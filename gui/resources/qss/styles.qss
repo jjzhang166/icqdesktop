@@ -1,0 +1,964 @@
+QWidget[Invisible="true"]
+{
+	background-color: transparent;
+}
+
+QWidget[ContactList="true"]
+{
+	background-color: transparent;
+}
+
+QWidget[ContactListWidget="true"]
+{
+	background-color: rgba(255, 255, 255, 95%);
+	border-right-style: solid;
+	border-right-color: #dadada;
+	border-right-width: 1dip;
+}
+
+QFrame[ButtonsWidget="true"]
+{
+	min-height:72dip;
+	background-color: #ebebeb;
+	border-right-style: solid;
+	border-right-width: 1dip;
+	border-right-color: #dadada;
+}
+
+QPushButton[RecentButton="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/tabs_recents_100.png);
+	margin-left: 28dip;
+	margin-right: 28dip;
+	margin-top: 24dip;
+	margin-bottom: 24dip;
+}
+
+QPushButton[RecentButton="true"]:hover
+{
+	border-image: url(:/resources/tabs_recents_100_hover.png);
+}
+
+QPushButton[RecentButton="true"]:checked
+{
+	border-image: url(:/resources/tabs_recents_100_active.png);
+}
+
+QPushButton[RecentButton="true"]:checked:hover
+{
+	border-image: url(:/resources/tabs_recents_100_active.png);
+}
+
+QPushButton[AllButton="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/tabs_contacts_100.png);
+	margin-left: 28dip;
+	margin-right: 28dip;
+	margin-top: 24dip;
+	margin-bottom: 24dip;
+}
+
+QPushButton[AllButton="true"]:hover
+{
+	border-image: url(:/resources/tabs_contacts_100_hover.png);
+}
+
+QPushButton[AllButton="true"]:checked
+{
+	border-image: url(:/resources/tabs_contacts_100_active.png);
+}
+
+QPushButton[AllButton="true"]:checked:hover
+{
+	border-image: url(:/resources/tabs_contacts_100_active.png);
+}
+
+QPushButton[SettingsButton="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/tabs_settings_100.png);
+	margin-left: 28dip;
+	margin-right: 28dip;
+	margin-top: 24dip;
+	margin-bottom: 24dip;
+}
+
+QPushButton[SettingsButton="true"]:hover
+{
+	border-image: url(:/resources/tabs_settings_100_hover.png);
+}
+
+QPushButton[SettingsButton="true"]:checked
+{
+	border-image: url(:/resources/tabs_settings_100_active.png);
+}
+
+QPushButton[SettingsButton="true"]:checked:hover
+{
+	border-image: url(:/resources/tabs_settings_100_active.png);
+}
+
+QWidget[VideoWindowCommon="true"] {
+	/*min-width: 328dip;
+	min-height: 82dip;*/
+}
+QWidget[DetachedVideoWindowCommon="true"] {
+	/*min-width: 320dip;
+	min-height: 80dip;*/
+}
+
+QLineEdit[SearchEdit="true"]
+{
+	font-size: 15dip;
+	border-style: none;
+}
+
+QWidget[TabLineWidget="true"]
+{
+	max-height: 1dip;
+	min-height:	1dip;
+	background: #dadada;
+}
+
+QPushButton[CallButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-left: 12dip;
+	margin-right: 12dip;
+	border-image: url(:/resources/contr_call_100.png);
+}
+
+QPushButton[CallButton="true"]:hover
+{
+	border-image: url(:/resources/contr_call_100_hover.png);
+}
+
+QPushButton[CallButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_call_100_active.png);
+}
+
+QPushButton[FavoriteStar="true"]
+{
+	margin-top: 11dip;
+	min-width: 12dip;
+	max-width: 12dip;
+	min-height: 12dip;
+	max-height: 12dip;
+	margin-left: 8dip;
+	margin-right: 8dip;
+	border-image: url(:/resources/cl_favorites_100.png);
+}
+
+QPushButton[VideoCallButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-left: 12dip;
+	margin-right: 12dip;
+	border-image: url(:/resources/contr_videocall_100.png);
+}
+
+QPushButton[AddMemberButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-left: 1dip;
+	margin-right: 12dip;
+	border-image: url(:/resources/contr_addpeople_100.png);
+}
+QPushButton[AddMemberButton="true"]:hover
+{
+	border-image: url(:/resources/contr_addpeople_100_hover.png);
+}
+QPushButton[AddMemberButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_addpeople_100_active.png);
+}
+
+QPushButton[VideoCallButton="true"]:hover
+{
+	border-image: url(:/resources/contr_videocall_100_hover.png);
+}
+QPushButton[VideoCallButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_videocall_100_active.png);
+}
+
+QWidget[WidgetWithBG="true"]
+{
+	background: rgba(0,0,0,65%);
+}
+
+QWidget[WidgetWithoutBG="true"]
+{
+	color: transparent;
+	background-color : rgba(0,0,0,0%);
+	background: rgba(0,0,0,5%);
+}
+
+QWidget[VideoPanel="true"]
+{
+	min-height: 50dip;
+	max-height: 50dip;
+	background: rgba(0,0,0,65%);
+}
+
+QWidget[VideoPanelHeader="true"]
+{
+	min-height: 32dip;
+	max-height: 32dip;
+	background: rgba(0,0,0,65%);
+}
+
+QWidget[VoipSysPanelHeader="true"]
+{
+	min-height: 90dip;
+	max-height: 90dip;
+	background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0,0,0,65%), stop:1 rgba(0,0,0,0%) );
+}
+
+QWidget[VoipSysPanelControls="true"]
+{
+	min-height: 70dip;
+	max-height: 70dip;
+	background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0,0,0,0%), stop:1 rgba(0,0,0,65%) );
+}
+
+QPushButton[VoipSysPanelControls_hangup="true"]
+{
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+
+	border-image: url(:/resources/contr_endcall_100.png);
+}
+QPushButton[VoipSysPanelControls_hangup="true"]:hover
+{
+	border-image: url(:/resources/contr_endcall_100_hover.png);
+}
+QPushButton[VoipSysPanelControls_hangup="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_endcall_100_active.png);
+}
+
+QPushButton[VoipSysPanelControls_video="true"]
+{
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+
+	border-image: url(:/resources/contr_videocall_100.png);
+}
+QPushButton[VoipSysPanelControls_video="true"]:hover
+{
+	border-image: url(:/resources/contr_videocall_100_hover.png);
+}
+QPushButton[VoipSysPanelControls_video="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_videocall_100_active.png);
+}
+
+QPushButton[VoipSysPanelControls_answer="true"]
+{
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+
+	border-image: url(:/resources/contr_call_100.png);
+}
+QPushButton[VoipSysPanelControls_answer="true"]:hover
+{
+	border-image: url(:/resources/contr_call_100_hover.png);
+}
+QPushButton[VoipSysPanelControls_answer="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_call_100_active.png);
+}
+
+QWidget[VideoPanelHeaderText="true"] {
+  	color: #ffffff;
+	font-size: 15dip;
+	text-align: left;
+}
+
+QWidget[VoipPanelHeaderText_Name="true"] {
+  	color: #ffffff;
+	font-size: 24dip;
+	text-align: left;
+}
+
+QWidget[VoipPanelHeaderText_Status="true"] {
+  	color: #ffffff;
+	font-size: 15dip;
+	text-align: left;
+}
+QWidget[CallPanelMainText_Name="true"] {
+  	color: #000000;
+	font-size: 16dip;
+	text-align: left;
+}
+QWidget[CallPanelMainText_Status="true"] {
+  	color: #000000;
+	font-size: 12dip;
+	text-align: left;
+}
+
+QWidget[CallPanelMain="true"]
+{
+	min-height: 74dip;
+	max-height: 74dip;
+	background: rgba(253,220,111,100%);
+}
+
+QPushButton[MenuShow="true"]
+{
+	min-width: 12dip;
+	max-width: 12dip;
+	min-height: 8dip;
+	max-height: 8dip;
+	border-image: url(:/resources/widgets/content_dropdown_black_open_100.png);
+	margin-left: 6dip;
+	margin-right: 6dip;
+	margin-top: 8dip;
+	margin-bottom: 8dip;
+}
+QPushButton[MenuShow="true"]:hover
+{
+	border-image: url(:/resources/widgets/content_dropdown_open_100.png);
+}
+QPushButton[MenuShow="true"]:hover:pressed
+{
+	border-image: url(:/resources/widgets/content_dropdown_open_100.png);
+}
+
+QPushButton[MenuHide="true"]
+{
+	min-width: 12dip;
+	max-width: 12dip;
+	min-height: 8dip;
+	max-height: 8dip;
+	border-image: url(:/resources/widgets/content_dropdown_black_close_100.png);
+	margin-left: 6dip;
+	margin-right: 6dip;
+	margin-top: 8dip;
+	margin-bottom: 8dip;
+}
+QPushButton[MenuHide="true"]:hover
+{
+	border-image: url(:/resources/widgets/content_dropdown_close_100.png);
+}
+QPushButton[MenuHide="true"]:hover:pressed
+{
+	border-image: url(:/resources/widgets/content_dropdown_close_100.png);
+}
+
+QWidget[VideoWindow="true"] {
+	/*background-color: transparent;*/
+}
+
+QWidget[IncomingCallWindow="true"] {
+/*	min-width: 400dip;
+	max-width: 400dip;
+	min-height: 285dip;
+	max-height: 285dip;*/
+	background-color: transparent;
+}
+
+QPushButton[VideoPanelHeaderMin="true"]
+{
+	min-width: 48dip;
+	max-width: 48dip;
+	border-style: none;
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-image: url(:/resources/video_panel/videoctrl_minimize_100.png);
+}
+QPushButton[VideoPanelHeaderMin="true"]:hover
+{
+	background-color: #d3d3d3;
+	background-image: url(:/resources/video_panel/videoctrl_minimize_100_hover.png);
+}
+QPushButton[VideoPanelHeaderMin="true"]:hover:pressed
+{
+	background-color: #9b9b9b;
+	background-image: url(:/resources/video_panel/videoctrl_minimize_100_active.png);
+}
+
+QPushButton[VideoPanelHeaderClose="true"]
+{
+	min-width: 48dip;
+	max-width: 48dip;
+	border-style: none;
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-image: url(:/resources/video_panel/videoctrl_close_100.png);
+}
+QPushButton[VideoPanelHeaderClose="true"]:hover
+{
+	background-color: #e81123;
+	background-image: url(:/resources/video_panel/videoctrl_close_100_hover.png);
+}
+QPushButton[VideoPanelHeaderClose="true"]:hover:pressed
+{
+	background-color: #d00516;
+	background-image: url(:/resources/video_panel/videoctrl_close_100_active.png);
+}
+
+QPushButton[VideoPanelHeaderMax="true"]
+{
+	min-width: 48dip;
+	max-width: 48dip;
+	border-style: none;
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-image: url(:/resources/video_panel/videoctrl_bigwindow_100.png);
+}
+QPushButton[VideoPanelHeaderMax="true"]:hover
+{
+	background-color: #d3d3d3;
+	background-image: url(:/resources/video_panel/videoctrl_bigwindow_100_hover.png);
+}
+QPushButton[VideoPanelHeaderMax="true"]:hover:pressed
+{
+	background-color: #9b9b9b;
+	background-image: url(:/resources/video_panel/videoctrl_bigwindow_100_active.png);
+}
+
+QPushButton[StopCallMainButton="true"]
+{
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	border-image: url(:/resources/contr_endcall_100.png);
+}
+QPushButton[StopCallMainButton="true"]:hover
+{
+	border-image: url(:/resources/contr_endcall_100_hover.png);
+}
+QPushButton[StopCallMainButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_endcall_100_active.png);
+}
+
+QWidget[CallItemsContainer="true"]
+{
+	min-height: 40dip;
+}
+
+QPushButton[VoipPanelHeaderAvatar="true"]
+{
+	min-width: 66dip;
+	max-width: 66dip;
+	min-height: 66dip;
+	max-height: 66dip;
+	border-style: none;
+	background-color: transparent;
+}
+
+QWidget[CallMenu="true"]
+{
+/*	min-width: 170dip;	max-width: 170dip;*/
+}
+
+QWidget[CallMenuItemCommon="true"]
+{
+	min-height: 40dip;
+	max-height: 40dip;
+	border-style: none;
+  	color: #282828;
+	font-size: 15dip;
+	text-align:left;
+	padding-left: 32dip;
+}
+
+QPushButton[CallMenuItemButton="true"]
+{
+	background-color: transparent;
+}
+QPushButton[CallMenuItemButton="true"]:hover
+{
+}
+QPushButton[CallMenuItemButton="true"]:hover:pressed
+{
+}
+
+QPushButton[CallMenuVolume_en="true"]
+{
+	border-style: none;
+	margin-right: 8dip;
+	image: url(:/resources/dialog_sound_100.png);
+}
+
+QPushButton[CallMenuVolume_dis="true"]
+{
+	border-style: none;
+	margin-right: 8dip;
+	image: url(:/resources/dialog_sound_off_100.png);
+}
+
+QPushButton[CallMenuMute="true"]
+{
+	background-image: url(:/resources/dialog_micro_100.png);
+	background-repeat: no-repeat;
+	background-position: left;
+}
+
+QPushButton[CallMenuMuteDis="true"]
+{
+	background-image: url(:/resources/dialog_micro_off_100.png);
+	background-repeat: no-repeat;
+	background-position: left;
+}
+
+QPushButton[CallMenuVideo="true"]
+{
+	background-image: url(:/resources/dialog_video_100.png);
+	background-repeat: no-repeat;
+	background-position: left;
+}
+
+QPushButton[CallMenuVideoDis="true"]
+{
+	background-image: url(:/resources/dialog_video_off_100.png);
+	background-repeat: no-repeat;
+	background-position: left;
+}
+
+QPushButton[StopCallButton="true"]
+{
+	min-height: 40dip;
+	max-height: 40dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	border-image: url(:/resources/contr_endcall_100.png);
+}
+QPushButton[StopCallButton="true"]:hover
+{
+	border-image: url(:/resources/contr_endcall_100_hover.png);
+}
+QPushButton[StopCallButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_endcall_100_active.png);
+}
+
+QPushButton[CallSoundOn="true"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_volume_100.png);
+}
+QPushButton[CallSoundOn="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_volume_100_hover.png);
+}
+QPushButton[CallSoundOn="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_volume_100_active.png);
+}
+
+QPushButton[CallSoundOff="true"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_volume_off_100.png);
+}
+QPushButton[CallSoundOff="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_volume_off_100_hover.png);
+}
+QPushButton[CallSoundOff="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_volume_off_100_active.png);
+}
+
+QPushButton[CallSettings="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/video_panel/videoctrl_settings_100.png);
+}
+QPushButton[CallSettings="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_settings_100_hover.png);
+}
+QPushButton[CallSettings="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_settings_100_active.png);
+}
+
+QPushButton[CallAddChat="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/video_panel/videoctrl_add_100.png);
+}
+QPushButton[CallAddChat="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_add_100_hover.png);
+}
+QPushButton[CallAddChat="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_add_100_active.png);
+}
+
+QPushButton[CallGoChat="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/video_panel/videoctrl_chat_100.png);
+}
+QPushButton[CallGoChat="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_chat_100_hover.png);
+}
+QPushButton[CallGoChat="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_chat_100_active.png);
+}
+
+QPushButton[CallFSOn="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/video_panel/videoctrl_fullscreen_100.png);
+}
+QPushButton[CallFSOn="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_fullscreen_100_hover.png);
+}
+QPushButton[CallFSOn="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_fullscreen_100_active.png);
+}
+
+QPushButton[CallFSOff="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/video_panel/videoctrl_decrease_100.png);
+}
+QPushButton[CallFSOff="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_decrease_100_hover.png);
+}
+QPushButton[CallFSOff="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_decrease_100_active.png);
+}
+
+QPushButton[CallPanelEnBtn="true"] {
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+} 
+
+QPushButton[CallPanelDisBtn="true"] {
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+QPushButton[CallEnableCam="true"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_camera_100.png);
+}
+QPushButton[CallEnableCam="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_camera_100_hover.png);
+}
+QPushButton[CallEnableCam="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_camera_100_active.png);
+}
+
+QPushButton[CallDisableCam="true"]
+{
+	background-image: url(:/resources/video_panel/videoctrl_camera_off_100.png);
+}
+QPushButton[CallDisableCam="true"]:hover
+{
+	background-image: url(:/resources/video_panel/videoctrl_camera_off_100_hover.png);
+}
+QPushButton[CallDisableCam="true"]:hover:pressed
+{
+	background-image: url(:/resources/video_panel/videoctrl_camera_off_100_active.png);
+}
+
+QPushButton[CallEnableMic="true"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_micro_100.png);
+}
+QPushButton[CallEnableMic="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_micro_100_hover.png);
+}
+QPushButton[CallEnableMic="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_micro_100_active.png);
+}
+
+QPushButton[CallDisableMic="true"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_micro_off_100.png);
+}
+QPushButton[CallDisableMic="true"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_micro_off_100_hover.png);
+}
+QPushButton[CallDisableMic="true"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_micro_off_100_active.png);
+}
+
+QPushButton[OptionButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-left: 12dip;
+	margin-right: 24dip;
+	border-image: url(:/resources/contr_options_100.png);
+}
+QPushButton[OptionButton="true"]:hover
+{
+	border-image: url(:/resources/contr_options_100_hover.png);
+}
+QPushButton[OptionButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_options_100_active.png);
+}
+
+QTextBrowser[ContactPageName="true"]
+{
+	margin-top: 8dip;
+	margin-left: 19dip;
+	font-size: 18dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	color: #282828;
+	background: transparent;
+	border: none;
+}
+
+QWidget[VideoPanelVolumeSliderEx="true"]
+{
+	max-width: 156dip;
+	min-width: 156dip;
+	max-height: 50dip;
+	min-height: 50dip;
+}
+
+QWidget[VideoPanelVolumeSliderExV="true"]
+{
+	max-width: 50dip;
+	min-width: 50dip;
+	max-height: 156dip;
+	min-height: 156dip;
+}
+
+QSlider[VideoPanelVolumeSlider="true"]:groove:horizontal
+{
+	background: #d7d7d7;
+	height: 2dip;
+	border-radius: 1dip;
+}
+
+QSlider[VideoPanelVolumeSlider="true"]:sub-page:horizontal
+{
+	background: solid #579e1c;
+	height: 2dip;
+	border-radius: 1dip;
+}
+QSlider[VideoPanelVolumeSlider="true"]:sub-page:horizontal:disabled
+{
+	background: solid #992117;
+	height: 2dip;
+	border-radius: 1dip;
+}
+
+QSlider[VideoPanelVolumeSlider="true"]:add-page:horizontal
+{
+	background: #d7d7d7;
+	height: 2dip;
+	border-radius: 1dip;
+}
+QSlider[VideoPanelVolumeSlider="true"]:add-page:horizontal:disabled
+{
+	background: #d7d7d7;
+	height: 2dip;
+	border-radius: 1dip;
+}
+
+QSlider[VideoPanelVolumeSlider="true"]:handle:horizontal
+{
+	background: solid #579e1c;
+	width: 8dip;
+	height: 8dip;
+	margin-top: -11dip;
+	margin-bottom: -11dip;
+	border-radius: 4dip;
+}
+QSlider[VideoPanelVolumeSlider="true"]:handle:horizontal:hover
+{
+	background: solid #67bc21;
+	border-radius: 4dip;
+}
+QSlider[VideoPanelVolumeSlider="true"]:handle:horizontal:disabled
+{
+	background: solid #992117;
+	border-radius: 4dip;
+}
+
+QSlider[VideoPanelVolumeSliderV="true"]:groove:vertical
+{
+	background: rgba(255,255,255,80%);
+	width: 2dip;
+	border-radius: 1dip;
+}
+
+QSlider[VideoPanelVolumeSliderV="true"]:sub-page:vertical
+{
+	background: #d7d7d7;
+	width: 2dip;
+	border-radius: 1dip;
+}
+QSlider[VideoPanelVolumeSliderV="true"]:sub-page:vertical:disabled
+{
+	background: #d7d7d7;
+	width: 2dip;
+	border-radius: 1dip;
+}
+
+QSlider[VideoPanelVolumeSliderV="true"]:add-page:vertical
+{
+	background: solid #579e1c;
+	width: 2dip;
+	border-radius: 1dip;
+}
+QSlider[VideoPanelVolumeSliderV="true"]:add-page:vertical:disabled
+{
+	background: solid #992117;
+	width: 2dip;
+	border-radius: 1dip;
+}
+
+QSlider[VideoPanelVolumeSliderV="true"]:handle:vertical
+{
+	background: solid #579e1c;
+	border: 1dip solid #579e1c;
+	width: 8dip;
+	height: 8dip;
+	margin-left: -11dip;
+	margin-right: -11dip;
+	border-radius: 4dip;
+}
+QSlider[VideoPanelVolumeSliderV="true"]:handle:vertical:hover
+{
+	background: solid #67bc21;
+	border-radius: 4dip;
+}
+QSlider[VideoPanelVolumeSliderV="true"]:handle:vertical:disabled
+{
+	background: solid #992117;
+	border-radius: 4dip;
+}
+
+QWidget[RecentMessageAlert="true"]
+{
+	background: rgba(255,255,255,94%);
+}
+
+QWidget[Line="true"]
+{
+	background: #cccccc;
+}
+
+QLabel[ViewAllLink="true"]
+{
+	color: #579e1c;
+	font-size: 15dip;
+}
+
+QLabel[ViewAllLink="true"]:hover
+{
+	color: #60AA23;
+}
+
+QLabel[ViewAllLink="true"]:hover:pressed
+{
+	color: #489B12;
+}
+
+QPushButton[TrayCloseButton="true"]
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_close_100.png);
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	padding-top: 4dip;
+	padding-right: 16dip;
+	border: none;
+}
+
+QPushButton[TrayCloseButton="true"]:hover
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_close_100_hover.png);
+	background-color: #d3d3d3;
+}
+
+QPushButton[TrayCloseButton="true"]:hover:pressed
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_close_100_active.png);
+	background-color: #c8c8c8;
+}

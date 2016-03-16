@@ -1,0 +1,17 @@
+QPushButton
+{
+    width: 20dip;
+    height: 20dip;
+    border: none;
+    background-color: transparent;
+    border-image: url(:/resources/contr_back_100.png);
+    margin: 10dip;
+}
+QPushButton:hover
+{
+    border-image: url(:/resources/contr_back_100_hover.png);
+}
+QPushButton:pressed
+{
+    border-image: url(:/resources/contr_back_100_active.png);
+}

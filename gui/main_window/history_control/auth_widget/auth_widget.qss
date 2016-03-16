@@ -1,0 +1,75 @@
+Ui--AuthWidget
+{
+}
+
+Ui--ContactInfoWidget
+{
+	background-color: rgba(255, 255, 255, 90%);
+	border-width: 0dip;
+	border-style: solid;
+	border-radius: 8dip;
+}
+
+Ui--TextEmojiWidget#contact_name
+{
+
+}
+
+Ui--TextEmojiWidget#contact_info
+{
+
+}
+
+QPushButton#button_add
+{
+	border: none;
+	font: "%FONT_FAMILY%";
+	font-size: 18dip;
+	color: #579e1c;
+}
+
+QPushButton#button_add:hover
+{
+	color: #60AA23;
+}
+
+QPushButton#button_add:hover:pressed
+{
+	color: #489B12;
+}
+
+QPushButton#button_spam
+{
+	border: none;
+	font: "%FONT_FAMILY%";
+	font-size: 18dip;
+	color: #e30f04;
+}
+
+QPushButton#button_spam:hover
+{
+	color: #ff352b;
+}
+
+QPushButton#button_spam:hover:pressed
+{
+	color: #d1140b;
+}
+
+QPushButton#button_delete
+{
+	border: none;
+	font: "%FONT_FAMILY%";
+	font-size: 18dip;
+	color: #e30f04;
+}
+
+QPushButton#button_delete:hover
+{
+	color: #ff352b;
+}
+
+QPushButton#button_delete:hover:pressed
+{
+	color: #d1140b;
+}

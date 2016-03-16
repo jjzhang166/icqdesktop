@@ -1,0 +1,203 @@
+QWidget
+{
+	font-family: %FONT_FAMILY%;
+}
+
+QScrollBar:vertical
+{
+	background-color: transparent;
+	width:6dip;
+}
+
+QScrollBar::handle:vertical
+{
+	background-color: #C4C4C4;
+	min-height: 20dip;
+}
+
+QScrollBar::add-line:vertical
+{
+	background-color: transparent;
+}
+
+QScrollBar::sub-line:vertical
+{
+	background-color: transparent;
+}
+
+
+QScrollBar:horizontal
+{
+	background-color: transparent;
+	height:6dip;
+}
+
+QScrollBar::handle:horizontal
+{
+	background-color: #C4C4C4;
+	min-width: 20dip;
+}
+
+QScrollBar::add-line:horizontal
+{
+	background-color: transparent;
+}
+
+QScrollBar::sub-line:horizontal
+{
+	background-color: transparent;
+}
+
+
+installer--ui--main_window
+{
+	background-color: white;
+}
+
+QWidget#logo
+{
+	background-repeat: no-repeat;
+	background-position: center;
+	background-image: url(:/images/content_logo_100.png);
+}
+
+QLabel#start_page_welcome_label
+{
+	color: #282828;
+	font-size: 32dip; 
+}
+
+QLabel#start_page_will_install
+{
+	color: #696969;
+	font-size: 15dip; 
+}
+
+QLabel#start_page_privacy_label
+{
+	color: #696969;
+	font-size: 13dip; 
+}
+
+QLabel#start_page_privacy_link
+{
+	color: #579e1c;
+	font-size: 13dip; 
+}
+
+QPushButton#custom_button
+{
+	font-size: 18dip;
+	color: #579e1c;
+	background-color: rgba(202,230,179,40%);
+	padding: 0;
+	margin: 0;
+	padding-right: 40dip;
+	padding-left: 40dip;
+	border: none;
+	max-height: 36dip;
+	min-height: 36dip;
+	border-style: solid;
+	border-color: #579e1c;
+	border-width: 2dip;	
+	margin-left: 12dip;
+	margin-right: 12dip;
+}
+
+QPushButton#custom_button:hover
+{
+	background-color: #579e1c;
+	color: #ffffff;
+}
+
+QLabel#progress_page_demo_label
+{
+	color: #282828;
+	font-size: 24dip;
+	margin-left: 16dip;
+	margin-right: 16dip;
+}
+
+QProgressBar
+{
+	border: none;
+	margin-left: 16dip;
+	margin-right: 16dip;
+	background-color: #eaeae2;
+}
+
+QProgressBar::chunk
+{
+    background-color: #579e1c;
+}
+
+
+QLabel#error_page_caption
+{
+	color: #e30f04;
+	font-size: 24dip; 
+}
+
+QLabel#error_page_comment
+{
+	color: #696969;
+	font-size: 15dip; 
+}
+
+QLabel#error_page_error_code
+{
+	color: #696969;
+	font-size: 15dip; 
+}
+
+
+QLabel#error_page_support_link
+{
+	color: #579e1c;
+	font-size: 15dip; 
+}
+
+QLabel#choose_account_label
+{
+	color: #282828;
+	font-size: 24dip; 
+}
+
+QLabel#choose_account_comment_label
+{
+	color: #696969;
+	font-size: 15dip;
+}
+
+QLabel#label_account_nick
+{
+	color: #282828;
+	font-size: 18dip;
+}
+
+QLabel#label_account_uin
+{
+	color: #696969;
+	font-size: 15dip;
+}
+
+QLabel#arrow_right
+{
+	background-image: url(:/images/picker_arrow_right_100.png);
+	background-repeat: none;
+}
+
+QScrollArea
+{
+	border: none;
+}
+
+installer--ui--account_widget
+{
+	background-color: white;
+}
+
+QWidget#accounts_area_widget
+{
+	background-color: white;
+}

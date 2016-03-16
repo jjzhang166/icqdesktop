@@ -1,0 +1,37 @@
+<RCC>
+  <qresource prefix="/">
+    <file>../translations/en.qm</file>
+    <file>../translations/ru.qm</file>
+    <file>../translations/uk.qm</file>
+    <file>../translations/de.qm</file>
+    <file>../translations/pt.qm</file>
+    <file>../translations/cs.qm</file>
+    <file>images/appicon.ico</file>
+    <file>styles/styles.qss</file>
+    <file>images/content_illustration_calls_100.jpg</file>
+    <file>images/content_illustration_calls_125.jpg</file>
+    <file>images/content_illustration_calls_150.jpg</file>
+    <file>images/content_illustration_calls_200.jpg</file>
+    <file>images/content_illustration_stickers_100.jpg</file>
+    <file>images/content_illustration_stickers_125.jpg</file>
+    <file>images/content_illustration_stickers_150.jpg</file>
+    <file>images/content_illustration_stickers_200.jpg</file>
+    <file>images/content_illustration_stickers_groups_100.jpg</file>
+    <file>images/content_illustration_stickers_groups_125.jpg</file>
+    <file>images/content_illustration_stickers_groups_150.jpg</file>
+    <file>images/content_illustration_stickers_groups_200.jpg</file>
+    <file>images/content_logo_100.png</file>
+    <file>images/content_logo_125.png</file>
+    <file>images/content_logo_150.png</file>
+    <file>images/content_logo_200.png</file>
+    <file>images/content_illustration_facepalm_100.jpg</file>
+    <file>images/content_illustration_facepalm_125.jpg</file>
+    <file>images/content_illustration_facepalm_150.jpg</file>
+    <file>images/content_illustration_facepalm_200.jpg</file>
+    <file>images/picker_arrow_right_100.png</file>
+    <file>images/picker_arrow_right_125.png</file>
+    <file>images/picker_arrow_right_150.png</file>
+    <file>images/picker_arrow_right_200.png</file>
+    <file>images/content_avatarplaceholder.png</file>
+  </qresource>
+</RCC>

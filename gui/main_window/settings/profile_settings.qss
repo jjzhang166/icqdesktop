@@ -1,0 +1,331 @@
+QWidget#backbutton_area
+{
+    width: 40dip;
+    background-color: transparent;
+}
+
+QWidget#avatar_area
+{
+    background-color: transparent;
+}
+
+QWidget#avatar
+{
+    width: 180dip;
+    height: 180dip;
+}
+
+QWidget#avatar_buttons_area
+{
+    width: 180dip;
+    height: 48dip;
+    background-color: transparent;
+}
+
+QWidget#info_area
+{
+    background-color: transparent;
+    border: none;
+}
+
+QWidget#info_area_scroll_contents
+{
+    background-color: transparent;
+}
+
+QWidget#info_values_area
+{
+    background-color: transparent;
+    border: none;
+}
+
+QWidget#info_head_area
+{
+    background-color: transparent;
+}
+
+QWidget#info_state_area
+{
+    background-color: transparent;
+}
+
+QPushButton#do_text_message[known="true"]
+{
+    width: 48dip;
+    height: 48dip;
+    min-width: 48dip;
+    min-height: 48dip;
+    margin-top: 24dip;
+    margin-right: 18dip;
+    border-image: url(:/resources/contr_writemsg_big_100.png);
+}
+QPushButton#do_text_message:hover[known="true"]
+{
+    border-image: url(:/resources/contr_writemsg_big_100_hover.png);
+}
+QPushButton#do_text_message:pressed[known="true"]
+{
+    border-image: url(:/resources/contr_writemsg_big_100_active.png);
+}
+
+QPushButton#do_voice_message[known="true"]
+{
+    width: 48dip;
+    height: 48dip;
+    min-width: 48dip;
+    min-height: 48dip;
+    margin-top: 24dip;
+    margin-right: 18dip;
+    border-image: url(:/resources/contr_call_big_100.png);
+}
+QPushButton#do_voice_message:hover[known="true"]
+{
+    border-image: url(:/resources/contr_call_big_100_hover.png);
+}
+QPushButton#do_voice_message:pressed[known="true"]
+{
+    border-image: url(:/resources/contr_call_big_100_active.png);
+}
+
+QPushButton#do_video_message[known="true"]
+{
+    width: 48dip;
+    height: 48dip;
+    min-width: 48dip;
+    min-height: 48dip;
+    margin-top: 24dip;
+    border-image: url(:/resources/contr_videocall_big_100.png);
+}
+QPushButton#do_video_message:hover[known="true"]
+{
+    border-image: url(:/resources/contr_videocall_big_100_hover.png);
+}
+QPushButton#do_video_message:pressed[known="true"]
+{
+    border-image: url(:/resources/contr_videocall_big_100_active.png);
+}
+
+QPushButton#do_text_message[known="false"]
+{
+    width: 48dip;
+    height: 48dip;
+    min-width: 48dip;
+    min-height: 48dip;
+    margin-top: 24dip;
+    margin-right: 18dip;
+    border-image: url(:/resources/contr_addpeople_big_100.png);
+}
+QPushButton#do_text_message:hover[known="false"]
+{
+    border-image: url(:/resources/contr_addpeople_big_100_hover.png);
+}
+QPushButton#do_text_message:pressed[known="false"]
+{
+    border-image: url(:/resources/contr_addpeople_big_100_active.png);
+}
+
+QPushButton#do_voice_message[known="false"]
+{
+    width: 48dip;
+    height: 48dip;
+    min-width: 48dip;
+    min-height: 48dip;
+    margin-top: 24dip;
+    margin-right: 18dip;
+    border-image: url(:/resources/contr_call_bigdisable_100.png);
+}
+QPushButton#do_voice_message:hover[known="false"]
+{
+    border-image: url(:/resources/contr_call_bigdisable_100.png);
+}
+QPushButton#do_voice_message:pressed[known="false"]
+{
+    border-image: url(:/resources/contr_call_bigdisable_100.png);
+}
+
+QPushButton#do_video_message[known="false"]
+{
+    width: 48dip;
+    height: 48dip;
+    min-width: 48dip;
+    min-height: 48dip;
+    margin-top: 24dip;
+    border-image: url(:/resources/contr_videocall_bigdisable_100.png);
+}
+QPushButton#do_video_message:hover[known="false"]
+{
+    border-image: url(:/resources/contr_videocall_bigdisable_100.png);
+}
+QPushButton#do_video_message:pressed[known="false"]
+{
+    border-image: url(:/resources/contr_videocall_bigdisable_100.png);
+}
+
+QPushButton#action_button[self="true"]
+{
+    height: 40dip;
+    border: none;
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 16dip;
+    color: #579e1c;
+    text-align: right bottom;
+    margin-top: 5dip;
+    qproperty-icon: url();
+}
+QPushButton#action_button[self="false"]
+{
+    width: 40dip;
+    height: 40dip;
+    border: none;
+    color: #579e1c;
+    text-align: center;
+    margin-top: 9dip;
+    qproperty-icon: url(:/resources/contr_options_100.png);
+}
+QPushButton#action_button:pressed[self="true"]
+{
+    background-color: transparent;
+}
+QPushButton#action_button::menu-indicator
+{
+    image: none;
+}
+
+QPushButton#ignore_button
+{
+    height: 40dip;
+    border: none;
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 18dip;
+    color: #e30f04;
+    text-align: left bottom;
+}
+
+QPushButton#ignore_button:hover
+{
+    color: #ff352b;
+}
+
+QPushButton#ignore_button:hover:pressed
+{
+    color: #d1140b;
+}
+
+QPushButton#report_spam_button
+{
+    height: 40dip;
+    border: none;
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 18dip;
+    color: #e30f04;
+    text-align: left bottom;
+}
+
+QPushButton#report_spam_button:hover
+{
+    color: #ff352b;
+}
+
+QPushButton#report_spam_button:hover:pressed
+{
+    color: #d1140b;
+}
+
+QMenu
+{
+    color: #282828;
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 15dip;
+    border-style: solid;
+	border-width: 1dip;
+	border-color: #d4d4d4;
+    background-color: #f2f2f2;
+}
+QMenu::icon
+{
+    padding-left: 8dip;
+    padding-right: 8dip;
+}
+QMenu#state_button_menu::item
+{
+    padding-left: 35dip;
+    padding-right: 16dip;
+    height: 40dip;
+}
+QMenu#action_button_menu::item
+{
+    padding-left: 16dip;
+    padding-right: 16dip;
+    height: 40dip;
+}
+QMenu::item:selected
+{
+    color: #282828;
+    background-color: #dcdcdc;
+}
+QMenu::separator
+{
+    background-color: transparent;
+}
+
+QPushButton#state_button[self="true"]
+{
+    border: none;
+    padding-left: 16dip;
+    min-width: 48dip;
+    min-height: 40dip;
+}
+QPushButton#state_button[self="false"]
+{
+    border: none;
+    padding-left: 0dip;
+    min-width: 48dip;
+    min-height: 40dip;
+}
+QPushButton#state_button:pressed[self="true"]
+{
+    background-color: #66cae6b3;
+}
+QPushButton#state_button:pressed[self="false"]
+{
+    background-color: transparent;
+}
+QPushButton#state_button::menu-indicator
+{
+    image: url(:/resources/widgets/content_dropdown_black_open_100.png);
+    width: 12dip;
+    height: 8dip;
+    subcontrol-origin: padding;
+    subcontrol-position: center left;
+    left: 10dip;
+}
+
+QLabel#state_sign[self="true"]
+{
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 16dip;
+    color: #579e1c;
+    margin-left: 0dip;
+}
+QLabel#state_sign[self="false"]
+{
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 16dip;
+    color: #579e1c;
+    margin-left: 10dip;
+}
+
+QLabel#state_sign[green="true"]
+{
+    color: #579e1c;
+}
+QLabel#state_sign[green="false"]
+{
+    color: #e30f04;
+}

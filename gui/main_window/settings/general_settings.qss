@@ -1,0 +1,102 @@
+QWidget
+{
+    background-color: transparent;
+    border: none;
+}
+
+QCheckBox
+{
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 16dip;
+    spacing: 12dip;
+}
+QCheckBox::indicator
+{
+    width: 44dip;
+    height: 20dip;
+}
+QCheckBox::indicator[ordinary="true"]
+{
+    width: 20dip;
+    height: 20dip;
+}
+
+QCheckBox::indicator:unchecked
+{
+    image: url(:/resources/widgets/content_switch_off_100.png);
+}
+QCheckBox::indicator:checked
+{
+    image: url(:/resources/widgets/content_switch_on_100.png);
+}
+
+QCheckBox::indicator:unchecked[ordinary="true"]
+{
+    image: url(:/resources/widgets/content_uncheck_100.png);
+}
+QCheckBox::indicator:checked[ordinary="true"]
+{
+    image: url(:/resources/widgets/content_check_100.png);
+}
+
+QPushButton
+{
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 16dip;
+}
+QPushButton::menu-indicator
+{
+    image: url(:/resources/widgets/content_dropdown_black_open_100.png);
+    width: 12dip;
+    height: 8dip;
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+}
+
+QMenu
+{
+    color: #282828;
+    font: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    font-size: 16dip;
+    border-style: solid;
+	border-width: 1dip;
+	border-color: #d4d4d4;
+    background-color: #f2f2f2;
+}
+QMenu::item
+{
+    padding-left: 16dip;
+    padding-right: 16dip;
+    height: 40dip;
+	min-width: 140dip;
+	max-width: 248dip;
+}
+QMenu::item:selected
+{
+    color: #282828;
+    background-color: #dcdcdc;
+}
+
+QSlider
+{
+    height: 24dip;
+    background-color: transparent;
+}
+QSlider::groove:horizontal
+{
+    border: none;
+    background-color: #d7d7d7;
+    height: 2dip;
+    margin: 0;
+}
+QSlider::handle:horizontal
+{
+    background: transparent;
+    image: url(:/resources/widgets/content_selectbar_100.png);
+    border: none;
+    width: 8dip;
+    height: 24dip;
+}

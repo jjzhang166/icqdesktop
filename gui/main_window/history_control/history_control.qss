@@ -1,0 +1,163 @@
+QWidget[HistoryControl="true"]
+{
+	background-color: transparent;
+	min-width: 333dip;
+}
+
+QWidget[ContactPageTopWidget="true"]
+{
+	background: rgba(255, 255, 255, 95%);
+	min-height: 64dip;
+	max-height: 64dip;
+	border-bottom-style: solid;
+	border-bottom-width: 1dip;
+	border-bottom-color: #dadada;
+}
+
+QWidget[MessagesWidget=true]
+{
+	background: transparent;
+}
+
+QWidget[NewMessages="true"]
+{
+	background: transparent;
+	min-height: 42dip;
+	max-height: 42dip;
+}
+
+QWidget[NewMessagesWidget="true"]
+{
+	min-height: 20dip;
+	max-height: 20dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+	border-radius: 10dip;
+}
+
+QWidget[NewMessagesWidgetHover="true"]
+{
+	min-height: 20dip;
+	max-height: 20dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+	border-radius: 10dip;
+}
+
+QWidget[NewMessagesWidgetPressed="true"]
+{
+	min-height: 20dip;
+	max-height: 20dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+	border-radius: 10dip;
+	background: #498812;
+}
+
+QLabel[NewMessagesLabel="true"]
+{
+	font-size: 12dip;
+	font-family: "%FONT_FAMILY_SEMIBOLD%";
+	font-weight: %FONT_WEIGHT_SEMIBOLD%;
+	margin-left: 24dip;
+	margin-right: 24dip;
+}
+
+QLabel[NewMessagesLabelHover="true"]
+{
+	font-size: 12dip;
+	font-family: "%FONT_FAMILY_SEMIBOLD%";
+	font-weight: %FONT_WEIGHT_SEMIBOLD%;
+	margin-left: 24dip;
+	margin-right: 24dip;
+}
+
+QWidget[ServiceMessage="true"]
+{
+	background: transparent;
+}
+
+QWidget[ServiceMessageCommonWidget="true"]
+{
+	background: transparent;
+}
+
+QWidget[DateWidget="true"]
+{
+	min-height: 20dip;
+	max-height: 20dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+	border-radius: 10dip;
+}
+
+QLabel[DateWidgetLabel="true"]
+{
+	font-size: 12dip;
+	font-family: "%FONT_FAMILY_SEMIBOLD%";
+	font-weight: %FONT_WEIGHT_SEMIBOLD%;
+	margin-left: 12dip;
+	margin-right: 12dip;
+	margin-top: 10dip;
+}
+
+QWidget[ServiceMessageOverlay="true"]
+{
+	min-height: 20dip;
+	max-height: 20dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+	background: transparent;
+}
+
+QWidget[ServiceMessageWidgetOverlay="true"]
+{
+	min-height: 20dip;
+	max-height: 20dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+	
+	border-radius: 10dip;
+}
+
+QLabel[ServiceMessageLabelOverlay="true"]
+{
+	font-size: 12dip;
+	font-family: "%FONT_FAMILY_SEMIBOLD%";
+	font-weight: %FONT_WEIGHT_SEMIBOLD%;
+	margin-left: 12dip;
+	margin-right: 12dip;
+	margin-top: 10dip;
+}
+
+QWidget[NewMessagesPlateCommonWidget="true"]
+{
+	background: rgba(202, 230, 179, 50%);
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+}
+
+QWidget[NewMessagesPlateWidget="true"]
+{
+	min-height: 32dip;
+	max-height: 32dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
+	/*background: rgba(202, 230, 179, 50%);*/
+}
+
+QLabel[NewMessagesPlateWidgetLabel="true"]
+{
+	font-size: 16dip;
+	/*color: #579eFF;*/
+	margin-left: 12dip;
+	margin-right: 12dip;
+	margin-top: 13dip;
+}
+
+QWidget[TypingWidget="true"]
+{
+	background-color: transparent;
+	min-height: 32dip;
+	max-height: 32dip;
+}

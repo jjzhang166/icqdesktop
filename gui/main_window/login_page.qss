@@ -1,0 +1,384 @@
+QWidget[LoginPageWidget="true"]
+{
+	background-color: #ffffff;
+}
+
+QWidget[LoginStackedWidget="true"]
+{
+	max-width: 320dip;
+	min-width: 320dip;
+}
+
+QLabel[WelcomeTitle="true"]
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	margin-top: 15dip;
+	font-size: 32dip;
+	font-family: "%FONT_FAMILY_LIGHT%";
+	color: #282828;
+    font-weight: %FONT_WEIGHT_LIGHT%;
+}
+
+QLabel[ActionHintLabel="true"]
+{
+	background-color: transparent;
+	min-height: 45dip;
+	max-height: 45dip;
+	font-size: 16dip;
+	color: #696969;
+}
+
+QWidget[CountrySearchWidget="true"]
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	background: transparent;
+	border-style: none;
+	border-bottom-style: solid;
+	border-bottom-width: 1dip;
+	border-bottom-color: #cccccc;
+}
+
+QLineEdit[CountrySearchEdit="true"]
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	background-color: transparent;
+	background-position: right;
+	margin-right: 12dip;
+	background-repeat: no-repeat;
+	font-size: 18dip;
+	border-style: solid;
+	border-width: 1dip;
+	border-color: #cccccc;
+	border-top-style: none;
+	border-left-style: none;
+	border-right-style: none;
+}
+
+QLineEdit[CountrySearchEdit="true"]:focus
+{
+	background-color: transparent;
+	padding-left: 32dip;
+	margin-right: 0dip;
+	background-repeat: no-repeat;
+	border-style: solid;
+	border-width: 1dip;
+	border-color: #579e1c;
+	border-top-style: none;
+	border-left-style: none;
+	border-right-style: none;
+}
+
+QTreeView[CountrySearchView="true"]
+{
+	border-style: solid;
+	border-width: 1dip;
+	border-color: #579e1c;
+	font-size: 16dip;
+	selection-background-color: #ffffff;
+	selection-color: #000000;
+}
+
+
+QLineEdit[CountryCodeEdit="true"]
+{
+	background-color: transparent;
+	border-style: outset;
+	min-height: 48dip;
+	font-size: 18dip;
+}
+
+QLineEdit[PhoneNumberEdit="true"]
+{
+	background-color: transparent;
+	border-style: outset;
+	min-height: 48dip;
+	max-height: 48dip;
+	font-size: 18dip;
+	text-align: left;
+	padding-left: 10dip;
+}
+
+QWidget[EnterPhoneWidget="true"]
+{
+	background-color: transparent;
+	border-bottom-color: #cccccc;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+	min-height: 48dip;
+	max-height: 48dip;
+	margin-top: 4dip;
+}
+
+QWidget[EnterPhoneWidgetFocused="true"]
+{
+	background-color: transparent;
+	border-bottom-color: #579e1c;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+	margin-top: 4dip;
+}
+
+QWidget[EnterPhoneWidgetError="true"]
+{
+	background-color: #fbdbd9;
+	border-style: none;
+	margin-top: 4dip;
+}
+
+QWidget[LoginButtonWidget="true"]
+{
+	min-height: 30dip;
+	max-height: 30dip;
+	margin-bottom: 12dip;
+}
+
+QPushButton[SwitchLoginButton="true"]
+{
+	min-width: 340dip;
+	max-width: 340dip;
+	min-height: 30dip;
+	max-height: 30dip;
+	background-color: transparent;
+	color: #579e1c;
+	font-size: 15dip;
+	border-style: outset;
+	margin-bottom: 12dip;
+}
+
+QPushButton[SwitchLoginButton="true"]:hover
+{
+	color: #579e1c;
+}
+
+QPushButton[SwitchLoginButton="true"]:hover:pressed
+{
+	color: #489B12;
+}
+
+QWidget[BackButtonWidget="true"]
+{
+	background: transparent;
+	min-width: 54dip;
+	max-width: 54dip;
+	min-height: 54dip;
+	max-height: 54dip;
+}
+
+QWidget[CenterContolWidget="true"]
+{
+	background-color: transparent;
+	max-width: 600dip;
+	min-width: 600dip;
+}
+
+QWidget[CenterControlWidgetBack="true"]
+{
+	background-color: transparent;
+}
+
+QLabel[EnteredPhoneNumber="true"]
+{
+	font-size: 24dip;
+}
+
+Qwidget[EnteredPhoneWidget="true"]
+{
+	background-color: transparent;
+	margin-bottom: 32dip;
+}
+
+QPushButton[EditPhoneButton="true"]
+{
+	background-color: transparent;
+	color: #579e1c;
+	font-size: 18dip;
+	border-style: outset;
+	margin-left: 16dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	min-width: 100dip;
+}
+
+QPushButton[EditPhoneButton="true"]:hover
+{
+	color: #60AA23;
+}
+
+QPushButton[EditPhoneButton="true"]:hover:pressed
+{
+	color: #489B12;
+}
+
+QPushButton[ResendCodeButton="true"]:disabled
+{
+	min-height: 30dip;
+	max-height: 30dip;
+	color: #696969;
+	font-size: 15dip;
+	border-style: outset;
+}
+
+QPushButton[ResendCodeButton="true"]:enabled
+{
+	min-height: 30dip;
+	max-height: 30dip;
+	color: #579e1c;
+	font-size: 15dip;
+	border-style: outset;
+}
+
+QPushButton[ResendCodeButton="true"]:hover
+{
+	color: #60AA23;
+}
+
+QPushButton[ResendCodeButton="true"]:hover:pressed
+{
+	color: #489B12;
+}
+
+QLineEdit[EnteredCode="true"]
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	background-color: transparent;
+	border-style: none;
+	border-bottom-color: #cccccc;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+	font-size: 18dip;
+}
+
+QLineEdit[EnteredCode="true"]:focus
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	font-size: 18dip;
+	background-color: transparent;
+	border-style: none;
+	border-bottom-color: #579e1c;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+}
+
+QLineEdit[EnteredCodeError="true"]
+{
+	background-color: #fbdbd9;
+	min-height: 48dip;
+	max-height: 48dip;
+	font-size: 18dip;
+	border-style: none;
+}
+
+QLineEdit[Uin="true"]
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	background-color: transparent;
+	border-style: none;
+	border-bottom-color: #cccccc;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+	font-size: 18dip;
+}
+
+QLineEdit[Uin="true"]:focus
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	font-size: 18dip;
+	background-color: transparent;
+	border-style: none;
+	border-bottom-color: #579e1c;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+}
+
+QLineEdit[UinError="true"]
+{
+	background-color: #fbdbd9;
+	min-height: 48dip;
+	max-height: 48dip;
+	font-size: 18dip;
+	border-style: none;
+	border-bottom-color: #fbdbd9;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+}
+
+QLineEdit[Password="true"]
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	margin-top: 4dip;
+	background-color: transparent;
+	border-style: none;
+	border-bottom-color: #cccccc;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+	font-size: 18dip;
+}
+
+QLineEdit[Password="true"]:focus
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	margin-top: 4dip;
+	font-size: 18dip;
+	background-color: transparent;
+	border-style: none;
+	border-bottom-color: #579e1c;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
+}
+
+QCheckBox
+{
+    font-size: 15dip;
+    font-family: "%FONT_FAMILY_LIGHT%";
+    font-weight: %FONT_WEIGHT_LIGHT%;
+    color: #696969;
+	padding-top: 4dip;
+    spacing: 8dip;
+}
+
+QCheckBox::indicator
+{
+    width: 20dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_uncheck_100.png");
+	image-position: left;
+}
+
+QCheckBox::indicator::checked
+{
+    width: 20dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_check_100.png");
+	image-position: left;
+}
+
+QLabel[ErrorLabel="true"]
+{
+	font-size: 15dip;
+	background-color: transparent;
+	color: #e20b00;
+}
+
+QWidget[ErrorWIdget="true"]
+{
+	min-height: 30dip;
+	max-height: 30dip;
+}
+
+QWidget[NextButtonWidget="true"]
+{
+	min-width: 150dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	background: transparent;
+	margin-top: 20dip;
+}

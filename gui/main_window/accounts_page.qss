@@ -1,0 +1,72 @@
+QWidget#main_widget
+{
+    background-color: #ffffff;
+}
+
+QLabel#welcome_label
+{
+    min-height: 48dip;
+    max-height: 48dip;
+    margin-top: 15dip;
+    font-size: 32dip;
+    font-family: "%FONT_FAMILY_LIGHT%";
+    color: #282828;
+    font-weight: %FONT_WEIGHT_LIGHT%;
+}
+
+QLabel#choose_account_label
+{
+    background-color: transparent;
+    min-height: 45dip;
+    max-height: 45dip;
+    font-size: 16dip;
+    color: #696969;
+}
+
+QLabel#choose_account_comment_label
+{
+    background-color: transparent;
+    min-height: 45dip;
+    max-height: 45dip;
+    font-size: 16dip;
+    color: #696969;
+}
+
+QLabel#label_account_nick
+{
+	color: #282828;
+	font-size: 18dip;
+}
+
+QLabel#label_account_uin
+{
+	color: #696969;
+	font-size: 16dip;
+}
+
+QLabel#arrow_right
+{
+	border-image: url(:/resources/smiles_menu/picker_arrow_right_100.png);
+    width: 20dip;
+    height: 20dip;
+}
+
+QScrollArea
+{
+	border: none;
+}
+
+QWidget#accounts_area_widget
+{
+	background-color: white;
+}
+
+QWidget#account_widget
+{
+    background-color: transparent;
+}
+
+QWidget#account_widget:hover
+{
+    background-color: #dcdcdc;
+}

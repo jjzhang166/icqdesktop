@@ -1,0 +1,150 @@
+QWidget[TitleWidget="true"]
+{
+	background-color: #ebebeb;
+	height: 28dip;
+	border-bottom-style: solid;
+	border-bottom-color: #dadada;
+	border-bottom-width: 1dip;
+}
+
+QPushButton[WindowIcon="true"]
+{
+	margin-top: 4dip;
+	margin-bottom: 4dip;
+	margin-left: 11dip;
+	border-image: url(:/resources/main_window/appicon.png);
+	width: 20dip;
+	height: 20dip;
+}
+
+QLabel[Title="true"]
+{
+	background: transparent;
+	color: #282828;
+	font-size: 15dip;
+	margin-left: 8dip;
+}
+
+QPushButton[HideButton="true"]
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_minimize_100.png);
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	padding-top: 2dip;
+	padding-bottom: 2dip;
+	padding-left: 11dip;
+	padding-right: 11dip;
+	border: none;
+}
+
+QPushButton[HideButton="true"]:hover
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_minimize_100_hover.png);
+	background-color: #d3d3d3;
+}
+
+QPushButton[HideButton="true"]:hover:pressed
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_minimize_100_active.png);
+	background-color: #c8c8c8;
+}
+
+QPushButton[MaximizeButton="true"]
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_bigwindow_100.png);
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	padding-top: 2dip;
+	padding-bottom: 2dip;
+	padding-left: 11dip;
+	padding-right: 11dip;
+	border: none;
+}
+
+QPushButton[MaximizeButton="true"]:hover
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_bigwindow_100_hover.png);
+	background-color: #d3d3d3;
+}
+
+QPushButton[MaximizeButton="true"]:hover:pressed
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_bigwindow_100_active.png);
+	background-color: #c8c8c8;
+}
+
+QPushButton[MinimizeButton="true"]
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_smallwindow_100.png);
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	padding-top: 2dip;
+	padding-bottom: 2dip;
+	padding-left: 11dip;
+	padding-right: 11dip;
+	border: none;
+}
+
+QPushButton[MinimizeButton="true"]:hover
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_smallwindow_100.png);
+	background-color: #d3d3d3;
+}
+
+QPushButton[MinimizeButton="true"]:hover:pressed
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_smallwindow_100_active.png);
+	background-color: #c8c8c8;
+}
+
+QPushButton[CloseButton="true"]
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_close_100.png);
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-position: center;
+	padding-top: 2dip;
+	padding-bottom: 2dip;
+	padding-left: 11dip;
+	padding-right: 12dip;
+	border: none;
+}
+
+QPushButton[CloseButton="true"]:hover
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_close_100_hover.png);
+	background-color: #e81123;
+}
+
+QPushButton[CloseButton="true"]:hover:pressed
+{
+	width: 24dip;
+	height: 24dip;
+	background-image: url(:/resources/main_window/contr_close_100_active.png);
+	background-color: #d00516;
+}

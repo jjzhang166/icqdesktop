@@ -1,0 +1,107 @@
+Ui--Smiles--TabButton
+{
+	min-height: 48dip;
+	max-height: 48dip;
+	max-width: 48dip;
+	min-width: 48dip;
+	padding: 0;
+	margin: 0;
+	border: none;
+	background: #ffffff;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+Ui--Smiles--TabButton::hover
+{
+	background: rgba(202, 230, 179, 30%);
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+Ui--Smiles--TabButton::checked
+{
+	background: rgba(202, 230, 179, 40%);
+	border-bottom-color: #579e1c;
+	border-bottom-width: 2dip;
+	border-bottom-style: solid;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+Ui--Smiles--TabButton[underline="false"]
+{
+	background: #ebebeb;
+	min-height: 40dip;
+	max-height: 40dip;
+}
+
+Ui--Smiles--TabButton::hover[underline="false"]
+{
+	border-bottom: none;
+	background: rgba(202, 230, 179, 40%);
+}
+
+Ui--Smiles--TabButton::checked[underline="false"]
+{
+	border-bottom: none;
+	background: rgba(202, 230, 179, 40%);
+}
+
+
+Ui--Smiles--Toolbar
+{
+	padding: 0;
+	margin: 0;
+	background: #ebebeb;
+	border-color: #d7d7d7;
+	border-width: 1dip;
+	border-style: solid;
+	border-right: none;
+	border-left: none;
+	border-top: none;
+}
+
+Ui--Smiles--Toolbar#smiles_cat_selector
+{
+	border-bottom: none;
+	min-height: 40dip;
+	max-height: 40dip;
+}
+
+QWidget#scroll_area_widget
+{
+	background: #ebebeb;
+}
+
+QTableView
+{
+	selection-background-color: rgba(202, 230, 179, 40%);
+	background: #ebebeb;
+	border: none;
+}
+
+QScrollArea
+{
+	border: none;
+	background: #ebebeb;
+}
+
+QLabel#set_header
+{
+	border: none;
+	margin: 0;
+	padding: 0;
+	font-family:"%FONT_FAMILY_BOLD%";
+	font-weight: %FONT_WEIGHT_BOLD%;
+	font-size: 12dip;
+	color: #579e1c;
+}
+
+Ui--Smiles--SmilesMenu
+{
+	border-top-color: #d7d7d7;
+	border-top-width: 1dip;
+	border-top-style: solid;
+	background: #ebebeb;
+}

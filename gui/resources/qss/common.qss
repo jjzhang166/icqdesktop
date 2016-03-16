@@ -1,0 +1,51 @@
+QWidget
+{
+	font-family: "%FONT_FAMILY%";
+	font-weight: %FONT_WEIGHT%;
+}
+
+QScrollBar:vertical
+{
+	background-color: transparent;
+	width:6dip;
+}
+
+QScrollBar::handle:vertical
+{
+	background-color: #C4C4C4;
+	min-height: 20dip;
+}
+
+QScrollBar::add-line:vertical
+{
+	background-color: transparent;
+}
+
+QScrollBar::sub-line:vertical
+{
+	background-color: transparent;
+}
+
+
+QScrollBar:horizontal
+{
+	background-color: transparent;
+	height:6dip;
+}
+
+QScrollBar::handle:horizontal
+{
+	background-color: #C4C4C4;
+	min-width: 20dip;
+}
+
+QScrollBar::add-line:horizontal
+{
+	background-color: transparent;
+}
+
+QScrollBar::sub-line:horizontal
+{
+	background-color: transparent;
+}
+

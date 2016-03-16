@@ -1,0 +1,53 @@
+QWidget#settings_view
+{
+    background-color: transparent;
+}
+
+QWidget#scroll_area
+{
+    border-left-style: none;
+    border-top-style: none;
+    border-bottom-style: none;    
+    border-right-style: solid;
+    border-right-width: 1dip;
+    border-right-color: #dadada;
+	background-color: rgba(255, 255, 255, 95%);
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: -1dip;
+    padding-bottom: 0;
+}
+
+QLabel#settings_topic_label
+{
+    text-align: left baseline;
+    font-family: "%FONT_FAMILY_LIGHT%";
+    font-weight: %FONT_WEIGHT_LIGHT%;
+    font-size: 32dip;
+    color: #282828;
+    margin-left: 16dip;
+    margin-bottom: 6dip;
+    margin-top: 22dip;
+}
+
+QPushButton
+{
+    font-family: "%FONT_FAMILY%";
+    font-weight: %FONT_WEIGHT%;
+    border: none;
+    min-height: 56dip;
+    color: #282828;
+    text-align: left;
+    padding-left: 60dip;
+    font-size: 18dip;
+}
+
+QPushButton:hover
+{
+    background-color: rgba(220, 220, 220, 40%);
+}
+
+QPushButton:checked
+{
+    background-color: rgba(202, 230, 179, 70%);
+}

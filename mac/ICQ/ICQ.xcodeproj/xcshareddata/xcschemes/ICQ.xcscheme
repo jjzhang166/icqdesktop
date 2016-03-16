@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "0700"
+   version = "1.7">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D5E1463E1BC54E39007F8671"
+               BuildableName = "ICQ.app"
+               BlueprintName = "ICQ"
+               ReferencedContainer = "container:ICQ.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <Testables>
+      </Testables>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "D5E1463E1BC54E39007F8671"
+            BuildableName = "ICQ.app"
+            BlueprintName = "ICQ"
+            ReferencedContainer = "container:ICQ.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+      <AdditionalOptions>
+      </AdditionalOptions>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "D5E1463E1BC54E39007F8671"
+            BuildableName = "ICQ.app"
+            BlueprintName = "ICQ"
+            ReferencedContainer = "container:ICQ.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+      <AdditionalOptions>
+      </AdditionalOptions>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "D5E1463E1BC54E39007F8671"
+            BuildableName = "ICQ.app"
+            BlueprintName = "ICQ"
+            ReferencedContainer = "container:ICQ.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Script"
+               scriptText = "#LOG=&quot;${HOME}/im-osx-archive-icq.log&quot;&#10;&#10;#echo &quot;*** Archiving $(date)&quot; &gt;&gt; $LOG&#10;#echo &quot;SRCROOT ${SRCROOT}&quot;&#10;#${SRCROOT}/scripts/post-build.sh &quot;${ARCHIVE_PATH}&quot; &quot;${SRCROOT}&quot; &gt;&gt; $LOG&#10;&#10;echo &quot;Prepare post build&quot;&#10;&#10;echo &quot;${SHARE_PATH}&quot;&#10;echo &quot;${PRODUCT_NAME}&quot;&#10;&#10;cd &quot;${ARCHIVE_PATH}/Products/Applications&quot;&#10;&#10;APP_BUNDLE_NAME=&quot;${PRODUCT_NAME}.app&quot;&#10;APP_VERSION=`/usr/libexec/PlistBuddy -c &quot;Print :CFBundleShortVersionString&quot; &quot;${APP_BUNDLE_NAME}/Contents/Info.plist&quot;`&#10;APP_BUILD_VERSION=`/usr/libexec/PlistBuddy -c &quot;Print :CFBundleVersion&quot; &quot;${APP_BUNDLE_NAME}/Contents/Info.plist&quot;`&#10;&#10;FEED_URL=`/usr/libexec/PlistBuddy -c &quot;Print :SUFeedURL&quot; &quot;${APP_BUNDLE_NAME}/Contents/Info.plist&quot;`&#10;&#10;UPDATE=&quot;&quot;&#10;if [ &quot;${FEED_URL}&quot; != &quot;&quot; ]; then&#10;UPDATE=&quot;ENABLE&quot;&#10;fi&#10;&#10;DMG_NAME=&quot;${PRODUCT_NAME} ${APP_VERSION}.${APP_BUILD_VERSION}.dmg&quot;&#10;APP_DSYM=&quot;${ARCHIVE_PATH}/dSYMs/${APP_BUNDLE_NAME}.dSYM&quot;&#10;&#10;echo &quot;Post build vars&quot;&#10;echo &quot;APP_BUNDLE_NAME ${APP_BUNDLE_NAME}&quot;&#10;echo &quot;APP_VERSION ${APP_VERSION}&quot;&#10;echo &quot;APP_BUILD_VERSION ${APP_BUILD_VERSION}&quot;&#10;echo &quot;FEED_URL ${FEED_URL}&quot;&#10;echo &quot;DMG_NAME ${DMG_NAME}&quot;&#10;echo &quot;APP_DSYM ${APP_DSYM}&quot;&#10;echo &quot;FEED_URL ${FEED_URL}&quot;&#10;echo &quot;UPDATE ${UPDATE}&quot;&#10;&#10;if [ &quot;${FEED_URL}&quot; == &quot;&quot; ]; then&#10;echo &quot;Delete Sparkle framework&quot;&#10;rm -rf &quot;${APP_BUNDLE_NAME}/Contents/Frameworks/Sparkle.framework&quot;&#10;fi&#10;&#10;if [ &quot;${CODESIGN_ENTITLEMENTS}&quot; != &quot;&quot; ]; then&#10;CODESIGN_ENTITLEMENTS=&quot;${SRCROOT}/${CODESIGN_ENTITLEMENTS}&quot;&#10;echo &quot;CODESIGN_ENTITLEMENTS @{CODESIGN_ENTITLEMENTS}&quot;&#10;fi&#10;&#10;echo &quot;Start signing&quot;&#10;${SRCROOT}/scripts/sign-app.sh &quot;${APP_BUNDLE_NAME}&quot; &quot;${CODESIGN_IDENTITY}&quot; &quot;${CODESIGN_ENTITLEMENTS}&quot;&#10;&#10;if [ &quot;${CODESIGN_INSTALLER}&quot; != &quot;&quot; ]; then&#10;echo &quot;Start productbuild&quot;&#10;/usr/bin/productbuild --component &quot;${APP_BUNDLE_NAME}&quot; /Applications &quot;${PRODUCT_NAME}.pkg&quot; --sign &quot;${CODESIGN_INSTALLER}&quot;&#10;fi&#10;&#10;echo &quot;Start Zip Artifacts&quot;&#10;zip -ry &quot;xcarchive.${APP_VERSION}.${APP_BUILD_VERSION}.zip&quot; &quot;${ARCHIVE_PATH}&quot;&#10;zip -9 -ry &quot;${APP_BUNDLE_NAME}.zip&quot; &quot;${APP_BUNDLE_NAME}&quot;&#10;zip -9 -ry &quot;${PRODUCT_NAME}.dSYM.zip&quot; &quot;${APP_DSYM}&quot;&#10;&#10;echo &quot;Start DMG creating&quot;&#10;${SRCROOT}/scripts/dmg-tools.sh dmg &quot;${PRODUCT_NAME}&quot; &quot;${SRCROOT}/DMG&quot;&#10;&#10;if [ &quot;${UPDATE}&quot; == &quot;ENABLE&quot; ]&#10;then&#10;echo &quot;Start preparing updates&quot;&#10;${SRCROOT}/scripts/updates/prepare_update.sh &quot;${DMG_NAME}&quot; &quot;${APP_BUNDLE_NAME}&quot; . ${SRCROOT}/scripts/updates&#10;fi&#10;&#10;echo &quot;Start sharing results&quot;&#10;if [ &quot;${CI_FTP_PATH}&quot; != &quot;&quot; ]; then&#10;&#10;if [ -d &quot;${SHARE_PATH}&quot; ]; then&#10;echo &quot;Delete exist target directory&quot;&#10;rm -R &quot;${SHARE_PATH}&quot;&#10;fi&#10;&#10;echo &quot;Create target directory&quot;&#10;mkdir -p &quot;${SHARE_PATH}&quot;&#10;&#10;echo &quot;Copy files to target&quot;&#10;COPYSOURCE=&quot;${ARCHIVE_PATH}/Products/Applications/&quot;&#10;echo &quot;${COPYSOURCE}&quot;&#10;cp -R &quot;${COPYSOURCE}&quot; &quot;${SHARE_PATH}&quot;&#10;&#10;fi&#10;&#10;exit 0&#10;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "D5E1463E1BC54E39007F8671"
+                     BuildableName = "ICQ.app"
+                     BlueprintName = "ICQ"
+                     ReferencedContainer = "container:ICQ.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
+   </ArchiveAction>
+</Scheme>
