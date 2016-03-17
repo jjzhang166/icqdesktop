@@ -1,7 +1,7 @@
 *Windows*
 
 ICQ for windows is compiled by Visual Studio.
-The solution file is gui/gui.vcxproj
+The solution file is icq.sln
 To build it, you need to provide 3 environment variables. 
 QT_PATH - path to dir containing the built QT version (dir with folders 'bin', 'include', 'lib')
 BOOST_INCLUDE - path for boost inclusions (dir containing folder 'boost')
