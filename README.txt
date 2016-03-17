@@ -42,7 +42,7 @@ if (lbh.currentPosition > 0 && lbh.currentPosition < end
                 && attributes[lbh.currentPosition].lineBreak
                 && eng->layoutData->string.at(lbh.currentPosition - 1).unicode() == QChar::SoftHyphen) {
 
-* comment or remove code block in 'if' construction;
+* comment or remove code block in 'if' construction
 
 2. qtbase/src/gui/text/qtextengine.cpp
 
@@ -60,7 +60,7 @@ We provides 2 .pro files containing build configuration for the project:
 corelib/corelib/corelib.pro - core library
 gui/gui.pro - gui (executable file)
 
-In gui.pro, you may switch between x32 and x64 architecture, as well as external and internal resources linking (CONFIG available).
+In gui.pro, you may switch between x32 and x64 architecture, as well as external and internal resources linking (CONFIG variable).
 You also have to provide a path to the directory, containing corelib.a file, which is obtained by building corelib.pro project (CORELIB_PATH variable).
 
 Before building gui.pro file, you need to install libqt4-dev package and execute config_linux.sh in trunk root.
