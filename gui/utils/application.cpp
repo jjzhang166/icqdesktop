@@ -73,7 +73,7 @@ namespace Utils
     Application::~Application()
     {
         Emoji::Cleanup();
-#ifndef __linux__
+#ifndef INTERNAL_RESOURCES
         QResource::unregisterResource(QApplication::applicationDirPath() + "/qresource");
 #endif
         main_window_.reset();
@@ -97,7 +97,7 @@ namespace Utils
         init_win7_features();
 
         app_->setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
-#ifndef __linux__
+#ifndef INTERNAL_RESOURCES
         QResource::registerResource(app_->applicationDirPath() + "/qresource");
 #endif
 

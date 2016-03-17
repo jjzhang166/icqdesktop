@@ -13,6 +13,10 @@ CONFIG += precompile_header
 
 CONFIG += 64
 
+CONFIG += res_internal
+
+CORELIB_PATH = ../corelib
+
 PRECOMPILED_HEADER = stdafx.h
 
 SOURCES += \
@@ -158,7 +162,10 @@ SOURCES += \
     main_window/settings/themes/ThemesModel.cpp \
     main_window/settings/themes/ThemesSettingsWidget.cpp \
     main_window/settings/themes/ThemesWidget.cpp \
-    main_window/settings/themes/ThemeWidget.cpp
+    main_window/settings/themes/ThemeWidget.cpp \
+    main_window/settings/Notifications.cpp \
+    main_window/settings/AboutUs.cpp \
+    main_window/settings/ContactUs.cpp
 
 HEADERS  += \
     app_config.h \
@@ -317,16 +324,24 @@ QMAKE_LIBS += -lopenal -lavformat -lavcodec -lswresample -lavfilter -lavutil -lc
 CONFIG(32, 64|32) {
     QMAKE_LIBS += -lp11-kit
 }
-QMAKE_LFLAGS += -Wl,-Bstatic -static-libgcc -static-libstdc++ -L../corelib
+
+QMAKE_LIBS_THREAD = -lxcb-util -lffi -lpcre -lexpat -lXext -lXau -lXdmcp -lz -Wl,-Bdynamic -ldl -lpthread -lX11
+
+QMAKE_LFLAGS += -Wl,-Bstatic -static-libgcc -static-libstdc++ -L$$CORELIB_PATH
 
 CONFIG(64, 64|32) {
-    QMAKE_LFLAGS += -L../../../external/linux/x64 -L../../../external/OpenAl/lib/linux/x64 -L../../../external/ffmpeg/lib/linux/x64 -L/x64
+    QMAKE_LFLAGS += -L$${PWD}/../external/linux/x64 -L$${PWD}/../external/OpenAl/lib/linux/x64 -L$${PWD}/../external/ffmpeg/lib/linux/x64 -L/x64
 } else {
-    QMAKE_LFLAGS += -L../../../external/linux -L../../../external/OpenAl/lib/linux -L../../../external/ffmpeg/lib/linux -L/x32
+    QMAKE_LFLAGS += -L$${PWD}/../external/linux -L$${PWD}/../external/OpenAl/lib/linux -L$${PWD}/../external/ffmpeg/lib/linux -L/x32
 }
-INCLUDEPATH += . ../../../external/OpenAl/include ../../../external/ffmpeg/include
+INCLUDEPATH += . $${PWD}/../external/OpenAl/include $${PWD}/../external/ffmpeg/include
 
 DISTFILES += \
     themes/ThemePixmapDb.inc
 
-RESOURCES = resource.qrc
+CONFIG(res_internal, res_internal|res_external) {
+    RESOURCES = resource.qrc
+    DEFINES += INTERNAL_RESOURCES
+} else {
+    QMAKE_POST_LINK += $$quote(cp -r $${PWD}/qresource $${OUT_PWD})
+}

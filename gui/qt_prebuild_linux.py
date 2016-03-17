@@ -3,11 +3,6 @@ if __name__ != '__main__':
 
 import os.path, time, sys, glob
 
-qt_base_path = "~/Qt/5.5/gcc_64"
-
-if len(sys.argv) == 2:
-	qt_base_path = sys.argv[1]
-
 files = glob.glob("translations/*ts")
 for file in files:
 	file_name = os.path.splitext(file)[0]
@@ -16,11 +11,11 @@ for file in files:
 	if os.path.exists(qm_file):
 		if os.path.getmtime(ts_file) > os.path.getmtime(qm_file):
 			print(os.path.basename(ts_file), "is newer that", os.path.basename(qm_file),">> rebuild")
-			os.system(qt_base_path + "/bin/lrelease " + '"' + ts_file + '"')	
+			os.system("lrelease " + '"' + ts_file + '"')	
 	else:
 		print("build", os.path.basename(qm_file))
-		os.system(qt_base_path + "/bin/lrelease " + '"' + ts_file + '"')
+		os.system("lrelease " + '"' + ts_file + '"')
 
-os.system(qt_base_path + "/bin/rcc " + '"' + os.path.abspath("resource.qrc").replace("\\", "/") + '"' + " -o " + '"' + os.path.abspath("qresource").replace("\\", "/") + '"' + " --binary")
+os.system("rcc " + '"' + os.path.abspath("resource.qrc").replace("\\", "/") + '"' + " -o " + '"' + os.path.abspath("qresource").replace("\\", "/") + '"' + " -binary")
 
 sys.exit(0)
