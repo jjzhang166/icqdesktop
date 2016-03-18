@@ -3,7 +3,7 @@
 ICQ for windows is compiled by Visual Studio.
 The solution file is icq.sln
 To build it, you need to provide 3 environment variables. 
-QT_PATH - path to dir containing the built QT version (dir with folders 'bin', 'include', 'lib')
+QT_PATH - path to dir containing the built Qt version (dir with folders 'bin', 'include', 'lib')
 BOOST_INCLUDE - path for boost inclusions (dir containing folder 'boost')
 BOOST_LIB - path to boost libraries
 
@@ -14,10 +14,10 @@ Xcode project file is mac/ICQ/ICQ.xcodeproj
 
 *Linux*
 
-ICQ for linux is compiled by QT creator, so you need to prepare QT environment first.
-QT may be installed from the official installer (see QT official website) or compiled from source code and linked statically/dynamically.
+ICQ for linux is compiled by Qt creator, so you need to prepare Qt environment first.
+Qt may be installed from the official installer (see Qt official website) or compiled from source code and linked statically/dynamically.
 
-To configure QT, we use the following command line:
+To configure Qt, we use the following command line:
 
 ./configure -static -release -c++11 -no-opengl -no-harfbuzz -no-audio-backend -system-xkbcommon-x11 -dbus-linked -no-openssl -qt-xcb -confirm-license -opensource -qt-zlib -qt-libjpeg -qt-libpng
 
@@ -34,7 +34,7 @@ libxcb1-dev
 libx11-xcb-dev
 libxcb-glx0-dev
 
-Additionally, we patched QT source code:
+Additionally, we patched Qt source code:
 
 1. qtbase/src/gui/text/qtextlayout.cpp:
 
@@ -53,7 +53,7 @@ if (si->position + itemLength >= lineEnd
 * change 'false' to 'true'
 
 
-In order to install the prepared version of QT in QT Creator, use official QT manuals.
+In order to install the prepared version of Qt in Qt Creator, use official Qt manuals.
 
 We provides 2 .pro files containing build configuration for the project:
 
