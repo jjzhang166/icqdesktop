@@ -29,7 +29,7 @@
     <name>Ui::AccountsPage</name>
     <message>
         <source>Choose your account</source>
-        <translation>Wähle dein Konto</translation>
+        <translation>Wähle Dein Konto</translation>
     </message>
     <message>
         <source>Now we support only one ICQ account per session. Please choose prefered one to continue.</source>
@@ -126,7 +126,7 @@
     <message>
         <source> at </source>
         <translatorcomment>example: last seen at 12:00</translatorcomment>
-        <translation> at </translation>
+        <translation> um </translation>
     </message>
     <message>
         <source>Male</source>
@@ -275,12 +275,12 @@
     <message>
         <source>You</source>
         <comment>active_voice</comment>
-        <translation>Sie</translation>
+        <translation>Du</translation>
     </message>
     <message>
         <source>you</source>
         <comment>passive_voice</comment>
-        <translation>dich</translation>
+        <translation>Dich</translation>
     </message>
     <message>
         <source>Missed call</source>
@@ -328,7 +328,7 @@
     </message>
     <message>
         <source> at </source>
-        <translation> bei </translation>
+        <translation> um </translation>
     </message>
     <message>
         <source>member</source>
@@ -411,7 +411,7 @@
     </message>
     <message>
         <source>Hello. Please add me to your contact list</source>
-        <translation>Hallo. Bitte füge mich zu deinen Kontakten hinzu</translation>
+        <translation>Hallo. Bitte füge mich zu Deinen Kontakten hinzu</translation>
     </message>
     <message>
         <source>today</source>
@@ -419,7 +419,7 @@
     </message>
     <message>
         <source> at </source>
-        <translation> bei </translation>
+        <translation> um </translation>
     </message>
     <message>
         <source>Seen </source>
@@ -462,7 +462,7 @@
     <name>contactus_page</name>
     <message>
         <source>Contact us</source>
-        <translation>Kontaktieren Sie uns</translation>
+        <translation>Kontaktiere uns</translation>
     </message>
     <message>
         <source>Attachments size exceeds 25 MB</source>
@@ -486,7 +486,7 @@
     </message>
     <message>
         <source>Your Email</source>
-        <translation>Deine Email</translation>
+        <translation>Deine E-Mail</translation>
     </message>
     <message>
         <source>Your comments or suggestions</source>
@@ -502,7 +502,7 @@
     </message>
     <message>
         <source>Error occured, try again later</source>
-        <translation>Ein Fehler ist aufgetreten, bitte versuche es später</translation>
+        <translation>Ein Fehler ist aufgetreten, bitte versuche es später erneut</translation>
     </message>
     <message>
         <source>Sending...</source>
@@ -511,7 +511,7 @@
     <message>
         <source>Thank you for contacting us!</source>
         <translatorcomment>In other words, &quot;thanks for your review!&quot;, you can use this one if it sounds better in your language</translatorcomment>
-        <translation>Danke, dass du dich an uns gewendet hast!</translation>
+        <translation>Danke, dass Du Dich an uns gewendet hast!</translation>
     </message>
     <message>
         <source>Send another review</source>
@@ -630,7 +630,7 @@
     </message>
     <message>
         <source>Unfavorite contact</source>
-        <translation>Kontakt von Favoriten entfernen</translation>
+        <translation>Kontakt aus Favoriten entfernen</translation>
     </message>
 </context>
 <context>
@@ -1612,7 +1612,7 @@
     </message>
     <message>
         <source>Drop files to place</source>
-        <translation>Drop Dateien hier</translation>
+        <translation>Dateien hier ablegen</translation>
     </message>
 </context>
 <context>
@@ -1688,7 +1688,7 @@
     </message>
     <message>
         <source>Your code</source>
-        <translation>Ihr Code</translation>
+        <translation>Dein Code</translation>
     </message>
     <message>
         <source>UIN or Email</source>
@@ -1712,7 +1712,7 @@
     </message>
     <message>
         <source>your phone number</source>
-        <translation>Ihre Telefonnummer</translation>
+        <translation>Deine Telefonnummer</translation>
     </message>
     <message>
         <source>Start messaging</source>
@@ -1729,16 +1729,16 @@
     <message>
         <source>Please confirm your country code and enter
 your phone number</source>
-        <translation>Bitte bestätigen Sie Ihre Länderkennung und geben Sie
-Ihre Telefonnummer ein</translation>
+        <translation>Bitte bestätige Deine Länderkennung und gib
+Deine Telefonnummer ein</translation>
     </message>
     <message>
         <source>Please enter the code you&apos;ve just received in your phone</source>
-        <translation>Bitte geben Sie den Code ein, den Sie telefonisch erhalten haben</translation>
+        <translation>Bitte gib den Code ein, den Du telefonisch erhalten hast</translation>
     </message>
     <message>
         <source>Enter your UIN or Email to get started</source>
-        <translation>Geben Sie Ihre UIN oder Email, um loszulegen</translation>
+        <translation>Geib Deine UIN oder E-Mail ein, um loszulegen</translation>
     </message>
     <message>
         <source>Resend code in </source>
@@ -1754,11 +1754,11 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>You have entered an invalid code. Please try again.</source>
-        <translation>Sie haben einen ungültigen Code eingegeben. Bitte versuchen Sie es erneut.</translation>
+        <translation>Du hast einen ungültigen Code eingegeben. Bitte versuche es erneut.</translation>
     </message>
     <message>
         <source>Invalid phone number. Please try again.</source>
-        <translation>Ungültige Telefonnummer.Bitte versuchen Sie es erneut.</translation>
+        <translation>Ungültige Telefonnummer. Bitte versuche es erneut.</translation>
     </message>
     <message>
         <source>Error occured, try again later</source>
@@ -1773,7 +1773,7 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>to synchronize your contacts</source>
-        <translation>deine Kontakte zu synchronisieren</translation>
+        <translation>Deine Kontakte zu synchronisieren</translation>
     </message>
     <message>
         <source>or </source>
@@ -1789,7 +1789,7 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>find friends</source>
-        <translation>freunde finden</translation>
+        <translation>Freunde finden</translation>
     </message>
     <message>
         <source>Looks like you have no contacts yet</source>
@@ -1804,7 +1804,7 @@ Ihre Telefonnummer ein</translation>
     <name>popup_window</name>
     <message>
         <source>Are you sure you want to remove user from this chat?</source>
-        <translation>Möchtest du den Nutzer wirklich aus diesem Chat entfernen?</translation>
+        <translation>Möchtest Du den Nutzer wirklich aus diesem Chat entfernen?</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -1816,7 +1816,7 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>Are you sure you want to sign out?</source>
-        <translation>Möchtest du dich wirklich abmelden?</translation>
+        <translation>Möchtest Du Dich wirklich abmelden?</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -1824,23 +1824,23 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>Are you sure you want to remove user from ignore list?</source>
-        <translation>Möchtest du den Nutzer wirklich von der Ignorierliste entfernen?</translation>
+        <translation>Möchtest Du den Nutzer wirklich von der Ignorierliste entfernen?</translation>
     </message>
     <message>
         <source>Are you sure you want to move contact to ignore list?</source>
-        <translation>Möchtest du diesen Kontakt wirklich in die Ignorierliste verschieben?</translation>
+        <translation>Möchtest Du diesen Kontakt wirklich in die Ignorierliste verschieben?</translation>
     </message>
     <message>
         <source>Are you sure you want to leave chat?</source>
-        <translation>Möchtest du den Chat wirklich verlassen?</translation>
+        <translation>Möchtest Du den Chat wirklich verlassen?</translation>
     </message>
     <message>
         <source>Are you sure you want to delete contact?</source>
-        <translation>Möchtest du diesen Kontakt wirklich löschen?</translation>
+        <translation>Möchtest Du diesen Kontakt wirklich löschen?</translation>
     </message>
     <message>
         <source>Are you sure this contact is spam?</source>
-        <translation>Bist du sicher, dass dieser Kontakt Spam ist?</translation>
+        <translation>Bist Du sicher, dass dieser Kontakt Spam ist?</translation>
     </message>
 </context>
 <context>
@@ -2020,7 +2020,7 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit</source>
-        <translation>Diese Produkt enthält Software, die vom OpenSSL-Projekt für das OpenSSL-Toolkit entwickelt wurde</translation>
+        <translation>Dieses Produkt enthält Software, die vom OpenSSL-Projekt für das OpenSSL-Toolkit entwickelt wurde</translation>
     </message>
     <message>
         <source>http://openssl.org</source>
@@ -2052,7 +2052,7 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>Contact us</source>
-        <translation>Kontaktieren Sie uns</translation>
+        <translation>Kontaktiere uns</translation>
     </message>
     <message>
         <source>Outgoing messages sound</source>
@@ -2064,16 +2064,16 @@ Ihre Telefonnummer ein</translation>
     </message>
     <message>
         <source>Emoji provided free by Emoji One</source>
-        <translation>Emoji provided free by Emoji One</translation>
+        <translation>Emoji kostenlos zur Verfügung gestellt von Emoji One</translation>
     </message>
     <message>
         <source>Sounds</source>
-        <translation>Geräusche</translation>
+        <translation>Töne</translation>
     </message>
     <message>
         <source>Play sounds</source>
         <translatorcomment>&quot;to play sounds&quot; setting (on/off)</translatorcomment>
-        <translation>Geräusche abspielen</translation>
+        <translation>Töne abspielen</translation>
     </message>
     <message>
         <source>Show notifications</source>
