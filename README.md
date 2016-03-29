@@ -1,25 +1,67 @@
 ### Windows
 
-ICQ for windows is compiled by Visual Studio.
-
+ICQ for windows is compiled by Visual Studio and does not require any dependencies resolving.
 The solution file is `icq.sln`
-
-To build it, you need to provide three environment variables.
-
-- `QT_PATH` - path to dir containing the built Qt version (dir with folders `bin`, `include`, `lib`)
-- `BOOST_INCLUDE` - path for boost inclusions (dir containing folder `boost`)
-- `BOOST_LIB` - path to boost libraries
 
 ### MacOS
 
 ICQ for Mac is compiled by Xcode and does not require any dependencies resolving.
 Xcode project file is `mac/ICQ/ICQ.xcodeproj`
 
+To configure Qt, we use the following command line:
+
+./configure -static -release -confirm-license -opensource
+
+Additionally, we patched Qt source code:
+
+`qtbase/src/gui/text/qtextengine.cpp`
+```cpp
+if (Q_LIKELY(last_cluster != cluster)) {
+  g.attributes[i].clusterStart = true;
+
+  // fix up clusters so that the cluster indices will be monotonic
+  // and thus we never return out-of-order indices
+  while (last_cluster++ < cluster && str_pos < item_length)
+      log_clusters[str_pos++] = last_glyph_pos;
+  last_glyph_pos = i + glyphs_shaped;
+  last_cluster = cluster;
+
+  // hide characters that should normally be invisible
+  switch (string[item_pos + str_pos]) {
+    case QChar::LineFeed:
+    case 0x000c: // FormFeed
+    case QChar::CarriageReturn:
+    case QChar::LineSeparator:
+    case QChar::ParagraphSeparator:
+        g.attributes[i].dontPrint = true;
+        break;
+    case QChar::SoftHyphen:
+        if (!actualFontEngine->symbol) {
+            // U+00AD [SOFT HYPHEN] is a default ignorable codepoint,
+            // so we replace its glyph and metrics with ones for
+            // U+002D [HYPHEN-MINUS] and make it visible if it appears at line-break
+            g.glyphs[i] = actualFontEngine->glyphIndex('-');
+            if (Q_LIKELY(g.glyphs[i] != 0)) {
+                 QGlyphLayout tmp = g.mid(i, 1);
+                 actualFontEngine->recalcAdvances(&tmp, 0);
+            }
+            g.attributes[i].dontPrint = true;
+        }
+        break;
+    default:
+        break;
+  }
+}
+```
+
+    *comment or remove 'case QChar::SoftHyphen:' with the body
+
 ### Linux
 
-ICQ for Linux is compiled by Qt creator, so you need to prepare Qt environment first.
+ICQ for Linux is compiled by Qt creator or qmake, so you need to prepare Qt environment first.
 
-Qt may be installed from the official installer (see Qt official website) or compiled from source code and linked statically/dynamically.
+Qt source code may be obtained from the official Qt website:
+http://download.qt.io/archive/qt/5.5/5.5.1/single/
 
 To configure Qt, we use the following command line:
 
@@ -57,6 +99,13 @@ if (si->position + itemLength >= lineEnd
         glyphs.attributes[glyphsEnd - 1].dontPrint = false;
 ```
    * change `false` to `true`
+   
+Then build the configured Qt using the followind command lines
+
+    make
+    make install
+
+Now you can use qmake from installed Qt to generate Makefiles from our .pro files.
 
 In order to install the prepared version of Qt in Qt Creator, use official Qt manuals.
 
