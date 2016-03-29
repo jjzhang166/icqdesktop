@@ -3,14 +3,8 @@
 
 #include "../../../http_request.h"
 
-
-#if 1
-    #define LOGIN_SERVER    "api.login.icq.net"
-    #define SESSION_SERVER  "api.icq.net"
-#else // sandbox
-    #define LOGIN_SERVER    "178.22.94.24"
-    #define SESSION_SERVER  "178.22.94.82" // this can be changed
-#endif
+#define LOGIN_SERVER    "api.login.icq.net"
+#define SESSION_SERVER  "api.icq.net"
 
 namespace core {
     namespace wim {

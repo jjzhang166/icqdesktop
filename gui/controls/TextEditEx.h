@@ -18,7 +18,7 @@ namespace Ui
         void enter();
         void setSize(int, int);
         void keyPressed(int);
-        
+
         private Q_SLOTS:
             void edit_content_changed();
 
@@ -42,8 +42,8 @@ namespace Ui
 
     public:
 
-        TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QPalette& palette, bool, bool _isFitToText);
-        TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QColor& color, bool, bool _isFitToText);
+        TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QPalette& palette, bool input, bool _isFitToText);
+        TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QColor& color, bool input, bool _isFitToText);
 
         QString getPlainText() const;
         void setPlainText(const QString& _text);

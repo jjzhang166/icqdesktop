@@ -2,6 +2,7 @@
 #include "FlatMenu.h"
 
 #include "../utils/utils.h"
+#include "../utils/InterConnector.h"
 
 namespace Ui
 {
@@ -19,6 +20,10 @@ namespace Ui
         QMenu(parent)
     {
         setStyle(new FlatMenuStyle());
+        if (platform::is_apple())
+        {
+            QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupWindow()), this, SLOT(close()));
+        }
     }
 
     FlatMenu::~FlatMenu()
@@ -29,10 +34,14 @@ namespace Ui
     void FlatMenu::paintEvent(QPaintEvent *event)
     {
         QMenu::paintEvent(event);
-
         QPainter p(this);
         p.setClipRect(1, 1, geometry().width(), geometry().height());
         setMask(p.clipRegion());
+    }
+
+    void FlatMenu::hideEvent(QHideEvent* event)
+    {
+        QMenu::hideEvent(event);
     }
 
     void FlatMenu::showEvent(QShowEvent* event)

@@ -414,7 +414,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 spl->addWidget(errorOccuredSign);
 
                 auto sendSpinner = new QLabel(sp);
-                auto abm = new QMovie(":/resources/r_spiner200.gif");
+                auto abm = new QMovie(":/resources/gifs/r_spiner200.gif");
                 Utils::grabTouchWidget(sendSpinner);
                 sendSpinner->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
                 sendSpinner->setContentsMargins(0, 0, 0, 0);
@@ -452,7 +452,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                     {
                         suggestioner->setProperty("normal", false);
                     }
-                    else if (suggestioner->getPlainText().length() < 10)
+                    else if (suggestioner->getPlainText().length() < 1)
                     {
                         suggestioner->setProperty("normal", false);
                         suggestionMinSizeError->setVisible(true);

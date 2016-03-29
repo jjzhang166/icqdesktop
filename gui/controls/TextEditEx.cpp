@@ -44,7 +44,9 @@ namespace Ui
         setPalette(p);
 
         if (is_fit_to_text_)
+        {
             connect(this->document(), SIGNAL(contentsChanged()), this, SLOT(edit_content_changed()), Qt::QueuedConnection);
+        }
     }
 
     void TextEditEx::edit_content_changed()

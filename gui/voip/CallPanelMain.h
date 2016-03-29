@@ -12,7 +12,34 @@ namespace voip_manager {
 
 class QLabel;
 namespace Ui {
-    class sliderEx;
+    class PushButton_t : public QPushButton {
+    public:
+        enum eButtonState {
+            normal = 0, 
+            hovered, 
+            pressed, 
+            //--------
+            total
+        };
+
+    public:
+        PushButton_t(QWidget* parent = NULL);
+        void setImageForState(const eButtonState state, const std::string& image);
+        void setOffsets(int fromIconToText);
+        void setIconSize(const int w, const int h);
+
+    protected:
+        void paintEvent(QPaintEvent*) override;
+        bool event(QEvent*) override;
+
+    private:
+        eButtonState currentState_;
+        QPixmap      bitmapsForStates_[total];
+        int          fromIconToText_;
+        int          iconW_;
+        int          iconH_;
+    };   
+
     class SliderEx : public QWidget {
         Q_OBJECT
 
@@ -33,13 +60,16 @@ namespace Ui {
         void set_value(int);
         void set_enabled(bool);
 
+        void setIconForState(const PushButton_t::eButtonState state, const std::string& image);
+        void setIconSize(const int w, const int h);
+
         void set_property_for_icon(const char* name, bool val);
         void set_property_for_slider(const char* name, bool val);
 
     private:
-        QHBoxLayout *horizontal_layout_;
-        QPushButton *slider_icon_;
-        QSlider *slider_;
+        QHBoxLayout  *horizontal_layout_;
+        PushButton_t *slider_icon_;
+        QSlider      *slider_;
     };
 
     class CallPanelMain : public QWidget {

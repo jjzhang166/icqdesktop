@@ -94,7 +94,7 @@ namespace Logic
     std::unique_ptr<ContactListModel> g_contact_list_model;
 
 	ContactListModel::ContactListModel(QObject *parent)
-		: QAbstractListModel(parent)
+		: CustomAbstractListModel(parent)
 		, ScrollPosition_(0)
 		, MinVisibleIndex_(0)
 		, MaxVisibleIndex_(0)
@@ -115,7 +115,18 @@ namespace Logic
 
 		Timer_->setSingleShot(true);
 		Timer_->setInterval(REFRESH_TIMER);
-		connect(Timer_, SIGNAL(timeout()), this, SLOT(refresh()), Qt::QueuedConnection);
+		connect(Timer_, &QTimer::timeout, this, &Logic::ContactListModel::refresh, Qt::QueuedConnection);
+        
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownAdd,
+            this, &Logic::ContactListModel::auth_add_contact, Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownAdd,
+            this, &Logic::ContactListModel::stats_auth_add_contact, Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownSpam,
+            this, &Logic::ContactListModel::unknown_contact_profile_spam_contact, Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownSpam, 
+            this, &Logic::ContactListModel::stats_spam_profile, Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownIgnore,
+            this, &Logic::ContactListModel::auth_ignore_contact, Qt::QueuedConnection);
 	}
 
 	int ContactListModel::rowCount(const QModelIndex &) const
@@ -181,19 +192,17 @@ namespace Logic
     
     QString ContactListModel::contactToTryOnTheme() const
     {
-        if (CurrentAimdId_.length() > 0)
-        {
+        if (!CurrentAimdId_.isEmpty())
             return CurrentAimdId_;
-        }
+
         QString recentsFirstContact = Logic::GetRecentsModel()->firstContact();
-        if (recentsFirstContact == "")
-        {
-            if (contacts_.size() > 0)
-            {
-                return contacts_.front().get_aimid();
-            }
-        }
-        return recentsFirstContact;
+        if (!recentsFirstContact.isEmpty())
+            return recentsFirstContact;
+
+        if (!contacts_.empty())
+            return contacts_.front().get_aimid();
+        
+        return QString();
     }
 
 	Qt::ItemFlags ContactListModel::flags(const QModelIndex &i) const
@@ -428,6 +437,12 @@ namespace Logic
 			emit dataChanged(index(i), index(i));
 	}
 
+    void ContactListModel::refreshList()
+    {
+        for (int i = MinVisibleIndex_; i <= MaxVisibleIndex_; ++i)
+            emit dataChanged(index(i), index(i));
+    }
+
 	void ContactListModel::avatarLoaded(QString aimId)
 	{
 		QHash<QString, int>::const_iterator iter = indexes_.find(aimId);
@@ -510,8 +525,8 @@ namespace Logic
         }
 
 		CurrentAimdId_ = _aimdId;
-		if (sel)
-			emit select(_aimdId);
+		if (sel && !CurrentAimdId_.isEmpty())
+			emit select(CurrentAimdId_);
 		else
 			emit selectedContactChanged(CurrentAimdId_);
 	}
@@ -671,7 +686,7 @@ namespace Logic
 
 	void ContactListModel::get_contact_profile(const QString& _aimId, std::function<void(profile_ptr, int32_t error)> _call_back)
 	{
-		profile_ptr profile;
+		profile_ptr profile; 
 
 		if (!_aimId.isEmpty())
 		{
@@ -774,11 +789,16 @@ namespace Logic
 		Ui::GetDispatcher()->post_message_to_core("contacts/remove", collection.get());
 	}
 
-    bool ContactListModel::block_spam_contact(const QString& _aimid)
+    bool ContactListModel::block_spam_contact(const QString& _aimid, bool _with_confirmation /*= true*/)
     {
-        auto confirm = Ui::GeneralDialog::GetConfirmationWithTwoButtons(QT_TRANSLATE_NOOP("popup_window", "Cancel"), QT_TRANSLATE_NOOP("popup_window", "Yes"),
-                QT_TRANSLATE_NOOP("popup_window", "Are you sure this contact is spam?"), Logic::GetContactListModel()->getDisplayName(_aimid), NULL, NULL);
-        if (confirm)
+        bool confirm = false;
+        if (_with_confirmation)
+        {
+            confirm = Ui::GeneralDialog::GetConfirmationWithTwoButtons(QT_TRANSLATE_NOOP("popup_window", "Cancel"), QT_TRANSLATE_NOOP("popup_window", "Yes"),
+                    QT_TRANSLATE_NOOP("popup_window", "Are you sure this contact is spam?"), Logic::GetContactListModel()->getDisplayName(_aimid), NULL, NULL);
+        }
+        
+        if (confirm || !_with_confirmation)
         {
             Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
             collection.set_value_as_qstring("contact", _aimid);
@@ -860,4 +880,50 @@ namespace Logic
 	{
 		IsWithCheckedBox_ = _isWithCheckedBox;
 	}
+
+    void ContactListModel::auth_add_contact(QString _aimid)
+	{
+		Logic::GetContactListModel()->add_contact_to_contact_list(_aimid);
+		// connect(Logic::GetContactListModel(), SIGNAL(contact_added(QString, bool)), this, SLOT(contact_authorized(QString, bool)));
+	}
+
+    void ContactListModel::stats_auth_add_contact(QString _aimid)
+	{
+        Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::add_user_dialog);
+	}
+
+    void ContactListModel::unknown_contact_profile_spam_contact(QString _aimid)
+    {
+        if (Logic::GetContactListModel()->block_spam_contact(_aimid))
+            emit Utils::InterConnector::instance().profileSettingsBack();
+    }
+	
+    void ContactListModel::auth_spam_contact(QString _aimid)
+    {
+        Logic::GetContactListModel()->block_spam_contact(_aimid, false);
+        emit Utils::InterConnector::instance().profileSettingsBack();
+    }
+
+	void ContactListModel::auth_delete_contact(QString _aimid)
+	{
+		Logic::GetContactListModel()->remove_contact_from_contact_list(_aimid);
+
+        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+        collection.set_value_as_qstring("contact", _aimid);
+        Ui::GetDispatcher()->post_message_to_core("dialogs/hide", collection.get());
+	}
+
+    void ContactListModel::auth_ignore_contact(QString _aimid)
+    {
+        if (Logic::GetContactListModel()->ignore_and_remove_from_cl_contact(_aimid))
+        {
+            Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::ignore_profile_page);
+            emit Utils::InterConnector::instance().profileSettingsBack();
+        }
+    }
+
+    void ContactListModel::stats_spam_profile(QString _aimid)
+    {
+        Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::spam_profile_page);
+    }
 }

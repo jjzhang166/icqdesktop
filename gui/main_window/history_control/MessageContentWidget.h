@@ -8,6 +8,7 @@ namespace HistoryControl
 		Q_OBJECT
 
 	Q_SIGNALS:
+        void stateChanged();
 		void removeMe();
 
         void forcedLayoutUpdatedSignal() const;

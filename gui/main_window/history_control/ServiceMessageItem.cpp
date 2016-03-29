@@ -50,6 +50,10 @@ namespace Ui
         sizePolicy1.setHeightForWidth(message_->sizePolicy().hasHeightForWidth());
         message_->setSizePolicy(sizePolicy1);
         message_->setAlignment(Qt::AlignHCenter|Qt::AlignTop);
+        if (platform::is_apple())
+        {
+            message_->setContentsMargins(0, 1, 0, 0);
+        }
         message_->setWordWrap(false);
         message_->setProperty("DateWidgetLabel", QVariant(true));
         horizontal_layout_2_->addWidget(message_);

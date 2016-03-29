@@ -19,13 +19,14 @@ using namespace core;
 
 enum statistics_info_types
 {
-    last_sent_time = 0,
+    //0,2 and 3 reserved
     event_name = 1,
-    event_time = 2,
-    event_id = 3,
-    event_props,
-    event_prop_name,
-    event_prop_value
+    event_props = 4,
+    event_prop_name = 5,
+    event_prop_value = 6,
+    last_sent_time = 7,
+    event_time = 8,
+    event_id = 9,
 };
 
 long long statistics::stats_event::session_event_id_ = 0;
@@ -126,7 +127,7 @@ void statistics::serialize(tools::binary_stream& _bs) const
     // push stats info
     {
         tools::tlvpack value_tlv;
-        value_tlv.push_child(tools::tlv(statistics_info_types::last_sent_time, std::chrono::system_clock::to_time_t(last_sent_time_)));
+        value_tlv.push_child(tools::tlv(statistics_info_types::last_sent_time, (int64_t)std::chrono::system_clock::to_time_t(last_sent_time_)));
 
         tools::binary_stream bs_value;
         value_tlv.serialize(bs_value);
@@ -138,8 +139,8 @@ void statistics::serialize(tools::binary_stream& _bs) const
         tools::tlvpack value_tlv;
         // TODO : push id, time, ..
         value_tlv.push_child(tools::tlv(statistics_info_types::event_name, stat_event->get_name()));
-        value_tlv.push_child(tools::tlv(statistics_info_types::event_time, std::chrono::system_clock::to_time_t(stat_event->get_time())));
-        value_tlv.push_child(tools::tlv(statistics_info_types::event_id, stat_event->get_id()));
+        value_tlv.push_child(tools::tlv(statistics_info_types::event_time, (int64_t)std::chrono::system_clock::to_time_t(stat_event->get_time())));
+        value_tlv.push_child(tools::tlv(statistics_info_types::event_id, (int64_t)stat_event->get_id()));
 
         tools::tlvpack props_pack;
         int prop_counter = 0;
@@ -226,7 +227,7 @@ bool statistics::unserialize(tools::binary_stream& _bs)
                 return false;
             }
             
-            time_t last_time = tlv_last_sent_time->get_value<time_t>();
+            time_t last_time = tlv_last_sent_time->get_value<int64_t>();
             last_sent_time_ = std::chrono::system_clock::from_time_t(last_time);
         }
         else
@@ -261,8 +262,8 @@ bool statistics::unserialize(tools::binary_stream& _bs)
                 }
             }
             
-            auto read_event_time = std::chrono::system_clock::from_time_t(tlv_event_time->get_value<int>());
-            auto read_event_id = tlv_event_id->get_value<int>();
+            auto read_event_time = std::chrono::system_clock::from_time_t(tlv_event_time->get_value<int64_t>());
+            auto read_event_id = tlv_event_id->get_value<int64_t>();
             insert_event(name, props, read_event_time, read_event_id);
         }
     }

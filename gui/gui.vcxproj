@@ -117,7 +117,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%QTPATH%\include\QtWidgets;%QTPATH%\include\QtGui;%QTPATH%\include\QtCore;%QTPATH%\include;$(QTPATH)\..\QtMultimedia\include;..\external\OpenAl\include;..\external\ffmpeg\include;..\external\ffmpeg\include\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\external\windows\qt\include\QtWidgets;..\external\windows\qt\include\QtGui;..\external\windows\qt\include\QtCore;..\external\windows\qt\include;..\external\windows\qt\include\QtMultimedia\include;..\external\OpenAl\include;..\external\ffmpeg\include;..\external\ffmpeg\include\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zm200 -w34100 -w34189 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>release\</AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
@@ -139,7 +139,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>preprocessor.lib;d3d9.lib;dxguid.lib;translator.lib;Ws2_32.lib;libGLESv2.lib;libEGL.lib;qtharfbuzzng.lib;glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;qtmain.lib;Qt5Gui.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5PlatformSupport.lib;qwindows.lib;qico.lib;Imm32.lib;Winmm.lib;Qt5Multimedia.lib;Qt5Network.lib;qtaudio_windows.lib;strmiids.lib;OpenAL32.lib;libavcodec.lib;libavfilter.lib;libavformat.lib;libavutil.lib;libswresample.lib;secur32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%QTPATH%\lib;..\lib;..\external\OpenAl\lib;..\external\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\external\windows\qt\lib;..\external\windows;..\lib;..\external\OpenAl\lib;..\external\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -246,7 +246,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(QTPATH)\include;$(QTPATH)\include\QtWidgets;$(QTPATH)\include\QtGui;$(QTPATH)\include\QtCore;%QTPATH%\include;%QTPATH%\include\QtWidgets;%QTPATH%\include\QtGui;%QTPATH%\include\QtCore;$(QTPATH)\..\QtMultimedia\include;..\external\OpenAl\include;..\external\ffmpeg\include;..\external\ffmpeg\include\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\external\windows\qt\include;..\external\windows\qt\include\QtWidgets;..\external\windows\qt\include\QtGui;..\external\windows\qt\include\QtCore;..\external\windows\qt\include\QtMultimedia\include;..\external\OpenAl\include;..\external\ffmpeg\include;..\external\ffmpeg\include\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zm200 -w34100 -w34189 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>debug\</AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
@@ -266,7 +266,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     </ClCompile>
     <Link>
       <AdditionalDependencies>preprocessord.lib;d3d9.lib;dxguid.lib;translatord.lib;Ws2_32.lib;libGLESv2d.lib;libEGLd.lib;qtharfbuzzngd.lib;glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;qtmaind.lib;Qt5Guid.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qicod.lib;Imm32.lib;Winmm.lib;runtimeobject.lib;Qt5Multimediad.lib;Qt5Networkd.lib;qtaudio_windowsd.lib;strmiids.lib;OpenAL32d.lib;libavcodec.lib;libavfilter.lib;libavformat.lib;libavutil.lib;libswresample.lib;secur32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%QTPATH%\lib;..\lib;%(AdditionalLibraryDirectories);$(QTPATH)\lib;..\external\OpenAl\lib;..\external\ffmpeg\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\external\windows;..\external\windows\qt\lib;..\lib;%(AdditionalLibraryDirectories);..\external\OpenAl\lib;..\external\ffmpeg\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -392,8 +392,10 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClCompile Include="gui_settings.cpp" />
     <ClCompile Include="controls\GeneralDialog.cpp" />
     <ClCompile Include="main_window\contact_list\ChatMembersModel.cpp" />
+    <ClCompile Include="main_window\contact_list\CustomAbstractListModel.cpp" />
     <ClCompile Include="main_window\contact_list\moc_AbstractSearchModel.cpp" />
     <ClCompile Include="main_window\contact_list\moc_ChatMembersModel.cpp" />
+    <ClCompile Include="main_window\contact_list\moc_CustomAbstractListModel.cpp" />
     <ClCompile Include="main_window\contact_list\moc_SearchMembersModel.cpp" />
     <ClCompile Include="main_window\contact_list\moc_SelectionContactsForGroupChat.cpp" />
     <ClCompile Include="main_window\contact_list\SearchMembersModel.cpp" />
@@ -407,9 +409,11 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClCompile Include="main_window\history_control\ChatEventInfo.cpp" />
     <ClCompile Include="main_window\history_control\ChatEventItem.cpp" />
     <ClCompile Include="main_window\history_control\HistoryControlPageItem.cpp" />
+    <ClCompile Include="main_window\history_control\HistoryControlPageThemePanel.cpp" />
     <ClCompile Include="main_window\history_control\ImagePreviewWidget.cpp" />
     <ClCompile Include="main_window\history_control\MessageStatusWidget.cpp" />
     <ClCompile Include="main_window\history_control\MessageStyle.cpp" />
+    <ClCompile Include="main_window\history_control\moc_HistoryControlPageThemePanel.cpp" />
     <ClCompile Include="main_window\history_control\PttAudioWidget.cpp" />
     <ClCompile Include="LoadPixmapFromDataTask.cpp" />
     <ClCompile Include="main_window\history_control\MessageItem.cpp" />
@@ -443,6 +447,8 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClCompile Include="main_window\search_contacts\results\NoResultsWidget.cpp" />
     <ClCompile Include="controls\SemitransparentWindow.cpp" />
     <ClCompile Include="main_window\settings\AboutUs.cpp" />
+    <ClCompile Include="main_window\settings\AttachPhone.cpp" />
+    <ClCompile Include="main_window\settings\AttachUin.cpp" />
     <ClCompile Include="main_window\settings\ContactUs.cpp" />
     <ClCompile Include="main_window\settings\Notifications.cpp" />
     <ClCompile Include="main_window\sounds\MpegLoader.cpp" />
@@ -644,6 +650,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClInclude Include="controls\GeneralDialog.h" />
     <ClInclude Include="main_window\contact_list\AbstractSearchModel.h" />
     <ClInclude Include="main_window\contact_list\ChatMembersModel.h" />
+    <ClInclude Include="main_window\contact_list\CustomAbstractListModel.h" />
     <ClInclude Include="main_window\contact_list\SearchMembersModel.h" />
     <ClInclude Include="main_window\contact_list\SelectionContactsForGroupChat.h" />
     <ClInclude Include="main_window\history_control\auth_widget\AuthWidget.h" />
@@ -652,6 +659,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClInclude Include="main_window\history_control\ChatEventInfo.h" />
     <ClInclude Include="main_window\history_control\ChatEventItem.h" />
     <ClInclude Include="main_window\history_control\HistoryControlPageItem.h" />
+    <ClInclude Include="main_window\history_control\HistoryControlPageThemePanel.h" />
     <ClInclude Include="main_window\history_control\ImagePreviewWidget.h" />
     <ClInclude Include="LoadPixmapFromDataTask.h" />
     <ClInclude Include="main_window\history_control\MessageItem.h" />

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		182429B21C1F0E0500E788D8 /* collection_helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 182429AF1C1F0E0500E788D8 /* collection_helper.cpp */; };
 		5D2AEF0C1C103EB100CC7BF8 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF0B1C103EB100CC7BF8 /* AVFoundation.framework */; };
 		5D2AEF0E1C103EB800CC7BF8 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF0D1C103EB800CC7BF8 /* CoreAudio.framework */; };
 		5D2AEF101C103EBF00CC7BF8 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF0F1C103EBF00CC7BF8 /* CoreGraphics.framework */; };
@@ -19,7 +20,6 @@
 		5D2AEF1F1C103F9D00CC7BF8 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF191C103F9D00CC7BF8 /* Security.framework */; };
 		5D2AEF201C103F9D00CC7BF8 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF1A1C103F9D00CC7BF8 /* SystemConfiguration.framework */; };
 		5D2AEF221C103FB600CC7BF8 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF211C103FB600CC7BF8 /* CoreVideo.framework */; };
-		182429B21C1F0E0500E788D8 /* collection_helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 182429AF1C1F0E0500E788D8 /* collection_helper.cpp */; };
 		860A30A61BDF7CE7000F0DF2 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 860A30A51BDF7CE7000F0DF2 /* common.h */; };
 		861162D91BD8F0A70092F60E /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 861162D61BD8F0A60092F60E /* libcrypto.a */; };
 		861162DA1BD8F0A70092F60E /* libcurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 861162D71BD8F0A60092F60E /* libcurl.a */; };
@@ -30,7 +30,6 @@
 		95CDDFA51C27E64200240739 /* namespaces.h in Headers */ = {isa = PBXBuildFile; fileRef = 95CDDFA11C27E64100240739 /* namespaces.h */; };
 		95CDDFA61C27E64200240739 /* remote_proc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95CDDFA21C27E64100240739 /* remote_proc.cpp */; };
 		95CDDFA71C27E64200240739 /* remote_proc.h in Headers */ = {isa = PBXBuildFile; fileRef = 95CDDFA31C27E64200240739 /* remote_proc.h */; };
-		D5D9C7F81BE7D46600477BD1 /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D9C7F71BE7D46600477BD1 /* boost.framework */; };
 		D5E14CEB1BC6840A007F8671 /* collection_helper.h in Headers */ = {isa = PBXBuildFile; fileRef = D5E14CDC1BC6840A007F8671 /* collection_helper.h */; };
 		D5E14CEC1BC6840A007F8671 /* collection.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E14CDD1BC6840A007F8671 /* collection.cpp */; };
 		D5E14CED1BC6840A007F8671 /* collection.h in Headers */ = {isa = PBXBuildFile; fileRef = D5E14CDE1BC6840A007F8671 /* collection.h */; };
@@ -62,6 +61,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		182429AF1C1F0E0500E788D8 /* collection_helper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = collection_helper.cpp; path = ../collection_helper.cpp; sourceTree = "<group>"; };
 		5D2AEF0B1C103EB100CC7BF8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		5D2AEF0D1C103EB800CC7BF8 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5D2AEF0F1C103EBF00CC7BF8 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -74,7 +74,6 @@
 		5D2AEF191C103F9D00CC7BF8 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		5D2AEF1A1C103F9D00CC7BF8 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		5D2AEF211C103FB600CC7BF8 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
-		182429AF1C1F0E0500E788D8 /* collection_helper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = collection_helper.cpp; path = ../collection_helper.cpp; sourceTree = "<group>"; };
 		860A30A51BDF7CE7000F0DF2 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = common.h; path = ../common.h; sourceTree = "<group>"; };
 		861162D61BD8F0A60092F60E /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = ../../external/mac/libcrypto.a; sourceTree = "<group>"; };
 		861162D71BD8F0A60092F60E /* libcurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcurl.a; path = ../../external/mac/libcurl.a; sourceTree = "<group>"; };
@@ -86,7 +85,6 @@
 		95CDDFA21C27E64100240739 /* remote_proc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = remote_proc.cpp; path = ../remote_proc.cpp; sourceTree = "<group>"; };
 		95CDDFA31C27E64200240739 /* remote_proc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = remote_proc.h; path = ../remote_proc.h; sourceTree = "<group>"; };
 		D55389AB1BC7E05B0088FBA6 /* core.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = core.xcodeproj; path = ../../core/core.xcodeproj; sourceTree = "<group>"; };
-		D5D9C7F71BE7D46600477BD1 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = ../../external/mac/boost.framework; sourceTree = "<group>"; };
 		D5E14CD51BC683F9007F8671 /* libcorelib.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libcorelib.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5E14CDC1BC6840A007F8671 /* collection_helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = collection_helper.h; path = ../collection_helper.h; sourceTree = "<group>"; };
 		D5E14CDD1BC6840A007F8671 /* collection.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = collection.cpp; path = ../collection.cpp; sourceTree = "<group>"; };
@@ -121,7 +119,6 @@
 				86CE8C481C0D9BC000A5E3F9 /* Foundation.framework in Frameworks */,
 				861162DB1BD8F0A70092F60E /* libssl.a in Frameworks */,
 				861162D91BD8F0A70092F60E /* libcrypto.a in Frameworks */,
-				D5D9C7F81BE7D46600477BD1 /* boost.framework in Frameworks */,
 				D5F7F7181BF23AB900653258 /* libcore.a in Frameworks */,
 				861162DA1BD8F0A70092F60E /* libcurl.a in Frameworks */,
 			);
@@ -154,7 +151,6 @@
 				5D2AEF0D1C103EB800CC7BF8 /* CoreAudio.framework */,
 				5D2AEF0B1C103EB100CC7BF8 /* AVFoundation.framework */,
 				86CE8C441C0D9B6D00A5E3F9 /* Foundation.framework */,
-				D5D9C7F71BE7D46600477BD1 /* boost.framework */,
 				D55389AB1BC7E05B0088FBA6 /* core.xcodeproj */,
 				D5E14D341BC6BE3A007F8671 /* export_list */,
 				95CDDFA01C27E64100240739 /* ivalue.h */,

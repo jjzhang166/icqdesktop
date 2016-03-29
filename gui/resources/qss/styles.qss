@@ -500,6 +500,15 @@ QWidget[CallMenuItemCommon="true"]
 	padding-left: 32dip;
 }
 
+QPushButton[CallMenuItemButtonAPlaybackOff="true"]
+{
+	min-height: 40dip;
+	max-height: 40dip;
+	min-width: 32dip;
+	max-width: 32dip;
+	background-color: transparent;
+}
+
 QPushButton[CallMenuItemButton="true"]
 {
 	background-color: transparent;
@@ -515,14 +524,14 @@ QPushButton[CallMenuVolume_en="true"]
 {
 	border-style: none;
 	margin-right: 8dip;
-	image: url(:/resources/dialog_sound_100.png);
+	border-image: url(:/resources/dialog_sound_100.png);
 }
 
 QPushButton[CallMenuVolume_dis="true"]
 {
 	border-style: none;
 	margin-right: 8dip;
-	image: url(:/resources/dialog_sound_off_100.png);
+	border-image: url(:/resources/dialog_sound_off_100.png);
 }
 
 QPushButton[CallMenuMute="true"]
@@ -716,15 +725,15 @@ QPushButton[CallEnableCam="true"]:hover:pressed
 
 QPushButton[CallDisableCam="true"]
 {
-	background-image: url(:/resources/video_panel/videoctrl_camera_off_100.png);
+	border-image: url(:/resources/video_panel/videoctrl_camera_off_100.png);
 }
 QPushButton[CallDisableCam="true"]:hover
 {
-	background-image: url(:/resources/video_panel/videoctrl_camera_off_100_hover.png);
+	border-image: url(:/resources/video_panel/videoctrl_camera_off_100_hover.png);
 }
 QPushButton[CallDisableCam="true"]:hover:pressed
 {
-	background-image: url(:/resources/video_panel/videoctrl_camera_off_100_active.png);
+	border-image: url(:/resources/video_panel/videoctrl_camera_off_100_active.png);
 }
 
 QPushButton[CallEnableMic="true"]

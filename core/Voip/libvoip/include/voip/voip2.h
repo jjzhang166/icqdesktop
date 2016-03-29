@@ -441,6 +441,7 @@ public:
     virtual void EnableMsgQueue() = 0;
     virtual void StartSignaling() = 0;
 
+    virtual void EnableMinimalBandwithMode(bool enable) = 0;
     virtual void EnableRtpDump(bool enable) = 0;
 
     virtual unsigned GetDevicesNumber(DeviceType deviceType) = 0;

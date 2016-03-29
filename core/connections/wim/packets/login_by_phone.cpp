@@ -75,7 +75,7 @@ int32_t core::wim::phone_login::parse_response_data(const rapidjson::Value& _dat
 		auto iter_token = _data.FindMember("token");
 		if (iter_token == _data.MemberEnd() || !iter_token->value.IsObject())
 			return wpie_http_parse_response;
-
+        
 		auto iter_expired_in = iter_token->value.FindMember("expiresIn");
 		auto iter_a = iter_token->value.FindMember("a");
 		if (iter_expired_in == iter_token->value.MemberEnd() || iter_a == iter_token->value.MemberEnd() ||

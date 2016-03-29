@@ -17,6 +17,7 @@ namespace Ui
 
     private:
         virtual void showEvent(QShowEvent* event) override;
+        virtual void hideEvent(QHideEvent* event) override;
         virtual void paintEvent(QPaintEvent* event) override;
 
     public:

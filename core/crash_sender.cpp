@@ -23,8 +23,8 @@ namespace core
             post_request.set_url(hockeyapp_url);
             post_request.set_post_form(true);
             post_request.push_post_form_parameter("contact", _login);
-            post_request.push_post_form_file("log", tools::from_utf16(utils::get_report_log_path()).c_str());
-            post_request.push_post_form_file("attachment0", tools::from_utf16(utils::get_report_mini_dump_path()).c_str());
+            post_request.push_post_form_filedata(L"log", utils::get_report_log_path());
+            post_request.push_post_form_filedata(L"attachment0", utils::get_report_mini_dump_path());
             return post_request.post();
         }
 

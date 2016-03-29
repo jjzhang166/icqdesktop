@@ -4,6 +4,7 @@
 #include "core.h"
 
 #include "tools/system.h"
+#include "../../corelib/collection_helper.h"
 
 using namespace core;
 
@@ -257,4 +258,10 @@ void gui_settings::save_if_needed()
             return 0;
         });
     }
+}
+
+void gui_settings::clear_values()
+{
+    values_.clear();
+    changed_ = true;
 }

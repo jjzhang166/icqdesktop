@@ -37,7 +37,6 @@ namespace Ui
 		double              koeff_height_;
 		double              koeff_width_;
 		QWidget*            main_widget_;
-        QWidget*            scene_;
 		int                 addWidth_;
         bool                isShowLabel_;
         bool                isShowButton_;
@@ -54,6 +53,7 @@ namespace Ui
         bool is_semi_window_;
         
     protected:
+        virtual void showEvent(QShowEvent *e) override;
         virtual void hideEvent(QHideEvent *e) override;
         virtual void mousePressEvent(QMouseEvent *e) override;
         virtual void keyPressEvent(QKeyEvent *e) override;

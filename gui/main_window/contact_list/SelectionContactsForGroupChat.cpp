@@ -151,6 +151,7 @@ namespace Ui
                 +"padding: 0 0 0 0dip; "
                 +"font-size: 15dip; "
                 +"color: #579e1c";
+        view_all->setMouseTracking(true);
 		view_all->setCursor(Qt::PointingHandCursor);
 		view_all->setStyleSheet(Utils::ScaleStyle(view_all_style, Utils::get_scale_coefficient()));
         view_all->setMargin(0);

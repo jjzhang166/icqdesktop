@@ -30,6 +30,8 @@ namespace Data
 	public:
 		MessageBuddy();
 
+        bool IsEmpty() const;
+
 		bool CheckInvariant() const;
 
         bool ContainsPreviewableLink() const;

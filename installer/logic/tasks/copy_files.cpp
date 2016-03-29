@@ -8,8 +8,8 @@
 
 namespace installer
 {
-	namespace logic
-	{
+    namespace logic
+    {
         installer::error copy_self(const QString& _install_path)
         {
             wchar_t buffer[1025];
@@ -66,55 +66,77 @@ namespace installer
 
                 file.close();
             }
-            
+
             return copy_self(_install_path);
         }
 
-        
-		installer::error copy_files()
-		{
+
+        installer::error copy_files()
+        {
             return copy_files_to_folder(get_install_folder());
-		}
+        }
 
         installer::error copy_files_to_updates()
         {
             return copy_files_to_folder(get_updates_folder() + "/" + VER_FILEVERSION_STR);
         }
 
-		installer::error delete_files()
-		{
-			QDir dir_product(get_product_folder());
+        installer::error delete_files()
+        {
+            QDir dir_product(get_product_folder());
 
-			dir_product.removeRecursively();
+            dir_product.removeRecursively();
 
-			return installer::error();
-		}
+            return installer::error();
+        }
 
-		installer::error delete_self()
-		{
-			wchar_t temp_path[1024];
-			if (!::GetTempPath(1024, temp_path))
-				return installer::error(errorcode::get_temp_path, QString("get temp folder"));
+        installer::error delete_folder_as_temp(const QString& _folder)
+        {
+            wchar_t temp_path[1024];
+            if (!::GetTempPath(1024, temp_path))
+                return installer::error(errorcode::get_temp_path, QString("get temp folder"));
 
-			wchar_t temp_file_name[1024];
-			if (!::GetTempFileName(temp_path, L"icq", 0, temp_file_name))
-				return installer::error(errorcode::get_temp_file_name, QString("get temp folder"));
+            wchar_t temp_file_name[1024];
+            if (!::GetTempFileName(temp_path, L"icq", 0, temp_file_name))
+                return installer::error(errorcode::get_temp_file_name, QString("get temp folder"));
 
-			wchar_t this_module_name[1024];
-			if (!::GetModuleFileName(0, this_module_name, 1024))
-				return installer::error(errorcode::get_module_name, QString("get this module name"));
-			
-			if (!::CopyFile(this_module_name, temp_file_name, FALSE))
-				return installer::error(errorcode::copy_installer, QString("copy installer to temp folder"));
+            wchar_t this_module_name[1024];
+            if (!::GetModuleFileName(0, this_module_name, 1024))
+                return installer::error(errorcode::get_module_name, QString("get this module name"));
 
-			::MoveFileEx(temp_file_name, NULL, MOVEFILE_DELAY_UNTIL_REBOOT | MOVEFILE_REPLACE_EXISTING);
+            if (!::CopyFile(this_module_name, temp_file_name, FALSE))
+                return installer::error(errorcode::copy_installer, QString("copy installer to temp folder"));
 
-			QString command = QString::fromUtf16((const ushort*) temp_file_name) + " -uninstalltmp";
-			if (!QProcess::startDetached(command))
-				return installer::error(errorcode::start_installer_from_temp, QString("start installer from temp folder"));
+            ::MoveFileEx(temp_file_name, NULL, MOVEFILE_DELAY_UNTIL_REBOOT | MOVEFILE_REPLACE_EXISTING);
 
-			return installer::error();
-		}
+            QString command = QString::fromUtf16((const ushort*) temp_file_name) + " -uninstalltmp " + _folder;
+            if (!QProcess::startDetached(command))
+                return installer::error(errorcode::start_installer_from_temp, QString("start installer from temp folder"));
+
+            return installer::error();
+        }
+
+        installer::error delete_self_from_8x()
+        {
+            wchar_t this_module_name[1024];
+            if (!::GetModuleFileName(0, this_module_name, 1024))
+                return installer::error(errorcode::get_module_name, QString("get this module name"));
+
+            QDir dir_module(QString::fromUtf16((const ushort*) this_module_name));
+
+            dir_module.cdUp();
+
+            QString qfolder = dir_module.path();
+
+            return delete_folder_as_temp(qfolder);
+
+            return installer::error();
+        }
+
+        installer::error delete_self_and_product_folder()
+        {
+            return delete_folder_as_temp(get_product_folder());
+        }
 
         installer::error delete_updates()
         {
@@ -155,29 +177,29 @@ namespace installer
             update_dir.setFilter(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
             QFileInfoList files_list = update_dir.entryInfoList();
 
-             for (int i = 0; i < files_list.size(); ++i)
-             {
-                 QFileInfo file_info = files_list.at(i);
+            for (int i = 0; i < files_list.size(); ++i)
+            {
+                QFileInfo file_info = files_list.at(i);
 
-                 QString file_path = file_info.absoluteFilePath();
+                QString file_path = file_info.absoluteFilePath();
 
-                 if (file_path != module_info.absoluteFilePath())
-                 {
-                     file_path = QDir::toNativeSeparators(file_path);
-                     
-                     QString new_file_name = QDir::toNativeSeparators(get_install_folder() + "/" + file_info.fileName());
+                if (file_path != module_info.absoluteFilePath())
+                {
+                    file_path = QDir::toNativeSeparators(file_path);
 
-                     for (int i = 0; i < 10; ++i)
-                     {
+                    QString new_file_name = QDir::toNativeSeparators(get_install_folder() + "/" + file_info.fileName());
+
+                    for (int i = 0; i < 10; ++i)
+                    {
                         if (::MoveFileEx((const wchar_t*) file_path.utf16(), (const wchar_t*) new_file_name.utf16(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING))
                             break;
 
                         ::Sleep(500);
-                     }
-                 }
-             }
+                    }
+                }
+            }
 
-             return installer::error();
+            return installer::error();
         }
 
         installer::error copy_self_from_updates()
@@ -205,6 +227,6 @@ namespace installer
 
 
 
-	}
+    }
 }
 

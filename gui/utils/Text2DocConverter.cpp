@@ -353,7 +353,7 @@ namespace
 		FlushLastWord();
 		WriteAnchor();
 
-        LastWordAccum_ += "<span>&nbsp;</span>";
+        LastWordAccum_ += "<span style='white-space: pre'>&#32;</span>";//"<span>&nbsp;</span>";
         FlushLastWord();
 
 		assert(!UrlAccum_.isEmpty());
@@ -437,6 +437,7 @@ namespace
 		url += schemeTail;
 
         bool needSoftHyphen = true;
+        int skipChars = 0;
 		for(;;)
 		{
 			const auto nextChar = PeekSChar();
@@ -463,6 +464,12 @@ namespace
             if (breakDocument && url.length() >= max_word_length && needSoftHyphen)
             {
                 url += QChar::SoftHyphen;
+            }
+
+            if (!needSoftHyphen && ++skipChars >= max_word_length)
+            {
+                needSoftHyphen = true;
+                skipChars = 0;
             }
 		}
 

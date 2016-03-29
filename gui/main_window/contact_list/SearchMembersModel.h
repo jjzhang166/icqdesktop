@@ -12,12 +12,12 @@ namespace Logic
     {
         Q_OBJECT
 
-Q_SIGNALS:
+    Q_SIGNALS:
         void results();
 
-        public Q_SLOTS:
-            void searchPatternChanged(QString) override;
-            void searchResult(QStringList);
+    public Q_SLOTS:
+        void searchPatternChanged(QString) override;
+        void searchResult(QStringList);
 
     public:
         SearchMembersModel(QObject *parent);
@@ -29,7 +29,7 @@ Q_SIGNALS:
         const QStringList& GetPattern() const;
         void emitChanged(int first, int last) override;
         void SetChatMembersModel(ChatMembersModel* _members_model);
-
+        
     private:
         mutable std::vector<Data::ChatMemberInfo> Match_;
         QStringList SearchPatterns_;

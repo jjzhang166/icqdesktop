@@ -57,6 +57,12 @@ int main(int _argc, char* _argv[])
             if (*iter == "-uninstalltmp")
             {
                 config.set_uninstalltmp(true);
+
+                ++iter;
+                if (iter == arguments.cend())
+                    break;
+
+                config.set_folder_for_delete(*iter);
             }
             else if (*iter == "-uninstall")
             {
@@ -117,8 +123,11 @@ int main(int _argc, char* _argv[])
 
         if (logic::get_install_config().is_nolaunch_from_8x() && logic::get_install_config().is_autoupdate_from_8x())
         {
-            logic::get_worker()->set_installed_flag_8x();
-            logic::get_worker()->copy_self_to_bin_8x();
+            connect_to_events();
+
+            logic::get_worker()->update_from_8x_step_1();
+
+            res = app.exec();
         }
         else if (logic::get_install_config().is_autoupdate_from_8x())
         {
@@ -128,7 +137,7 @@ int main(int _argc, char* _argv[])
 
             connect_to_events();
 
-            logic::get_worker()->autoupdate_from_8x();
+            logic::get_worker()->update_from_8x_step_2();
 
             res = app.exec();
         }

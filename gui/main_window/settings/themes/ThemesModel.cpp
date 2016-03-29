@@ -75,7 +75,6 @@ namespace Ui
     
     void ThemesModel::set_target_contact(QString _aimId)
     {
-        __INFO("themes", "_aimId is " << _aimId);
         target_contact_ = _aimId;
     }
 }

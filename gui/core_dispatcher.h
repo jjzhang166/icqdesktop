@@ -93,8 +93,10 @@ namespace Ui
         void im_created();
 		void login_complete();
 		void messageBuddies(std::shared_ptr<Data::MessageBuddies>, QString, Ui::MessagesBuddiesOpt, bool, qint64);
-		void getSmsResult(int code);
-		void loginResult(int code);
+		void getSmsResult(int64_t, int code);
+		void loginResult(int64_t, int code);
+		void loginResultAttachUin(int64_t, int code);
+		void loginResultAttachPhone(int64_t, int code);
 		void avatarLoaded(const QString&, QPixmap*, int);
 		void presense(Data::Buddy*);
 		void searchResult(QStringList);
@@ -106,8 +108,10 @@ namespace Ui
         void chatInfoFailed(qint64, core::group_chat_info_errors);
         void myInfo();
 
-        void typing(QString, QVector< QString >);
-        void stopTyping(QString, QVector< QString >, int);
+        void typingAimId(QString, QString);
+        void typingName(QString, QString);
+        void stopTypingAimId(QString, QString);
+        void stopTypingName(QString, QString);
         void messagesReceived(QString, QVector< QString >);
         
 		void contactRemoved(QString);
@@ -134,6 +138,9 @@ namespace Ui
         void speechToText(qint64, int, QString, int);
 
         void recv_permit_deny(bool);
+
+		void recvFlags(int);
+
 	public Q_SLOTS:
 		void received(const QString, const qint64, core::icollection*);
 
@@ -177,9 +184,6 @@ namespace Ui
 		void previewDownloadResult(const int64_t seq, core::coll_helper &params);
 		void fileUploadingProgress(core::coll_helper &params);
 
-        void typingEmitter(QString aimId, QVector< QString > chattersAimIds);
-        Q_SLOT void stopTypingEmitter();
-
 	private:
 		core::iconnector*		core_connector_;
 		core::icore_interface*	core_face_;
@@ -188,8 +192,8 @@ namespace Ui
 		std::unordered_map<int64_t, callback_info> callbacks_;
 		QDateTime last_time_callbacks_cleaned_up_;
         
-        std::deque< std::pair< QString, QVector< QString > > > typingTimerQueue_;
-        std::map< QString, std::map< QString, int > > typingFires_;
+        QMutex typingFiresLocker_;
+        std::map<QString, std::map<QString, int>> typingFires_;
 
         bool is_stats_enabled_;
 	};

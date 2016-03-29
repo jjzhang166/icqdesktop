@@ -19,6 +19,7 @@ namespace Ui
 		QString userType_;
 		QString phoneNumber_;
 		uint32_t flags_;
+		bool auto_created_;
 
 	public:
 		my_info();
@@ -31,6 +32,7 @@ namespace Ui
 		QString userType() const { return userType_; };
 		QString phoneNumber() const { return phoneNumber_; };
 		uint32_t flags() const { return flags_; };
+		bool auto_created() const { return auto_created_; };
 	};
 
 	my_info* MyInfo();

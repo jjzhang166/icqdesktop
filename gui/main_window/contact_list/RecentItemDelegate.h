@@ -22,13 +22,13 @@ namespace Logic
 		int itemSize() const;
 		void blockState(bool value);
         
-        void addTypersAimIds(QString aimId, QVector< QString > chattersAimIds);
-        void removeTypersAimIds(QString aimId, QVector< QString > chattersAimIds);
-        void removeTyperAimId(QString aimId, QString chatterAimId);
+        void addChatter(QString aimId, QString chatter);
+        void removeChatter(QString aimId, QString chatter);
+
         void setDragIndex(const QModelIndex& index);
 
 	private:
-        std::map< QString, std::set< QString > > typers_;
+        std::map<QString, std::set<QString>> typers_;
         
 		struct ItemKey
 		{

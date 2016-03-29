@@ -687,6 +687,11 @@ namespace HistoryControl
 
         return imageRect;
     }
+    
+    bool PreviewContentWidget::isTextPresented()
+    {
+        return TextControl_;
+    }
 
     namespace
     {

@@ -509,13 +509,13 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
 	{
 		bool result = coll_params.get_value_as_bool("result");
 		int error = result ? 0 : coll_params.get_value_as_int("error");
-		emit getSmsResult(error);
+		emit getSmsResult(seq, error);
 	}
 	else if (received_message == "login_result")
 	{
 		bool result = coll_params.get_value_as_bool("result");
 		int error = result ? 0 : coll_params.get_value_as_int("error");
-		emit loginResult(error);
+		emit loginResult(seq, error);
 	}
 	else if (received_message == "avatars/get/result")
 	{
@@ -535,9 +535,8 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
 	}
 	else if (received_message == "gui_settings")
 	{
-        auto data_path = coll_params.get_value_as_string("data_path");
-
 #ifdef _WIN32
+        auto data_path = coll_params.get_value_as_string("data_path");
         core::dump::set_product_data_path(Utils::FromQString(data_path));
         core::dump::set_os_version(coll_params.get_value_as_string("os_version"));
 #endif
@@ -703,27 +702,69 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         }
         emit messagesReceived(aimId, sendersAimIds);
     }
-    else if (received_message == "typing")
+    else if (received_message == "typing" || received_message == "typing/stop")
     {
         QString aimId = coll_params.get_value_as_string("aimId");
-        QVector< QString > chattersAimIds;
-        if (coll_params.is_value_exist("chattersAimIds"))
+        QString chatterAimId = coll_params.get_value_as_string("chatterAimId");
+        QString chatterName = coll_params.get_value_as_string("chatterName");
+        if (!chatterAimId.length() && !chatterName.length())
         {
-            auto array = coll_params.get_value_as_array("chattersAimIds");
-            for (int i = 0; array && i < array->size(); ++i)
+            chatterAimId = aimId;
+        }
+        if (received_message == "typing")
+        {
+            if (chatterName.length())
             {
-                chattersAimIds.push_back(array->get_at(i)->get_as_string());
-                typingFires_[aimId][chattersAimIds.last()]++;
+                emit typingName(aimId, chatterName);
+                typingFiresLocker_.lock();
+                typingFires_[aimId][chatterName]++;
+                typingFiresLocker_.unlock();
+                QTimer::singleShot(6000, [this, aimId, chatterName]()
+                {
+                    typingFires_[aimId][chatterName]--;
+                    typingFiresLocker_.lock();
+                    if (typingFires_[aimId][chatterName] <= 0)
+                    {
+                        typingFires_[aimId].erase(chatterName);
+                        emit stopTypingName(aimId, chatterName);
+                    }
+                    typingFiresLocker_.unlock();
+                });
+            }
+            else
+            {
+                emit typingAimId(aimId, chatterAimId);
+                typingFires_[aimId][chatterAimId]++;
+                QTimer::singleShot(6000, [this, aimId, chatterAimId]()
+                {
+                    typingFires_[aimId][chatterAimId]--;
+                    typingFiresLocker_.lock();
+                    if (typingFires_[aimId][chatterAimId] <= 0)
+                    {
+                        typingFires_[aimId].erase(chatterAimId);
+                        emit stopTypingAimId(aimId, chatterAimId);
+                    }
+                    typingFiresLocker_.unlock();
+                });
             }
         }
-        if (chattersAimIds.empty())
+        else
         {
-            chattersAimIds.push_back(aimId);
-            typingFires_[aimId][aimId]++;
+            if (chatterName.length())
+            {
+                emit stopTypingName(aimId, chatterName);
+                typingFiresLocker_.lock();
+                typingFires_[aimId][chatterName]--;
+                typingFiresLocker_.unlock();
+            }
+            else
+            {
+                emit stopTypingAimId(aimId, chatterAimId);
+                typingFiresLocker_.lock();
+                typingFires_[aimId][chatterAimId]--;
+                typingFiresLocker_.unlock();
+            }
         }
-        typingEmitter(aimId, chattersAimIds);
-        typingTimerQueue_.push_back(std::make_pair(aimId, chattersAimIds));
-        QTimer::singleShot(6000, this, SLOT(stopTypingEmitter()));
     }
     else if (received_message == "contacts/get_ignore/result")
     {
@@ -735,39 +776,26 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         }
         Logic::UpdateIgnoredModel(ignored_aimids);
         emit recv_permit_deny(ignored_aimids.isEmpty());
-    }
-}
-
-void core_dispatcher::typingEmitter(QString aimId, QVector<QString> chattersAimIds)
-{
-    emit typing(aimId, chattersAimIds);
-}
-
-void core_dispatcher::stopTypingEmitter()
-{
-    auto pair = typingTimerQueue_.front();
-    typingTimerQueue_.pop_front();
-    auto aimId = pair.first;
-    auto chattersAimId = pair.second;
-    QVector< QString > stopped;
-    for (auto chatter: chattersAimId)
+    } 
+    else if (received_message == "login_result_attach_uin")
+	{
+		bool result = coll_params.get_value_as_bool("result");
+		int error = result ? 0 : coll_params.get_value_as_int("error");
+		emit loginResultAttachUin(seq, error);
+	} 
+    else if (received_message == "login_result_attach_phone")
+	{
+		bool result = coll_params.get_value_as_bool("result");
+		int error = result ? 0 : coll_params.get_value_as_int("error");
+		emit loginResultAttachPhone(seq, error);
+	}
+    else if (received_message == "recv_flags")
     {
-        if (typingFires_.find(aimId) != typingFires_.end() && typingFires_[aimId].find(chatter) != typingFires_[aimId].end())
-        {
-            typingFires_[aimId][chatter]--;
-            if (typingFires_[aimId][chatter] <= 0)
-                stopped.push_back(chatter);
-        }
+        emit recvFlags(coll_params.get_value_as_int("flags"));
     }
-    for (auto chatter: stopped)
-        typingFires_[aimId].erase(chatter);
-    if (typingFires_[aimId].empty())
-        typingFires_.erase(aimId);
-    if (!stopped.empty())
-        emit stopTyping(aimId, stopped, (typingFires_.find(aimId) == typingFires_.end() ? 0 : (int)typingFires_[aimId].size()));
 }
 
-std::unique_ptr<core_dispatcher> g_dispatcher;
+namespace { std::unique_ptr<core_dispatcher> g_dispatcher; }
 
 core_dispatcher* Ui::GetDispatcher()
 {

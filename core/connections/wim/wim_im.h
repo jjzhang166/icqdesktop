@@ -37,12 +37,12 @@ namespace core
 		class history_message;
 		typedef std::shared_ptr<history_message> history_message_sptr;
 	}
-    	
+
     namespace themes
     {
         class theme;
     }
-    	
+
 
 	namespace wim
 	{
@@ -79,7 +79,7 @@ namespace core
             class request;
             class failed_requests;
         }
-        
+
 
 		class send_message_handler
 		{
@@ -117,7 +117,7 @@ namespace core
 
             std::chrono::system_clock::time_point last_packet_time_;
 
-            			
+
 			void execute_packet_from_queue();
 
 			std::shared_ptr<async_task_handlers> post_packet(
@@ -204,7 +204,7 @@ namespace core
 
                 stop_objects() : active_session_id_(0) {}
             };
-			
+
             std::shared_ptr<stop_objects> stop_objects_;
 			std::shared_ptr<wim::contactlist> contact_list_;
 			std::shared_ptr<wim::active_dialogs> active_dialogs_;
@@ -213,12 +213,14 @@ namespace core
 
 			// authorization parameters
 			std::shared_ptr<auth_parameters> auth_params_;
+			std::shared_ptr<auth_parameters> attached_auth_params_;
 
             // wim fetch parameters
             std::shared_ptr<fetch_parameters> fetch_params_;
 
 			// temporary for phone registration
 			std::shared_ptr<phone_info> phone_registration_data_;
+			std::shared_ptr<phone_info> attached_phone_registration_data_;
 
 			// threads
 			std::shared_ptr<wim_send_thread> wim_send_thread_;
@@ -249,12 +251,11 @@ namespace core
             std::shared_ptr<holes::failed_requests> failed_holes_requests_;
 
 			bool sent_pending_messages_active_;
-                        
+
 			// statistic
 			std::unique_ptr<statistic::imstat> imstat_;
-				
+
 			const robusto_packet_params make_robusto_params();
-			const wim_packet_params make_wim_params();
 
 			std::shared_ptr<async_task_handlers> post_wim_packet(std::shared_ptr<wim_packet> _packet);
 			std::shared_ptr<async_task_handlers> post_robusto_packet(std::shared_ptr<robusto_packet> packet);
@@ -289,7 +290,7 @@ namespace core
             void post_stickers_meta_to_gui(int64_t _seq, const std::string& _size);
 
 			virtual void get_chat_info(int64_t _seq, const std::string& _aimid, int32_t _limit) override;
-            
+
             virtual void get_themes_meta(int64_t _seq, const ThemesScale themes_value_) override;
             void get_theme(int64_t _seq, int _theme_id);
             themes::theme* get_theme_from_cache(int _theme_id);
@@ -308,9 +309,11 @@ namespace core
 			virtual std::string get_login() override;
             virtual void logout(std::function<void()> _on_result) override;
 
-            void login_by_password(const std::string& login, const std::string& password, bool save_auth_data);
+            void login_by_password(int64_t _seq, const std::string& login, const std::string& password, bool save_auth_data, bool start_session);
+            void login_by_password_and_attach_uin(int64_t _seq, const std::string& login, const std::string& password, const wim_packet_params& _from_params);
+
             void start_session(bool _is_ping = false) override;
-            
+
 			void cancel_requests();
             bool is_session_valid(int64_t _session_id);
 			void poll(bool _is_first, bool _after_network_error, int32_t _failed_network_error_count = 0);
@@ -319,7 +322,7 @@ namespace core
 
 			void schedule_store_timer();
 			void stop_store_timer();
-			
+
 			loader& get_loader();
 
 			// statistic
@@ -344,11 +347,11 @@ namespace core
             virtual void send_message_typing(const int64_t _seq, const std::string& _contact);
 
             virtual void send_feedback(const int64_t, const std::string &url, const std::map<std::string, std::string> &fields, const std::vector<std::string> &files);
-            
+
             virtual void set_state(const int64_t _seq, const core::profile_state _state) override;
 
             void post_pending_messages();
-            
+
 			std::shared_ptr<send_message_handler> send_pending_message_async(
 				const int64_t _seq,
 				const archive::not_sent_message_sptr& _message);
@@ -365,19 +368,23 @@ namespace core
 			virtual void connect() override;
 
 			// login functions
-			virtual void login(const login_info& _info) override;
-			virtual void login_get_sms_code(int64_t seq, const phone_info& _info) override;
+			virtual void login(int64_t _seq, const login_info& _info) override;
+			virtual void login_get_sms_code(int64_t seq, const phone_info& _info, bool _is_login) override;
 			virtual void login_by_phone(int64_t _seq, const phone_info& _info) override;
+
+            virtual void start_attach_phone(int64_t _seq, const phone_info& _info) override;
+            virtual void start_attach_uin(int64_t _seq, const login_info& _info, const wim_packet_params& _from_params) override;
 
             virtual void erase_auth_data() override;
 
             virtual void sign_url(int64_t _seq, const std::string& unsigned_url) override;
-            
+
 			std::shared_ptr<async_task_handlers> get_robusto_token();
 
 			// history functions
 			void get_archive_index(int64_t _seq, const std::string& _contact, int64_t _from, int64_t _count, int32_t _recursion);
 			void get_archive_messages(int64_t _seq, const std::string& _contact, int64_t _from, int64_t _count, int32_t _recursion);
+            void get_archive_messages_get_messages(int64_t _seq, const std::string& _contact, int64_t _from, int64_t _count, int32_t _recursion);
 			virtual void get_archive_messages(int64_t _seq, const std::string& _contact, int64_t _from, int64_t _count) override;
 			virtual void get_archive_index(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) override;
 			virtual void get_archive_messages_buddies(int64_t _seq, const std::string& _contact, std::shared_ptr<archive::msgids_list> _ids) override;
@@ -411,10 +418,10 @@ namespace core
             virtual void get_ignore_list(int64_t _seq) override;
             virtual void favorite(const std::string& _contact) override;
             virtual void unfavorite(const std::string& _contact) override;
-            
+
 			std::shared_ptr<async_task_handlers> post_dlg_state_to_gui(const std::string _contact, bool _from_favorite = false, bool _serialize_message = true);
 
-			
+
 			// ------------------------------------------------------------------------------
 			// files functions
 			virtual void upload_file_sharing(
@@ -443,7 +450,7 @@ namespace core
 
             virtual void set_played(const std::string& url, bool played);
             virtual void speech_to_text(int64_t _seq, const std::string& _url, const std::string& _locale);
-            
+
             void upload_file_sharing_internal(const archive::not_sent_message_sptr& _not_sent);
 
             void resume_failed_network_requests();
@@ -458,8 +465,14 @@ namespace core
 			virtual void add_members(int64_t _seq, const std::string& _aimid, const std::string& _m_chat_members_to_add) override;
 			virtual void add_chat(int64_t _seq, const std::string& _m_chat_name, const std::vector<std::string>& _m_chat_members) override;
 			virtual void modify_chat(int64_t _seq, const std::string& _aimid, const std::string& _m_chat_name) override;
-			
+
             static void send_ignore_list_to_gui(const std::vector<std::string>& _ignore_list);
+
+            void attach_uin(int64_t _seq);
+            void attach_phone(int64_t _seq, const auth_parameters& auth_params, const phone_info& _info);
+
+            void attach_uin_finished();
+            void attach_phone_finished();
 
 		public:
 
@@ -469,11 +482,13 @@ namespace core
             virtual std::shared_ptr<wim::wim_packet> prepare_voip_msg(const std::string& data) override;
             virtual std::shared_ptr<wim::wim_packet> prepare_voip_pac(const voip_manager::VoipProtoMsg& data) override;
 
-			void login_normalize_phone(int64_t _seq, const std::string& _country, const std::string& _raw_phone, const std::string& _locale) override;
+			void login_normalize_phone(int64_t _seq, const std::string& _country, const std::string& _raw_phone, const std::string& _locale, bool _is_login) override;
 			std::string get_contact_friendly_name(const std::string& contact_login) override;
 
 			// events
-			void on_login_result(int32_t err);
+			void on_login_result(int64_t _seq, int32_t err);
+            void on_login_result_attach_uin(int64_t _seq, int32_t err, const auth_parameters& auth_params, const wim_packet_params& _from_params);
+
             void handle_net_error(int32_t err) override;
 
 			void on_event_buddies_list(fetch_event_buddy_list* _event, std::shared_ptr<auto_callback> _on_complete);
@@ -489,9 +504,12 @@ namespace core
 			virtual void search_contacts(int64_t _seq, const core::search_params& _filters) override;
             virtual void search_contacts2(int64_t _seq, const std::string& keyword, const std::string& phonenumber, const std::string& tag) override;
 			virtual void get_profile(int64_t _seq, const std::string& _contact) override;
-
+            
+			virtual const wim_packet_params make_wim_params() override;
+            virtual const wim_packet_params make_wim_params_general(bool _is_current_auth_params) override;
 			im(const im_login_id& _login, voip_manager::VoipManager& _voip_manager);
 			virtual ~im();
+            virtual void load_flags(const int64_t _seq) override;
 		};
 	}
 }

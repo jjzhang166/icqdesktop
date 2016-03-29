@@ -10,7 +10,6 @@ namespace installer
         {
             Q_OBJECT
 
-
 Q_SIGNALS:
 
             void progress(int);
@@ -21,6 +20,8 @@ Q_SIGNALS:
         protected:
 
             int progress_;
+            bool delete_8x_files_on_final_;
+            bool delete_8x_self_on_final_;
 
             void reset_watcher();
             std::unique_ptr<QFutureWatcher<installer::error>> current_task_watcher_;
@@ -59,9 +60,16 @@ Q_SIGNALS:
             void uninstall();
             void uninstalltmp();
             void clear_updates();
-            void autoupdate_from_8x();
-            void set_installed_flag_8x();
+
+            void update_from_8x_step_1();
+            void update_from_8x_step_2();
+
             void copy_self_to_bin_8x();
+
+            bool is_delete_8x_files_on_final() const { return delete_8x_files_on_final_; }
+            void set_delete_8x_files_on_final(bool _val) { delete_8x_files_on_final_ = _val; }
+            bool is_delete_8x_self_on_final() const { return delete_8x_self_on_final_; }
+            void set_delete_8x_self_on_final(bool _val) { delete_8x_self_on_final_ = _val; }
 
             worker();
             virtual ~worker();

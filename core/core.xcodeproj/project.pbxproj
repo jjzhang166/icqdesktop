@@ -13,6 +13,13 @@
 		184401811C7E044400A6C3E8 /* fetch_event_permit.h in Headers */ = {isa = PBXBuildFile; fileRef = 1844017F1C7E044400A6C3E8 /* fetch_event_permit.h */; };
 		184401841C7E047700A6C3E8 /* get_permit_deny.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 184401821C7E047700A6C3E8 /* get_permit_deny.cpp */; };
 		184401851C7E047700A6C3E8 /* get_permit_deny.h in Headers */ = {isa = PBXBuildFile; fileRef = 184401831C7E047700A6C3E8 /* get_permit_deny.h */; };
+		186E3D6E1CA0491000AB8721 /* boost.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 186E3D6D1CA0491000AB8721 /* boost.a */; };
+		188871401CA9413E004059BF /* attach_phone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1888713C1CA9413E004059BF /* attach_phone.cpp */; };
+		188871411CA9413E004059BF /* attach_phone.h in Headers */ = {isa = PBXBuildFile; fileRef = 1888713D1CA9413E004059BF /* attach_phone.h */; };
+		188871421CA9413E004059BF /* attach_uin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1888713E1CA9413E004059BF /* attach_uin.cpp */; };
+		188871431CA9413E004059BF /* attach_uin.h in Headers */ = {isa = PBXBuildFile; fileRef = 1888713F1CA9413E004059BF /* attach_uin.h */; };
+		188871461CA941DC004059BF /* get_flags.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 188871441CA941DC004059BF /* get_flags.cpp */; };
+		188871471CA941DC004059BF /* get_flags.h in Headers */ = {isa = PBXBuildFile; fileRef = 188871451CA941DC004059BF /* get_flags.h */; };
 		18AA232D1C0F58C300A4A5CC /* imstat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18AA232B1C0F58C300A4A5CC /* imstat.cpp */; };
 		18AA232E1C0F58C300A4A5CC /* imstat.h in Headers */ = {isa = PBXBuildFile; fileRef = 18AA232C1C0F58C300A4A5CC /* imstat.h */; };
 		18AA23411C107AC100A4A5CC /* send_imstat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18AA233F1C107AC100A4A5CC /* send_imstat.cpp */; };
@@ -45,7 +52,6 @@
 		86740DEB1BDA792900907500 /* VoipManagerDefines.h in Headers */ = {isa = PBXBuildFile; fileRef = 86740DE61BDA792800907500 /* VoipManagerDefines.h */; };
 		86740DEC1BDA792900907500 /* VoipManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 86740DE81BDA792800907500 /* VoipManager.h */; };
 		86740DED1BDA792900907500 /* VoipSerialization.h in Headers */ = {isa = PBXBuildFile; fileRef = 86740DE91BDA792800907500 /* VoipSerialization.h */; };
-		867929B81BD8EC1C0072B080 /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 867929B51BD8EBC20072B080 /* boost.framework */; };
 		867C0B8A1C490E2E006D1161 /* themes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 867C0B881C490E2E006D1161 /* themes.cpp */; };
 		867C0B8B1C490E2E006D1161 /* themes.h in Headers */ = {isa = PBXBuildFile; fileRef = 867C0B891C490E2E006D1161 /* themes.h */; };
 		867C0B8F1C492DE5006D1161 /* get_themes_index.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 867C0B8D1C492DE5006D1161 /* get_themes_index.cpp */; };
@@ -269,6 +275,13 @@
 		1844017F1C7E044400A6C3E8 /* fetch_event_permit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fetch_event_permit.h; sourceTree = "<group>"; };
 		184401821C7E047700A6C3E8 /* get_permit_deny.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = get_permit_deny.cpp; sourceTree = "<group>"; };
 		184401831C7E047700A6C3E8 /* get_permit_deny.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = get_permit_deny.h; sourceTree = "<group>"; };
+		186E3D6D1CA0491000AB8721 /* boost.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = boost.a; path = ../external/mac/boost/lib/boost.a; sourceTree = "<group>"; };
+		1888713C1CA9413E004059BF /* attach_phone.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = attach_phone.cpp; sourceTree = "<group>"; };
+		1888713D1CA9413E004059BF /* attach_phone.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = attach_phone.h; sourceTree = "<group>"; };
+		1888713E1CA9413E004059BF /* attach_uin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = attach_uin.cpp; sourceTree = "<group>"; };
+		1888713F1CA9413E004059BF /* attach_uin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = attach_uin.h; sourceTree = "<group>"; };
+		188871441CA941DC004059BF /* get_flags.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = get_flags.cpp; sourceTree = "<group>"; };
+		188871451CA941DC004059BF /* get_flags.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = get_flags.h; sourceTree = "<group>"; };
 		18AA232B1C0F58C300A4A5CC /* imstat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = imstat.cpp; sourceTree = "<group>"; };
 		18AA232C1C0F58C300A4A5CC /* imstat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = imstat.h; sourceTree = "<group>"; };
 		18AA233F1C107AC100A4A5CC /* send_imstat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = send_imstat.cpp; sourceTree = "<group>"; };
@@ -301,7 +314,6 @@
 		86740DE61BDA792800907500 /* VoipManagerDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoipManagerDefines.h; path = Voip/VoipManagerDefines.h; sourceTree = "<group>"; };
 		86740DE81BDA792800907500 /* VoipManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoipManager.h; path = Voip/VoipManager.h; sourceTree = "<group>"; };
 		86740DE91BDA792800907500 /* VoipSerialization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoipSerialization.h; path = Voip/VoipSerialization.h; sourceTree = "<group>"; };
-		867929B51BD8EBC20072B080 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../icq.desktop-ext/boost.framework"; sourceTree = "<group>"; };
 		867C0B881C490E2E006D1161 /* themes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = themes.cpp; path = themes/themes.cpp; sourceTree = "<group>"; };
 		867C0B891C490E2E006D1161 /* themes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = themes.h; path = themes/themes.h; sourceTree = "<group>"; };
 		867C0B8D1C492DE5006D1161 /* get_themes_index.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = get_themes_index.cpp; sourceTree = "<group>"; };
@@ -526,9 +538,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				5D9753111C0F18B3007A59FA /* libvoip_x64.a in Frameworks */,
+				186E3D6E1CA0491000AB8721 /* boost.a in Frameworks */,
 				5D2AEF2D1C10407A00CC7BF8 /* libippvc_l.a in Frameworks */,
 				5D2AEF291C10403100CC7BF8 /* libippcore_l.a in Frameworks */,
-				867929B81BD8EC1C0072B080 /* boost.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -587,6 +599,7 @@
 		D5DFA0FB1BC4097300A656D2 = {
 			isa = PBXGroup;
 			children = (
+				186E3D6D1CA0491000AB8721 /* boost.a */,
 				5D2AEF2B1C10407A00CC7BF8 /* libippvc_l.a */,
 				5D2AEF281C10403100CC7BF8 /* libippcore_l.a */,
 				5D9753101C0F18B3007A59FA /* libvoip_x64.a */,
@@ -602,7 +615,6 @@
 				18D6D52F1C688CFE004C9B49 /* http_request.h */,
 				18D6D5301C688CFE004C9B49 /* statistics.cpp */,
 				18D6D5311C688CFE004C9B49 /* statistics.h */,
-				867929B51BD8EBC20072B080 /* boost.framework */,
 				D55389C91BC813090088FBA6 /* stickers */,
 				867C0B8C1C490E3A006D1161 /* themes */,
 				D5DFA25E1BC40D2700A656D2 /* archive */,
@@ -783,6 +795,12 @@
 		D5DFA29C1BC40D2800A656D2 /* packets */ = {
 			isa = PBXGroup;
 			children = (
+				188871441CA941DC004059BF /* get_flags.cpp */,
+				188871451CA941DC004059BF /* get_flags.h */,
+				1888713C1CA9413E004059BF /* attach_phone.cpp */,
+				1888713D1CA9413E004059BF /* attach_phone.h */,
+				1888713E1CA9413E004059BF /* attach_uin.cpp */,
+				1888713F1CA9413E004059BF /* attach_uin.h */,
 				184401821C7E047700A6C3E8 /* get_permit_deny.cpp */,
 				184401831C7E047700A6C3E8 /* get_permit_deny.h */,
 				95E220DC1C56523C00B5840E /* send_feedback.cpp */,
@@ -938,6 +956,7 @@
 				86B059DF1C05E64900396B65 /* app_config.h in Headers */,
 				865AE8BC1BE272CE0071193F /* search_contacts.h in Headers */,
 				D5DFA3A01BC40D2800A656D2 /* tlv.h in Headers */,
+				188871471CA941DC004059BF /* get_flags.h in Headers */,
 				D5DFA3541BC40D2800A656D2 /* get_sms_code.h in Headers */,
 				951CE8821C1B121D00A3B250 /* spam_report.h in Headers */,
 				D5DFA39A1BC40D2800A656D2 /* system.h in Headers */,
@@ -983,6 +1002,7 @@
 				95E220BE1C47BF7500B5840E /* end_session.h in Headers */,
 				D5DFA3921BC40D2800A656D2 /* scope.h in Headers */,
 				32E66AE71C789A1400E002BB /* speech_to_text.h in Headers */,
+				188871431CA9413E004059BF /* attach_uin.h in Headers */,
 				869E4A671C11EC5300A9CE17 /* fetch_event_my_info.h in Headers */,
 				D5DFA3801BC40D2800A656D2 /* profiler.h in Headers */,
 				865AE8B81BE271710071193F /* search_contacts_params.h in Headers */,
@@ -1043,6 +1063,7 @@
 				867C0B901C492DE5006D1161 /* get_themes_index.h in Headers */,
 				D5DFA3721BC40D2800A656D2 /* wim_im.h in Headers */,
 				86740DED1BDA792900907500 /* VoipSerialization.h in Headers */,
+				188871411CA9413E004059BF /* attach_phone.h in Headers */,
 				D5DFA3221BC40D2800A656D2 /* async_task.h in Headers */,
 				9566A2DC1C17079E00A5CBA4 /* fetch_event_user_added_to_buddy_list.h in Headers */,
 				D5DFA39C1BC40D2800A656D2 /* threadpool.h in Headers */,
@@ -1152,6 +1173,7 @@
 				D5DFA3831BC40D2800A656D2 /* stdafx.cpp in Sources */,
 				D5DFA34B1BC40D2800A656D2 /* gen_robusto_token.cpp in Sources */,
 				D5DFA3861BC40D2800A656D2 /* binary_stream.cpp in Sources */,
+				188871461CA941DC004059BF /* get_flags.cpp in Sources */,
 				86B059DE1C05E64900396B65 /* app_config.cpp in Sources */,
 				D5DFA3591BC40D2800A656D2 /* login_by_phone.cpp in Sources */,
 				D5DFA38A1BC40D2800A656D2 /* fast_binary_stream.cpp in Sources */,
@@ -1167,6 +1189,7 @@
 				D50504501BE91A7F006B4028 /* add_buddy.cpp in Sources */,
 				D5DFA3101BC40D2800A656D2 /* contact_archive.cpp in Sources */,
 				951CE87F1C1B121D00A3B250 /* set_permit_deny.cpp in Sources */,
+				188871401CA9413E004059BF /* attach_phone.cpp in Sources */,
 				9566A2C61C11788600A5CBA4 /* updater.cpp in Sources */,
 				D5DFA3731BC40D2800A656D2 /* wim_packet.cpp in Sources */,
 				D5DFA3301BC40D2800A656D2 /* fetch_event_buddy_list.cpp in Sources */,
@@ -1181,6 +1204,7 @@
 				D5DFA3151BC40D2800A656D2 /* history_message.cpp in Sources */,
 				18D6D5361C688CFE004C9B49 /* statistics.cpp in Sources */,
 				95CDDFCF1C3FC1CA00240739 /* fetch_event_typing.cpp in Sources */,
+				188871421CA9413E004059BF /* attach_uin.cpp in Sources */,
 				D5DFA3511BC40D2800A656D2 /* get_history.cpp in Sources */,
 				D5DFA3811BC40D2800A656D2 /* scheduler.cpp in Sources */,
 				D5DFA3471BC40D2800A656D2 /* client_login.cpp in Sources */,
@@ -1333,6 +1357,7 @@
 				HEADER_SEARCH_PATHS = (
 					../external/openssl/,
 					"../external/rapidjson-master/include",
+					../external/mac/boost/include,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1366,6 +1391,7 @@
 				HEADER_SEARCH_PATHS = (
 					../external/openssl/,
 					"../external/rapidjson-master/include",
+					../external/mac/boost/include,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

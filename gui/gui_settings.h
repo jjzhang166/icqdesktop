@@ -93,6 +93,8 @@ Q_SIGNALS:
             assert(false);
             return _default_value;
         }
+        
+        bool contains_value(const QString& _name) const;
                 
     private:
 

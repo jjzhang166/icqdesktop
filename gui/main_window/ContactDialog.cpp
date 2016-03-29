@@ -77,7 +77,12 @@ namespace Ui
             {
                 if (url.isLocalFile())
                 {
-                    if (!(platform::is_apple() && (QFileInfo(url.toLocalFile()).isBundle() || QFileInfo(url.toLocalFile()).isDir())))
+                    QFileInfo info(url.toLocalFile());
+                    bool canDrop = !(info.isBundle() || info.isDir());
+                    if (info.size() == 0)
+                        canDrop = false;
+
+                    if (canDrop)
                     {
                         Ui::GetDispatcher()->uploadSharedFile(contact, url.toLocalFile());
                         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::filesharing_dnd_dialog);
@@ -104,6 +109,7 @@ namespace Ui
 		, inputWidget_(new InputWidget(this))
 		, smilesMenu_(new Smiles::SmilesMenu(this))
         , dragOverlayWindow_(new DragOverlayWindow(this))
+        , overlayUpdateTimer_(new QTimer(this))
 	{
         setAcceptDrops(true);
 
@@ -131,6 +137,10 @@ namespace Ui
 
 		initSmilesMenu();
 		initInputWidget();
+
+        overlayUpdateTimer_->setInterval(500);
+        overlayUpdateTimer_->setSingleShot(false);
+        connect(overlayUpdateTimer_, SIGNAL(timeout()), this, SLOT(updateDragOverlay()), Qt::QueuedConnection);
 	}
 
 
@@ -169,6 +179,12 @@ namespace Ui
 		smilesMenu_->Hide();
 	}
 
+    void ContactDialog::updateDragOverlay()
+    {
+        if (!rect().contains(mapFromGlobal(QCursor::pos())))
+            hideDragOverlay();
+    }
+
     void ContactDialog::cancelSelection()
     {
         assert(historyControlWidget_);
@@ -177,6 +193,7 @@ namespace Ui
 
     void ContactDialog::hideInput()
     {
+        overlayUpdateTimer_->stop();
         inputWidget_->hide();
     }
 
@@ -187,6 +204,7 @@ namespace Ui
         dragOverlayWindow_->move(pos.x(),pos.y());
         dragOverlayWindow_->resize(width(), height());
         dragOverlayWindow_->show();
+        overlayUpdateTimer_->start();
     }
 
     void ContactDialog::hideDragOverlay()

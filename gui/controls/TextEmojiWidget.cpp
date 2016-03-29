@@ -505,6 +505,8 @@ namespace Ui
 	void TextEmojiWidget::resizeEvent(QResizeEvent *_e)
 	{
 		QWidget::resizeEvent(_e);
+        if (_e->oldSize().width() != -1 && _e->oldSize().height() != -1)
+            emit setSize(_e->size().width() - _e->oldSize().width(), _e->size().height() - _e->oldSize().height());
 	}
 
 	void TextEmojiWidget::mousePressEvent(QMouseEvent *_e)

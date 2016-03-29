@@ -4,8 +4,9 @@
 #include "VoipManagerDefines.h"
 #include <assert.h>
 #include <sstream>
+#include "../../corelib/collection_helper.h"
 
-static void operator>>(const voip2::ButtonType& type, core::coll_helper& coll) {
+inline void operator>>(const voip2::ButtonType& type, core::coll_helper& coll) {
     switch (type) {
     case voip2::ButtonType_Close: coll.set_value_as_string("button_type", "close"); return;
     default: assert(false); break;
@@ -18,7 +19,7 @@ inline void operator>>(const voip_manager::ButtonTap& button_tap, core::coll_hel
     button_tap.type >> coll;
 }
 
- void operator>>(const std::vector<std::string>& contacts, core::coll_helper& coll) {
+inline void operator>>(const std::vector<std::string>& contacts, core::coll_helper& coll) {
     for (unsigned ix = 0; ix < contacts.size(); ix++) {
         const std::string& contact = contacts[ix];
         if (contact.empty()) {
@@ -33,7 +34,7 @@ inline void operator>>(const voip_manager::ButtonTap& button_tap, core::coll_hel
     }
 }
 
-static void operator>>(const voip2::DeviceType& type, core::coll_helper& coll) {
+inline void operator>>(const voip2::DeviceType& type, core::coll_helper& coll) {
     const char* name = "device_type";
     switch (type) {
     case voip2::VideoCapturing: coll.set_value_as_string(name, "video_capture"); return;
@@ -44,7 +45,7 @@ static void operator>>(const voip2::DeviceType& type, core::coll_helper& coll) {
     }
 }
 
-static void operator>>(const voip2::LayoutType& type, core::coll_helper& coll) {
+inline void operator>>(const voip2::LayoutType& type, core::coll_helper& coll) {
     const char* name = "layout_type";
     switch (type) {
     case voip2::LayoutType_One: coll.set_value_as_string(name, "square_with_detach_preview"); return;
@@ -56,7 +57,7 @@ static void operator>>(const voip2::LayoutType& type, core::coll_helper& coll) {
     }
 }
 
-static void operator>>(const voip2::MouseTap& type, core::coll_helper& coll) {
+inline void operator>>(const voip2::MouseTap& type, core::coll_helper& coll) {
     const char* name = "mouse_tap_type";
     switch (type) {
     case voip2::MouseTap_Single: coll.set_value_as_string(name, "single"); return;
@@ -68,7 +69,7 @@ static void operator>>(const voip2::MouseTap& type, core::coll_helper& coll) {
     }
 }
 
-static void operator>>(const voip2::ViewArea& type, core::coll_helper& coll) {
+inline void operator>>(const voip2::ViewArea& type, core::coll_helper& coll) {
     const char* name = "view_area_type";
     switch (type) {
     case voip2::ViewArea_Primary: coll.set_value_as_string(name, "primary"); return;
@@ -144,7 +145,7 @@ inline void operator>>(const std::vector<voip_manager::device_description>& devi
     }
 }
 
-static void operator>>(const voip_manager::FrameSize& fs, core::coll_helper& coll) {
+inline void operator>>(const voip_manager::FrameSize& fs, core::coll_helper& coll) {
     coll.set_value_as_int64("wnd", fs.hwnd);
     coll.set_value_as_double("aspect_ratio", fs.aspect_ratio);
 }
@@ -170,12 +171,12 @@ inline void operator>>(const std::string& param, core::coll_helper& coll) {
     coll.set_value_as_string("param", param.c_str());
 }
 
-static void operator>>(const voip_manager::Contact& contact, core::coll_helper& coll) {
+inline void operator>>(const voip_manager::Contact& contact, core::coll_helper& coll) {
     coll.set_value_as_string("account", contact.account.c_str());
     coll.set_value_as_string("contact", contact.contact.c_str());
 }
 
-static void operator<<(voip_manager::Contact& contact, core::coll_helper& coll) {
+inline void operator<<(voip_manager::Contact& contact, core::coll_helper& coll) {
     contact.account = coll.get_value_as_string("account");
     contact.contact = coll.get_value_as_string("contact");
 

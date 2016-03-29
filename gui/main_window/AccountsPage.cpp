@@ -75,7 +75,6 @@ namespace Ui
             name_label->setObjectName("label_account_nick");
 
             name_layout->addWidget(name_label);
-            name_layout->addSpacing(8);
 
             QLabel* uin_label = new QLabel(this);
             uin_label->setText(format_uin(account_.uin()));
@@ -97,7 +96,7 @@ namespace Ui
         
         setFixedHeight(account_widget_height);
         
-        connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatar_loaded(QString)), Qt::QueuedConnection);
+//        connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatar_loaded(QString)), Qt::QueuedConnection);
     }
 
     void account_widget::avatar_loaded(QString uid)

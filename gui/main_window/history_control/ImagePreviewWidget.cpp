@@ -283,8 +283,12 @@ namespace HistoryControl
         return (State_ == State::Loaded);
     }
     
-    bool ImagePreviewWidget::isMessageBubbleVisible() const
+    bool ImagePreviewWidget::isImageBubbleVisible() const
     {
+        if (!PreviewsEnabled_)
+        {
+            return false;
+        }
         return (State_ != State::Error);
     }
 }

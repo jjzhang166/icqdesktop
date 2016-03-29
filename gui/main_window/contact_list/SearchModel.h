@@ -18,6 +18,7 @@ namespace Logic
 
     private Q_SLOTS:
         void avatarLoaded(QString);
+        void contactRemoved(QString contact);
 
 	public:
 		explicit SearchModel(QObject *parent);
@@ -28,6 +29,7 @@ namespace Logic
 		void setFocus() override;
 		const QStringList& GetPattern() const;
 		void emitChanged(int first, int last) override;
+
 	private:
 		std::vector<ContactItem> Match_;
 		QStringList SearchPatterns_;

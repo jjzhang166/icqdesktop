@@ -19,6 +19,7 @@
 #include "../../controls/FlatMenu.h"
 #include "../../controls/TextEditEx.h"
 #include "../../controls/LineEditEx.h"
+#include "../../controls/BackButton.h"
 
 namespace Ui
 {
@@ -33,12 +34,12 @@ namespace Ui
         static QList<QString> slist;
         if (slist.isEmpty())
         {
-            slist.push_back(QT_TRANSLATE_NOOP("settings_languages", "ru"));
-            slist.push_back(QT_TRANSLATE_NOOP("settings_languages", "en"));
-            slist.push_back(QT_TRANSLATE_NOOP("settings_languages", "uk"));
-            slist.push_back(QT_TRANSLATE_NOOP("settings_languages", "de"));
-            slist.push_back(QT_TRANSLATE_NOOP("settings_languages", "pt"));
-            slist.push_back(QT_TRANSLATE_NOOP("settings_languages", "cs"));
+            slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "ru"));
+            slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "en"));
+            slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "uk"));
+            slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "de"));
+            slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "pt"));
+            slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "cs"));
             assert(slist.size() == Utils::GetTranslator()->getLanguages().size());
         }
         return slist;
@@ -94,7 +95,7 @@ namespace Ui
 
     void GeneralSettingsWidget::Creator::addHeader(QWidget* parent, QLayout* layout, const QString& text)
     {
-        auto w = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(46));
+        auto w = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(50));
         w->setText(text);
         layout->addWidget(w);
         Utils::grabTouchWidget(w);
@@ -367,6 +368,30 @@ namespace Ui
             spl->addWidget(p);
         }
         layout->addWidget(sp);
+    }
+
+    void GeneralSettingsWidget::Creator::addBackButton(QWidget* parent, QLayout* layout, std::function<void()> _on_button_click)
+    {
+        auto backbutton_area = new QWidget(parent);
+        backbutton_area->setObjectName(QStringLiteral("backbutton_area"));
+        backbutton_area->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+        auto backbutton_area_layout = new QVBoxLayout(backbutton_area);
+        backbutton_area_layout->setObjectName(QStringLiteral("backbutton_area_layout"));
+        backbutton_area_layout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(24), 0, 0);
+
+        auto back_button = new BackButton(backbutton_area);
+        back_button->setObjectName(QStringLiteral("back_button"));
+        back_button->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+        back_button->setFlat(true);
+        back_button->setFocusPolicy(Qt::NoFocus);
+        back_button->setCursor(Qt::CursorShape::PointingHandCursor);
+        backbutton_area_layout->addWidget(back_button);
+
+        auto verticalSpacer = new QSpacerItem(Utils::scale_value(15), Utils::scale_value(543), QSizePolicy::Minimum, QSizePolicy::Expanding);
+        backbutton_area_layout->addItem(verticalSpacer);
+
+        layout->addWidget(backbutton_area);
+        connect(back_button, &QPushButton::clicked, _on_button_click);
     }
 
     void GeneralSettingsWidget::Creator::initGeneral(QWidget* parent, std::map<std::string, Synchronizator> &collector)
@@ -642,7 +667,7 @@ namespace Ui
 
         addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Wallpapers"));
     }
-    
+
     GeneralSettingsWidget::GeneralSettingsWidget(QWidget* parent):
         QStackedWidget(parent),
         general_(nullptr),
@@ -697,6 +722,16 @@ namespace Ui
         contactus_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initContactUs(contactus_, collector);
         addWidget(contactus_);
+
+        attachUin_ = new QWidget(this);
+        attachUin_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+        Creator::initAttachUin(attachUin_, collector);
+        addWidget(attachUin_);
+
+        attachPhone_ = new QWidget(this);
+        attachPhone_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+        Creator::initAttachPhone(attachPhone_, collector);
+        addWidget(attachPhone_);
 
         setCurrentWidget(general_);
 
@@ -775,13 +810,13 @@ namespace Ui
             setCurrentWidget(contactus_);
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::feedback_show);
         }
-        else if (type == Utils::CommonSettingsType::CommonSettingsType_ConnectPhone)
+        else if (type == Utils::CommonSettingsType::CommonSettingsType_AttachPhone)
         {
-            setCurrentWidget(connectPhone_);
+            setCurrentWidget(attachPhone_);
         }
-        else if (type == Utils::CommonSettingsType::CommonSettingsType_ConnectUin)
+        else if (type == Utils::CommonSettingsType::CommonSettingsType_AttachUin)
         {
-            setCurrentWidget(connectUin_);
+            setCurrentWidget(attachUin_);
         }
     }
 
@@ -866,9 +901,14 @@ namespace Ui
         }
     }
 
+    void GeneralSettingsWidget::hideEvent(QHideEvent *e)
+    {
+        QStackedWidget::hideEvent(e);
+    }
+
     void GeneralSettingsWidget::paintEvent(QPaintEvent* event)
     {
-        QWidget::paintEvent(event);
+        QStackedWidget::paintEvent(event);
 
         QPainter painter(this);
         painter.setBrush(QBrush(QColor("#ffffff")));

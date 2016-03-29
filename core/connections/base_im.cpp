@@ -154,6 +154,17 @@ std::wstring base_im::get_im_downloads_path(const std::string &alt)
 }
 
 // voip
+void core::base_im::on_voip_call_set_proxy(const voip_manager::VoipProxySettings& proxySettings) {
+#ifndef STRIP_VOIP
+	auto call_manager = voip_manager_.get_call_manager();
+	assert(!!call_manager);
+
+	if (!!call_manager) {
+        call_manager->call_set_proxy(proxySettings);
+	}
+#endif
+}
+
 void core::base_im::on_voip_call_start(std::string contact, bool video, bool attach) {
 #ifndef STRIP_VOIP
 	assert(!contact.empty());

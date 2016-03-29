@@ -39,6 +39,9 @@ namespace Ui
 		void onSmilesMenu();
 		void onInputEditFocusOut();
 
+    private Q_SLOTS:
+        void updateDragOverlay();
+
 	Q_SIGNALS:
 		void contactSelected(QString _aimId);
 		void sendMessage(QString);
@@ -48,6 +51,7 @@ namespace Ui
 		InputWidget*				inputWidget_;
 		Smiles::SmilesMenu*			smilesMenu_;
         DragOverlayWindow*          dragOverlayWindow_;
+        QTimer*                     overlayUpdateTimer_;
 
 		void initSmilesMenu();
 		void initInputWidget();

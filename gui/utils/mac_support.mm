@@ -501,6 +501,15 @@ void MacSupport::log(QString logString)
     NSLog(@"%@", logString_);
 }
 
+void MacSupport::replacePasteboard(const QString &text)
+{
+    NSPasteboard * pb = [NSPasteboard generalPasteboard];
+    
+    [pb clearContents];
+    [pb declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
+    [pb setString:fromQString(text) forType:NSPasteboardTypeString];
+}
+
 typedef const UCKeyboardLayout * LayoutsPtr;
 
 LayoutsPtr layoutFromSource(TISInputSourceRef source)

@@ -13,6 +13,8 @@ SOURCES += main.cpp
 
 CONFIG += 64
 
+QMAKE_LIBS_THREAD = -lxcb-util -lffi -lpcre -lexpat -lXext -lXau -lXdmcp -lz -Wl,-Bdynamic -ldl -lpthread -lX11
+
 QMAKE_LFLAGS += -Wl,-Bstatic -static-libgcc -static-libstdc++
 QMAKE_CXXFLAGS += -std=c++0x
 

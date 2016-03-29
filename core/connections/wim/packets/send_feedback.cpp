@@ -96,10 +96,20 @@ int32_t send_feedback::init_request(std::shared_ptr<core::http_request_simple> _
 
     for (auto f: fields_)
         _request->push_post_form_parameter(f.first, f.second);
-    for (auto a: attachments_) 
-        _request->push_post_form_file("fb.attachement", tools::wstring_to_string(tools::from_utf8(a)));
-    if (boost::filesystem::exists(to))
-        _request->push_post_form_file("fb.attachement", tools::wstring_to_string(tools::from_utf8(to.string())));
+    if (1) // SET AS DATA
+    {
+        for (auto a: attachments_)
+            _request->push_post_form_filedata(L"fb.attachement", tools::from_utf8(a));
+        if (boost::filesystem::exists(to))
+            _request->push_post_form_filedata(L"fb.attachement", to.wstring());
+    }
+    else // SET AS FILENAME
+    {
+        for (auto a: attachments_)
+            _request->push_post_form_file("fb.attachement", tools::wstring_to_string(tools::from_utf8(a)));
+        if (boost::filesystem::exists(to))
+            _request->push_post_form_file("fb.attachement", tools::wstring_to_string(tools::from_utf8(to.string())));
+    }
     _request->push_post_form_parameter("submit", "send");
     _request->push_post_form_parameter("r", core::tools::system::generate_guid());
 

@@ -22,7 +22,7 @@ namespace Ui
 		"QPushButton { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #a9a9a9; font-size: 16dip; background-color: #e4e4e4; border-style: none; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 32dip; min-height: 32dip; } ";
 
 	const QString main_button_noborder_style =
-		"QPushButton { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #ffffff; font-size: 16dip; background-color: #579e1c; border-style: none; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 32dip; min-height: 32dip; } QPushButton:hover { background-color: #57a813; } QPushButton:pressed { background-color: #50901b; } ";
+		"QPushButton { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #ffffff; font-size: 16dip; background-color: #579e1c; border-style: none; margin: 0; padding-left: 20dip; padding-right: 20dip; /*min-width: 100dip;*/ max-height: 32dip; min-height: 32dip; } QPushButton:hover { background-color: #57a813; } QPushButton:pressed { background-color: #50901b; } ";
 
 
     
@@ -60,6 +60,7 @@ public:
     void setActiveImage(const QString& _imageName);
     void setActive(bool _isActive);
 	void setFillColor(QColor);
+    QSize sizeHint() const override;
 };
     
 }

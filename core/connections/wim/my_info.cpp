@@ -16,6 +16,7 @@ namespace
 		userType,
 		phoneNumber,
 		flags,
+        autoCreated,
 	};
 }
 
@@ -54,7 +55,7 @@ int32_t my_info::unserialize(const rapidjson::Value& _node)
 	auto iter_flags = _node.FindMember("globalFlags");
 	if (iter_flags != _node.MemberEnd() && iter_flags->value.IsUint())
 		flags_ = iter_flags->value.GetUint();
-
+    
     if (state_ == "occupied" || state_ == "na" || state_ == "busy")
         state_ = "dnd";
     else if (state_ != "offline" && state_ != "invisible")

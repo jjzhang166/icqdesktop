@@ -100,6 +100,17 @@ namespace Ui
 		QPainter* Painter_;
 	};
 
+    class FocusableListView: public QListView
+    {
+    public:
+        FocusableListView(QWidget *parent = 0);
+        ~FocusableListView();
+        
+    protected:
+        virtual void enterEvent(QEvent *e) override;
+        virtual void leaveEvent(QEvent *e) override;
+    };
+    
 	class ContactList : public QWidget
 	{
 		Q_OBJECT
@@ -143,10 +154,11 @@ namespace Ui
         void hideNoContactsYet();
         void hideNoRecentsYet();
 
-        void typing(QString, QVector< QString >);
-        void stopTyping(QString, QVector< QString >, int);
-        void messagesReceived(QString, QVector< QString >);
-        void stopTyping(QString, QString);
+        void typingAimId(QString, QString);
+        void typingName(QString, QString);
+        void stopTypingAimId(QString, QString);
+        void stopTypingName(QString, QString);
+        void messagesReceived(QString, QVector<QString>);
         
 		void show_popup_menu(QAction* _action);
 
@@ -207,11 +219,11 @@ namespace Ui
         QSpacerItem *horizontal_spacer_2_;
         QStackedWidget *stacked_widget_;
         QWidget *recents_page_;
-        QListView *recents_view_;
+        FocusableListView *recents_view_;
         QWidget *contact_list_page_;
-        QListView *contact_list_view_;
+        FocusableListView *contact_list_view_;
         QWidget *search_page_;
-        QListView *search_view_;
+        FocusableListView *search_view_;
         QWidget *widget_;
         QFrame *frame_;
         QPushButton *all_tab_button_;

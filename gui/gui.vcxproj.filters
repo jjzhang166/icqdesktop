@@ -241,6 +241,10 @@
     <ClCompile Include="main_window\settings\AboutUs.cpp" />
     <ClCompile Include="main_window\settings\ContactUs.cpp" />
     <ClCompile Include="main_window\settings\Notifications.cpp" />
+    <ClCompile Include="main_window\contact_list\moc_CustomAbstractListModel.cpp" />
+    <ClCompile Include="main_window\contact_list\CustomAbstractListModel.cpp" />
+    <ClCompile Include="main_window\history_control\HistoryControlPageThemePanel.cpp" />
+    <ClCompile Include="main_window\history_control\moc_HistoryControlPageThemePanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common.shared\version_info_constants.h" />
@@ -384,6 +388,8 @@
     <ClInclude Include="main_window\history_control\MessageStyle.h" />
     <ClInclude Include="cache\themes\themes.h" />
     <ClInclude Include="..\common.shared\keys.h" />
+    <ClInclude Include="main_window\contact_list\CustomAbstractListModel.h" />
+    <ClInclude Include="main_window\history_control\HistoryControlPageThemePanel.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

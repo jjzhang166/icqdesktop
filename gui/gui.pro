@@ -165,7 +165,9 @@ SOURCES += \
     main_window/settings/themes/ThemeWidget.cpp \
     main_window/settings/Notifications.cpp \
     main_window/settings/AboutUs.cpp \
-    main_window/settings/ContactUs.cpp
+    main_window/settings/ContactUs.cpp \
+    main_window/contact_list/CustomAbstractListModel.cpp \
+    main_window/history_control/HistoryControlPageThemePanel.cpp
 
 HEADERS  += \
     app_config.h \
@@ -316,7 +318,9 @@ HEADERS  += \
     main_window/settings/themes/ThemesModel.h \
     main_window/settings/themes/ThemesSettingsWidget.h \
     main_window/settings/themes/ThemesWidget.h \
-    main_window/settings/themes/ThemeWidget.h
+    main_window/settings/themes/ThemeWidget.h \
+    main_window/contact_list/CustomAbstractListModel.h \
+    main_window/history_control/HistoryControlPageThemePanel.h
 
 DEFINES += STRIP_VOIP
 QMAKE_CXXFLAGS += -std=c++0x

@@ -96,7 +96,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>Ws2_32.lib;Wldap32.lib;..\external\curl\lib\libcurld.lib;..\external\openssl\debug\libeay32.lib;..\external\openssl\debug\ssleay32.lib;..\lib\cored.lib;Msimg32.lib;libvoip_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>corelib.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>$(SolutionDir)core\Voip\libvoip\lib\debug;%BOOST_LIB%;$(BOOST_LIB)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)core\Voip\libvoip\lib\debug;..\external\windows\boost\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -134,7 +134,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>Ws2_32.lib;Wldap32.lib;Msimg32.lib;..\external\curl\lib\libcurl.lib;..\external\openssl\libeay32.lib;..\external\openssl\ssleay32.lib;..\lib\core.lib;libvoip_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>corelib.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>$(BOOST_LIB);%BOOST_LIB%;$(SolutionDir)core\Voip\libvoip\lib\release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\external\windows\boost\lib;$(SolutionDir)core\Voip\libvoip\lib\release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

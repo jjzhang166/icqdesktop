@@ -7,7 +7,7 @@
 #include "../../utils/utils.h"
 #include "../../core_dispatcher.h"
 #include "../../utils/gui_coll_helper.h"
-
+#include "../../utils/InterConnector.h"
 
 namespace Logic
 {
@@ -17,6 +17,7 @@ namespace Logic
 	{
 		connect(Ui::GetDispatcher(), SIGNAL(searchResult(QStringList)), this, SLOT(searchResult(QStringList)), Qt::QueuedConnection);
         connect(GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatarLoaded(QString)), Qt::QueuedConnection);
+        connect(Ui::GetDispatcher(), SIGNAL(contactRemoved(QString)), this, SLOT(contactRemoved(QString)), Qt::QueuedConnection);
 	}
 
 	int SearchModel::rowCount(const QModelIndex &) const
@@ -45,7 +46,7 @@ namespace Logic
 		Match_.clear();
 	}
 
-	const QStringList& SearchModel::GetPattern() const
+    const QStringList& SearchModel::GetPattern() const
 	{
 		return SearchPatterns_;
 	}
@@ -105,6 +106,12 @@ namespace Logic
             }
             ++i;
         }
+    }
+
+    void SearchModel::contactRemoved(QString contact)
+    {
+        Match_.erase(std::remove_if(Match_.begin(), Match_.end(), [contact](const ContactItem& item) { return item.Get()->AimId_ == contact; }), Match_.end());
+        emitChanged(0, Match_.size());
     }
 
 	void SearchModel::emitChanged(int first, int last)

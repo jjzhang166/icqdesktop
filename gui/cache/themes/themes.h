@@ -15,7 +15,6 @@ class theme
     QPixmap thumb_;
     QPixmap image_;
     bool tile_;
-    QColor typing_color_;
     QColor spinner_color_;
     QColor edges_color_;
     bool is_image_loaded_;
@@ -24,7 +23,8 @@ public:
     theme(int _id, QString _tint_color, QByteArray& _imageData, QByteArray& _thumbData, const bool _tile);
     void unserialize(core::coll_helper _coll);
     void load_thumb(char* _data, int32_t _size);
-    QPixmap get_thumb() { return thumb_; }
+    QPixmap get_thumb() const { return thumb_; }
+    void set_thumb(QPixmap pixmap) { thumb_ = pixmap; }
     int get_id() const { return id_; }
     bool is_tile() const { return tile_; }
     QPixmap get_image() const {
@@ -33,7 +33,6 @@ public:
     }
     int get_position() const { return position_; }
     QColor get_tint_color();
-    QColor get_typing_color() { return typing_color_; }
     void initDefault();
     void set_image(QPixmap &_pixmap)
     {
@@ -48,8 +47,19 @@ public:
         return is_image_loaded_;
     }
     
+    void unload_image();
+    
     static QColor colorFromString(const char* _colorString);
     
+    struct contact_list_item {
+        QColor bg_color_;
+        QColor name_color_;
+        QColor message_color_;
+        QColor sender_color_;
+        QColor time_color_;
+        void unserialize(Ui::gui_coll_helper& coll);
+    } contact_list_item_;
+
     struct bubble {
         QColor bg1_color_;
         QColor bg2_color_;
@@ -104,6 +114,12 @@ public:
         QColor text_color_;
         void unserialize(Ui::gui_coll_helper& coll);
     } new_messages_bubble_;
+    
+    struct typing {
+        int light_gif_;
+        QColor text_color_;
+        void unserialize(Ui::gui_coll_helper& coll);
+    } typing_;
 };
 
 typedef std::shared_ptr<theme> themePtr;
@@ -118,6 +134,7 @@ public:
     void unserialize(const core::coll_helper &_coll);
     void set_theme_data(core::coll_helper _coll);
     themes_dict get_themes() { return themes_; }
+    void unload_unused_themes_images(std::set<int> used);
     
 private:
     themes_dict themes_;
@@ -126,6 +143,7 @@ private:
 
 void unserialize(core::coll_helper _coll);
 void set_theme_data(core::coll_helper _coll);
+void unload_unused_themes_images(std::set<int> used);
 themes_dict loaded_themes();
 
 UI_THEMES_NS_END

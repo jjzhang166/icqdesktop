@@ -83,7 +83,17 @@ namespace Ui
 		QMenu::popup(pos, at);
 	}
 
-    void ContextMenu::showEvent(QShowEvent *)
+    void ContextMenu::clear()
+    {
+        QMenu::clear();
+    }
+
+    void ContextMenu::hideEvent(QHideEvent *e)
+    {
+        QMenu::hideEvent(e);
+    }
+
+    void ContextMenu::showEvent(QShowEvent *e)
     {
 		if (InvertRight_ || Indent_ != 0)
 		{

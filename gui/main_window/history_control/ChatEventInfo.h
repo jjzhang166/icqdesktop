@@ -37,6 +37,8 @@ namespace HistoryControl
 
 		QString SenderFriendly_;
 
+        QString Generic_;
+
 		struct
 		{
 			QStringList MembersFriendly_;
@@ -45,6 +47,7 @@ namespace HistoryControl
 		struct
 		{
 			QString NewName_;
+            QString NewDescription_;
 		} Chat_;
 
 		ChatEventInfo(const core::chat_event_type type, const bool isOutgoing, const QString &myAimid);
@@ -52,6 +55,8 @@ namespace HistoryControl
 		QString formatEventTextInternal() const;
 
 		QString formatAddedToBuddyListText() const;
+
+        QString formatAvatarModifiedText() const;
 
 		QString formatBirthdayText() const;
 
@@ -61,9 +66,13 @@ namespace HistoryControl
 
 		QString formatChatNameModifiedText() const;
 
+        QString formatGenericText() const;
+
 		QString formatMchatAddMembersText() const;
 
 		QString formatMchatDelMembersText() const;
+
+        QString formatChatDescriptionModified() const;
 
 		QString formatMchatInviteText() const;
 
@@ -76,6 +85,10 @@ namespace HistoryControl
 		bool isMyAimid(const QString &aimId) const;
 
 		bool hasMultipleMembers() const;
+
+        void setGenericText(const QString &text);
+
+        void setNewDescription(const QString &newDescription);
 
 		void setNewName(const QString &newName);
 

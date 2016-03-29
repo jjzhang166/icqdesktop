@@ -24,24 +24,17 @@ namespace Ui
         , button_text_(_button_text)
         , disconnector_(new Utils::SignalsDisconnector)
 	{
-        if (platform::is_apple())
-        {
-            scene_ = this;
-        }
-        else
-        {
-            scene_ = this;
-        }
-        
-        auto global_layout = new QVBoxLayout(scene_);
+        auto global_layout = new QVBoxLayout(this);
         global_layout->setMargin(0);
 		global_layout->setSpacing(0);
         global_layout->setAlignment(Qt::AlignTop);
         
+        TextEmojiWidget *label = nullptr;
+        
         if (isShowLabel_)
         {
             {
-                auto host = new QWidget(scene_);
+                auto host = new QWidget(this);
                 auto host_layout = new QHBoxLayout(host);
                 host_layout->setContentsMargins(0, 0, 0, 0);
                 host_layout->setSpacing(0);
@@ -58,7 +51,7 @@ namespace Ui
                 global_layout->addWidget(host);
             }
             {
-                auto host = new QWidget(scene_);
+                auto host = new QWidget(this);
                 auto host_layout = new QHBoxLayout(host);
                 host_layout->setContentsMargins(Utils::scale_value(24), 0, Utils::scale_value(24), 0);
                 host_layout->setSpacing(0);
@@ -66,7 +59,7 @@ namespace Ui
                 host->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
                 host->setStyleSheet("background-color: white;");
                 {
-                    auto label = new TextEmojiWidget(_parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor(0x28, 0x28, 0x28), Utils::scale_value(24));
+                    label = new TextEmojiWidget(host, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor(0x28, 0x28, 0x28), Utils::scale_value(24));
                     label->setContentsMargins(0, 0, 0, 0);
                     label->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
                     label->setAutoFillBackground(false);
@@ -80,10 +73,10 @@ namespace Ui
 
         if (main_widget_)
             global_layout->addWidget(main_widget_);
-                
+        
         if (isShowButton_)
         {
-            auto bottom_widget = new QWidget(scene_);
+            auto bottom_widget = new QWidget(this);
             auto bottom_layout = new QHBoxLayout(bottom_widget);
             bottom_layout->setContentsMargins(0, Utils::scale_value(button_margin_), 0, Utils::scale_value(button_margin_));
             bottom_layout->setSpacing(0);
@@ -102,28 +95,33 @@ namespace Ui
                 bottom_layout->addWidget(next_button_);
             }
             global_layout->addWidget(bottom_widget);
-            
+
             Testing::setAccessibleName(next_button_, "next_button_");
         }
         
-        scene_->setStyleSheet("background-color: white; border: none;");
-        scene_->setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowSystemMenuHint);
-        scene_->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
-        scene_->setFixedWidth(Utils::scale_value(360));
+        this->setStyleSheet("background-color: white; border: none;");
+        this->setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowSystemMenuHint);
+        this->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
+        this->setFixedWidth(Utils::scale_value(360));
 
         if (main_widget_)
             main_widget_->setStyleSheet("background-color: white;");
 
-        Utils::addShadowToWindow(scene_, true);
+        Utils::addShadowToWindow(this, true);
 
         semi_window_ = new SemitransparentWindow(Ui::get_gui_settings(), nullptr);
         semi_window_->setShow(false);
         
         if (platform::is_apple())
         {
-            scene_->setFocusPolicy(Qt::FocusPolicy::WheelFocus);
+            this->setFocusPolicy(Qt::FocusPolicy::WheelFocus);
             QWidget::connect(semi_window_, SIGNAL(clicked()), this, SLOT(close()));
             QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupWindow()), this, SLOT(close()));
+            if (isShowLabel_)
+            {
+                // People are talking that this must be connected for any platform, not for mac only.
+                QWidget::connect(label, &TextEmojiWidget::setSize, [this](int, int dh) { setFixedHeight(height() + dh); });
+            }
         }
 	}
 
@@ -135,8 +133,8 @@ namespace Ui
     void GeneralDialog::on_resize_child(int _delta_w, int _delta_h)
     {
         const auto shadow_width = Ui::get_gui_settings()->get_shadow_width();
-        const auto old_height = (height_ == -1 ? (scene_->rect().height() - 2 * shadow_width) : height_);
-        const auto old_width = (width_ == -1 ? (scene_->rect().width() - 2 * shadow_width) : width_);
+        const auto old_height = (height_ == -1 ? (this->rect().height() - 2 * shadow_width) : height_);
+        const auto old_width = (width_ == -1 ? (this->rect().width() - 2 * shadow_width) : width_);
         updateParamsRoutine(old_width + _delta_w, old_height + _delta_h, x_, y_, is_semi_window_);
     }
 
@@ -171,12 +169,12 @@ namespace Ui
     {
         const auto shadow_width = Ui::get_gui_settings()->get_shadow_width();
         
-        scene_->layout()->setContentsMargins(0, 0, 0, 0);
+        this->layout()->setContentsMargins(0, 0, 0, 0);
         if (_width != -1)
-            scene_->setFixedWidth(_width + 2 * shadow_width);
+            this->setFixedWidth(_width + 2 * shadow_width);
         if (_height != -1)
-            scene_->setFixedHeight(_height + 2 * shadow_width);
-        scene_->move(_x, _y);
+            this->setFixedHeight(_height + 2 * shadow_width);
+        this->move(_x, _y);
 
         if (semi_window_)
             semi_window_->setShow(_is_semi_window);
@@ -186,6 +184,11 @@ namespace Ui
         x_ = _x;
         y_ =  _y;
         is_semi_window_ = _is_semi_window;
+    }
+
+    void GeneralDialog::showEvent(QShowEvent *e)
+    {
+        QDialog::showEvent(e);
     }
 
     void GeneralDialog::hideEvent(QHideEvent *e)
@@ -198,7 +201,7 @@ namespace Ui
     void GeneralDialog::mousePressEvent(QMouseEvent* e)
     {
         QDialog::mousePressEvent(e);
-        if (platform::is_apple() && !scene_->geometry().contains(mapToParent(e->pos())))
+        if (platform::is_apple() && !this->geometry().contains(mapToParent(e->pos())))
             close();
     }
 

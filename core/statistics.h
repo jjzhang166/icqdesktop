@@ -12,7 +12,12 @@ namespace core
 
     const static std::string flurry_url = "https://data.flurry.com/aah.do";
 
-    const static uint32_t send_interval_ms = 1000 * 20 * 1; // 6 hours for release, 1 for testing time
+#ifdef DEBUG
+    const static uint32_t send_interval_ms = 1000 * 20 * 1; // 20 seconds for debug
+#else 
+    const static uint32_t send_interval_ms = 1000 * 60 * 60; // 1 hour for release
+#endif // DEBUG
+
     const static uint32_t save_to_file_interval_ms = 1000 * 10; // 10 seconds
     const static uint32_t delay_send_on_start_ms = 1000 * 10; // 10 seconds
 

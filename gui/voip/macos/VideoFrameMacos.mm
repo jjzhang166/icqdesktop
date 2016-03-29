@@ -318,11 +318,17 @@ GraphicsPanelMacosImpl::GraphicsPanelMacosImpl(QWidget* parent, std::vector<QWid
     [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
     [[window standardWindowButton:NSWindowZoomButton] setHidden:YES];
     
-    window.titleVisibility = NSWindowTitleHidden;
-    window.titlebarAppearsTransparent = YES;
     window.movable = NO;
     window.movableByWindowBackground  = NO;
-    window.styleMask |= NSFullSizeContentViewWindowMask;
+    
+    if (QSysInfo().macVersion() >= QSysInfo::MV_10_10)
+    {
+        [window setValue:@(YES) forKey:@"titlebarAppearsTransparent"];
+        [window setValue:@(1) forKey:@"titleVisibility"];   
+//        window.titlebarAppearsTransparent = YES;
+//        window.titleVisibility = NSWindowTitleHidden;
+        window.styleMask |= (1 << 15);//NSFullSizeContentViewWindowMask;
+    }
     
     [parentView addSubview:_renderView];
 }

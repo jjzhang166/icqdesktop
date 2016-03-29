@@ -115,7 +115,7 @@ namespace Ui
         Painter_->setPen(QPen(QColor("#dadada"), Utils::scale_value(1)));
         Painter_->drawLine(contentsRect().topRight(), contentsRect().bottomRight());
         ::ContactList::RenderServiceContact(*Painter_, false /* Hover_ */, false /* Select_ */, false,
-            QT_TRANSLATE_NOOP("ignore_list", "You have no ignored contacts"), Data::ContactType::EMPTY_IGNORE_LIST);
+            QT_TRANSLATE_NOOP("profile_page", "You have no ignored contacts"), Data::ContactType::EMPTY_IGNORE_LIST);
         Painter_->end();
     }
 
@@ -271,6 +271,32 @@ namespace Ui
 		}
 	}
 
+    
+    FocusableListView::FocusableListView(QWidget *parent/* = 0*/): QListView(parent)
+    {
+        //
+    }
+    
+    FocusableListView::~FocusableListView()
+    {
+        //
+    }
+    
+    void FocusableListView::enterEvent(QEvent *e)
+    {
+        QListView::enterEvent(e);
+        if (platform::is_apple())
+            emit Utils::InterConnector::instance().forceRefreshList(model(), true);
+    }
+    
+    void FocusableListView::leaveEvent(QEvent *e)
+    {
+        QListView::leaveEvent(e);
+        if (platform::is_apple())
+            emit Utils::InterConnector::instance().forceRefreshList(model(), false);
+    }
+
+    
 	ContactList::ContactList(QWidget* parent, Logic::MembersWidgetRegim _regim, Logic::ChatMembersModel* _chatMembersModel)
 		: QWidget(parent)
 		, CurrentTab_(RECENTS)
@@ -310,7 +336,7 @@ namespace Ui
         vertical_layout_3_->setSpacing(0);
         vertical_layout_3_->setObjectName(QStringLiteral("verticalLayout_5"));
         vertical_layout_3_->setContentsMargins(0, 0, 0, 0);
-        recents_view_ = new QListView(recents_page_);
+        recents_view_ = new FocusableListView(recents_page_);
         recents_view_->setObjectName(QStringLiteral("recents_view"));
         recents_view_->setFrameShape(QFrame::NoFrame);
         recents_view_->setLineWidth(0);
@@ -337,7 +363,7 @@ namespace Ui
         vertical_layout_2_->setSpacing(0);
         vertical_layout_2_->setObjectName(QStringLiteral("verticalLayout_2"));
         vertical_layout_2_->setContentsMargins(0, 0, 0, 0);
-        contact_list_view_ = new QListView(contact_list_page_);
+        contact_list_view_ = new FocusableListView(contact_list_page_);
         contact_list_view_->setObjectName(QStringLiteral("contact_list_view"));
         QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Preferred);
         sizePolicy1.setHorizontalStretch(0);
@@ -393,12 +419,13 @@ namespace Ui
         vertical_layout_4_->setSpacing(0);
         vertical_layout_4_->setObjectName(QStringLiteral("verticalLayout_6"));
         vertical_layout_4_->setContentsMargins(0, 0, 0, 0);
-        search_view_ = new QListView(search_page_);
+        search_view_ = new FocusableListView(search_page_);
         search_view_->setObjectName(QStringLiteral("search_view"));
         search_view_->setFrameShape(QFrame::NoFrame);
         search_view_->setLineWidth(0);
         search_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         search_view_->setProperty("ContactListWidget", QVariant(true));
+        search_view_->setMouseTracking(true);
         search_view_->setCursor(Qt::PointingHandCursor);
         search_view_->setAcceptDrops(true);
         search_view_->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -555,10 +582,11 @@ namespace Ui
 			guiSettingsChanged();
 		}
         
-        connect(GetDispatcher(), SIGNAL(typing(QString, QVector< QString >)), this, SLOT(typing(QString, QVector< QString >)));
-        connect(GetDispatcher(), SIGNAL(stopTyping(QString, QVector< QString >, int)), this, SLOT(stopTyping(QString, QVector< QString >, int)));
-        connect(GetDispatcher(), SIGNAL(messagesReceived(QString, QVector< QString >)), this, SLOT(messagesReceived(QString, QVector< QString >)));
-        connect(&Utils::InterConnector::instance(), SIGNAL(stopTyping(QString, QString)), this, SLOT(stopTyping(QString, QString)));
+        connect(GetDispatcher(), SIGNAL(typingAimId(QString, QString)), this, SLOT(typingAimId(QString, QString)));
+        connect(GetDispatcher(), SIGNAL(typingName(QString, QString)), this, SLOT(typingName(QString, QString)));
+        connect(GetDispatcher(), SIGNAL(stopTypingAimId(QString, QString)), this, SLOT(stopTypingAimId(QString, QString)));
+        connect(GetDispatcher(), SIGNAL(stopTypingName(QString, QString)), this, SLOT(stopTypingName(QString, QString)));
+        connect(GetDispatcher(), SIGNAL(messagesReceived(QString, QVector<QString>)), this, SLOT(messagesReceived(QString, QVector<QString>)));
 	}
 
 	ContactList::~ContactList()
@@ -819,7 +847,12 @@ namespace Ui
                     {
                         if (url.isLocalFile())
                         {
-                            if (!(platform::is_apple() && (QFileInfo(url.toLocalFile()).isBundle() || QFileInfo(url.toLocalFile()).isDir())))
+                            QFileInfo info(url.toLocalFile());
+                            bool canDrop = !(info.isBundle() || info.isDir());
+                            if (info.size() == 0)
+                                canDrop = false;
+
+                            if (canDrop)
                             {
                                 Ui::GetDispatcher()->uploadSharedFile(data->AimId_, url.toLocalFile());
                                 Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::filesharing_dnd_recents);
@@ -855,7 +888,12 @@ namespace Ui
                     {
                         if (url.isLocalFile())
                         {
-                            if (!(platform::is_apple() && (QFileInfo(url.toLocalFile()).isBundle() || QFileInfo(url.toLocalFile()).isDir())))
+                            QFileInfo info(url.toLocalFile());
+                            bool canDrop = !(info.isBundle() || info.isDir());
+                            if (info.size() == 0)
+                                canDrop = false;
+
+                            if (canDrop)
                             {
                                 Ui::GetDispatcher()->uploadSharedFile(data.AimId_, url.toLocalFile());
                                 Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::filesharing_dnd_recents);
@@ -891,7 +929,12 @@ namespace Ui
                     {
                         if (url.isLocalFile())
                         {
-                            if (!(platform::is_apple() && (QFileInfo(url.toLocalFile()).isBundle() || QFileInfo(url.toLocalFile()).isDir())))
+                            QFileInfo info(url.toLocalFile());
+                            bool canDrop = !(info.isBundle() || info.isDir());
+                            if (info.size() == 0)
+                                canDrop = false;
+
+                            if (canDrop)
                             {
                                 Ui::GetDispatcher()->uploadSharedFile(data->AimId_, url.toLocalFile());
                                 Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::filesharing_dnd_recents);
@@ -1091,7 +1134,9 @@ namespace Ui
 			connect(popup_menu_, SIGNAL(triggered(QAction*)), this, SLOT(show_popup_menu(QAction*)));
 		}
         else
+        {
     		popup_menu_->clear();
+        }
         
         if (Logic::is_delete_members(regim_))
             return;
@@ -1129,7 +1174,9 @@ namespace Ui
 			connect(popup_menu_, SIGNAL(triggered(QAction*)), this, SLOT(show_popup_menu(QAction*)));
 		}
 		else
+        {
 			popup_menu_->clear();
+        }
 
 		Data::DlgState dlg = _current.data(Qt::DisplayRole).value<Data::DlgState>();
 		QString aimId = dlg.AimId_;
@@ -1420,26 +1467,44 @@ namespace Ui
         });
     }
     
-    void ContactList::typing(QString aimId, QVector< QString > chattersAimIds)
+    void ContactList::typingAimId(QString aimId, QString chatter)
     {
-        recents_delegate_->addTypersAimIds(aimId, chattersAimIds);
-        recents_view_->update();
+        auto name = chatter;
+        auto contact = Logic::GetContactListModel()->getContactItem(chatter);
+        if (contact)
+            name = contact->Get()->GetDisplayName();
+        typingName(aimId, name);
     }
-    
-    void ContactList::stopTyping(QString aimId, QVector< QString > chattersAimIds, int)
+    void ContactList::typingName(QString aimId, QString chatter)
     {
-        messagesReceived(aimId, chattersAimIds);
-    }
-
-    void ContactList::stopTyping(QString aimId, QString chatterAimId)
-    {
-        recents_delegate_->removeTyperAimId(aimId, chatterAimId);
+        recents_delegate_->addChatter(aimId, chatter);
         recents_view_->update();
     }
 
-    void ContactList::messagesReceived(QString aimId, QVector<QString> sendersAimIds)
+    void ContactList::stopTypingAimId(QString aimId, QString chatter)
     {
-        recents_delegate_->removeTypersAimIds(aimId, sendersAimIds);
+        auto name = chatter;
+        auto contact = Logic::GetContactListModel()->getContactItem(chatter);
+        if (contact)
+            name = contact->Get()->GetDisplayName();
+        stopTypingName(aimId, name);
+    }
+    void ContactList::stopTypingName(QString aimId, QString chatter)
+    {
+        recents_delegate_->removeChatter(aimId, chatter);
+        recents_view_->update();
+    }
+
+    void ContactList::messagesReceived(QString aimId, QVector<QString> chatters)
+    {
+        for (auto chatter: chatters)
+        {
+            auto name = chatter;
+            auto contact = Logic::GetContactListModel()->getContactItem(chatter);
+            if (contact)
+                name = contact->Get()->GetDisplayName();
+            recents_delegate_->removeChatter(aimId, name);
+        }
         recents_view_->update();
     }
 

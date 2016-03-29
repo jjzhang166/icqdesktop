@@ -17,6 +17,7 @@ namespace {
         kmenu_item_cam = 2
     };
 }
+#define ICON_SIZE Utils::scale_value(20)
 
 extern std::string getFotmatedTime(unsigned ts);
 
@@ -29,27 +30,27 @@ Ui::SliderEx::SliderEx(QWidget* parent)
     horizontal_layout_->setSpacing(0);
     horizontal_layout_->setObjectName(QStringLiteral("horizontalLayout"));
     horizontal_layout_->setContentsMargins(0, 0, 0, 0);
-    slider_icon_ = new voipTools::BoundBox<QPushButton>(this);
+
+    slider_icon_ = new voipTools::BoundBox<PushButton_t>(this);
     slider_icon_->setObjectName(QStringLiteral("sliderIcon"));
     QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(slider_icon_->sizePolicy().hasHeightForWidth());
+    //sizePolicy.setHorizontalStretch(0);
+    //sizePolicy.setVerticalStretch(0);
+    //sizePolicy.setHeightForWidth(slider_icon_->sizePolicy().hasHeightForWidth());
     slider_icon_->setSizePolicy(sizePolicy);
     
     horizontal_layout_->addWidget(slider_icon_);
     
     slider_ = new voipTools::BoundBox<QSlider>(this);
     slider_->setObjectName(QStringLiteral("slider"));
-    QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    sizePolicy1.setHorizontalStretch(0);
-    sizePolicy1.setVerticalStretch(0);
-    sizePolicy1.setHeightForWidth(slider_->sizePolicy().hasHeightForWidth());
+    QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    //sizePolicy1.setHorizontalStretch(0);
+    //sizePolicy1.setVerticalStretch(0);
+    //sizePolicy1.setHeightForWidth(slider_->sizePolicy().hasHeightForWidth());
     slider_->setSizePolicy(sizePolicy1);
     slider_->setOrientation(Qt::Horizontal);
     
     horizontal_layout_->addWidget(slider_);
-    
     slider_icon_->setText(QString());
     
     QMetaObject::connectSlotsByName(this);
@@ -64,6 +65,12 @@ Ui::SliderEx::SliderEx(QWidget* parent)
 
 Ui::SliderEx::~SliderEx(){
 
+}
+
+void Ui::SliderEx::setIconSize(const int w, const int h) {
+    if (!!slider_icon_) {
+        slider_icon_->setIconSize(w, h);
+    }
 }
 
 void Ui::SliderEx::onVolumeChanged(int v) {
@@ -89,6 +96,12 @@ void Ui::SliderEx::set_value(int v) {
 void Ui::SliderEx::set_property_for_icon(const char* name, bool val) {
     slider_icon_->setProperty(name, val);
     slider_icon_->setStyle(QApplication::style());
+}
+
+void Ui::SliderEx::setIconForState(const PushButton_t::eButtonState state, const std::string& image) {
+    if (!!slider_icon_) {
+        slider_icon_->setImageForState(state, image);
+    }
 }
 
 void Ui::SliderEx::set_property_for_slider(const char* name, bool val) {
@@ -165,7 +178,8 @@ Ui::CallPanelMain::CallPanelMain(QWidget* parent)
             SliderEx* slider = new SliderEx(&_menu);
             slider->setProperty("CallMenuItemCommon", true);
             slider->set_property_for_slider("VideoPanelVolumeSlider", true);
-            slider->set_property_for_icon("CallMenuItemButton", true);
+            slider->set_property_for_icon("CallMenuItemButtonAPlaybackOff", true);
+            slider->setIconSize(ICON_SIZE, ICON_SIZE);
 
             _menu.add_widget(kmenu_item_volume, slider);
             connect(slider, SIGNAL(onSliderValueChanged(int)), this, SLOT(onVolumeChanged(int)), Qt::QueuedConnection);
@@ -174,19 +188,23 @@ Ui::CallPanelMain::CallPanelMain(QWidget* parent)
         }
         
         {
-            QPushButton* btn = new voipTools::BoundBox<QPushButton>(&_menu);
+            PushButton_t* btn = new voipTools::BoundBox<PushButton_t>(&_menu);
             btn->setProperty("CallMenuItemCommon", true);
             btn->setProperty("CallMenuItemButton", true);
 			btn->setCursor(QCursor(Qt::PointingHandCursor));
+            btn->setOffsets(Utils::scale_value(12));
+            btn->setIconSize(ICON_SIZE, ICON_SIZE);
             _menu.add_widget(kmenu_item_mic, btn);
             connect(btn, SIGNAL(clicked()), this, SLOT(onMuteMicOnOffClicked()), Qt::QueuedConnection);
         }
         
         {
-            QPushButton* btn = new voipTools::BoundBox<QPushButton>(&_menu);
+            PushButton_t* btn = new voipTools::BoundBox<PushButton_t>(&_menu);
             btn->setProperty("CallMenuItemCommon", true);
             btn->setProperty("CallMenuItemButton", true);
+            btn->setOffsets(Utils::scale_value(12));
 			btn->setCursor(QCursor(Qt::PointingHandCursor));
+            btn->setIconSize(ICON_SIZE, ICON_SIZE);
             _menu.add_widget(kmenu_item_cam, btn);
             connect(btn, SIGNAL(clicked()), this, SLOT(onVideoOnOffClicked()), Qt::QueuedConnection);
         }
@@ -206,8 +224,14 @@ void Ui::CallPanelMain::onVoipMuteChanged(const std::string& device_type, bool m
     if (device_type == "audio_playback") {
         if (SliderEx* slider_vol = (SliderEx*)_menu.get_widget(kmenu_item_volume)) {
             slider_vol->set_enabled(!muted);
-            slider_vol->set_property_for_icon("CallMenuVolume_en", !muted);
-            slider_vol->set_property_for_icon("CallMenuVolume_dis", muted);
+            //slider_vol->set_property_for_icon("CallMenuVolume_en", !muted);
+            //slider_vol->set_property_for_icon("CallMenuVolume_dis", muted);
+            if (muted) {
+                slider_vol->setIconForState(PushButton_t::normal, ":/resources/dialog_sound_off_100.png");
+            } else {
+                slider_vol->setIconForState(PushButton_t::normal, ":/resources/dialog_sound_100.png");
+            }
+
             slider_vol->setStyle(QApplication::style());
 			slider_vol->setCursor(QCursor(Qt::PointingHandCursor));
         } else {
@@ -217,9 +241,13 @@ void Ui::CallPanelMain::onVoipMuteChanged(const std::string& device_type, bool m
 }
 
 void Ui::CallPanelMain::onVoipMediaLocalAudio(bool enabled) {
-    if (QPushButton* btn = (QPushButton*)_menu.get_widget(kmenu_item_mic)) {
-        btn->setProperty("CallMenuMuteDis", !enabled);
-        btn->setProperty("CallMenuMute", enabled);
+    if (PushButton_t* btn = (PushButton_t*)_menu.get_widget(kmenu_item_mic)) {
+        if (enabled) {
+            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_micro_100.png");
+        } else {
+            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_micro_off_100.png");
+        }
+
 		btn->setText(enabled ? QT_TRANSLATE_NOOP("voip_pages", "Turn off microphone") : QT_TRANSLATE_NOOP("voip_pages", "Turn on microphone"));
         btn->setStyle(QApplication::style());
 		btn->setCursor(QCursor(Qt::PointingHandCursor));
@@ -229,9 +257,13 @@ void Ui::CallPanelMain::onVoipMediaLocalAudio(bool enabled) {
 }
 
 void Ui::CallPanelMain::onVoipMediaLocalVideo(bool enabled) {
-    if (QPushButton* btn = (QPushButton*)_menu.get_widget(kmenu_item_cam)) {
-        btn->setProperty("CallMenuVideoDis", !enabled);
-		btn->setProperty("CallMenuVideo", enabled);
+    if (PushButton_t* btn = (PushButton_t*)_menu.get_widget(kmenu_item_cam)) {
+        if (enabled) {
+            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_video_100.png");
+        } else {
+            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_video_off_100.png");
+        }
+
         btn->setText(enabled ? QT_TRANSLATE_NOOP("voip_pages", "Turn off camera") : QT_TRANSLATE_NOOP("voip_pages", "Turn on camera"));
         btn->setStyle(QApplication::style());
     } else {
@@ -344,4 +376,71 @@ void Ui::CallPanelMain::onVoipCallNameChanged(const std::vector<voip_manager::Co
     assert(!name.empty());
 
     name_and_status_container_->setName(name.c_str());
+}
+
+Ui::PushButton_t::PushButton_t(QWidget* parent/* = NULL*/) 
+    : QPushButton(parent)
+    , fromIconToText_(0)
+    , iconW_(-1)
+    , iconH_(-1)
+    , currentState_(normal) {
+    
+}
+
+void Ui::PushButton_t::paintEvent(QPaintEvent*) {
+    QPainter painter(this);
+    QRect rcDraw = rect();
+    const QPixmap& icon   = !bitmapsForStates_[currentState_].isNull() ? bitmapsForStates_[currentState_] : bitmapsForStates_[normal];
+    const QString textStr = text();
+
+    if (!icon.isNull()) {
+        const int w = std::min(iconW_ >= 0 ? iconW_ : icon.width(),  rcDraw.width());
+        const int h = std::min(iconH_ >= 0 ? iconH_ : icon.height(), rcDraw.height());
+        const QRect iconRect(rcDraw.left(), (rcDraw.top() + rcDraw.bottom() - h) * 0.5f, w, h);
+
+        painter.drawPixmap(iconRect, icon);
+        rcDraw.setLeft(rcDraw.left() + w + fromIconToText_);
+    }
+
+    if (!textStr.isEmpty()) {
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::TextAntialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
+        painter.setFont(font());
+        painter.drawText(rcDraw, Qt::AlignVCenter | Qt::AlignLeft, textStr);
+
+        painter.end();
+    }
+}
+
+void Ui::PushButton_t::setIconSize(const int w, const int h) {
+    iconW_ = w;
+    iconH_ = h;
+}
+
+void Ui::PushButton_t::setImageForState(const eButtonState state, const std::string& image) {
+    assert(state >= 0);
+    assert(state < total);
+
+    if (image.empty()) {
+        bitmapsForStates_[state] = QPixmap();
+    } else {
+        bitmapsForStates_[state] = QPixmap(Utils::parse_image_name(image.c_str()));
+    }
+}
+
+void Ui::PushButton_t::setOffsets(int fromIconToText) {
+    fromIconToText_ = fromIconToText;
+}
+
+bool Ui::PushButton_t::event(QEvent *event) {
+    if (event->type() == QEvent::Enter)
+        (currentState_ = hovered), update();
+    else if (event->type() == QEvent::Leave)
+        (currentState_ = normal), update();
+    if (event->type() == QEvent::MouseButtonPress)
+        (currentState_ = pressed), update();
+
+    return QPushButton::event(event);
 }

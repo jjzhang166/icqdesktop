@@ -34,6 +34,8 @@ namespace HistoryControl
         virtual QSize sizeHint() const override;
 
         virtual bool haveContentMenu(QPoint) const override;
+        
+        bool isTextPresented();
 
     protected:
         const bool PreviewsEnabled_;

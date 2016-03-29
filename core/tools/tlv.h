@@ -10,6 +10,30 @@ namespace core
 
         typedef std::list<std::shared_ptr<tlv>> tlv_list;
 
+        template<class T, bool is_integral>
+        struct is_implementaion_defined_fundamental_impl
+        {
+            enum {value = true};
+        };
+
+        template<class T>
+        struct is_implementaion_defined_fundamental_impl<T, false>
+        {
+            enum {value = false};
+        };
+
+        template<class T>
+        struct is_implementaion_defined_fundamental
+        {
+            enum {value = is_implementaion_defined_fundamental_impl<T, std::numeric_limits<T>::is_integer>::value};
+        };
+
+        template<> struct is_implementaion_defined_fundamental<bool> { enum {value  = false}; };
+        template<> struct is_implementaion_defined_fundamental<int32_t> { enum {value  = false}; };
+        template<> struct is_implementaion_defined_fundamental<uint32_t> { enum {value  = false}; };
+        template<> struct is_implementaion_defined_fundamental<int64_t> { enum {value  = false}; };
+        template<> struct is_implementaion_defined_fundamental<uint64_t> { enum {value  = false}; };
+
         class tlvpack
         {
             tlv_list			tlvlist_;
@@ -91,6 +115,8 @@ namespace core
             const T_ &_val
         )
         {
+            static_assert(!is_implementaion_defined_fundamental<T_>::value, "Data Structure requires fixed-width types.");
+
             typedef typename std::conditional<
                 std::is_base_of<iserializable_tlv, T_>::value,
                 iserializable_tlv,

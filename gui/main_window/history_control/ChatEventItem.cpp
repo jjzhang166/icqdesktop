@@ -1,67 +1,98 @@
 #include "stdafx.h"
+
+#include "../../cache/themes/themes.h"
+#include "../../controls/DpiAwareImage.h"
+#include "../../controls/TextEditEx.h"
+#include "../../theme_settings.h"
+
+#include "../../utils/log/log.h"
+#include "../../utils/Text2DocConverter.h"
 #include "../../utils/utils.h"
+
 #include "ChatEventInfo.h"
 #include "ChatEventItem.h"
-#include "../../cache/themes/themes.h"
-#include "../../theme_settings.h"
 
 namespace Ui
 {
 
 	namespace
 	{
-		qint32 getBubbleRightPadding();
+		qint32 getBubbleHorPadding();
 
 		qint32 getBubbleRadius();
 
+        qint32 getIconLeftPadding();
+
         int32_t getMinBubbleOffset();
 
-		qint32 getTextLeftPadding();
+		qint32 getTextHorPadding();
 
 		qint32 getTextVertOffset();
 
-		const QFont& getWidgetFont();
-        
-        const Utils::FontsFamily getWidgetFontFamily();
+        Utils::FontsFamily getWidgetFontFamily();
 
-		qint32 getWidgetHeight();
+        int32_t getWidgetFontSize();
 
-		qint32 getIconLeftPadding();
+		qint32 getWidgetMinHeight();
 
 		qint32 getIconRightPadding();
+    }
 
-		qint32 getWidgetVertPadding();
-	}
+    ChatEventItem::~ChatEventItem()
+    {
+    }
 
     ChatEventItem::ChatEventItem(const HistoryControl::ChatEventInfoSptr& eventInfo)
         : HistoryControlPageItem(nullptr)
         , EventInfo_(eventInfo)
-        , CachedTextWidth_(0)
-        , emojer_(nullptr, getWidgetFontFamily(), Utils::scale_value(12) * qApp->devicePixelRatio(), QColor("#696969"), -1)
+        , TextWidget_(nullptr)
     {
     }
 
 	ChatEventItem::ChatEventItem(QWidget *parent, const HistoryControl::ChatEventInfoSptr& eventInfo)
 		: HistoryControlPageItem(parent)
 		, EventInfo_(eventInfo)
-		, CachedTextWidth_(0)
-		, emojer_(nullptr, getWidgetFontFamily(), Utils::scale_value(12) * qApp->devicePixelRatio(), QColor("#696969"), -1)
+		, TextWidget_(nullptr)
 	{
 		assert(EventInfo_);
 
-        emojer_.setText(eventInfo->formatEventText());
+        TextWidget_ = new TextEditEx(
+            this,
+            getWidgetFontFamily(),
+            getWidgetFontSize(),
+            QColor("#696969"),
+            false,
+            false
+        );
 
-        auto palette = QPalette(emojer_.palette());
-        palette.setBrush(QPalette::ColorRole::Background, QBrush(QColor(Qt::transparent)));
-        emojer_.setPalette(palette);
+        TextWidget_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        TextWidget_->setFrameStyle(QFrame::NoFrame);
+        TextWidget_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        TextWidget_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        TextWidget_->setOpenLinks(true);
+        TextWidget_->setOpenExternalLinks(true);
+        TextWidget_->setWordWrapMode(QTextOption::WordWrap);
+        TextWidget_->setFocusPolicy(Qt::NoFocus);
+        TextWidget_->setStyleSheet("background: transparent");
+        TextWidget_->document()->setDocumentMargin(0);
 
-		Icon_ = DpiAwareImage(
-			EventInfo_->loadEventIcon(
-				getWidgetHeight()
-			)
+        const auto &message = EventInfo_->formatEventText();
+        Logic::Text4Edit(message, *TextWidget_, Logic::Text2DocHtmlMode::Escape, true, true);
+
+        TextWidget_->setAlignment(Qt::AlignHCenter);
+        TextWidget_->show();
+
+        Icon_.reset(
+            new DpiAwareImage(
+			    EventInfo_->loadEventIcon(
+				    getWidgetMinHeight()
+			    )
+            )
 		);
 
-        setFixedHeight(sizeHint().height());
+        setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+        updateTheme();
 	}
 
 	QString ChatEventItem::formatRecentsText() const
@@ -69,12 +100,98 @@ namespace Ui
 		return EventInfo_->formatEventText();
 	}
 
-    QSize ChatEventItem::sizeHint() const
+    int32_t ChatEventItem::evaluateFullIconWidth()
     {
-        return QSize(
-            0,
-            getWidgetHeight() + (getWidgetVertPadding() * 2)
+        if (Icon_->isNull())
+        {
+            return 0;
+        }
+
+        auto fullIconWidth = getIconLeftPadding();
+        fullIconWidth += Icon_->width();
+        fullIconWidth += getIconRightPadding();
+
+        return fullIconWidth;
+    }
+
+    int32_t ChatEventItem::evaluateTextHeight(const int32_t textWidth)
+    {
+        assert(textWidth > 0);
+
+        auto &document = *TextWidget_->document();
+
+        if (TextWidget_->width() != textWidth)
+        {
+            TextWidget_->setFixedWidth(textWidth);
+            document.setTextWidth(textWidth);
+        }
+
+        return TextWidget_->getTextSize().height();
+    }
+
+    int32_t ChatEventItem::evaluateTextWidth(const int32_t widgetWidth)
+    {
+        assert(widgetWidth > 0);
+
+        const auto maxBubbleWidth = (
+            widgetWidth -
+            getBubbleHorPadding() -
+            getBubbleHorPadding()
         );
+
+        const auto maxBubbleContentWidth = (
+            maxBubbleWidth -
+            getTextHorPadding() -
+            getTextHorPadding()
+        );
+
+        const auto maxTextWidth = (
+            maxBubbleContentWidth -
+            evaluateFullIconWidth()
+        );
+
+        auto &document = *TextWidget_->document();
+
+        if (TextWidget_->width() != maxTextWidth)
+        {
+            TextWidget_->setFixedWidth(maxTextWidth);
+            document.setTextWidth(maxTextWidth);
+        }
+
+        const auto idealWidth = document.idealWidth();
+
+        const auto widthInfidelityFix = (
+            QFontMetrics(document.defaultFont()).averageCharWidth() * 2
+        );
+
+        const auto fixedWidth = (idealWidth + widthInfidelityFix);
+
+        return fixedWidth;
+    }
+
+    void ChatEventItem::updateTheme()
+    {
+        const auto theme = get_qt_theme_settings()->themeForContact(aimId_);
+        const auto textColor = theme->chat_event_.text_color_;
+
+        auto palette = TextWidget_->palette();
+
+        const auto textColorChanged = (
+            palette.color(QPalette::Text) != textColor
+        );
+        if (!textColorChanged)
+        {
+            return;
+        }
+
+        palette.setBrush(QPalette::Background, QBrush(Qt::transparent));
+        palette.setColor(QPalette::Text, textColor);
+        TextWidget_->setPalette(palette);
+
+        TextWidget_->document()->setDefaultFont(Utils::appFont(
+            getWidgetFontFamily(),
+            getWidgetFontSize()
+        ));
     }
 
 	void ChatEventItem::paintEvent(QPaintEvent*)
@@ -87,43 +204,16 @@ namespace Ui
 		p.setRenderHint(QPainter::SmoothPixmapTransform);
 		p.setRenderHint(QPainter::TextAntialiasing);
 
-		p.setPen(Qt::NoPen);
-        
-        auto theme = get_qt_theme_settings()->themeForContact(aimId_);
-        QColor backgroundColor = theme->chat_event_.bg_color_;
-        QColor textColor = theme->chat_event_.text_color_;
-        
-		p.setBrush(QBrush(backgroundColor));
-
-		p.drawRoundedRect(BubbleRect_, getBubbleRadius(), getBubbleRadius());
-
-		p.setPen(Qt::white);
-		p.setBrush(Qt::NoBrush);
-		p.setFont(getWidgetFont());
-        
-        emojer_.setColor(textColor);
-
-		auto cursorX = BubbleRect_.left();
-
-		if (Icon_)
+		if (!Icon_->isNull())
 		{
-			cursorX += getIconLeftPadding();
+			const auto iconX = (BubbleRect_.left() + getIconLeftPadding());
 
-			const auto iconY = (height() - Icon_.height()) / 2;
+			const auto iconY = (height() - Icon_->height()) / 2;
 
-			Icon_.draw(p, cursorX, iconY);
-
-			cursorX += Icon_.width();
-			cursorX += getIconRightPadding();
+			Icon_->draw(p, iconX, iconY);
 		}
-		else
-		{
-			cursorX += getTextLeftPadding();
-        }
 
-        auto pm = emojer_.grab();
-        pm.setDevicePixelRatio(qApp->devicePixelRatio());
-        p.drawPixmap(cursorX, getTextVertOffset(), pm);
+        updateTheme();
 	}
 
 	void ChatEventItem::resizeEvent(QResizeEvent *event)
@@ -131,64 +221,70 @@ namespace Ui
         HistoryControlPageItem::resizeEvent(event);
 
         const auto &newSize = event->size();
+        const auto newWidth = newSize.width();
 
-		setFixedWidth(newSize.width());
+        const auto &oldSize = event->oldSize();
 
-		QFontMetrics m(getWidgetFont());
-
-		assert(CachedTextWidth_ >= 0);
-		if (CachedTextWidth_ == 0)
-		{
-			const auto &text = EventInfo_->formatEventText();
-			assert(!text.isEmpty());
-
-			// a very slow operation, therefore cache the results.
-			CachedTextWidth_ = m.boundingRect(text).width();
-			assert(CachedTextWidth_ > 0);
-
-            CachedTextWidth_ += m.width(QChar(' ')); // workaround for TextEmojiWidget (margins?) bug
-		}
-
-		auto bubbleWidth = CachedTextWidth_ + getBubbleRightPadding();
-
-		if (Icon_)
-		{
-			bubbleWidth += getIconLeftPadding();
-			bubbleWidth += Icon_.width();
-			bubbleWidth += getIconRightPadding();
-		}
-		else
-		{
-			bubbleWidth += getTextLeftPadding();
-		}
-
-        const auto maxBubbleWidth = (newSize.width() - (getMinBubbleOffset() * 2));
-        bubbleWidth = std::min(maxBubbleWidth, bubbleWidth);
-
-		BubbleRect_ = QRect(0, 0, bubbleWidth, getWidgetHeight());
-		BubbleRect_.moveCenter(rect().center());
-
-        auto textWidth = BubbleRect_.width();
-
-        if (Icon_)
+        const auto sameWidth = (oldSize.width() == newWidth);
+        if (sameWidth)
         {
-            textWidth -= getIconLeftPadding();
-            textWidth -= Icon_.width();
-            textWidth -= getIconRightPadding();
+            return;
+        }
+
+        // setup the text control and get it dimensions
+        const auto textWidth = evaluateTextWidth(newWidth);
+        const auto textHeight = evaluateTextHeight(textWidth);
+        TextWidget_->setFixedSize(textWidth, textHeight);
+
+        // evaluate bubble width
+
+		auto bubbleWidth = 0;
+
+        if (Icon_->isNull())
+        {
+            bubbleWidth += getTextHorPadding();
         }
         else
         {
-            textWidth -= getTextLeftPadding();
+            bubbleWidth += evaluateFullIconWidth();
         }
 
-        textWidth -=  getBubbleRightPadding();
+        bubbleWidth += textWidth;
+        bubbleWidth += getTextHorPadding();
 
-        emojer_.setFixedWidth(textWidth * qApp->devicePixelRatio());
+        // evaluate bubble height
+
+        auto bubbleHeight = textHeight;
+        bubbleHeight += getTextVertOffset();
+        bubbleHeight += getTextVertOffset();
+
+		BubbleRect_ = QRect(0, 0, bubbleWidth, bubbleHeight);
+		BubbleRect_.moveCenter(QRect(0, 0, newWidth, bubbleHeight).center());
+
+        // setup geometry
+
+        setFixedSize(newWidth, bubbleHeight);
+
+        auto textWidgetLeft = BubbleRect_.left();
+
+        if (Icon_->isNull())
+        {
+            textWidgetLeft += getTextHorPadding();
+        }
+        else
+        {
+            textWidgetLeft += evaluateFullIconWidth();
+        }
+
+        TextWidget_->move(
+            textWidgetLeft,
+            BubbleRect_.top() + getTextVertOffset()
+        );
 	}
 
 	namespace
 	{
-		qint32 getBubbleRightPadding()
+		qint32 getBubbleHorPadding()
 		{
 			return Utils::scale_value(12);
 		}
@@ -200,10 +296,10 @@ namespace Ui
 
         int32_t getMinBubbleOffset()
         {
-            return Utils::scale_value(80);
+            return Utils::scale_value(24);
         }
 
-		qint32 getTextLeftPadding()
+		qint32 getTextHorPadding()
 		{
 			return Utils::scale_value(12);
 		}
@@ -213,23 +309,19 @@ namespace Ui
 			return Utils::scale_value(6);
 		}
 
-		const QFont& getWidgetFont()
-		{
-            static QFont font(
-                Utils::appFont(Utils::FontsFamily::SEGOE_UI_SEMIBOLD, Utils::scale_value(12))
-            );
-            
-            return font;
-		}
-        
-        const Utils::FontsFamily getWidgetFontFamily()
+        Utils::FontsFamily getWidgetFontFamily()
         {
             return Utils::FontsFamily::SEGOE_UI_SEMIBOLD;
         }
 
-		qint32 getWidgetHeight()
+        int32_t getWidgetFontSize()
+        {
+            return (Utils::scale_value(12) * qApp->devicePixelRatio());
+        }
+
+		qint32 getWidgetMinHeight()
 		{
-			return Utils::scale_value(20);
+			return Utils::scale_value(22);
 		}
 
 		qint32 getIconRightPadding()
@@ -242,10 +334,6 @@ namespace Ui
 			return Utils::scale_value(6);
 		}
 
-		qint32 getWidgetVertPadding()
-		{
-			return Utils::scale_value(4);
-		}
 	}
 
 };

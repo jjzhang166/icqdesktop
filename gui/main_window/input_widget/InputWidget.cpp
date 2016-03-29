@@ -200,7 +200,7 @@ namespace Ui
 
         Logic::GetContactListModel()->setInputText(contact_, input_text);
 
-        send_button_->setEnabled(!input_text.isEmpty());
+        send_button_->setEnabled(!input_text.trimmed().isEmpty());
         file_button_->setVisible(input_text.isEmpty());
 
         int doc_height = text_edit_->document()->size().height();
@@ -265,7 +265,12 @@ namespace Ui
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
         collection.set_value_as_qstring("contact", contact_);
-        QString text = text_edit_->getPlainText();
+        QString text = text_edit_->getPlainText().trimmed();
+        
+        if (text.length() == 0)
+        {
+            return;
+        }
         
         if ((unsigned)text.length() > Utils::get_input_maximum_chars())
             text.resize(Utils::get_input_maximum_chars());
@@ -307,6 +312,9 @@ namespace Ui
         for (const auto &filename : selectedFiles)
         {
             QFileInfo fileInfo(filename);
+            if (fileInfo.size() == 0)
+                continue;
+
             Ui::GetDispatcher()->uploadSharedFile(contact_, filename);
          
             core::stats::event_props_type props_file;

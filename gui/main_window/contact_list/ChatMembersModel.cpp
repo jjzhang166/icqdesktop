@@ -12,6 +12,7 @@
 #include "../../utils/utils.h"
 #include "../../core_dispatcher.h"
 #include "../../utils/gui_coll_helper.h"
+#include "../../utils/InterConnector.h"
 #include "../../my_info.h"
 #include "ContactListModel.h"
 #include "../../types/chat.h"
@@ -19,7 +20,7 @@
 namespace Logic
 {
     ChatMembersModel::ChatMembersModel(std::shared_ptr<Data::ChatInfo>& _info, QObject *_parent)
-        : QAbstractListModel(_parent)
+        : CustomAbstractListModel(_parent)
         , is_short_view_(true)
     {
         update_info(_info, false);
@@ -85,7 +86,7 @@ namespace Logic
         {           
             update_info(_info, true);
             is_full_list_loaded_ = true;
-            emit dataChanged(index(0), index(members_.size()));
+            emit dataChanged(index(0), index((int)members_.size()));
         }    
     }
 

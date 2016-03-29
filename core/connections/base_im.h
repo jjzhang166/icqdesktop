@@ -9,6 +9,7 @@ namespace voip_manager {
 	class VoipManager;
     struct VoipProtoMsg;
     struct WindowParams;
+    struct VoipProxySettings;
 }
 
 namespace core
@@ -25,6 +26,7 @@ namespace core
 
     namespace wim {
         class wim_packet;
+        struct wim_packet_params;
     }
 
 	namespace archive
@@ -83,12 +85,19 @@ namespace core
 		virtual std::wstring get_im_path() const = 0;
 
 		// login functions
-		virtual void login(const login_info& _info) = 0;
-		virtual void login_normalize_phone(int64_t _seq, const std::string& _country, const std::string& _raw_phone, const std::string& _locale) = 0;
-		virtual void login_get_sms_code(int64_t _seq, const phone_info& _info) = 0;
+		virtual void login(int64_t _seq, const login_info& _info) = 0;
+		virtual void login_normalize_phone(int64_t _seq, const std::string& _country, const std::string& _raw_phone, const std::string& _locale, bool _is_login) = 0;
+		virtual void login_get_sms_code(int64_t _seq, const phone_info& _info, bool _is_login) = 0;
 		virtual void login_by_phone(int64_t _seq, const phone_info& _info) = 0;
+
+        virtual void start_attach_uin(int64_t _seq, const login_info& _info, const wim::wim_packet_params& _from_params) = 0;
+        virtual void start_attach_phone(int64_t _seq, const phone_info& _info) = 0;
+
 		virtual std::string get_login() = 0;
         virtual void logout(std::function<void()> _on_result) = 0;
+
+        virtual const wim::wim_packet_params make_wim_params() = 0;
+        virtual const wim::wim_packet_params make_wim_params_general(bool _is_current_auth_params) = 0;
 
         virtual void erase_auth_data() = 0; // when logout
         virtual void start_session(bool _is_ping = false) = 0;
@@ -152,6 +161,7 @@ namespace core
 		// voip
 		//virtual void on_peer_list_updated(const std::vector<std::string>& peers) = 0;
 		virtual void on_voip_call_request_calls();
+        virtual void on_voip_call_set_proxy(const voip_manager::VoipProxySettings& proxySettings);
 		virtual void on_voip_call_start(std::string contact, bool video, bool attach);
 		virtual void on_voip_add_window(voip_manager::WindowParams& windowParams);
         virtual void on_voip_remove_window(void* hwnd);
@@ -225,6 +235,7 @@ namespace core
         
         // tools
         virtual void sign_url(int64_t _seq, const std::string& unsigned_url) = 0;
+        virtual void load_flags(const int64_t _seq) = 0;
 	};
 
 }

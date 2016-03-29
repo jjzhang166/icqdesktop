@@ -13,13 +13,19 @@ namespace core
         class binary_stream;
     }
 
-
+    struct file_binary_stream
+    {
+        std::wstring file_name_;
+        tools::binary_stream file_stream_;
+    };
+    
     class http_request_simple
     {
         std::function<bool()> is_stop_;
         std::map<std::string, std::string> post_parameters_;
         std::map<std::string, std::string> post_form_parameters_;
         std::multimap<std::string, std::string> post_form_files_;
+        std::multimap<std::string, file_binary_stream> post_form_filedatas_;
 
         std::string url_;
         std::list<std::string> custom_headers_;
@@ -44,6 +50,7 @@ namespace core
         bool keep_alive_;
 
         void clear_post_data();
+        std::string get_post_param() const;
         void set_post_params(curl_context* ctx);
         bool send_request(bool _post, bool switch_proxy = false);
 
@@ -64,6 +71,7 @@ namespace core
 
         void set_url(const std::wstring& url);
         void set_url(const std::string& url);
+        std::string get_post_url();
 
         void push_post_parameter(const std::wstring& name, const std::wstring& value);
         void push_post_parameter(const std::string& name, const std::string& value);
@@ -72,6 +80,7 @@ namespace core
         void push_post_form_parameter(const std::string& name, const std::string& value);
         void push_post_form_file(const std::wstring& name, const std::wstring& file_name);
         void push_post_form_file(const std::string& name, const std::string& file_name);
+        void push_post_form_filedata(const std::wstring& name, const std::wstring& file_name);
 
         void set_need_log(bool _need);
         void set_keep_alive();

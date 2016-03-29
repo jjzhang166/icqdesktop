@@ -89,7 +89,7 @@ namespace installer
 
         exported_data& get_exported_data();
 
-        void set_8x_update_downloaded();
+        installer::error set_8x_update_downloaded();
     }
 }
 

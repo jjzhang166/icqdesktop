@@ -30,12 +30,19 @@ namespace Logic
     {
         const auto searchMemberModel = qobject_cast<const Logic::SearchMembersModel*>(index.model());
         const auto membersModel = qobject_cast<const Logic::ChatMembersModel*>(index.model());
-
+        
         bool isGroup = false;
         QString displayName, status, state;
         QString aimId;
         bool haveLastSeen = false, isChecked = false, isChatMember = false;
         QDateTime lastSeen;
+        
+        bool hasMouseOver = true;
+        if (platform::is_apple())
+        {
+            if (const auto customModel = qobject_cast<const Logic::CustomAbstractListModel *>(index.model()))
+                hasMouseOver = customModel->customFlagIsSet(Logic::CustomAbstractListModelFlags::HasMouseOver);
+        }
 
         Data::Contact* contact_in_cl = NULL;
 
@@ -80,8 +87,8 @@ namespace Logic
         }
 
         const bool isSelected = ((option.state & QStyle::State_Selected) && !isGroup) && !StateBlocked_;
-        const bool isHovered =  ((option.state & QStyle::State_MouseOver) && !isGroup) && !StateBlocked_ && !isSelected;
-
+        const bool isHovered =  ((option.state & QStyle::State_MouseOver) && !isGroup) && !StateBlocked_ && !isSelected && hasMouseOver;
+        
         painter->save();
         painter->setRenderHint(QPainter::Antialiasing);
         painter->translate(option.rect.topLeft());

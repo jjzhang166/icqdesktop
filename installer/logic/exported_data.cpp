@@ -271,6 +271,8 @@ namespace installer
 
             if (_settings)
                 read_settings(base);
+
+            base.Close();
         }
         
         const accounts_list& exported_data::get_accounts() const
@@ -369,13 +371,17 @@ namespace installer
         }
 
 
-        void set_8x_update_downloaded()
+        installer::error set_8x_update_downloaded()
         {
             CRegKey icq_key;
             if (ERROR_SUCCESS != icq_key.Open(HKEY_CURRENT_USER, STR_CS_ICQ_MRA_KEY, KEY_SET_VALUE) != ERROR_SUCCESS)
-                return;
+            {
+                return installer::error(errorcode::open_registry_key);
+            }
 
-            auto res = icq_key.SetDWORDValue(STR_REG_INSTALLER_DOWNLOADED, 1);
+            icq_key.SetDWORDValue(STR_REG_INSTALLER_DOWNLOADED, 1);
+
+            return installer::error();
         }
     }
 }

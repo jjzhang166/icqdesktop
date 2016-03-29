@@ -7,120 +7,120 @@
 
 using namespace Ui;
 
-void GeneralSettingsWidget::Creator::initAbout(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/)
+void GeneralSettingsWidget::Creator::initAbout(QWidget* _parent, std::map<std::string, Synchronizator> &/*collector*/)
 {
-    auto scroll_area = new QScrollArea(parent);
-    scroll_area->setWidgetResizable(true);
-    Utils::grabTouchWidget(scroll_area->viewport(), true);
+    auto scrollArea = new QScrollArea(_parent);
+    scrollArea->setWidgetResizable(true);
+    Utils::grabTouchWidget(scrollArea->viewport(), true);
 
-    auto scroll_area_content = new QWidget(scroll_area);
-    scroll_area_content->setGeometry(QRect(0, 0, Utils::scale_value(800), Utils::scale_value(600)));
-    Utils::grabTouchWidget(scroll_area_content);
+    auto scrollAreaWidget = new QWidget(scrollArea);
+    scrollAreaWidget->setGeometry(QRect(0, 0, Utils::scale_value(800), Utils::scale_value(600)));
+    Utils::grabTouchWidget(scrollAreaWidget);
 
-    auto scroll_area_content_layout = new QVBoxLayout(scroll_area_content);
-    scroll_area_content_layout->setSpacing(0);
-    scroll_area_content_layout->setAlignment(Qt::AlignTop);
-    scroll_area_content_layout->setContentsMargins(Utils::scale_value(48), 0, 0, Utils::scale_value(48));
+    auto scrollAreaLayout = new QVBoxLayout(scrollAreaWidget);
+    scrollAreaLayout->setSpacing(0);
+    scrollAreaLayout->setAlignment(Qt::AlignTop);
+    scrollAreaLayout->setContentsMargins(Utils::scale_value(48), 0, 0, Utils::scale_value(48));
 
-    scroll_area->setWidget(scroll_area_content);
+    scrollArea->setWidget(scrollAreaWidget);
 
-    auto layout = new QHBoxLayout(parent);
+    auto layout = new QHBoxLayout(_parent);
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(scroll_area);
+    layout->addWidget(scrollArea);
 
-    addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "About ICQ"));
+    addHeader(scrollArea, scrollAreaLayout, QT_TRANSLATE_NOOP("settings_pages", "About ICQ"));
     {
-        auto p = new QWidget(scroll_area);
-        Utils::grabTouchWidget(p);
-        auto pl = new QHBoxLayout(p);
-        pl->setContentsMargins(0, Utils::scale_value(28), Utils::scale_value(48), 0);
-        pl->setSpacing(Utils::scale_value(32));
-        pl->setAlignment(Qt::AlignTop);
+        auto mainWidget = new QWidget(scrollArea);
+        Utils::grabTouchWidget(mainWidget);
+        auto mainLayout = new QHBoxLayout(mainWidget);
+        mainLayout->setContentsMargins(0, Utils::scale_value(28), Utils::scale_value(48), 0);
+        mainLayout->setSpacing(Utils::scale_value(32));
+        mainLayout->setAlignment(Qt::AlignTop);
         {
-            auto sp = new QWidget(p);
-            auto spl = new QVBoxLayout(sp);
-            Utils::grabTouchWidget(sp);
-            spl->setContentsMargins(0, 0, 0, 0);
-            spl->setSpacing(0);
-            spl->setAlignment(Qt::AlignTop);
+            auto logoWidget = new QWidget(mainWidget);
+            auto logoLayout = new QVBoxLayout(logoWidget);
+            Utils::grabTouchWidget(logoWidget);
+            logoLayout->setContentsMargins(0, 0, 0, 0);
+            logoLayout->setSpacing(0);
+            logoLayout->setAlignment(Qt::AlignTop);
             {
-                auto i = new QPushButton(sp);
-                i->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-                i->setFixedSize(QSize(Utils::scale_value(80), Utils::scale_value(80)));
-                i->setFlat(true);
-                i->setStyleSheet("border-image: url(:/resources/main_window/content_logo_200.png);");
-                spl->addWidget(i);
+                auto logo = new QPushButton(logoWidget);
+                logo->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
+                logo->setFixedSize(QSize(Utils::scale_value(80), Utils::scale_value(80)));
+                logo->setFlat(true);
+                logo->setStyleSheet("border-image: url(:/resources/main_window/content_logo_200.png);");
+                logoLayout->addWidget(logo);
             }
-            pl->addWidget(sp);
+            mainLayout->addWidget(logoWidget);
         }
         {
-            auto sp = new QWidget(p);
-            auto spl = new QVBoxLayout(sp);
-            Utils::grabTouchWidget(sp);
-            spl->setContentsMargins(0, 0, 0, 0);
-            spl->setSpacing(0);
-            spl->setAlignment(Qt::AlignTop);
+            auto aboutWidget = new QWidget(mainWidget);
+            auto aboutLayout = new QVBoxLayout(aboutWidget);
+            Utils::grabTouchWidget(aboutWidget);
+            aboutLayout->setContentsMargins(0, 0, 0, 0);
+            aboutLayout->setSpacing(0);
+            aboutLayout->setAlignment(Qt::AlignTop);
             {
                 //auto t = QString("%1 (%2 %3)").arg(QT_TRANSLATE_NOOP("settings_pages","ICQ")).arg(QT_TRANSLATE_NOOP("settings_pages","build")).arg(VERSION_INFO_STR);
-                auto t = QString("%1 (%2)").arg(QT_TRANSLATE_NOOP("settings_pages", "ICQ")).arg(VERSION_INFO_STR);
-                auto w = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), -1);
-                Utils::grabTouchWidget(w);
-                w->setText(t);
-                spl->addWidget(w);
+                auto versionLabel = QString("%1 (%2)").arg(QT_TRANSLATE_NOOP("settings_pages", "ICQ")).arg(VERSION_INFO_STR);
+                auto versionText = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), -1);
+                Utils::grabTouchWidget(versionText);
+                versionText->setText(versionLabel);
+                aboutLayout->addWidget(versionText);
             }
             {
-                auto w = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
-                Utils::grabTouchWidget(w);
-                w->set_multiline(true);
-                w->setText(QT_TRANSLATE_NOOP("settings_pages", "This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit"));
-                spl->addWidget(w);
+                auto opensslLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
+                Utils::grabTouchWidget(opensslLabel);
+                opensslLabel->set_multiline(true);
+                opensslLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit"));
+                aboutLayout->addWidget(opensslLabel);
             }
             {
-                auto b = new QPushButton(sp);
-                auto bl = new QVBoxLayout(b);
-                b->setFlat(true);
-                b->setStyleSheet("background-color: transparent;");
-                b->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Fixed);
-                b->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-                bl->setContentsMargins(0, 0, 0, 0);
-                bl->setSpacing(0);
-                bl->setAlignment(Qt::AlignTop);
+                auto opensslButton = new QPushButton(aboutWidget);
+                auto opensslLayout = new QVBoxLayout(opensslButton);
+                opensslButton->setFlat(true);
+                opensslButton->setStyleSheet("background-color: transparent;");
+                opensslButton->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Fixed);
+                opensslButton->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+                opensslLayout->setContentsMargins(0, 0, 0, 0);
+                opensslLayout->setSpacing(0);
+                opensslLayout->setAlignment(Qt::AlignTop);
                 {
-                    auto w = new TextEmojiWidget(b, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(28));
-                    Utils::grabTouchWidget(w);
-                    w->setText(QT_TRANSLATE_NOOP("settings_pages", "http://openssl.org"));
-                    connect(b, &QPushButton::pressed, [w]()
+                    auto opensslLink = new TextEmojiWidget(opensslButton, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(28));
+                    Utils::grabTouchWidget(opensslLink);
+                    opensslLink->setText(QT_TRANSLATE_NOOP("settings_pages", "http://openssl.org"));
+                    connect(opensslButton, &QPushButton::pressed, [opensslLink]()
                     {
-                        QDesktopServices::openUrl(w->text());
+                        QDesktopServices::openUrl(opensslLink->text());
                     });
-                    b->setFixedHeight(w->height());
-                    bl->addWidget(w);
+                    opensslButton->setFixedHeight(opensslLink->height());
+                    opensslLayout->addWidget(opensslLink);
                 }
-                spl->addWidget(b);
+                aboutLayout->addWidget(opensslButton);
             }
             {
-                auto w = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
-                Utils::grabTouchWidget(w);
-                w->set_multiline(true);
-                w->setText(QT_TRANSLATE_NOOP("settings_pages", "Copyright © 2012, the WebRTC project authors. All rights reserved."));
-                spl->addWidget(w);
+                auto voipCopyrightLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
+                Utils::grabTouchWidget(voipCopyrightLabel);
+                voipCopyrightLabel->set_multiline(true);
+                voipCopyrightLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "Copyright © 2012, the WebRTC project authors. All rights reserved."));
+                aboutLayout->addWidget(voipCopyrightLabel);
             }
             {
-                auto w = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(28));
-                Utils::grabTouchWidget(w);
-                w->set_multiline(true);
-                w->setText(QT_TRANSLATE_NOOP("settings_pages", "Emoji provided free by Emoji One"));
-                spl->addWidget(w);
+                auto emojiLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(28));
+                Utils::grabTouchWidget(emojiLabel);
+                emojiLabel->set_multiline(true);
+                emojiLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "Emoji provided free by Emoji One"));
+                aboutLayout->addWidget(emojiLabel);
             }
             {
-                auto w = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
-                Utils::grabTouchWidget(w);
-                w->setText(QT_TRANSLATE_NOOP("settings_pages", "© ICQ LLC") + ", " + QDate::currentDate().toString("yyyy"));
-                spl->addWidget(w);
+                auto copyrightLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
+                Utils::grabTouchWidget(copyrightLabel);
+                copyrightLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "© ICQ LLC") + ", " + QDate::currentDate().toString("yyyy"));
+                aboutLayout->addWidget(copyrightLabel);
             }
-            pl->addWidget(sp);
+            mainLayout->addWidget(aboutWidget);
         }
-        scroll_area_content_layout->addWidget(p);
+        scrollAreaLayout->addWidget(mainWidget);
     }
 }

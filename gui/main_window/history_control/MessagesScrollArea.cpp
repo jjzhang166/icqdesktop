@@ -139,6 +139,13 @@ namespace Ui
         );
     }
 
+    bool MessagesScrollArea::containsWidget(QWidget *widget) const
+    {
+        assert(widget);
+        
+        return Layout_->containsWidget(widget);
+    }
+
     void MessagesScrollArea::removeWidget(QWidget *widget)
     {
         assert(widget);
@@ -157,7 +164,10 @@ namespace Ui
     {
         stopScrollAnimation();
 
-        Layout_->setViewportByOffset(0);
+        if (!Layout_->isViewportAtBottom())
+        {
+            Layout_->setViewportByOffset(0);
+        }
 
         resetUserActivityTimer();
     }
@@ -252,7 +262,11 @@ namespace Ui
             }, true
         );
 
-        return (selection_text.isEmpty() ? first_message_text_only : (first_message_full + selection_text));
+        QString result = (selection_text.isEmpty() ? first_message_text_only : (first_message_full + selection_text));
+        if (!result.isEmpty() && result.endsWith("\n\n"))
+            result = result.left(result.length() - 1);
+
+        return result;
     }
 
     void MessagesScrollArea::mouseMoveEvent(QMouseEvent *e)

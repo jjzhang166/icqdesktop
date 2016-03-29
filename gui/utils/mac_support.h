@@ -41,6 +41,8 @@ public:
     static void getPossibleStrings(const QString& text, QStringList & result);
     
     static bool nativeEventFilter(const QByteArray &data, void *message, long *result);
+    
+    static void replacePasteboard(const QString & text);
 
     QMenuBar * createMenuBar(bool simple = false);
     void updateMainMenu();

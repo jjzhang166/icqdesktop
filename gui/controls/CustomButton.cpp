@@ -161,3 +161,11 @@ void Ui::CustomButton::setFillColor(QColor _color)
 	update();
 }
 
+QSize Ui::CustomButton::sizeHint() const
+{
+    QFontMetrics fm(font());
+    int width = fm.width(text());
+    int height = fm.height();
+    return QSize(width, height);
+}
+

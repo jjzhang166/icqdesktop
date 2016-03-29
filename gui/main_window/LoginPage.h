@@ -21,18 +21,19 @@ namespace Ui
 	Q_SIGNALS:
 		void country(QString);
 		void loggedIn();
+        void attached();
 
 	private Q_SLOTS:
 		void countrySelected(QString);
 		void nextPage();
-		void prevPage();
-		void switchLoginType();
 		void updateTimer();
 		void sendCode();
 		void setPhoneFocusIn();
 		void setPhoneFocusOut();
-		void getSmsResult(int);
-		void loginResult(int);
+		void getSmsResult(int64_t, int);
+		void loginResult(int64_t, int);
+		void loginResultAttachUin(int64_t, int);
+		void loginResultAttachPhone(int64_t, int);
 		void clearErrors();
 		void codeEditChanged(QString);
 		void countryCodeChanged(QString);
@@ -41,8 +42,12 @@ namespace Ui
         void stats_edit_phone();
         void stats_resend_sms();
 
+    public Q_SLOTS:
+		void prevPage();
+		void switchLoginType();
+
 	public:
-		LoginPage(QWidget* parent);
+		LoginPage(QWidget* parent, bool is_login);
 		~LoginPage();
         
         void enableKeepLogedIn();
@@ -55,6 +60,7 @@ namespace Ui
 		void init();
 		void initLoginSubPage(int index);
 		void setErrorText(int result);
+        void updateErrors(int result);
 
 	private:
 		QTimer*						timer_;
@@ -67,7 +73,6 @@ namespace Ui
 		QStackedWidget*				login_staked_widget_;
 		QPushButton*				next_page_link_;
 		QWidget*					country_search_widget_;
-//		QPushButton*				prev_page_link_;
         BackButton*                 prev_page_link_;
 		QPushButton*				edit_phone_button_;
 		QPushButton*				switch_login_link_;
@@ -80,5 +85,7 @@ namespace Ui
 		QLabel*						error_label_;
 		QLabel*						entered_phone_;
 		QLabel*						hint_label_;
+        bool                        is_login_;
+        int64_t                     send_seq_;
 	};
 }

@@ -41,7 +41,7 @@ int32_t wim_packet::execute()
     err = execute_request(request);
     if (err != 0)
         return err;
-    
+
     err = parse_response(request->get_response());
     if (err != 0)
         return err;
@@ -111,6 +111,11 @@ int32_t wim_packet::parse_response(std::shared_ptr<core::tools::binary_stream> r
 #ifdef DEBUG__OUTPUT_NET_PACKETS
         puts(json_str);
 #endif // DEBUG__OUTPUT_NET_PACKETS
+
+#ifdef DEBUG
+        const std::string json_str_dbg(json_str);
+#endif
+
         rapidjson::Document doc;
         if (doc.ParseInsitu(json_str).HasParseError())
             return wpie_error_parse_response;
@@ -118,7 +123,7 @@ int32_t wim_packet::parse_response(std::shared_ptr<core::tools::binary_stream> r
         auto iter_response = doc.FindMember("response");
         if (iter_response == doc.MemberEnd())
             return wpie_http_parse_response;
-        
+
         auto iter_status = iter_response->value.FindMember("statusCode");
         if (iter_status == iter_response->value.MemberEnd() || !iter_status->value.IsUint())
             return wpie_http_parse_response;

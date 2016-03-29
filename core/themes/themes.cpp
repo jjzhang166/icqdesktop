@@ -234,6 +234,29 @@ namespace core
         /* theme */
         theme::theme(std::wstring folder_path) : theme_id_(0), folder_path_(folder_path), tile_(false), position_(0) {}
         
+        void theme::contact_list_item::unserialize(const rapidjson::Value &_node)
+        {
+            auto iter_bg_color = _node.FindMember("BackgroundColor");
+            if (iter_bg_color != _node.MemberEnd() && iter_bg_color->value.IsString())
+                bg_color_ = iter_bg_color->value.GetString();
+
+            auto iter_name_color = _node.FindMember("ContactNameColor");
+            if (iter_name_color != _node.MemberEnd() && iter_name_color->value.IsString())
+                name_color_ = iter_name_color->value.GetString();
+
+            auto iter_message_color = _node.FindMember("MessageColor");
+            if (iter_message_color != _node.MemberEnd() && iter_message_color->value.IsString())
+                message_color_ = iter_message_color->value.GetString();
+
+            auto iter_sender_color = _node.FindMember("SenderNameColor");
+            if (iter_sender_color != _node.MemberEnd() && iter_sender_color->value.IsString())
+                sender_color_ = iter_sender_color->value.GetString();
+
+            auto iter_time_color = _node.FindMember("TimeColor");
+            if (iter_time_color != _node.MemberEnd() && iter_time_color->value.IsString())
+                time_color_ = iter_time_color->value.GetString();
+        }
+
         void theme::bubble::unserialize(const rapidjson::Value& _node)
         {
             auto iter_bgc1 = _node.FindMember("BackgroundColor1");
@@ -343,6 +366,17 @@ namespace core
                 bg_pressed_color_ = iter_bg_pressed_color->value.GetString();
         }
         
+        void theme::typing::unserialize(const rapidjson::Value &_node)
+        {
+            auto iter_text_color = _node.FindMember("TextColor");
+            if (iter_text_color != _node.MemberEnd() && iter_text_color->value.IsString())
+                text_color_ = iter_text_color->value.GetString();
+            
+            auto iter_light_gif = _node.FindMember("LightGif");
+            if (iter_light_gif != _node.MemberEnd() && iter_light_gif->value.IsString())
+                light_gif_ = std::stoi(iter_light_gif->value.GetString(), 0);
+        }
+        
         bool theme::unserialize(const rapidjson::Value& _node, const ThemesScale _themes_scale)
         {
             auto iter_id = _node.FindMember("ID");
@@ -418,6 +452,12 @@ namespace core
                     thumb_name_ = iter_thumb->value.GetString();
                 }
             }
+
+            auto iter_contact_list_item = _node.FindMember("ContactListItem");
+            if (iter_contact_list_item != _node.MemberEnd() && iter_contact_list_item->value.IsObject())
+            {
+                contact_list_item_.unserialize(iter_contact_list_item->value);
+            }
             
             auto iter_tile = _node.FindMember("Tile");
             if (iter_tile != _node.MemberEnd() && iter_tile->value.IsString())
@@ -491,6 +531,12 @@ namespace core
             if (iter_new_messages_bubble != _node.MemberEnd() && iter_new_messages_bubble->value.IsObject())
             {
                 new_messages_bubble_.unserialize(iter_new_messages_bubble->value);
+            }
+            
+            auto iter_typing = _node.FindMember("Typing");
+            if (iter_typing != _node.MemberEnd() && iter_typing->value.IsObject())
+            {
+                typing_.unserialize(iter_typing->value);
             }
             
             return true;
@@ -749,6 +795,14 @@ namespace core
                     thumb->write((uint8_t*)bs_thumb.read(file_size), file_size);
                     coll_theme.set_value_as_stream("thumb", thumb.get());
                 }
+
+                coll_helper contact_list_item_set(_coll->create_collection(), true); //
+                contact_list_item_set.set_value_as_string("bg_color", (*iter_theme)->contact_list_item_.bg_color_);
+                contact_list_item_set.set_value_as_string("name_color", (*iter_theme)->contact_list_item_.name_color_);
+                contact_list_item_set.set_value_as_string("message_color", (*iter_theme)->contact_list_item_.message_color_);
+                contact_list_item_set.set_value_as_string("sender_color", (*iter_theme)->contact_list_item_.sender_color_);
+                contact_list_item_set.set_value_as_string("time_color", (*iter_theme)->contact_list_item_.time_color_);
+                coll_theme.set_value_as_collection("contact_list_item", contact_list_item_set.get());
                 
                 coll_helper date_set(_coll->create_collection(), true);
                 date_set.set_value_as_string("bg_color", (*iter_theme)->date_.bg_color_);
@@ -800,10 +854,15 @@ namespace core
                 new_messages_bubble_set.set_value_as_string("bg_pressed_color", (*iter_theme)->new_messages_bubble_.bg_pressed_color_);
                 coll_theme.set_value_as_collection("new_messages_bubble", new_messages_bubble_set.get());
                 
-                coll_helper new_messages_plate_set(_coll->create_collection(), true); //
+                coll_helper new_messages_plate_set(_coll->create_collection(), true);
                 new_messages_plate_set.set_value_as_string("bg_color", (*iter_theme)->new_messages_plate_.bg_color_);
                 new_messages_plate_set.set_value_as_string("text_color", (*iter_theme)->new_messages_plate_.text_color_);
                 coll_theme.set_value_as_collection("new_messages_plate", new_messages_plate_set.get());
+                
+                coll_helper typing_set(_coll->create_collection(), true);
+                typing_set.set_value_as_int("light_gif", (*iter_theme)->typing_.light_gif_);
+                typing_set.set_value_as_string("text_color", (*iter_theme)->typing_.text_color_);
+                coll_theme.set_value_as_collection("typing", typing_set.get());
             }
             
             _coll.set_value_as_array("themes", sets_array.get());

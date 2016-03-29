@@ -56,6 +56,8 @@ namespace Ui
 
         bool isViewportFull() const;
 
+        bool containsWidget(QWidget *widget) const;
+
         void removeWidget(QWidget *widget);
 
         bool touchScrollInProgress() const;

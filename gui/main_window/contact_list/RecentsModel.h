@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CustomAbstractListModel.h"
+
 #include "../../types/contact.h"
 #include "../../types/message.h"
 
@@ -10,7 +12,7 @@ namespace Ui
 
 namespace Logic
 {
-	class RecentsModel : public QAbstractListModel
+	class RecentsModel : public CustomAbstractListModel
 	{
 		Q_OBJECT
 
@@ -23,12 +25,11 @@ namespace Logic
         void favoriteChanged(QString);
 
 	private Q_SLOTS:
-
 		void activeDialogHide(QString);
 		void contactChanged(QString);
 		void dlgState(Data::DlgState);
 		void sortDialogs();
-		
+
 	public:
 		explicit RecentsModel(QObject *parent);
 

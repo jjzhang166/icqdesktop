@@ -35,6 +35,8 @@ namespace Ui
         void contactSpam();
         
         void myInfo();
+        void recvFlags(int _flags);
+        void updateProfile();
 
     private:
         std::unique_ptr<UI> Ui_;

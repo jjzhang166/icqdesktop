@@ -29,4 +29,10 @@ namespace Ui
 
 		return QWidget::paintEvent(_e);
 	}
+
+    void ContactAvatarWidget::UpdateParams(const QString& _aimid, const QString& _display_name)
+    {
+        aimid_ = _aimid;
+        display_name_ = _display_name;
+    }
 }

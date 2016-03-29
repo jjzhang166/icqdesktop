@@ -27,7 +27,7 @@ namespace Ui
 
         setContextMenuPolicy(Qt::NoContextMenu);
 
-        setStyleSheet("QScrollBar::sub-page:vertical, QScrollBar::add-page:vertical { background: none; }");
+        //setStyleSheet("QScrollBar::sub-page:vertical, QScrollBar::add-page:vertical { background: none; }");
 
         setMaximum(0);
         setPageStep(100);

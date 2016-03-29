@@ -30,7 +30,7 @@ namespace HistoryControl
         
         bool isPreviewVisible() const;
         
-        bool isMessageBubbleVisible() const;
+        bool isImageBubbleVisible() const;
 
     protected:
         virtual void initialize() override;

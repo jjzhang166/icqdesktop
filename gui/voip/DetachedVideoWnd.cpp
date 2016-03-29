@@ -316,12 +316,14 @@ void Ui::UIEffects::fadeIn(unsigned interval) {
 #endif
 }
 
+#define SHOW_HEADER_PANEL false
+
 Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
     : AspectRatioResizebleWnd()
     , parent_(parent)
 	, closed_manualy_(false)
 	, show_panel_timer_(this)
-	, video_panel_header_(new VideoPanelHeader(this, kVPH_ShowClose)) {
+    , video_panel_header_effect_(NULL) {
 
         if (this->objectName().isEmpty())
             this->setObjectName(QStringLiteral("detachedVideoWnd"));
@@ -344,10 +346,18 @@ Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
         setAttribute(Qt::WA_X11DoNotAcceptFocus);
 #endif
 
-        video_panel_header_effect_ = new UIEffects(*video_panel_header_.get());
+        if (SHOW_HEADER_PANEL) {
+            video_panel_header_.reset(new VideoPanelHeader(this, kVPH_ShowNone));
+        }
+	    
+        if (!!video_panel_header_) {
+            video_panel_header_effect_ = new UIEffects(*video_panel_header_.get());
+        }
 #ifndef __linux__
         std::vector<QWidget*> panels;
-        panels.push_back(video_panel_header_.get());
+        if (!!video_panel_header_) {
+            panels.push_back(video_panel_header_.get());
+        }
         _rootWidget = platform_specific::GraphicsPanel::create(this, panels);
         _rootWidget->setContentsMargins(0, 0, 0, 0);
         //_rootWidget->setProperty("WidgetWithBG", true);
@@ -355,8 +365,11 @@ Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
         _rootWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         layout()->addWidget(_rootWidget);
 #endif //__linux__
+
         std::vector<QWidget*> topPanels;
-        topPanels.push_back(video_panel_header_.get());
+        if (!!video_panel_header_) {
+            topPanels.push_back(video_panel_header_.get());
+        }
         std::vector<QWidget*> bottomPanels;
         event_filter_ = new video_window::ResizeEventFilter(topPanels, bottomPanels, this);
 		installEventFilter(event_filter_);
@@ -367,12 +380,7 @@ Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
 		connect(&show_panel_timer_, SIGNAL(timeout()), this, SLOT(_check_panels_vis()), Qt::QueuedConnection);
 		show_panel_timer_.setInterval(1500);
 
-		assert(!!video_panel_header_);
 		if (!!video_panel_header_) {
-			//video_panel_header_->setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-			//video_panel_header_->setAttribute(Qt::WA_NoSystemBackground, true);
-			//video_panel_header_->setAttribute(Qt::WA_TranslucentBackground, true); 
-
             video_panel_header_->setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
             video_panel_header_->setAttribute(Qt::WA_NoSystemBackground, true);
             video_panel_header_->setAttribute(Qt::WA_TranslucentBackground, true);  
@@ -426,7 +434,9 @@ void Ui::DetachedVideoWindow::onPanelClickedMaximize() {
 
 void Ui::DetachedVideoWindow::onPanelMouseEnter() {
 	show_panel_timer_.stop();
-	video_panel_header_effect_->fadeIn(500);
+    if (video_panel_header_effect_) {
+	    video_panel_header_effect_->fadeIn(500);
+    }
 }
 
 void Ui::DetachedVideoWindow::onPanelMouseLeave() {
@@ -452,7 +462,9 @@ void Ui::DetachedVideoWindow::mouseMoveEvent(QMouseEvent* e) {
 void Ui::DetachedVideoWindow::enterEvent(QEvent* e) {
 	QWidget::enterEvent(e);
 	show_panel_timer_.stop();
-	video_panel_header_effect_->fadeIn(500);
+    if (video_panel_header_effect_) {
+    	video_panel_header_effect_->fadeIn(500);
+    }
 }
 
 void Ui::DetachedVideoWindow::leaveEvent(QEvent* e) {
@@ -502,10 +514,15 @@ void Ui::DetachedVideoWindow::hideFrame() {
 }
 
 void Ui::DetachedVideoWindow::showEvent(QShowEvent* e) {
-	video_panel_header_->show();
+    if (!!video_panel_header_) {
+	    video_panel_header_->show();
+    }
     QWidget::showEvent(e);
 	show_panel_timer_.stop();
-	video_panel_header_effect_->fadeIn(500);
+
+    if (video_panel_header_effect_) {
+        video_panel_header_effect_->fadeIn(500);
+    }
 	show_panel_timer_.start();
 }
 
@@ -514,7 +531,9 @@ bool Ui::DetachedVideoWindow::closedManualy() {
 }
 
 void Ui::DetachedVideoWindow::hideEvent(QHideEvent* e) {
-	video_panel_header_->hide();
+    if (!!video_panel_header_) {
+	    video_panel_header_->hide();
+    }
     QWidget::hideEvent(e);
 }
 
@@ -529,18 +548,11 @@ Ui::DetachedVideoWindow::~DetachedVideoWindow() {
 
 void Ui::DetachedVideoWindow::changeEvent(QEvent* e) {
     QWidget::changeEvent(e);
-
-    //if (e->type() == QEvent::ActivationChange) {
-    //    if (isActiveWindow()) {
-    //        video_panel_header_->blockSignals(true);
-    //        video_panel_header_->raise();
-    //        video_panel_header_->blockSignals(false);
-    //        //_video_panel_header->activateWindow();
-    //    }
-    //}
 }
 
 void Ui::DetachedVideoWindow::_check_panels_vis() {
 	show_panel_timer_.stop();
-	video_panel_header_effect_->fadeOut(500);
+    if (video_panel_header_effect_) {
+    	video_panel_header_effect_->fadeOut(500);
+    }
 }

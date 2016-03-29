@@ -14,7 +14,6 @@ theme::theme(int _id, QString _tint_color_string, QByteArray& _imageData, QByteA
     
     tile_ = _tile;
     
-    __INFO("themes", "_tint_color_string " << _tint_color_string << " (" << _id << ")");
     tint_color_ = colorFromString(_tint_color_string.toLatin1().data());
     
     QPixmap pi;
@@ -28,6 +27,7 @@ theme::theme(int _id, QString _tint_color_string, QByteArray& _imageData, QByteA
     QPixmap pt;
     pt.loadFromData(_thumbData);
     thumb_ = pt;
+    Utils::check_pixel_ratio(thumb_);
 }
 
 QColor theme::colorFromString(const char* _colorString)
@@ -47,6 +47,12 @@ void theme::initDefault()
     tile_ = true;
     tint_color_ = QColor(0xff, 0xff, 0xff, 0x00);
     
+    contact_list_item_.bg_color_ = QColor(0xff, 0xff, 0xff, 0xff);
+    contact_list_item_.name_color_ = QColor(0x28, 0x28, 0x28, 0xff);
+    contact_list_item_.message_color_ = QColor(0x69, 0x69, 0x69, 0xff);
+    contact_list_item_.sender_color_ = QColor(0x69, 0x69, 0x69, 0xff);
+    contact_list_item_.time_color_ = QColor(0x69, 0x69, 0x69, 0xff);
+
     incoming_bubble_.bg1_color_ = QColor(0xff, 0xff, 0xff, 0xff);
     incoming_bubble_.bg2_color_ = QColor(0xff, 0xff, 0xff, 0xb8);
     incoming_bubble_.text_color_ = QColor(0x28, 0x28, 0x28, 0xff);
@@ -81,7 +87,9 @@ void theme::initDefault()
     new_messages_plate_.bg_color_ = QColor(0x57, 0x9e, 0x1c, 0x7f);
     new_messages_plate_.text_color_ = QColor(0xff, 0xff, 0xff, 0xff);
     
-    typing_color_ = QColor(0x57, 0x54, 0x4c, 0xff);
+    typing_.text_color_ = QColor(0x57, 0x54, 0x4c, 0xff);
+    typing_.light_gif_ = 0;
+    
     spinner_color_ = QColor(0x83, 0x86, 0x93, 0xff);
     edges_color_ = QColor(0xc7, 0xc7, 0xc7, 0xff);
     
@@ -95,6 +103,15 @@ void theme::initDefault()
 QColor theme::get_tint_color()
 {
     return tint_color_;
+}
+
+void theme::contact_list_item::unserialize(Ui::gui_coll_helper &_coll)
+{
+    bg_color_ = colorFromString(_coll.get_value_as_string("bg_color"));
+    name_color_ = colorFromString(_coll.get_value_as_string("name_color"));
+    message_color_ = colorFromString(_coll.get_value_as_string("message_color"));
+    sender_color_ = colorFromString(_coll.get_value_as_string("sender_color"));
+    time_color_ = colorFromString(_coll.get_value_as_string("time_color"));
 }
 
 void theme::date::unserialize(Ui::gui_coll_helper& _coll)
@@ -149,15 +166,19 @@ void theme::new_messages_bubble::unserialize(Ui::gui_coll_helper &_coll)
     bg_pressed_color_ = colorFromString(_coll.get_value_as_string("bg_pressed_color"));
 }
 
+void theme::typing::unserialize(Ui::gui_coll_helper &_coll)
+{
+    text_color_ = colorFromString(_coll.get_value_as_string("text_color"));
+    light_gif_ = _coll.get_value_as_int("light_gif");
+}
+
 void theme::unserialize(core::coll_helper _coll)
 {
     id_ = _coll.get_value_as_int("id");
     position_ = _coll.get_value_as_int("position");
     is_image_loaded_ = false;
     tint_color_ = colorFromString(_coll.get_value_as_string("tint_color"));
-    __INFO("themes", "_tint_color " << tint_color_.name() << " (" << id_ << ")");
     tile_ = _coll.get_value_as_bool("tile");
-    typing_color_ = colorFromString(_coll.get_value_as_string("typing_color"));
     
     if (_coll.is_value_exist("thumb"))
     {
@@ -168,6 +189,9 @@ void theme::unserialize(core::coll_helper _coll)
             load_thumb((char*)thumb_stream->read(thumb_size), thumb_size);
         }
     }
+
+    Ui::gui_coll_helper coll_contact_list_item(_coll.get_value_as_collection("contact_list_item"), false);
+    contact_list_item_.unserialize(coll_contact_list_item);
 
     Ui::gui_coll_helper coll_incoming_bubble(_coll.get_value_as_collection("incoming_bubble"), false);
     incoming_bubble_.unserialize(coll_incoming_bubble);
@@ -195,6 +219,9 @@ void theme::unserialize(core::coll_helper _coll)
     
     Ui::gui_coll_helper coll_new_messages_bubble(_coll.get_value_as_collection("new_messages_bubble"), false);
     new_messages_bubble_.unserialize(coll_new_messages_bubble);
+    
+    Ui::gui_coll_helper coll_typing(_coll.get_value_as_collection("typing"), false);
+    typing_.unserialize(coll_typing);
 }
 
 void cache::unserialize(const core::coll_helper &_coll)
@@ -241,12 +268,30 @@ void cache::set_theme_data(core::coll_helper _coll)
     }
 }
 
+void cache::unload_unused_themes_images(std::set<int> used)
+{
+    for (auto it = themes_.begin(); it != themes_.end(); ++it)
+    {
+        auto theme = it->second;
+        int theme_id = theme->get_id();
+        if (used.find(theme_id) == used.end() && theme->is_image_loaded())
+        {
+            theme->unload_image();
+        }
+    }
+}
+
 void theme::load_thumb(char* _data, int32_t _size)
 {
     thumb_.loadFromData((const uchar*)_data, _size);
+    Utils::check_pixel_ratio(thumb_);
 }
 
-
+void theme::unload_image()
+{
+    is_image_loaded_ = false;
+    image_ = QPixmap();
+}
 
 cache& get_cache()
 {
@@ -259,6 +304,11 @@ cache& get_cache()
 void unserialize(core::coll_helper _coll)
 {
     get_cache().unserialize(_coll);
+}
+
+void unload_unused_themes_images(std::set<int> used)
+{
+    get_cache().unload_unused_themes_images(used);
 }
 
 void set_theme_data(core::coll_helper _coll)

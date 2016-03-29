@@ -20,7 +20,7 @@ namespace Logic
     std::unique_ptr<RecentsModel> g_recents_model;
 
 	RecentsModel::RecentsModel(QObject *parent)
-		: QAbstractListModel(parent)
+		: CustomAbstractListModel(parent)
 		, Timer_(new QTimer(this))
         , FavoritesCount_(0)
         , FavoritesVisible_(true)
@@ -43,7 +43,7 @@ namespace Logic
         }
         else
         {
-            int result = Dialogs_.size() + 2;
+            int result = (int)Dialogs_.size() + 2;
             if (!FavoritesVisible_)
                 result -= FavoritesCount_;
             return result;
@@ -355,11 +355,11 @@ namespace Logic
     
     QString RecentsModel::firstContact()
     {
-        if (Dialogs_.size() > 0)
+        if (!Dialogs_.empty())
         {
             return Dialogs_.front().AimId_;
         }
-        return "";
+        return QString();
     }
 
 	int RecentsModel::totalUnreads() const

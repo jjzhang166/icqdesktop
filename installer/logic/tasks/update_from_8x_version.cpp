@@ -87,7 +87,7 @@ namespace installer
             return QFileInfo::exists(auth_file);
         }
 
-        installer::error export_from_8x_and_uninstall()
+        installer::error export_from_8x()
         {
             shutdown_8x();
 
@@ -95,7 +95,11 @@ namespace installer
                 !is_new_accounts_exist(), 
                 !is_new_settings_exits());
 
+            return installer::error();
+        }
 
+        installer::error uninstall_8x_from_executable()
+        {
             CRegKey key_path;
             if (key_path.Open(HKEY_CURRENT_USER, L"Software\\ICQ\\ICQ", KEY_READ) == ERROR_SUCCESS)
             {

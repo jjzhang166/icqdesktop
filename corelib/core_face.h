@@ -15,7 +15,8 @@ namespace core
 		le_rate_limit		= 4,
 		le_unknown_error	= 5,
 		le_invalid_sms_code = 6,
-		le_error_validate_phone = 7
+		le_error_validate_phone = 7,
+        le_attach_error_busy_phone = 8,
 	};
 
 	enum avatar_error

@@ -74,8 +74,8 @@ namespace Ui
         QWidget* themes_;
         QWidget* about_;
         QWidget* contactus_;
-        QWidget* connectPhone_;
-        QWidget* connectUin_;
+        QWidget* attachPhone_;
+        QWidget* attachUin_;
 
 
         struct Creator
@@ -88,18 +88,22 @@ namespace Ui
 
             struct DropperInfo { QMenu* menu; TextEmojiWidget* currentSelected; };
 
-            static void initAbout(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
             static void addHeader(QWidget* parent, QLayout* layout, const QString& text);
             static GeneralSettingsWidget::Creator::addSwitcherWidgets addSwitcher(std::map<std::string, Synchronizator> *collector, QWidget* parent, QLayout* layout, const QString& text, bool switched, std::function< QString(bool) > slot);
             static void addChooser(QWidget* parent, QLayout* layout, const QString& info, const QString& value, std::function< void(QPushButton*) > slot);
             static DropperInfo addDropper(QWidget* parent, QLayout* layout, const QString& info, const std::vector< QString >& values, int selected, std::function< void(QString, int, TextEmojiWidget*) > slot1, bool isCheckable, bool switched, std::function< QString(bool) > slot2);
             static void addProgresser(QWidget* parent, QLayout* layout, const std::vector< QString >& values, int selected, std::function< void(TextEmojiWidget*, TextEmojiWidget*, int) > slot);
+            static void addBackButton(QWidget* parent, QLayout* layout, std::function<void()> _on_button_click = [](){});
+
+            static void initAbout(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
             static void initGeneral(QWidget* parent, std::map<std::string, Synchronizator> &collector);
             static void initVoiceVideo(QWidget* parent, VoiceAndVideoOptions& voiceAndVideo, std::map<std::string, Synchronizator> &/*collector*/);
-
             static void initThemes(QWidget* parent);
             static void initNotifications(QWidget* parent, std::map<std::string, Synchronizator> &collector);
             static void initContactUs(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
+            static void initAttachUin(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
+            static void initAttachPhone(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
+
         };
 
     public:
@@ -109,7 +113,8 @@ namespace Ui
         void setType(int type);
 
     private:
-        void paintEvent(QPaintEvent *event) override;
+        virtual void paintEvent(QPaintEvent *event) override;
+        virtual void hideEvent(QHideEvent *e) override;
 
         private Q_SLOTS:
             void onVoipDeviceListUpdated(const std::vector< voip_proxy::device_desc >& devices);

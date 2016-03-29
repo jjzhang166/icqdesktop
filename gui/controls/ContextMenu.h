@@ -22,10 +22,12 @@ namespace Ui
        void setIndent(int indent);
 
 	   void popup(const QPoint &pos, QAction *at=0);
+       void clear();
 
    protected:
-       virtual void showEvent(QShowEvent *e);
-
+       virtual void showEvent(QShowEvent *e) override;
+       virtual void hideEvent(QHideEvent *e) override;
+       
    private:
        bool InvertRight_;
        int Indent_;

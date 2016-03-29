@@ -4,48 +4,44 @@ QWidget
 	font-weight: %FONT_WEIGHT%;
 }
 
-QScrollBar:vertical
+QScrollBar
 {
 	background-color: transparent;
-	width:6dip;
+	width: 8dip;
+	border-radius: 3dip;
+	margin-top: 2dip;
+	margin-bottom: 2dip;
+	margin-right: 2dip;
 }
 
-QScrollBar::handle:vertical
+QScrollBar:hover
 {
-	background-color: #C4C4C4;
-	min-height: 20dip;
+	background-color: #7fc4c4c4;
+	border-radius: 3dip;
+	margin-top: 2dip;
+	margin-bottom: 2dip;
+	margin-right: 2dip;
 }
 
-QScrollBar::add-line:vertical
+QScrollBar::handle
 {
-	background-color: transparent;
+	background-color: #c4c4c4;
+	min-height: 40dip;
+	border-radius: 3dip;
 }
-
-QScrollBar::sub-line:vertical
+QScrollBar::handle:hover
 {
-	background-color: transparent;
+	background-color: #696969;
+	min-height: 40dip;
+	border-radius: 3dip;
 }
 
-
-QScrollBar:horizontal
-{
-	background-color: transparent;
-	height:6dip;
-}
-
-QScrollBar::handle:horizontal
-{
-	background-color: #C4C4C4;
-	min-width: 20dip;
-}
-
-QScrollBar::add-line:horizontal
+QScrollBar::add-line, QScrollBar::sub-line
 {
 	background-color: transparent;
 }
 
-QScrollBar::sub-line:horizontal
+QScrollBar::sub-page, QScrollBar::add-page
 {
-	background-color: transparent;
+	background: none;
 }
-

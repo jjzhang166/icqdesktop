@@ -80,6 +80,11 @@ namespace Data
 
 	}
 
+    bool MessageBuddy::IsEmpty() const
+    {
+        return Id_ == -1 && InternalId_.isEmpty();
+    }
+
 	bool MessageBuddy::CheckInvariant() const
 	{
 		if (Outgoing_)
@@ -114,16 +119,24 @@ namespace Data
         assert(Type_ > core::message_type::min);
         assert(Type_ < core::message_type::max);
 
+        QString uri;
+        if (FileSharing_.get())
+            uri = FileSharing_->GetUri();
+
         int duration;
-        return containsPttAudio(Text_, duration);
+        return containsPttAudio(Text_, duration) || containsPttAudio(uri, duration);
     }
     
     bool MessageBuddy::ContainsImage() const
     {
         assert(Type_ > core::message_type::min);
         assert(Type_ < core::message_type::max);
+
+        QString uri;
+        if (FileSharing_.get())
+            uri = FileSharing_->GetUri();
         
-        return containsImage(Text_);
+        return containsImage(Text_) || containsImage(uri);
     }
 
 	bool MessageBuddy::IsBase() const

@@ -323,8 +323,7 @@ namespace Ui
         
         CurrentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_Themes;
         updateSettingsState();
-        
-        __INFO("themes", "_aimId is empty");
+
         emit Utils::InterConnector::instance().themesSettingsShow(false, "");
     }
     

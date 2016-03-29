@@ -565,6 +565,7 @@ namespace HistoryControl
                 PttText_->setWordWrapMode(QTextOption::WordWrap);
                 PttText_->setStyleSheet("background: transparent");
                 PttText_->setFocusPolicy(Qt::NoFocus);
+                PttText_->hide();
             }
             disconnect(Ui::GetDispatcher(), SIGNAL(speechToText(qint64, int, QString, int)), this, SLOT(speechToText(qint64, int, QString, int)));
             if (error != 0 || text.isEmpty())

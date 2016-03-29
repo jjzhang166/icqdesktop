@@ -42,6 +42,7 @@ namespace Ui
         search_vertical_layout_->addSpacing(Utils::scale_value(0));
         search_vertical_layout_->addWidget(search_edit_);
         horizontal_search_layout_->addWidget(parent_widget_);
+        search_edit_->setContextMenuPolicy(Qt::NoContextMenu);
 
         search_edit_icon_ = new CustomButton(this, ":/resources/contr_compose_100.png");
         search_edit_icon_->setOffsets(Utils::scale_value(0), Utils::scale_value(0));
@@ -95,6 +96,7 @@ namespace Ui
     void SearchWidget::setFocus()
     {
         search_edit_->setFocus(Qt::MouseFocusReason);
+        setActive(true);
     }
 
 	SearchWidget::~SearchWidget()
@@ -144,10 +146,16 @@ namespace Ui
 
 	void SearchWidget::searchChanged(QString text)
 	{
-        setActive(!text.isEmpty());
+        setActive(true);
 
-		if (active_ && !text.isEmpty())
-			emit searchBegin();
+        if (!text.isEmpty())
+        {
+            emit searchBegin();
+        }
+        else
+        {
+            searchEnd();
+        }
 
 		emit search(text);
 	}
@@ -157,7 +165,6 @@ namespace Ui
 		if (active_)
         {
 			searchCompleted();
-            search_edit_->setFocus();
         }
         else
         {

@@ -126,10 +126,10 @@ namespace Emoji
             painter.setPen(Qt::SolidLine);
             painter.setPen(QColor::fromRgb(0, 0, 0));
             
-            QRect r(0, Utils::is_mac_retina()?-6:-2, sizeToSearch, sizeToSearch+20);
+            QRect r(0, Utils::is_mac_retina()?-4:-2, sizeToSearch, sizeToSearch+20);
             
             Utils::SChar ch(main, ext);
-            QFont f = QFont(QStringLiteral("AppleColorEmoji"), sizeToSearch);
+            QFont f = QFont(QStringLiteral("AppleColorEmoji"), sizeToSearch - 8);
             painter.setFont(f);
             painter.drawText(r, Qt::AlignHCenter, ch.ToQString());
             

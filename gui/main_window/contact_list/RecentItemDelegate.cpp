@@ -98,8 +98,9 @@ namespace Logic
 
 		const auto avatar = GetAvatarStorage()->GetRounded(dlg.AimId_, QString(), Utils::scale_bitmap(Utils::scale_value(48)), state, isFilled, isDefault);
 
+        const bool hasMouseOver = (platform::is_apple() ? Logic::GetRecentsModel()->customFlagIsSet(Logic::CustomAbstractListModelFlags::HasMouseOver) : true);
 		const bool isSelected = (option.state & QStyle::State_Selected) && !StateBlocked_;
-		const bool isHovered = (option.state & QStyle::State_MouseOver) && !StateBlocked_ && !isSelected;
+        const bool isHovered = (option.state & QStyle::State_MouseOver) && !StateBlocked_ && !isSelected && hasMouseOver;
 
 		const auto displayName = Logic::GetContactListModel()->getDisplayName(dlg.AimId_);
 
@@ -203,30 +204,20 @@ namespace Logic
 		StateBlocked_= value;
 	}
     
-    void RecentItemDelegate::addTypersAimIds(QString aimId, QVector< QString > chattersAimIds)
+    void RecentItemDelegate::addChatter(QString aimId, QString chatter)
     {
-        typers_[aimId].insert(chattersAimIds.begin(), chattersAimIds.end());
+        typers_[aimId].insert(chatter);
     }
     
-    void RecentItemDelegate::removeTypersAimIds(QString aimId, QVector< QString > chattersAimIds)
+    void RecentItemDelegate::removeChatter(QString aimId, QString chatter)
     {
         if (typers_.find(aimId) == typers_.end())
             return;
-        for (auto chatter: chattersAimIds)
-            typers_[aimId].erase(chatter);
+        typers_[aimId].erase(chatter);
         if (typers_[aimId].empty())
             typers_.erase(aimId);
     }
 
-    void RecentItemDelegate::removeTyperAimId(QString aimId, QString chatterAimId)
-    {
-        if (typers_.find(aimId) == typers_.end())
-            return;
-        typers_[aimId].erase(chatterAimId);
-        if (typers_[aimId].empty())
-            typers_.erase(aimId);
-    }
-    
     void RecentItemDelegate::setDragIndex(const QModelIndex& index)
     {
         DragIndex_ = index;

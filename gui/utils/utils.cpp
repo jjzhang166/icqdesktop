@@ -280,16 +280,16 @@ namespace Utils
 		gradient.setColorAt(1, Qt::transparent);
 	}
 
-    
+
     SignalsDisconnector::SignalsDisconnector()
     {
     }
-    
+
     SignalsDisconnector::~SignalsDisconnector()
     {
         clean();
     }
-    
+
     void SignalsDisconnector::add(const char *key, QMetaObject::Connection &&connection)
     {
         if (connections_.find(key) != connections_.end())
@@ -313,7 +313,7 @@ namespace Utils
         connections_.clear();
     }
 
-    
+
 
 	QMap<QString, QString> GetCountryCodes()
 	{
@@ -400,7 +400,7 @@ namespace Utils
             widget->update();
         }
     }
-    
+
     void ApplyStyle(QWidget *widget, QString style)
     {
         if (widget)
@@ -409,7 +409,7 @@ namespace Utils
             widget->setStyleSheet(Utils::ScaleStyle(style, Utils::get_scale_coefficient()));
         }
     }
-    
+
 	QString LoadStyle(const QString& qss_file, double scale, bool import_common_style)
 	{
 		QFile file(qss_file);
@@ -573,10 +573,10 @@ namespace Utils
 	QStringList GetPossibleStrings(const QString& text)
 	{
 		QStringList result;
-        
+
         if (text.isEmpty())
             return result;
-        
+
 #ifdef _WIN32
 		HKL aLayouts[8] = {0};
 		int nCount = ::GetKeyboardLayoutList(8, aLayouts);
@@ -595,13 +595,13 @@ namespace Utils
 			}
 		}
 #else
-        
+
 #ifdef __APPLE__
         MacSupport::getPossibleStrings(text, result);
 #else
         result.push_back(text);
 #endif
-        
+
 #endif //_WIN32
 		return result;
 	}
@@ -724,7 +724,7 @@ namespace Utils
         r.setPatternSyntax(QRegExp::RegExp);
         return r.exactMatch(email);
     }
-    
+
 	int scale_value(const int _px)
 	{
 		return (int)(Utils::get_scale_coefficient() * (double)_px);
@@ -976,7 +976,7 @@ namespace Utils
 //                Bold     = 75,   // 700
 //                ExtraBold = 81,  // 800
 //                Black    = 87    // 900
-                
+
             case FontsFamily::SEGOE_UI_BOLD:
                 return "500";
             case FontsFamily::SEGOE_UI_LIGHT:
@@ -1039,7 +1039,7 @@ namespace Utils
                 font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Helvetica Neue")));
                 font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Helvetica Neue")));
                 font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Helvetica Neue")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Helvetica Neue")));                
+                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Helvetica Neue")));
 //                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Open Sans")));
 //                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Open Sans")));
 //                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Open Sans")));
@@ -1064,7 +1064,7 @@ namespace Utils
 		color.setAlphaF(0.5);
 		return color;
 	}
-    
+
     QString rgbaStringFromColor(const QColor& _color)
     {
         QString textColorString = QString("rgba(%1, %2, %3, %4%)").arg(_color.red()).arg(_color.green()).arg(_color.blue()).arg(_color.alpha()*100/255);
@@ -1295,16 +1295,20 @@ namespace Utils
 
     bool saveAs(const QString& inputFilename, QString& filename, QString& directory)
     {
+        static auto last_directory = QDir::toNativeSeparators(Ui::get_gui_settings()->get_value(settings_download_directory, Utils::DefaultDownloadsPath()));
+        
         filename.clear();
         directory.clear();
 
         int dot = inputFilename.lastIndexOf('.');
         QString ext = dot != -1 ? inputFilename.mid(dot, inputFilename.length()) : QString();
         QString name = (inputFilename.contains(QRegExp("\\/:*?\"<>\\|\"")) || inputFilename.length() >= 128) ? QT_TRANSLATE_NOOP("filesharing_widget", "File") : inputFilename;
-        QString destination = QFileDialog::getSaveFileName(0, QT_TRANSLATE_NOOP("context_menu", "Save as..."), name, "*" + ext);
+        QString full_name = QDir::toNativeSeparators(QDir(last_directory).filePath(name));
+        QString destination = QFileDialog::getSaveFileName(0, QT_TRANSLATE_NOOP("context_menu", "Save as..."), full_name, "*" + ext);
         if (!destination.isEmpty())
         {
             QFileInfo info(destination);
+            last_directory = info.dir().absolutePath();
             directory = info.dir().absolutePath();
             filename = info.fileName();
             if (info.suffix().isEmpty() && !ext.isEmpty())
@@ -1351,7 +1355,7 @@ namespace Utils
         props.emplace_back(std::make_pair("Settings_Previews", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true))));
         props.emplace_back(std::make_pair("Settings_Scale", std::to_string(Utils::get_scale_coefficient())));
         props.emplace_back(std::make_pair("Settings_Language", Ui::get_gui_settings()->get_value(settings_language, QString("")).toUpper().toStdString()));
-    
+
         // props.emplace_back(std::make_pair("Settings_Wallpaper_Global", std::to_string()));
         // props.emplace_back(std::make_pair("Settings_Wallpaper_Local", std::to_string()));
 

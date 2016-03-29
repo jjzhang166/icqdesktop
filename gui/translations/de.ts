@@ -2,27 +2,34 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="de" sourcelanguage="en">
 <context>
-    <name>Form</name>
+    <name>QWidgetTextControl</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
+        <source>&amp;Undo</source>
+        <translation>Rückgängig</translation>
     </message>
     <message>
-        <source>Добавить к существующему звонку</source>
-        <translation></translation>
+        <source>&amp;Redo</source>
+        <translation>Wiederholen</translation>
     </message>
     <message>
-        <source>У вас есть активный звонок.
-Что вы хотите сделать?</source>
-        <translation></translation>
+        <source>&amp;Copy</source>
+        <translation>Kopieren</translation>
     </message>
     <message>
-        <source>Начать новый звонок</source>
-        <translation></translation>
+        <source>&amp;Paste</source>
+        <translation>Einfügen</translation>
     </message>
     <message>
-        <source>Отклонить</source>
-        <translation></translation>
+        <source>Cu&amp;t</source>
+        <translation>Ausschneiden</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Alles auswählen</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Löschen</translation>
     </message>
 </context>
 <context>
@@ -37,139 +44,10 @@
     </message>
 </context>
 <context>
-    <name>Ui::ProfileSettingsWidget</name>
+    <name>attach_page</name>
     <message>
-        <source>Profile</source>
-        <translation>Profil</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translatorcomment>Move the user to ignore list</translatorcomment>
-        <translation>Ignorieren</translation>
-    </message>
-    <message>
-        <source>Report spam</source>
-        <translatorcomment>To report spam from this user</translatorcomment>
-        <translation>Spam melden</translation>
-    </message>
-    <message>
-        <source>Edit profile</source>
-        <translation>Profil bearbeiten</translation>
-    </message>
-    <message>
-        <source>Only visible for those, who has it in the phone book</source>
-        <translation>Nur für Adressbuchkontakte sichtbar</translation>
-    </message>
-    <message>
-        <source>First name</source>
-        <translation>Vorname</translation>
-    </message>
-    <message>
-        <source>Last name</source>
-        <translation>Nachname</translation>
-    </message>
-    <message>
-        <source>Birthdate</source>
-        <translation>Geburtsdatum</translation>
-    </message>
-    <message>
-        <source>Gender</source>
-        <translation>Geschlecht</translation>
-    </message>
-    <message>
-        <source>Country</source>
-        <translation>Land</translation>
-    </message>
-    <message>
-        <source>City</source>
-        <translation>Stadt</translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translatorcomment>&quot;About me&quot; in user&apos;s profile</translatorcomment>
-        <translation>Über mich</translation>
-    </message>
-    <message>
-        <source>Online</source>
-        <translation>Online</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Bitte nicht stören</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Unsichtbar</translation>
-    </message>
-    <message>
-        <source>Report Spam</source>
-        <translatorcomment>To report spam from this user</translatorcomment>
-        <translation>Spam melden</translation>
-    </message>
-    <message>
-        <source>Phone number</source>
-        <translation>Telefonnummer</translation>
-    </message>
-    <message>
-        <source>Seen </source>
-        <translatorcomment>Date and time, when the user was online</translatorcomment>
-        <translation>Gesehen </translation>
-    </message>
-    <message>
-        <source>today</source>
-        <translation>heute</translation>
-    </message>
-    <message>
-        <source>yesterday</source>
-        <translation>gestern</translation>
-    </message>
-    <message>
-        <source> at </source>
-        <translatorcomment>example: last seen at 12:00</translatorcomment>
-        <translation> um </translation>
-    </message>
-    <message>
-        <source>Male</source>
-        <translation>Männlich</translation>
-    </message>
-    <message>
-        <source>Female</source>
-        <translation>Weiblich</translation>
-    </message>
-    <message>
-        <source>Offline</source>
-        <translation>Offline</translation>
-    </message>
-    <message>
-        <source>UIN</source>
-        <translation>UIN</translation>
-    </message>
-    <message>
-        <source>Ignore list</source>
-        <translation>Ignorierliste</translation>
-    </message>
-</context>
-<context>
-    <name>Ui::RecentMessagesAlert</name>
-    <message>
-        <source>View all</source>
-        <translatorcomment>View all unread messages</translatorcomment>
-        <translation>Alle anzeigen</translation>
-    </message>
-</context>
-<context>
-    <name>Ui::TrayIcon</name>
-    <message>
-        <source>Online</source>
-        <translation>Online</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Bitte nicht stören</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Unsichtbar</translation>
+        <source>Continue</source>
+        <translation>Fortfahren</translation>
     </message>
 </context>
 <context>
@@ -221,7 +99,6 @@
     </message>
     <message>
         <source> changed theme to </source>
-        <translatorcomment>someone changed groupchat theme to smth</translatorcomment>
         <translation> hat das Thema geändert zu </translation>
     </message>
     <message>
@@ -310,6 +187,22 @@
     <message>
         <source> joined the chat</source>
         <translation> ist dem Chat beigetreten</translation>
+    </message>
+    <message>
+        <source>You changed description to &quot;</source>
+        <translation>Du hast die Beschreibung wie folgt geändert: &quot;</translation>
+    </message>
+    <message>
+        <source> changed description to &quot;</source>
+        <translation> hat die Beschreibung wie folgt geändert: &quot;</translation>
+    </message>
+    <message>
+        <source>You changed picture of chat</source>
+        <translation>Du hast das Chat-Bild geändert</translation>
+    </message>
+    <message>
+        <source> changed picture of chat</source>
+        <translation> hat das Chat-Bild geändert</translation>
     </message>
 </context>
 <context>
@@ -510,7 +403,6 @@
     </message>
     <message>
         <source>Thank you for contacting us!</source>
-        <translatorcomment>In other words, &quot;thanks for your review!&quot;, you can use this one if it sounds better in your language</translatorcomment>
         <translation>Danke, dass Du Dich an uns gewendet hast!</translation>
     </message>
     <message>
@@ -589,10 +481,6 @@
         <translation>Löschen</translation>
     </message>
     <message>
-        <source>Quit</source>
-        <translation>Beenden</translation>
-    </message>
-    <message>
         <source>Add contact</source>
         <translation>Kontakt hinzufügen</translation>
     </message>
@@ -619,10 +507,6 @@
     <message>
         <source>Change wallpaper</source>
         <translation>Hintergrund ändern</translation>
-    </message>
-    <message>
-        <source>Show</source>
-        <translation>Öffnen</translation>
     </message>
     <message>
         <source>Favorite contact</source>
@@ -1655,13 +1539,6 @@
     </message>
 </context>
 <context>
-    <name>ignore_list</name>
-    <message>
-        <source>You have no ignored contacts</source>
-        <translation>Du hast keine ignorierten Kontakte</translation>
-    </message>
-</context>
-<context>
     <name>input_widget</name>
     <message>
         <source>Message...</source>
@@ -1764,6 +1641,17 @@ Deine Telefonnummer ein</translation>
         <source>Error occured, try again later</source>
         <translation>Ein Fehler ist aufgetreten, bitte versuche es später</translation>
     </message>
+    <message>
+        <source>This phone number is already attached to another account. Please edit phone number and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>notifications_alert</name>
+    <message>
+        <source>View all</source>
+        <translation>Alle anzeigen</translation>
+    </message>
 </context>
 <context>
     <name>placeholders</name>
@@ -1773,7 +1661,7 @@ Deine Telefonnummer ein</translation>
     </message>
     <message>
         <source>to synchronize your contacts</source>
-        <translation>Deine Kontakte zu synchronisieren</translation>
+        <translation>deine Kontakte zu synchronisieren</translation>
     </message>
     <message>
         <source>or </source>
@@ -1789,7 +1677,7 @@ Deine Telefonnummer ein</translation>
     </message>
     <message>
         <source>find friends</source>
-        <translation>Freunde finden</translation>
+        <translation>freunde finden</translation>
     </message>
     <message>
         <source>Looks like you have no contacts yet</source>
@@ -1844,6 +1732,129 @@ Deine Telefonnummer ein</translation>
     </message>
 </context>
 <context>
+    <name>profile_page</name>
+    <message>
+        <source>Ignore list</source>
+        <translation>Ignorierliste</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Profil</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <translation>Ignorieren</translation>
+    </message>
+    <message>
+        <source>Report spam</source>
+        <translation>Spam melden</translation>
+    </message>
+    <message>
+        <source>Edit profile</source>
+        <translation>Profil bearbeiten</translation>
+    </message>
+    <message>
+        <source>UIN</source>
+        <translation>UIN</translation>
+    </message>
+    <message>
+        <source>Phone number</source>
+        <translation>Telefonnummer</translation>
+    </message>
+    <message>
+        <source>Only visible for those, who has it in the phone book</source>
+        <translation>Nur für Adressbuchkontakte sichtbar</translation>
+    </message>
+    <message>
+        <source>First name</source>
+        <translation>Vorname</translation>
+    </message>
+    <message>
+        <source>Last name</source>
+        <translation>Nachname</translation>
+    </message>
+    <message>
+        <source>Birthdate</source>
+        <translation>Geburtsdatum</translation>
+    </message>
+    <message>
+        <source>Gender</source>
+        <translation>Geschlecht</translation>
+    </message>
+    <message>
+        <source>Country</source>
+        <translation>Land</translation>
+    </message>
+    <message>
+        <source>City</source>
+        <translation>Stadt</translation>
+    </message>
+    <message>
+        <source>Online</source>
+        <translation>Online</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Bitte nicht stören</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Unsichtbar</translation>
+    </message>
+    <message>
+        <source>Report Spam</source>
+        <translation>Spam melden</translation>
+    </message>
+    <message>
+        <source>Seen </source>
+        <translation>Gesehen </translation>
+    </message>
+    <message>
+        <source>today</source>
+        <translation>heute</translation>
+    </message>
+    <message>
+        <source>yesterday</source>
+        <translation>gestern</translation>
+    </message>
+    <message>
+        <source> at </source>
+        <translation> um </translation>
+    </message>
+    <message>
+        <source>Offline</source>
+        <translation>Offline</translation>
+    </message>
+    <message>
+        <source>Male</source>
+        <translation>Männlich</translation>
+    </message>
+    <message>
+        <source>Female</source>
+        <translation>Weiblich</translation>
+    </message>
+    <message>
+        <source>You have no ignored contacts</source>
+        <translation>Du hast keine ignorierten Kontakte</translation>
+    </message>
+    <message>
+        <source>About me</source>
+        <translation>Über mich</translation>
+    </message>
+    <message>
+        <source>for safety and spam protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attach phone number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect to ICQ account</source>
+        <translation>Mit ICQ-Konto verbinden</translation>
+    </message>
+</context>
+<context>
     <name>ptt_widget</name>
     <message>
         <source>unclear message</source>
@@ -1895,33 +1906,6 @@ Deine Telefonnummer ein</translation>
         <source>years</source>
         <comment>21</comment>
         <translation>Jahre</translation>
-    </message>
-</context>
-<context>
-    <name>settings_languages</name>
-    <message>
-        <source>ru</source>
-        <translation>Русский</translation>
-    </message>
-    <message>
-        <source>en</source>
-        <translation>English</translation>
-    </message>
-    <message>
-        <source>uk</source>
-        <translation>Українська</translation>
-    </message>
-    <message>
-        <source>de</source>
-        <translation>Deutsch</translation>
-    </message>
-    <message>
-        <source>pt</source>
-        <translation>Português</translation>
-    </message>
-    <message>
-        <source>cs</source>
-        <translation>Český</translation>
     </message>
 </context>
 <context>
@@ -2052,7 +2036,7 @@ Deine Telefonnummer ein</translation>
     </message>
     <message>
         <source>Contact us</source>
-        <translation>Kontaktiere uns</translation>
+        <translation>Kontaktieren Sie uns</translation>
     </message>
     <message>
         <source>Outgoing messages sound</source>
@@ -2072,7 +2056,6 @@ Deine Telefonnummer ein</translation>
     </message>
     <message>
         <source>Play sounds</source>
-        <translatorcomment>&quot;to play sounds&quot; setting (on/off)</translatorcomment>
         <translation>Töne abspielen</translation>
     </message>
     <message>
@@ -2083,6 +2066,30 @@ Deine Telefonnummer ein</translation>
     <message>
         <source>Wallpapers</source>
         <translation>Hintergrund</translation>
+    </message>
+    <message>
+        <source>ru</source>
+        <translation>Русский</translation>
+    </message>
+    <message>
+        <source>en</source>
+        <translation>English</translation>
+    </message>
+    <message>
+        <source>uk</source>
+        <translation>Українська</translation>
+    </message>
+    <message>
+        <source>de</source>
+        <translation>Deutsch</translation>
+    </message>
+    <message>
+        <source>pt</source>
+        <translation>Português</translation>
+    </message>
+    <message>
+        <source>cs</source>
+        <translation>Český</translation>
     </message>
 </context>
 <context>
@@ -2105,6 +2112,29 @@ Deine Telefonnummer ein</translation>
     </message>
 </context>
 <context>
+    <name>tray_menu</name>
+    <message>
+        <source>Online</source>
+        <translation>Online</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Bitte nicht stören</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Unsichtbar</translation>
+    </message>
+    <message>
+        <source>Quit</source>
+        <translation>Beenden</translation>
+    </message>
+    <message>
+        <source>Show</source>
+        <translation>Öffnen</translation>
+    </message>
+</context>
+<context>
     <name>typing_widget</name>
     <message>
         <source>is typing</source>
@@ -2113,13 +2143,6 @@ Deine Telefonnummer ein</translation>
     <message>
         <source>are typing</source>
         <translation>schreiben gerade</translation>
-    </message>
-</context>
-<context>
-    <name>videoSetting</name>
-    <message>
-        <source>Settings</source>
-        <translation>Einstellungen</translation>
     </message>
 </context>
 <context>

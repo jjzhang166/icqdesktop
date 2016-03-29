@@ -44,6 +44,16 @@ namespace core
             std::wstring get_thumb_path() const;
             
         public:
+
+            struct contact_list_item {
+                std::string bg_color_;
+                std::string name_color_;
+                std::string message_color_;
+                std::string sender_color_;
+                std::string time_color_;
+                void unserialize(const rapidjson::Value& _node);
+            } contact_list_item_;
+
             struct bubble {
                 std::string bg1_color_;
                 std::string bg2_color_;
@@ -98,6 +108,12 @@ namespace core
                 std::string text_color_;
                 void unserialize(const rapidjson::Value& _node);
             } new_messages_bubble_;
+            
+            struct typing {
+                std::string text_color_;
+                int light_gif_;
+                void unserialize(const rapidjson::Value& _node);
+            } typing_;
         };
         
         class download_task

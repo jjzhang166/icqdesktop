@@ -102,7 +102,6 @@ namespace HistoryControl
     FileSharingWidget::FileSharingWidget(const FileSharingInfoSptr& fsInfo, QString _aimId)
         : PreviewContentWidget(0, false, QString(), false, _aimId)
         , FsInfo_(fsInfo)
-        , StateToResume_(State::Initial)
         , RetryCount_(0)
         , CopyFile_(false)
         , SaveAs_(false)
@@ -121,7 +120,6 @@ namespace HistoryControl
 		, BytesTransferred_(0)
 		, DownloadingBarBaseAngle_(DOWNLOADING_BAR_BASE_ANGLE_MIN)
 		, BaseAngleAnimation_(nullptr)
-        , StateToResume_(State::Initial)
         , RetryCount_(0)
         , CopyFile_(false)
         , SaveAs_(false)
@@ -991,37 +989,6 @@ namespace HistoryControl
         setCurrentProcessId(procId);
 	}
 
-    void FileSharingWidget::resumeState()
-    {
-        // subject for further development
-
-        const auto isMetainfoLoaded = (StateToResume_ == State::ImageFile_MetainfoLoaded);
-        const auto isMiniPreviewLoaded = (StateToResume_ == State::ImageFile_MiniPreviewLoaded);
-        const auto isImageInitial = (StateToResume_ == State::ImageFile_Initial);
-
-        assert(isMetainfoLoaded || isMiniPreviewLoaded || isImageInitial);
-        if (!isMetainfoLoaded &&
-            !isMiniPreviewLoaded &&
-            !isImageInitial)
-        {
-            return;
-        }
-
-        if (isMetainfoLoaded)
-        {
-        }
-
-        if (isMiniPreviewLoaded)
-        {
-        }
-
-        if (isImageInitial)
-        {
-        }
-
-        StateToResume_ = State::Initial;
-    }
-
 	void FileSharingWidget::resumeUploading()
 	{
 		assert(FsInfo_);
@@ -1211,7 +1178,6 @@ namespace HistoryControl
                            isState(State::ImageFile_Downloading));
                     if (isState(State::ImageFile_Initial))
                     {
-                        setStateToResume(State::ImageFile_Initial);
                         startDownloadingFullImage();
                     }
 				}
@@ -1223,7 +1189,6 @@ namespace HistoryControl
                        isState(State::ImageFile_Downloading));
                 if (isState(State::ImageFile_Downloading))
                 {
-                    setStateToResume(State::ImageFile_MetainfoLoaded);
                     startDownloadingFullImage();
                 }
 				break;
@@ -1233,7 +1198,6 @@ namespace HistoryControl
                        isState(State::ImageFile_Downloading));
                 if (isState(State::ImageFile_Downloading))
                 {
-                    setStateToResume(State::ImageFile_MiniPreviewLoaded);
                     startDownloadingFullImage();
                 }
 				break;
@@ -1279,24 +1243,6 @@ namespace HistoryControl
 				break;
 		}
 	}
-
-    void FileSharingWidget::setStateToResume(const State state)
-    {
-        const auto isMetainfoLoaded = (state == State::ImageFile_MetainfoLoaded);
-        const auto isMiniPreviewLoaded = (state == State::ImageFile_MiniPreviewLoaded);
-        const auto isImageInitial = (state == State::ImageFile_Initial);
-
-        assert(isMetainfoLoaded || isMiniPreviewLoaded || isImageInitial);
-        if (!isMetainfoLoaded &&
-            !isMiniPreviewLoaded &&
-            !isImageInitial)
-        {
-            return;
-        }
-
-        assert(StateToResume_ == State::Initial);
-        StateToResume_ = state;
-    }
 
 	void FileSharingWidget::startDownloadingPlainFile()
 	{
@@ -1549,11 +1495,6 @@ namespace HistoryControl
 		if (isImageDownloading)
 		{
             setState(State::ImageFile_Downloaded);
-
-            if (StateToResume_ != State::Initial)
-            {
-                resumeState();
-            }
 		}
 
 		stopDataTransferAnimation();

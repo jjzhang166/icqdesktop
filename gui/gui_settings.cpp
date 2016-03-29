@@ -13,6 +13,11 @@ namespace Ui
     }
 
 
+    bool qt_gui_settings::contains_value(const QString& _name) const
+    {
+        return (values_.find(_name) != values_.end());
+    }
+
     template<> void qt_gui_settings::set_value<QString>(const QString& _name, const QString& _value)
     {
         QByteArray arr = _value.toUtf8();

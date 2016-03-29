@@ -9,7 +9,10 @@
 #include "tasks/write_registry.h"
 #include "tasks/create_links.h"
 #include "tasks/update_from_8x_version.h"
+#include "tasks/unistall_8x.h"
 #include "exported_data.h"
+
+
 
 
 namespace installer
@@ -24,7 +27,9 @@ namespace installer
         }
 
         worker::worker()
-            :	progress_(0)
+            :   progress_(0),
+                delete_8x_files_on_final_(false),
+                delete_8x_self_on_final_(false)
         {
         }
 
@@ -41,27 +46,32 @@ namespace installer
 
         void worker::final_install()
         {
-            run_async_function(store_exported_settings, [this](const installer::error& _err)
+            run_async_function(store_exported_settings, [this](const installer::error& /*_err*/)
             {
-                if (!_err.is_ok())
-                {
-                }
 
-                run_async_function(store_exported_account, [this](const installer::error& _err)
+                run_async_function(store_exported_account, [this](const installer::error& /*_err*/)
                 {
-                    if (!_err.is_ok())
-                    {
-                    }
 
-                    run_async_function(start_process, [this](const installer::error& _err)
+                    run_async_function(start_process, [this](const installer::error& /*_err*/)
                     {
-                        if (!_err.is_ok())
+
+                        if (is_delete_8x_files_on_final())
                         {
-                            emit error(_err);
-                            return;
+                            delete_8x_registry_and_files();
                         }
 
-                        emit finish();
+                        if (is_delete_8x_self_on_final())
+                        {
+                            run_async_function(delete_self_from_8x, [this](const installer::error& /*_err*/)
+                            {
+
+                                emit finish();
+                            }, 100);
+                        }
+                        else
+                        {
+                            emit finish();
+                        }
 
                     }, 100);
 
@@ -74,23 +84,22 @@ namespace installer
             progress_ = 5;
             emit progress(progress_);
 
-            run_async_function(export_from_8x_and_uninstall, [this](const installer::error& _err)
+            run_async_function(export_from_8x, [this](const installer::error& _err)
             {
                 if (!_err.is_ok())
                 {
                     emit error(_err);
                     return;
                 }
-
-                run_async_function(terminate_process, [this](const installer::error& _err)
+                run_async_function(uninstall_8x_from_executable, [this](const installer::error& _err)
                 {
                     if (!_err.is_ok())
                     {
                         emit error(_err);
                         return;
                     }
-
-                    run_async_function(copy_files, [this](const installer::error& _err)
+                    
+                    run_async_function(terminate_process, [this](const installer::error& _err)
                     {
                         if (!_err.is_ok())
                         {
@@ -98,7 +107,7 @@ namespace installer
                             return;
                         }
 
-                        run_async_function(write_registry, [this](const installer::error& _err)
+                        run_async_function(copy_files, [this](const installer::error& _err)
                         {
                             if (!_err.is_ok())
                             {
@@ -106,7 +115,7 @@ namespace installer
                                 return;
                             }
 
-                            run_async_function(create_links, [this](const installer::error& _err)
+                            run_async_function(write_registry, [this](const installer::error& _err)
                             {
                                 if (!_err.is_ok())
                                 {
@@ -114,26 +123,35 @@ namespace installer
                                     return;
                                 }
 
-                                if (get_exported_data().get_accounts().size())
+                                run_async_function(create_links, [this](const installer::error& _err)
                                 {
-                                    if (get_exported_data().get_accounts().size() > 1)
+                                    if (!_err.is_ok())
                                     {
-                                        emit select_account();
+                                        emit error(_err);
                                         return;
                                     }
-                                    else
+
+                                    if (get_exported_data().get_accounts().size())
                                     {
-                                        get_exported_data().set_exported_account(*get_exported_data().get_accounts().begin());
+                                        if (get_exported_data().get_accounts().size() > 1)
+                                        {
+                                            emit select_account();
+                                            return;
+                                        }
+                                        else
+                                        {
+                                            get_exported_data().set_exported_account(*get_exported_data().get_accounts().begin());
+                                        }
                                     }
-                                }
 
-                                final_install();
+                                    final_install();
 
-                            }, 85);
-                        }, 60);
-                    }, 40);
-                }, 30);
-            }, 20 );
+                                }, 85);
+                            }, 60);
+                        }, 40);
+                    }, 30);
+                }, 20);
+            }, 10 );
         }
 
         void worker::uninstall()
@@ -149,7 +167,7 @@ namespace installer
                     {
                         run_async_function(delete_files, [this](const installer::error&)
                         {
-                            run_async_function(delete_self, [this](const installer::error&)
+                            run_async_function(delete_self_and_product_folder, [this](const installer::error&)
                             {
                                 emit finish();
                             }, 100);
@@ -161,11 +179,18 @@ namespace installer
 
         void worker::uninstalltmp()
         {
-            QDir dir_product(get_product_folder());
+            QString folder_for_delete = get_product_folder();
+
+            if (!get_install_config().get_folder_for_delete().isEmpty())
+            {
+                folder_for_delete = get_install_config().get_folder_for_delete();
+            }
+
+            QDir delete_dir(folder_for_delete);
 
             for (int i = 0; i < 50; i++)
             {
-                if (dir_product.removeRecursively())
+                if (delete_dir.removeRecursively())
                     return;
 
                 ::Sleep(100);
@@ -263,22 +288,33 @@ namespace installer
             }, 70);
         }
 
-        void worker::set_installed_flag_8x()
+        void worker::update_from_8x_step_1()
         {
-            set_8x_update_downloaded();
+            run_async_function(copy_files, [this](const installer::error& _err)
+            {
+                if (!_err.is_ok())
+                {
+                    emit error(_err);
+
+                    return;
+                }
+
+                run_async_function(set_8x_update_downloaded, [this](const installer::error& /*_err*/)
+                {
+                    copy_self_to_bin_8x();
+
+                    emit finish();
+                }, 100);
+
+            }, 50);
         }
 
-        void worker::copy_self_to_bin_8x()
-        {
-            copy_self_to_icqim_8x();
-        }
-
-        void worker::autoupdate_from_8x()
+        void worker::update_from_8x_step_2()
         {
             progress_ = 5;
             emit progress(progress_);
 
-            run_async_function(export_from_8x_and_uninstall, [this](const installer::error& _err)
+            run_async_function(export_from_8x, [this](const installer::error& _err)
             {
                 if (!_err.is_ok())
                 {
@@ -286,15 +322,9 @@ namespace installer
                     return;
                 }
 
-                run_async_function(terminate_process, [this](const installer::error& _err)
+                run_async_function(delete_8x_links, [this](const installer::error& /*_err*/)
                 {
-                    if (!_err.is_ok())
-                    {
-                        emit error(_err);
-                        return;
-                    }
-
-                    run_async_function(copy_files, [this](const installer::error& _err)
+                    run_async_function(terminate_process, [this](const installer::error& _err)
                     {
                         if (!_err.is_ok())
                         {
@@ -318,6 +348,9 @@ namespace installer
                                     return;
                                 }
 
+                                set_delete_8x_files_on_final(true);
+                                set_delete_8x_self_on_final(true);
+
                                 if (get_exported_data().get_accounts().size())
                                 {
                                     if (get_exported_data().get_accounts().size() > 1)
@@ -332,12 +365,17 @@ namespace installer
                                 }
 
                                 final_install();
-
                             }, 85);
                         }, 60);
-                    }, 40);
-                }, 30);
-            }, 20 );
+                    }, 30);
+                }, 15);
+
+            }, 10 );
+        }
+
+        void worker::copy_self_to_bin_8x()
+        {
+            copy_self_to_icqim_8x();
         }
     }
 }

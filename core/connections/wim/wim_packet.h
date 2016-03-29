@@ -84,6 +84,8 @@ namespace core
 
             wpie_error_robusto_you_are_not_chat_member = 33,
 
+            wpie_error_attach_busy_phone = 34,
+
             wpie_client_http_error = 400,
 
             wpie_error_need_relogin= 1000,

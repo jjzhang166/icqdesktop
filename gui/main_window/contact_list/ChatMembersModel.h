@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CustomAbstractListModel.h"
+
 #include "../../types/contact.h"
 #include "../../types/message.h"
 #include "../../types/chat.h"
@@ -20,17 +22,18 @@ namespace Logic
     const int InitMembersLimit = 20;
     const int MaxMembersLimit = 1000;
 
-    class ChatMembersModel : public QAbstractListModel
+    class ChatMembersModel : public CustomAbstractListModel
     {
         Q_OBJECT
+        
     Q_SIGNALS:
         void results();
 
-        public Q_SLOTS:
-            void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
+    public Q_SLOTS:
+        void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
 
-        private Q_SLOTS:
-            void avatarLoaded(QString);
+    private Q_SLOTS:
+        void avatarLoaded(QString);
 
     public:
         ChatMembersModel(std::shared_ptr<Data::ChatInfo> &info, QObject *parent);

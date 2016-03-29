@@ -29,367 +29,387 @@ namespace Ui
 {    
     class ProfileSettingsWidget::UI
     {
-        QHBoxLayout *main_layout;
+        QHBoxLayout *mainLayout_;
         
-        QWidget *backbutton_area;
-        QVBoxLayout *backbutton_area_layout;
-            BackButton *back_button;
+        QWidget *backButtonWidget_;
+        QVBoxLayout *backButtonLayout_;
+            BackButton *backButton_;
             QSpacerItem *verticalSpacer;
         
-        QWidget *avatar_area;
-        QVBoxLayout *avatar_area_layout;
-            QWidget *avatar;
-                QVBoxLayout *avatar_layout;
-            QWidget *avatar_buttons_area;
-            QHBoxLayout *avatar_buttons_area_layout;
-                QPushButton *do_text_message;
-                QPushButton *do_voice_message;
-                QPushButton *do_video_message;
-            QPushButton *ignore_button;
-            QPushButton *report_spam_button;
+        QWidget *avatarWidget_;
+        QVBoxLayout *avatarWidgetLayout_;
+            QWidget *avatar_;
+                QVBoxLayout *avatarLayout_;
+            QWidget *actionsWidget_;
+            QHBoxLayout *actionsLayout_;
+                QPushButton *messageButton_;
+                QPushButton *voiceButton_;
+                QPushButton *videoButton_;
+            QPushButton *ignoreButton_;
+            QPushButton *spamButton_;
             QSpacerItem *verticalSpacer_2;
         
-        QScrollArea *info_area;
-        QWidget *info_area_scroll_contents;
-        QVBoxLayout *info_area_layout;
-            QWidget *info_head_area;
-            QHBoxLayout *info_head_area_layout;
-                TextEmojiWidget *full_name;
-                QPushButton *action_button;
-                    FlatMenu *action_button_menu;
-            QWidget *info_state_area;
-            QHBoxLayout *info_state_area_layout;
-                QPushButton *state_button;
-                    FlatMenu *state_button_menu;
-                QLabel *state_sign;
+        QScrollArea *infoScrollArea_;
+        QWidget *infoWidget_;
+        QVBoxLayout *infoLayout_;
+            QWidget *headWidget_;
+            QHBoxLayout *headLayout_;
+                TextEmojiWidget *fullName_;
+                QPushButton *optionsButton_;
+                    FlatMenu *optionsMenu_;
+            QWidget *statusWidget_;
+            QHBoxLayout *statusLayout_;
+                QPushButton *statusButton_;
+                    FlatMenu *statusMenu_;
+                QLabel *statusLabel_;
                 QSpacerItem *horizontalSpacer;
 
-            QWidget *info_values_area;
-            QVBoxLayout *info_values_area_layout;
+            QWidget *infoValuesWidget_;
+            QVBoxLayout *infoValuesLayout_;
 
-                TextEmojiWidget *icq_number_head;
-                TextEmojiWidget *icq_number;
+                TextEmojiWidget *uinHead_;
+                TextEmojiWidget *uin_;
             
-                TextEmojiWidget *phone_head;
-                TextEmojiWidget *phone;
-                TextEmojiWidget *phone_bottom;
+                TextEmojiWidget *phoneHead_;
+                TextEmojiWidget *phone_;
+                TextEmojiWidget *phoneBottom_;
             
-                TextEmojiWidget *first_name_head;
-                TextEmojiWidget *first_name;
+                TextEmojiWidget *firstNameHead_;
+                TextEmojiWidget *firstName_;
             
-                TextEmojiWidget *last_name_head;
-                TextEmojiWidget *last_name;
+                TextEmojiWidget *lastNameHead_;
+                TextEmojiWidget *lastName_;
             
-                TextEmojiWidget *birthdate_head;
-                TextEmojiWidget *birthdate;
+                TextEmojiWidget *birthdateHead_;
+                TextEmojiWidget *birthdate_;
             
-                TextEmojiWidget *gender_head;
-                TextEmojiWidget *gender;
+                TextEmojiWidget *genderHead_;
+                TextEmojiWidget *gender_;
             
-                TextEmojiWidget *country_head;
-                TextEmojiWidget *country;
+                TextEmojiWidget *countryHead_;
+                TextEmojiWidget *country_;
             
-                TextEmojiWidget *city_head;
-                TextEmojiWidget *city;
+                TextEmojiWidget *cityHead_;
+                TextEmojiWidget *city_;
             
-                TextEmojiWidget *about_head;
-                TextEmojiWidget *about;
+                TextEmojiWidget *aboutHead_;
+                TextEmojiWidget *about_;
 
-                TextEmojiWidget *show_ignore_list_label;
+                TextEmojiWidget *ignoreListLabel_;
+                TextEmojiWidget *attach_phone_label;
+                TextEmojiWidget *attach_uin_label;
         
         friend class ProfileSettingsWidget;
         
     public:
-        void init(QWidget *profile_settings_widget)
+        void init(QWidget *_profileWidget)
         {
-            profile_settings_widget->setObjectName(QStringLiteral("profile_settings_widget"));
-            profile_settings_widget->setStyleSheet(Utils::LoadStyle(":/main_window/settings/profile_settings.qss", Utils::get_scale_coefficient(), true));
-            profile_settings_widget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-            profile_settings_widget->setMinimumSize(QSize(0, 0));
-            profile_settings_widget->setBaseSize(QSize(0, 0));
+            _profileWidget->setObjectName(QStringLiteral("_profileWidget"));
+            _profileWidget->setStyleSheet(Utils::LoadStyle(":/main_window/settings/profile_settings.qss", Utils::get_scale_coefficient(), true));
+            _profileWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+            _profileWidget->setMinimumSize(QSize(0, 0));
+            _profileWidget->setBaseSize(QSize(0, 0));
             
-            main_layout = new QHBoxLayout(profile_settings_widget);
-            main_layout->setSpacing(0);
-            main_layout->setObjectName(QStringLiteral("main_layout"));
-            main_layout->setContentsMargins(0, 0, 0, 0);
+            mainLayout_ = new QHBoxLayout(_profileWidget);
+            mainLayout_->setSpacing(0);
+            mainLayout_->setObjectName(QStringLiteral("mainLayout_"));
+            mainLayout_->setContentsMargins(0, 0, 0, 0);
             
-            backbutton_area = new QWidget(profile_settings_widget);
-            backbutton_area->setObjectName(QStringLiteral("backbutton_area"));
-            backbutton_area->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
-            backbutton_area_layout = new QVBoxLayout(backbutton_area);
-            backbutton_area_layout->setObjectName(QStringLiteral("backbutton_area_layout"));
-            backbutton_area_layout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(24), 0, 0);
+            backButtonWidget_ = new QWidget(_profileWidget);
+            backButtonWidget_->setObjectName(QStringLiteral("backButtonWidget_"));
+            backButtonWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+            backButtonLayout_ = new QVBoxLayout(backButtonWidget_);
+            backButtonLayout_->setObjectName(QStringLiteral("backButtonLayout_"));
+            backButtonLayout_->setContentsMargins(Utils::scale_value(24), Utils::scale_value(24), 0, 0);
 
-            back_button = new BackButton(backbutton_area);
-            back_button->setObjectName(QStringLiteral("back_button"));
-            back_button->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-            back_button->setFlat(true);
-			back_button->setFocusPolicy(Qt::NoFocus);
-			back_button->setCursor(Qt::CursorShape::PointingHandCursor);
-            backbutton_area_layout->addWidget(back_button);
+            backButton_ = new BackButton(backButtonWidget_);
+            backButton_->setObjectName(QStringLiteral("backButton_"));
+            backButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            backButton_->setFlat(true);
+            backButton_->setFocusPolicy(Qt::NoFocus);
+            backButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            backButtonLayout_->addWidget(backButton_);
             
             verticalSpacer = new QSpacerItem(Utils::scale_value(15), Utils::scale_value(543), QSizePolicy::Minimum, QSizePolicy::Expanding);
-            backbutton_area_layout->addItem(verticalSpacer);
+            backButtonLayout_->addItem(verticalSpacer);
             
-            main_layout->addWidget(backbutton_area);
+            mainLayout_->addWidget(backButtonWidget_);
             
-            avatar_area = new QWidget(profile_settings_widget);
-            avatar_area->setObjectName(QStringLiteral("avatar_area"));
-            avatar_area->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
-            avatar_area_layout = new QVBoxLayout(avatar_area);
-            avatar_area_layout->setSpacing(0);
-            avatar_area_layout->setObjectName(QStringLiteral("verticalLayout"));
-            avatar_area_layout->setContentsMargins(Utils::scale_value(48), Utils::scale_value(24), Utils::scale_value(32), 0);
+            avatarWidget_ = new QWidget(_profileWidget);
+            avatarWidget_->setObjectName(QStringLiteral("avatarWidget_"));
+            avatarWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+            avatarWidgetLayout_ = new QVBoxLayout(avatarWidget_);
+            avatarWidgetLayout_->setSpacing(0);
+            avatarWidgetLayout_->setObjectName(QStringLiteral("verticalLayout"));
+            avatarWidgetLayout_->setContentsMargins(Utils::scale_value(48), Utils::scale_value(24), Utils::scale_value(32), 0);
 
-            avatar = new QWidget(avatar_area);
-            avatar->setObjectName(QStringLiteral("avatar"));
-            avatar->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-            avatar_layout = new QVBoxLayout(avatar);
-            avatar_layout->setObjectName(QStringLiteral("avatar_layout"));
-            avatar_layout->setContentsMargins(0, 0, 0, 0);
-            avatar_area_layout->addWidget(avatar);
+            avatar_ = new QWidget(avatarWidget_);
+            avatar_->setObjectName(QStringLiteral("avatar_"));
+            avatar_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            avatarLayout_ = new QVBoxLayout(avatar_);
+            avatarLayout_->setObjectName(QStringLiteral("avatarLayout_"));
+            avatarLayout_->setContentsMargins(0, 0, 0, 0);
+            avatarWidgetLayout_->addWidget(avatar_);
             
-            avatar_buttons_area = new QWidget(avatar_area);
-            avatar_buttons_area->setObjectName(QStringLiteral("avatar_buttons_area"));
-            avatar_buttons_area->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
-            avatar_buttons_area_layout = new QHBoxLayout(avatar_buttons_area);
-            avatar_buttons_area_layout->setObjectName(QStringLiteral("avatar_buttons_area_layout"));
-            avatar_buttons_area_layout->setSpacing(0);
-            avatar_buttons_area_layout->setContentsMargins(0, 0, 0, 0);
+            actionsWidget_ = new QWidget(avatarWidget_);
+            actionsWidget_->setObjectName(QStringLiteral("actionsWidget_"));
+            actionsWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
+            actionsLayout_ = new QHBoxLayout(actionsWidget_);
+            actionsLayout_->setObjectName(QStringLiteral("actionsLayout_"));
+            actionsLayout_->setSpacing(0);
+            actionsLayout_->setContentsMargins(0, 0, 0, 0);
             
-            do_text_message = new QPushButton(avatar_buttons_area);
-            do_text_message->setObjectName(QStringLiteral("do_text_message"));
-            do_text_message->setFlat(true);
-            do_text_message->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-			do_text_message->setFocusPolicy(Qt::NoFocus);
-			do_text_message->setCursor(Qt::CursorShape::PointingHandCursor);
-            avatar_buttons_area_layout->addWidget(do_text_message);
+            messageButton_ = new QPushButton(actionsWidget_);
+            messageButton_->setObjectName(QStringLiteral("messageButton_"));
+            messageButton_->setFlat(true);
+            messageButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            messageButton_->setFocusPolicy(Qt::NoFocus);
+            messageButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            actionsLayout_->addWidget(messageButton_);
             
-            do_voice_message = new QPushButton(avatar_buttons_area);
-            do_voice_message->setObjectName(QStringLiteral("do_voice_message"));
-            do_voice_message->setFlat(true);
-            do_voice_message->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-			do_voice_message->setFocusPolicy(Qt::NoFocus);
-			do_voice_message->setCursor(Qt::CursorShape::PointingHandCursor);
-            avatar_buttons_area_layout->addWidget(do_voice_message);
+            voiceButton_ = new QPushButton(actionsWidget_);
+            voiceButton_->setObjectName(QStringLiteral("voiceButton_"));
+            voiceButton_->setFlat(true);
+            voiceButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            voiceButton_->setFocusPolicy(Qt::NoFocus);
+            voiceButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            actionsLayout_->addWidget(voiceButton_);
             
 #ifdef STRIP_VOIP
-            do_voice_message->hide();
-            avatar_buttons_area_layout->setContentsMargins(Utils::scale_value(20), 0, 0, 0);
+            voiceButton_->hide();
+            actionsLayout_->setContentsMargins(Utils::scale_value(20), 0, 0, 0);
 #endif //STRIP_VOIP
 
-            do_video_message = new QPushButton(avatar_buttons_area);
-            do_video_message->setObjectName(QStringLiteral("do_video_message"));
-            do_video_message->setFlat(true);
-            do_video_message->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-			do_video_message->setFocusPolicy(Qt::NoFocus);
-			do_video_message->setCursor(Qt::CursorShape::PointingHandCursor);
-            avatar_buttons_area_layout->addWidget(do_video_message);
+            videoButton_ = new QPushButton(actionsWidget_);
+            videoButton_->setObjectName(QStringLiteral("videoButton_"));
+            videoButton_->setFlat(true);
+            videoButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            videoButton_->setFocusPolicy(Qt::NoFocus);
+            videoButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            actionsLayout_->addWidget(videoButton_);
 
 #ifdef STRIP_VOIP
-            do_video_message->hide();
+            videoButton_->hide();
 #endif //STRIP_VOIP
             
-            avatar_area_layout->addWidget(avatar_buttons_area);
-            avatar_area_layout->addWidget(show_ignore_list_label);
+            avatarWidgetLayout_->addWidget(actionsWidget_);
+            avatarWidgetLayout_->addWidget(ignoreListLabel_);
+            avatarWidgetLayout_->addWidget(attach_uin_label);
+			
+            ignoreButton_ = new QPushButton(avatarWidget_);
+            ignoreButton_->setObjectName(QStringLiteral("ignoreButton_"));
+            ignoreButton_->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
+            ignoreButton_->setFlat(true);
+            ignoreButton_->setFocusPolicy(Qt::NoFocus);
+            ignoreButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            avatarWidgetLayout_->addWidget(ignoreButton_);
             
-            ignore_button = new QPushButton(avatar_area);
-            ignore_button->setObjectName(QStringLiteral("ignore_button"));
-            ignore_button->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
-            ignore_button->setFlat(true);
-			ignore_button->setFocusPolicy(Qt::NoFocus);
-			ignore_button->setCursor(Qt::CursorShape::PointingHandCursor);
-            avatar_area_layout->addWidget(ignore_button);
-            
-            report_spam_button = new QPushButton(avatar_area);
-            report_spam_button->setObjectName(QStringLiteral("report_spam_button"));
-            report_spam_button->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
-            report_spam_button->setFlat(true);
-			report_spam_button->setFocusPolicy(Qt::NoFocus);
-			report_spam_button->setCursor(Qt::CursorShape::PointingHandCursor);
-            avatar_area_layout->addWidget(report_spam_button);
+            spamButton_ = new QPushButton(avatarWidget_);
+            spamButton_->setObjectName(QStringLiteral("spamButton_"));
+            spamButton_->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
+            spamButton_->setFlat(true);
+            spamButton_->setFocusPolicy(Qt::NoFocus);
+            spamButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            avatarWidgetLayout_->addWidget(spamButton_);
             
             verticalSpacer_2 = new QSpacerItem(Utils::scale_value(20), Utils::scale_value(40), QSizePolicy::Minimum, QSizePolicy::Expanding);
             
-            avatar_area_layout->addItem(verticalSpacer_2);
+            avatarWidgetLayout_->addItem(verticalSpacer_2);
             
-            main_layout->addWidget(avatar_area);
+            mainLayout_->addWidget(avatarWidget_);
             
-            info_area = new QScrollArea(profile_settings_widget);
-            info_area->setObjectName(QStringLiteral("info_area"));
-            info_area->setWidgetResizable(true);
-            Utils::grabTouchWidget(info_area->viewport(), true);
+            infoScrollArea_ = new QScrollArea(_profileWidget);
+            infoScrollArea_->setObjectName(QStringLiteral("infoScrollArea_"));
+            infoScrollArea_->setWidgetResizable(true);
+            Utils::grabTouchWidget(infoScrollArea_->viewport(), true);
             
-            info_area_scroll_contents = new QWidget(info_area);
-            info_area_scroll_contents->setObjectName(QStringLiteral("info_area_scroll_contents"));
-            info_area_scroll_contents->setGeometry(QRect(0, 0, Utils::scale_value(847), Utils::scale_value(707)));
-            Utils::grabTouchWidget(info_area_scroll_contents);
+            infoWidget_ = new QWidget(infoScrollArea_);
+            infoWidget_->setObjectName(QStringLiteral("infoWidget_"));
+            infoWidget_->setGeometry(QRect(0, 0, Utils::scale_value(847), Utils::scale_value(707)));
+            Utils::grabTouchWidget(infoWidget_);
 
-            info_area_layout = new QVBoxLayout(info_area_scroll_contents);
-            info_area_layout->setSpacing(0);
-            info_area_layout->setObjectName(QStringLiteral("info_area_layout"));
-            info_area_layout->setContentsMargins(0, Utils::scale_value(19), Utils::scale_value(48), Utils::scale_value(48));
+            infoLayout_ = new QVBoxLayout(infoWidget_);
+            infoLayout_->setSpacing(0);
+            infoLayout_->setObjectName(QStringLiteral("infoLayout_"));
+            infoLayout_->setContentsMargins(0, Utils::scale_value(19), Utils::scale_value(48), Utils::scale_value(48));
             
-            info_head_area = new QWidget(info_area);
-            Utils::grabTouchWidget(info_head_area);
-            info_head_area->setObjectName(QStringLiteral("info_head_area"));
-            info_head_area->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
-            info_head_area->setMaximumHeight(Utils::scale_value(72));
-            info_head_area_layout = new QHBoxLayout(info_head_area);
-            info_head_area_layout->setSpacing(0);
-            info_head_area_layout->setObjectName(QStringLiteral("info_head_area_layout"));
-            info_head_area_layout->setContentsMargins(Utils::scale_value(16), 0, 0, Utils::scale_value(10));
+            headWidget_ = new QWidget(infoScrollArea_);
+            Utils::grabTouchWidget(headWidget_);
+            headWidget_->setObjectName(QStringLiteral("headWidget_"));
+            headWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
+            headWidget_->setMaximumHeight(Utils::scale_value(72));
+            headLayout_ = new QHBoxLayout(headWidget_);
+            headLayout_->setSpacing(0);
+            headLayout_->setObjectName(QStringLiteral("headLayout_"));
+            headLayout_->setContentsMargins(Utils::scale_value(16), 0, 0, Utils::scale_value(10));
             
-            full_name = new TextEmojiWidget(info_head_area, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(44));
-            Utils::grabTouchWidget(full_name);
-            full_name->set_ellipsis(true);
-            full_name->set_selectable(true);
-            info_head_area_layout->addWidget(full_name);
+            fullName_ = new TextEmojiWidget(headWidget_, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(44));
+            Utils::grabTouchWidget(fullName_);
+            fullName_->set_ellipsis(true);
+            fullName_->set_selectable(true);
+            headLayout_->addWidget(fullName_);
             
-            action_button = new QPushButton(info_head_area);
-            action_button->setObjectName(QStringLiteral("action_button"));
-            action_button->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-            action_button->setFlat(true);
-            action_button->setIconSize(QSize(Utils::scale_value(40), Utils::scale_value(40)));
-			action_button->setFocusPolicy(Qt::NoFocus);
-			action_button->setCursor(Qt::CursorShape::PointingHandCursor);
-            action_button_menu = new FlatMenu(action_button);
-            action_button_menu->setExpandDirection(Qt::AlignLeft);
-            action_button_menu->setObjectName(QStringLiteral("action_button_menu"));
-            info_head_area_layout->addWidget(action_button);
+            optionsButton_ = new QPushButton(headWidget_);
+            optionsButton_->setObjectName(QStringLiteral("optionsButton_"));
+            optionsButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            optionsButton_->setFlat(true);
+            optionsButton_->setIconSize(QSize(Utils::scale_value(40), Utils::scale_value(40)));
+            optionsButton_->setFocusPolicy(Qt::NoFocus);
+            optionsButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            optionsMenu_ = new FlatMenu(optionsButton_);
+            optionsMenu_->setExpandDirection(Qt::AlignLeft);
+            optionsMenu_->setObjectName(QStringLiteral("optionsMenu_"));
+            headLayout_->addWidget(optionsButton_);
             
-            info_area_layout->addWidget(info_head_area);
+            infoLayout_->addWidget(headWidget_);
             
-            info_state_area = new QWidget(info_area);
-            Utils::grabTouchWidget(info_state_area);
-            info_state_area->setObjectName(QStringLiteral("info_state_area"));
-            info_state_area->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed));
-            info_state_area->setMinimumSize(QSize(0, Utils::scale_value(45)));
-            info_state_area->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
-            info_state_area_layout = new QHBoxLayout(info_state_area);
-            info_state_area_layout->setSpacing(0);
-            info_state_area_layout->setObjectName(QStringLiteral("info_state_area_ayout"));
-            info_state_area_layout->setContentsMargins(Utils::scale_value(2), 0, 0, 0);
+            statusWidget_ = new QWidget(infoScrollArea_);
+            Utils::grabTouchWidget(statusWidget_);
+            statusWidget_->setObjectName(QStringLiteral("statusWidget_"));
+            statusWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed));
+            statusWidget_->setMinimumSize(QSize(0, Utils::scale_value(45)));
+            statusWidget_->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
+            statusLayout_ = new QHBoxLayout(statusWidget_);
+            statusLayout_->setSpacing(0);
+            statusLayout_->setObjectName(QStringLiteral("info_state_area_ayout"));
+            statusLayout_->setContentsMargins(Utils::scale_value(2), 0, 0, 0);
             
-            state_button = new QPushButton(info_state_area);
-            state_button->setObjectName(QStringLiteral("state_button"));
-            state_button->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed));
-            state_button->setMinimumSize(QSize(Utils::scale_value(36), Utils::scale_value(36)));
-            state_button->setMaximumSize(QSize(Utils::scale_value(36), Utils::scale_value(36)));
-            state_button->setFlat(true);
-            state_button->setIconSize(QSize(Utils::scale_value(24), Utils::scale_value(24)));
-			state_button->setFocusPolicy(Qt::NoFocus);
-			state_button->setCursor(Qt::CursorShape::PointingHandCursor);
-            state_button_menu = new FlatMenu(state_button);
-            state_button_menu->setObjectName(QStringLiteral("state_button_menu"));
-            info_state_area_layout->addWidget(state_button);
+            statusButton_ = new QPushButton(statusWidget_);
+            statusButton_->setObjectName(QStringLiteral("statusButton_"));
+            statusButton_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed));
+            statusButton_->setMinimumSize(QSize(Utils::scale_value(36), Utils::scale_value(36)));
+            statusButton_->setMaximumSize(QSize(Utils::scale_value(36), Utils::scale_value(36)));
+            statusButton_->setFlat(true);
+            statusButton_->setIconSize(QSize(Utils::scale_value(24), Utils::scale_value(24)));
+            statusButton_->setFocusPolicy(Qt::NoFocus);
+            statusButton_->setCursor(Qt::CursorShape::PointingHandCursor);
+            statusMenu_ = new FlatMenu(statusButton_);
+            statusMenu_->setObjectName(QStringLiteral("statusMenu_"));
+            statusLayout_->addWidget(statusButton_);
             
-            state_sign = new QLabel(info_state_area);
-            Utils::grabTouchWidget(state_sign);
-            state_sign->setObjectName(QStringLiteral("state_sign"));
-            info_state_area_layout->addWidget(state_sign);
+            statusLabel_ = new QLabel(statusWidget_);
+            Utils::grabTouchWidget(statusLabel_);
+            statusLabel_->setObjectName(QStringLiteral("statusLabel_"));
+            statusLayout_->addWidget(statusLabel_);
             
             horizontalSpacer = new QSpacerItem(Utils::scale_value(40), Utils::scale_value(20), QSizePolicy::Expanding, QSizePolicy::Minimum);
-            info_state_area_layout->addItem(horizontalSpacer);
+            statusLayout_->addItem(horizontalSpacer);
             
-            info_area_layout->addWidget(info_state_area);
+            infoLayout_->addWidget(statusWidget_);
 
-            info_values_area = new QWidget(info_area);
-            Utils::grabTouchWidget(info_values_area);
-            info_values_area->setObjectName(QStringLiteral("info_values_area"));
-            info_values_area->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-            info_values_area_layout = new QVBoxLayout(info_values_area);
-            info_values_area_layout->setAlignment(Qt::AlignTop);
-            info_values_area_layout->setObjectName(QStringLiteral("info_values_area_layout"));
-            info_values_area_layout->setSpacing(0);
-            info_values_area_layout->setContentsMargins(Utils::scale_value(16), 0, 0, 0);
+            infoValuesWidget_ = new QWidget(infoScrollArea_);
+            Utils::grabTouchWidget(infoValuesWidget_);
+            infoValuesWidget_->setObjectName(QStringLiteral("infoValuesWidget_"));
+            infoValuesWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+            infoValuesLayout_ = new QVBoxLayout(infoValuesWidget_);
+            infoValuesLayout_->setAlignment(Qt::AlignTop);
+            infoValuesLayout_->setObjectName(QStringLiteral("infoValuesLayout_"));
+            infoValuesLayout_->setSpacing(0);
+            infoValuesLayout_->setContentsMargins(Utils::scale_value(16), 0, 0, 0);
 
-            auto fieldRoutine1 = [](QWidget* parent, QLayout* parentLayout, TextEmojiWidget*& fieldHead, TextEmojiWidget*& field, int dy)
+            auto fieldRoutine1 = [](QWidget* _parent, QLayout* _parentLayout, TextEmojiWidget*& _fieldHead, TextEmojiWidget*& _field, int _dy)
             {
-                fieldHead = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(36 + dy));
-                fieldHead->set_ellipsis(true);
-                Utils::grabTouchWidget(fieldHead);
-                parentLayout->addWidget(fieldHead);
+                _fieldHead = new TextEmojiWidget(_parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(36 + _dy));
+                _fieldHead->set_ellipsis(true);
+                Utils::grabTouchWidget(_fieldHead);
+                _parentLayout->addWidget(_fieldHead);
                 
-                field = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), QColor("#282828"), Utils::scale_value(20));
-                field->set_ellipsis(true);
-                field->set_selectable(true);
-                Utils::grabTouchWidget(field);
-                parentLayout->addWidget(field);
+                _field = new TextEmojiWidget(_parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), QColor("#282828"), Utils::scale_value(20));
+                _field->set_ellipsis(true);
+                _field->set_selectable(true);
+                Utils::grabTouchWidget(_field);
+                _parentLayout->addWidget(_field);
             };
-            auto fieldRoutine2 = [fieldRoutine1](QWidget* parent, QLayout* parentLayout, TextEmojiWidget*& fieldHead, TextEmojiWidget*& field, TextEmojiWidget*& fieldBottom, int dy)
-            {
-                fieldRoutine1(parent, parentLayout, fieldHead, field, dy);
-                fieldBottom = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(18));
-                fieldBottom->set_ellipsis(true);
-                Utils::grabTouchWidget(fieldBottom);
-                parentLayout->addWidget(fieldBottom);
-            };
-            fieldRoutine1(info_values_area, info_values_area_layout, icq_number_head, icq_number, -10);
-            fieldRoutine2(info_values_area, info_values_area_layout, phone_head, phone, phone_bottom, 0);
-            fieldRoutine1(info_values_area, info_values_area_layout, first_name_head, first_name, 0);
-            fieldRoutine1(info_values_area, info_values_area_layout, last_name_head, last_name, 0);
-            fieldRoutine1(info_values_area, info_values_area_layout, birthdate_head, birthdate, 0);
-            fieldRoutine1(info_values_area, info_values_area_layout, gender_head, gender, 0);
-            fieldRoutine1(info_values_area, info_values_area_layout, country_head, country, 0);
-            fieldRoutine1(info_values_area, info_values_area_layout, city_head, city, 0);
-            fieldRoutine1(info_values_area, info_values_area_layout, about_head, about, 0);
 
-            about->set_ellipsis(false);
-            about->set_multiline(true);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, uinHead_, uin_, -10);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, phoneHead_, phone_, 0);
+			
+            attach_phone_label = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(20));
+
+            Utils::grabTouchWidget(attach_phone_label);
+            attach_phone_label->setCursor(Qt::PointingHandCursor);
+            attach_phone_label->setText(QT_TRANSLATE_NOOP("profile_page", "Attach phone number"));
+            attach_phone_label->setObjectName(QStringLiteral("attach_phone_label"));
+            attach_phone_label->set_ellipsis(true);
+            infoValuesLayout_->addWidget(attach_phone_label);  
+			
+            phoneBottom_ = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(18));
+            phoneBottom_->set_ellipsis(true);
+            Utils::grabTouchWidget(phoneBottom_);
+            infoValuesLayout_->addWidget(phoneBottom_);
+
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, firstNameHead_, firstName_, 0);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, lastNameHead_, lastName_, 0);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, birthdateHead_, birthdate_, 0);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, genderHead_, gender_, 0);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, countryHead_, country_, 0);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, cityHead_, city_, 0);
+            fieldRoutine1(infoValuesWidget_, infoValuesLayout_, aboutHead_, about_, 0);
+
+            about_->set_ellipsis(false);
+            about_->set_multiline(true);
             
-            show_ignore_list_label = new TextEmojiWidget(info_values_area, Utils::FontsFamily::SEGOE_UI,
+            ignoreListLabel_ = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI,
                 Utils::scale_value(18), QColor("#e30f04"), Utils::scale_value(44 - 18 + 10));
-            Utils::grabTouchWidget(show_ignore_list_label);
-            info_values_area_layout->addWidget(show_ignore_list_label);            
-            show_ignore_list_label->setCursor(Qt::PointingHandCursor);
-            show_ignore_list_label->setText(QT_TR_NOOP("Ignore list"));
-            show_ignore_list_label->setObjectName(QStringLiteral("show_ignore_list_label"));
-            show_ignore_list_label->set_ellipsis(true);
+            Utils::grabTouchWidget(ignoreListLabel_);
+            infoValuesLayout_->addWidget(ignoreListLabel_);
+            ignoreListLabel_->setCursor(Qt::PointingHandCursor);
+            ignoreListLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Ignore list"));
+            ignoreListLabel_->setObjectName(QStringLiteral("ignoreListLabel_"));
+            ignoreListLabel_->set_ellipsis(true);
             
-            info_area_layout->addWidget(info_values_area);
+            attach_uin_label = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI,
+            Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(44 - 18 + 10));
+            Utils::grabTouchWidget(attach_uin_label);
+            infoValuesLayout_->addWidget(attach_uin_label);            
+            attach_uin_label->setCursor(Qt::PointingHandCursor);
+            attach_uin_label->setText(QT_TRANSLATE_NOOP("profile_page", "Connect to ICQ account"));
+            attach_uin_label->setObjectName(QStringLiteral("attach_uin_label"));
+            attach_uin_label->set_ellipsis(true);
+			
+            infoLayout_->addWidget(infoValuesWidget_);
 
-            main_layout->addWidget(info_area);
+            mainLayout_->addWidget(infoScrollArea_);
             
-            info_area->setWidget(info_area_scroll_contents);
+            infoScrollArea_->setWidget(infoWidget_);
             
-            retranslateUi(profile_settings_widget);
+            retranslateUi(_profileWidget);
             
-            QMetaObject::connectSlotsByName(profile_settings_widget);
+            QMetaObject::connectSlotsByName(_profileWidget);
         }
         
-        void retranslateUi(QWidget *profile_settings_widget)
+        void retranslateUi(QWidget *_profileWidget)
         {
-            profile_settings_widget->setWindowTitle(QT_TR_NOOP("Profile"));
-            back_button->setText("");
-            do_text_message->setText("");
-            do_voice_message->setText("");
-            do_video_message->setText("");
-            ignore_button->setText(QT_TR_NOOP("Ignore"));
-            report_spam_button->setText(QT_TR_NOOP("Report spam"));
-            full_name->setText("");
-            action_button->setText(QT_TR_NOOP("Edit profile"));
-            state_button->setText("");
-            state_sign->setText("");
-            icq_number_head->setText(QT_TR_NOOP("UIN"));
-            icq_number->setText("");
-            phone_head->setText(QT_TR_NOOP("Phone number"));
-            phone->setText("");
-            phone_bottom->setText(QT_TR_NOOP("Only visible for those, who has it in the phone book"));
-            first_name_head->setText(QT_TR_NOOP("First name"));
-            first_name->setText("");
-            last_name_head->setText(QT_TR_NOOP("Last name"));
-            last_name->setText("");
-            birthdate_head->setText(QT_TR_NOOP("Birthdate"));
-            birthdate->setText("");
-            gender_head->setText(QT_TR_NOOP("Gender"));
-            gender->setText("");
-            country_head->setText(QT_TR_NOOP("Country"));
-            country->setText("");
-            city_head->setText(QT_TR_NOOP("City"));
-            city->setText("");
-            about_head->setText(QT_TR_NOOP("About"));
-            about->setText("");
+            _profileWidget->setWindowTitle(QT_TRANSLATE_NOOP("profile_page", "Profile"));
+            backButton_->setText("");
+            messageButton_->setText("");
+            voiceButton_->setText("");
+            videoButton_->setText("");
+            ignoreButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Ignore"));
+            spamButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Report spam"));
+            fullName_->setText("");
+            optionsButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Edit profile"));
+            statusButton_->setText("");
+            statusLabel_->setText("");
+            uinHead_->setText(QT_TRANSLATE_NOOP("profile_page", "UIN"));
+            uin_->setText("");
+            phoneHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Phone number"));
+            phone_->setText("");
+            phoneBottom_->setText(QT_TRANSLATE_NOOP("profile_page", "Only visible for those, who has it in the phone book"));
+            firstNameHead_->setText(QT_TRANSLATE_NOOP("profile_page", "First name"));
+            firstName_->setText("");
+            lastNameHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Last name"));
+            lastName_->setText("");
+            birthdateHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Birthdate"));
+            birthdate_->setText("");
+            genderHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Gender"));
+            gender_->setText("");
+            countryHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Country"));
+            country_->setText("");
+            cityHead_->setText(QT_TRANSLATE_NOOP("profile_page", "City"));
+            city_->setText("");
+            aboutHead_->setText(QT_TRANSLATE_NOOP("profile_page", "About me"));
+            about_->setText("");
         }
     };
     
@@ -404,28 +424,31 @@ namespace Ui
     {
         Ui_->init(this);
         
-        connect(Ui_->back_button, &QPushButton::clicked, [this]() { emit Utils::InterConnector::instance().profileSettingsBack(); });
+        connect(Ui_->backButton_, &QPushButton::clicked, [this]() { emit Utils::InterConnector::instance().profileSettingsBack(); });
 
         connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(onAvatarLoaded(QString)), Qt::QueuedConnection);
         
-        Ui_->state_button_menu->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TR_NOOP("Online"), this, SLOT(menuStateOnline()));
-        Ui_->state_button_menu->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TR_NOOP("Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
-        Ui_->state_button_menu->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TR_NOOP("Invisible"), this, SLOT(menuStateInvisible()));
+        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TRANSLATE_NOOP("profile_page", "Online"), this, SLOT(menuStateOnline()));
+        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TRANSLATE_NOOP("profile_page", "Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
+        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TRANSLATE_NOOP("profile_page", "Invisible"), this, SLOT(menuStateInvisible()));
 
         /*
-        Ui_->action_button_menu->addAction(QT_TR_NOOP("Add to Favorites"));
-        Ui_->action_button_menu->addSeparator();
+        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("profile_page", "Add to Favorites"));
+        Ui_->optionsMenu_->addSeparator();
         */
-        Ui_->action_button_menu->addAction(QT_TR_NOOP("Ignore"), this, SLOT(contactIgnore()));
-        Ui_->action_button_menu->addAction(QT_TR_NOOP("Report Spam"), this, SLOT(contactSpam()));
+        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("profile_page", "Ignore"), this, SLOT(contactIgnore()));
+        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("profile_page", "Report Spam"), this, SLOT(contactSpam()));
 
-        connect(Ui_->ignore_button, SIGNAL(clicked()), this, SLOT(contactIgnore()));
-        connect(Ui_->report_spam_button, SIGNAL(clicked()), this, SLOT(contactSpam()));
+        connect(Ui_->ignoreButton_, SIGNAL(clicked()), this, SLOT(contactIgnore()));
+        connect(Ui_->spamButton_, SIGNAL(clicked()), this, SLOT(contactSpam()));
 
-        Ui_->show_ignore_list_label->disconnect();
-        Testing::setAccessibleName(Ui_->show_ignore_list_label, "IgnoreList");
+        Ui_->ignoreListLabel_->disconnect();
+        Ui_->attach_phone_label->disconnect();
+        Ui_->attach_uin_label->disconnect();
 
-        connect(Ui_->show_ignore_list_label, &TextEmojiWidget::clicked, [this]()
+        Testing::setAccessibleName(Ui_->ignoreListLabel_, "IgnoreList");
+
+        connect(Ui_->ignoreListLabel_, &TextEmojiWidget::clicked, [this]()
         {
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::ignorelist_open);
             QVector<QString> temp;
@@ -443,12 +466,24 @@ namespace Ui
             disconnect(connectId);
         });
 
+        connect(Ui_->attach_phone_label, &TextEmojiWidget::clicked, [this]()
+        {
+            emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_AttachPhone);
+        });
+
+        connect(Ui_->attach_uin_label, &TextEmojiWidget::clicked, [this]()
+        {
+            emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_AttachUin);
+        });
+
         disconnector_->add("login_complete", QWidget::connect(GetDispatcher(), &core_dispatcher::login_complete, [this]
         {
             if (needRequestAgain_ && isVisible())
                 updateInterface(uin_);
         }));
         
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUpdateInterface, this, &ProfileSettingsWidget::updateProfile, Qt::QueuedConnection);
+
         updateActionButton();
     }
     
@@ -465,13 +500,11 @@ namespace Ui
     void ProfileSettingsWidget::contactIgnore()
     {
         emit Utils::InterConnector::instance().profileSettingsUnknownIgnore(uin_);
-        emit Utils::InterConnector::instance().profileSettingsBack();
     }
 
     void ProfileSettingsWidget::contactSpam()
     {
         emit Utils::InterConnector::instance().profileSettingsUnknownSpam(uin_);
-        emit Utils::InterConnector::instance().profileSettingsBack();
     }
     
     void ProfileSettingsWidget::myInfo()
@@ -487,30 +520,43 @@ namespace Ui
             setStateOnline();
     }
     
-    void ProfileSettingsWidget::updateInterface(const QString &uin)
+    void ProfileSettingsWidget::updateProfile()
+    {
+        updateInterface(uin_);
+    }
+
+    void ProfileSettingsWidget::updateInterface(const QString &_uin)
     {
         needRequestAgain_ = false;
         
-        if (uin.length())
+        if (_uin.length())
         {
             disconnect(SIGNAL(myInfo()));
             disconnect(SIGNAL(needLogin()));
+            disconnect(SIGNAL(recvFlags(int)));
         }
         else
         {
             myInfo();
+            core::coll_helper helper(GetDispatcher()->create_collection(), true);
+            Ui_->attach_uin_label->setVisible(false);
+            GetDispatcher()->post_message_to_core("load_flags", helper.get());
             connect(GetDispatcher(), SIGNAL(myInfo()), this, SLOT(myInfo()));
             connect(GetDispatcher(), SIGNAL(needLogin()), this, SLOT(setStateOffline()));
+            connect(GetDispatcher(), SIGNAL(recvFlags(int)), this, SLOT(recvFlags(int)));
         }
         
-        uin_ = uin;
-        
-        Ui_->backbutton_area->setVisible(uin.length());
-        Ui_->avatar_buttons_area->setVisible(uin.length());
-        Ui_->ignore_button->setVisible(false);
-        Ui_->report_spam_button->setVisible(false);
-        Ui_->info_state_area->setVisible(false);
-        Ui_->show_ignore_list_label->setVisible(uin.isEmpty());
+        uin_ = _uin;
+
+        Ui_->backButtonWidget_->setVisible(_uin.length());
+        Ui_->actionsWidget_->setVisible(_uin.length());
+        Ui_->ignoreButton_->setVisible(false);
+        Ui_->spamButton_->setVisible(false);
+        Ui_->statusWidget_->setVisible(false);
+        Ui_->ignoreListLabel_->setVisible(_uin.isEmpty());
+		Ui_->attach_phone_label->setVisible(false);
+        Ui_->attach_uin_label->setVisible(false);
+
         setFullName("");
         setICQNumber("");
         setPhone("", false);
@@ -527,47 +573,50 @@ namespace Ui
             avatar_ = nullptr;
         }
 
-        actionButtonState_ = uin.length() ? USER_ACTIONS : EDIT_PROFILE;
+        actionButtonState_ = _uin.length() ? USER_ACTIONS : EDIT_PROFILE;
         updateActionButton();
 
-        Logic::GetContactListModel()->get_contact_profile(uin, [this](Logic::profile_ptr _profile, int32_t /*error*/)
+        if (USER_ACTIONS)
         {
-            if (_profile)
-                parse(_profile);
-            else
-                needRequestAgain_ = true;
-        });
+            Logic::GetContactListModel()->get_contact_profile(_uin, [this](Logic::profile_ptr _profile, int32_t /*error*/)
+            {
+                if (_profile)
+                    parse(_profile);
+                else
+                    needRequestAgain_ = true;
+            });
+        }
     }
 
-    void ProfileSettingsWidget::paintEvent(QPaintEvent* event)
+    void ProfileSettingsWidget::paintEvent(QPaintEvent* _event)
     {
-        QWidget::paintEvent(event);
+        QWidget::paintEvent(_event);
         
         QPainter painter(this);
         painter.setBrush(QBrush(QColor("#ffffff")));
         painter.drawRect(geometry().x() - 1, geometry().y() - 1, visibleRegion().boundingRect().width() + 2, visibleRegion().boundingRect().height() + 2);
     }
 
-    bool ProfileSettingsWidget::event(QEvent* event)
+    bool ProfileSettingsWidget::event(QEvent* _event)
     {
-        if (event->type() == QMouseEvent::Wheel)
+        if (_event->type() == QMouseEvent::Wheel)
         {
-            auto barValue = Ui_->info_area->verticalScrollBar()->value();
-            if (!Ui_->info_area->geometry().contains(mapFromGlobal(QCursor::pos())))
+            auto barValue = Ui_->infoScrollArea_->verticalScrollBar()->value();
+            if (!Ui_->infoScrollArea_->geometry().contains(mapFromGlobal(QCursor::pos())))
             {
-                QWheelEvent* wheel = static_cast< QWheelEvent* >(event);
+                QWheelEvent* wheel = static_cast< QWheelEvent* >(_event);
                 auto nval = (barValue - wheel->delta());
-                nval = std::max(nval, Ui_->info_area->verticalScrollBar()->minimum());
-                nval = std::min(nval, Ui_->info_area->verticalScrollBar()->maximum());
-                Ui_->info_area->verticalScrollBar()->setValue(nval);
+                nval = std::max(nval, Ui_->infoScrollArea_->verticalScrollBar()->minimum());
+                nval = std::min(nval, Ui_->infoScrollArea_->verticalScrollBar()->maximum());
+                Ui_->infoScrollArea_->verticalScrollBar()->setValue(nval);
             }
         }
-        return QWidget::event(event);
+        return QWidget::event(_event);
     }
 
-    void ProfileSettingsWidget::parse(Logic::profile_ptr profile)
+    void ProfileSettingsWidget::parse(Logic::profile_ptr _profile)
     {
-        auto contact = Logic::GetContactListModel()->getContactItem(profile->get_aimid());
+        auto contact = Logic::GetContactListModel()->getContactItem(_profile->get_aimid());
 
         auto contactIsSelf = (actionButtonState_ == EDIT_PROFILE);
 
@@ -575,40 +624,51 @@ namespace Ui
         {
             if (contact && contact->Get()->GetDisplayName().length())
                 setFullName(contact->Get()->GetDisplayName());
-            else if (profile->get_contact_name().length())
-                setFullName(profile->get_contact_name());
-            else if (profile->get_displayid().length())
-                setFullName(profile->get_displayid());
-            else if (profile->get_friendly().length())
-                setFullName(profile->get_friendly());
+            else if (_profile->get_contact_name().length())
+                setFullName(_profile->get_contact_name());
+            else if (_profile->get_displayid().length())
+                setFullName(_profile->get_displayid());
+            else if (_profile->get_friendly().length())
+                setFullName(_profile->get_friendly());
             else
-                setFullName(QString("%1%2%3").arg(profile->get_first_name()).arg(profile->get_first_name().length() ? " " : "").arg(profile->get_last_name()));
+                setFullName(QString("%1%2%3").arg(_profile->get_first_name()).arg(_profile->get_first_name().length() ? " " : "").arg(_profile->get_last_name()));
             
-            setICQNumber(profile->get_aimid());
-            setPhone(!profile->get_phones().empty() ? profile->get_phones().front().get_phone() : "", contactIsSelf);
-            setFirstName(profile->get_first_name());
-            setLastName(profile->get_last_name());
-            setBirthdate(profile->get_birthdate() ? Utils::GetTranslator()->formatDate(QDateTime::fromMSecsSinceEpoch(profile->get_birthdate() * 1000, Qt::LocalTime).date(), false) : "");
-            setGender(profile->get_gender());
-            setCountry(profile->get_origin_address().get_country());
-            setCity(profile->get_origin_address().get_city());
-            setAbout(profile->get_about());
-        }
+            setICQNumber(_profile->get_aimid());
 
-        auto contactIsFriend = ((actionButtonState_ == USER_ACTIONS) && (contact && !contact->is_not_auth()));
-        auto contactIsUnknown = ((actionButtonState_ == USER_ACTIONS) && !contactIsSelf && !contactIsFriend);
+            if (!contactIsSelf)
+            {
+                setPhone(!_profile->get_phones().empty() ? _profile->get_phones().front().get_phone() : "", contactIsSelf);
+            }
+            else
+            {
+                if (MyInfo()->phoneNumber().isEmpty())
+                {
+                    setPhone(MyInfo()->phoneNumber(), contactIsSelf);
+                }
+                else
+                {
+                    setPhone("+" + MyInfo()->phoneNumber(), contactIsSelf);
+                }
+            }
+
+            setFirstName(_profile->get_first_name());
+            setLastName(_profile->get_last_name());
+            setBirthdate(_profile->get_birthdate() ? Utils::GetTranslator()->formatDate(QDateTime::fromMSecsSinceEpoch(_profile->get_birthdate() * 1000, Qt::LocalTime).date(), false) : "");
+            setGender(_profile->get_gender());
+            setCountry(_profile->get_origin_address().get_country());
+            setCity(_profile->get_origin_address().get_city());
+            setAbout(_profile->get_about());
+        }
         
-        auto contactIsOnline = (contact && contact->is_online());
+        auto uin = _profile->get_aimid();
         
-        auto uin = profile->get_aimid();
-        auto dname = Ui_->full_name->text();
-        
-        Ui_->info_state_area->setVisible(contactIsSelf || contactIsFriend);
-        Ui_->state_button->setCursor(contactIsSelf ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
+        Ui_->statusButton_->setCursor(contactIsSelf ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
 
         if (actionButtonState_ == EDIT_PROFILE)
         {
-            Utils::ApplyPropertyParameter(Ui_->state_sign, "green", true);
+            Ui_->statusWidget_->setVisible(true);
+            Utils::ApplyPropertyParameter(Ui_->statusLabel_, "green", true);
+
             GetDispatcher()->disconnect(SIGNAL(signedUrl(QString)));
             connect(GetDispatcher(), &core_dispatcher::signedUrl, [](QString url)
             {
@@ -618,8 +678,8 @@ namespace Ui
                 QDesktopServices::openUrl(url);
                 ((Utils::Application *)qApp)->setUrlHandler();
             });
-            Ui_->action_button->disconnect();
-            connect(Ui_->action_button, &QPushButton::clicked, [uin]()
+            Ui_->optionsButton_->disconnect();
+            connect(Ui_->optionsButton_, &QPushButton::clicked, [uin]()
             {
                 if (uin.length())
                 {
@@ -631,48 +691,53 @@ namespace Ui
                 }
             });
            
-            Ui_->do_text_message->disconnect();
-            Ui_->do_voice_message->disconnect();
-            Ui_->do_video_message->disconnect();
+            Ui_->messageButton_->disconnect();
+            Ui_->voiceButton_->disconnect();
+            Ui_->videoButton_->disconnect();
         }
         else if (actionButtonState_ == USER_ACTIONS)
         {
+            auto contactIsFriend = ((actionButtonState_ == USER_ACTIONS) && (contact && !contact->is_not_auth()));
+            Ui_->statusWidget_->setVisible(contactIsFriend);
+
+            auto contactIsUnknown = ((actionButtonState_ == USER_ACTIONS) && !contactIsSelf && !contactIsFriend);
+            auto contactIsOnline = (contact && contact->is_online());
             GetDispatcher()->disconnect(SIGNAL(signedUrl(QString)));
             
-            Ui_->state_sign->setText("");
+            Ui_->statusLabel_->setText("");
             if (contactIsFriend && contact && contact->Get())
             {
-                Ui_->state_button->setVisible(contactIsOnline);
+                Ui_->statusButton_->setVisible(contactIsOnline);
                 if (!contact->is_online())
                 {
-                    QString state = QT_TR_NOOP("Seen ");
+                    QString state = QT_TRANSLATE_NOOP("profile_page", "Seen ");
                     QDateTime lastSeen = contact->Get()->GetLastSeen();
                     if (lastSeen.isValid())
                     {
                         const auto current = QDateTime::currentDateTime();
                         const auto days = lastSeen.daysTo(current);
                         if (days == 0)
-                            state += QT_TR_NOOP("today");
+                            state += QT_TRANSLATE_NOOP("profile_page", "today");
                         else if (days == 1)
-                            state += QT_TR_NOOP("yesterday");
+                            state += QT_TRANSLATE_NOOP("profile_page", "yesterday");
                         else
                             state += Utils::GetTranslator()->formatDate(lastSeen.date(), lastSeen.date().year() == current.date().year());
                         if (lastSeen.date().year() == current.date().year())
                         {
-                            state += QT_TR_NOOP(" at ");
+                            state += QT_TRANSLATE_NOOP("profile_page", " at ");
                             state += lastSeen.time().toString(Qt::SystemLocaleShortDate);
                         }
 
-                        Utils::ApplyPropertyParameter(Ui_->state_sign, "green", true);
-                        Ui_->state_sign->setText(state);
+                        Utils::ApplyPropertyParameter(Ui_->statusLabel_, "green", true);
+                        Ui_->statusLabel_->setText(state);
                     }
                 }
             }
-            if (Ui_->state_sign->text().isEmpty())
+            if (Ui_->statusLabel_->text().isEmpty())
             {
                 if (contactIsOnline)
                 {
-                    Utils::ApplyPropertyParameter(Ui_->state_sign, "green", true);
+                    Utils::ApplyPropertyParameter(Ui_->statusLabel_, "green", true);
                     auto s = contact->Get()->State_.toLower();
                     if (s == "dnd")
                         setStateDoNotDisturb();
@@ -683,30 +748,30 @@ namespace Ui
                 }
                 else
                 {
-                    Utils::ApplyPropertyParameter(Ui_->state_sign, "green", false);
-                    Ui_->state_sign->setText(QT_TR_NOOP("Offline"));
+                    Utils::ApplyPropertyParameter(Ui_->statusLabel_, "green", false);
+                    Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Offline"));
                 }
             }
             
-            Ui_->state_button->setVisible(false);
+            Ui_->statusButton_->setVisible(false);
             
-            Ui_->do_text_message->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::PointingHandCursor);
-            Utils::ApplyPropertyParameter(Ui_->do_text_message, "known", contactIsFriend);
+            Ui_->messageButton_->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::PointingHandCursor);
+            Utils::ApplyPropertyParameter(Ui_->messageButton_, "known", contactIsFriend);
 
-            Ui_->do_voice_message->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
-            Utils::ApplyPropertyParameter(Ui_->do_voice_message, "known", contactIsFriend);
+            Ui_->voiceButton_->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
+            Utils::ApplyPropertyParameter(Ui_->voiceButton_, "known", contactIsFriend);
 
-            Ui_->do_video_message->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
-            Utils::ApplyPropertyParameter(Ui_->do_video_message, "known", contactIsFriend);
+            Ui_->videoButton_->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
+            Utils::ApplyPropertyParameter(Ui_->videoButton_, "known", contactIsFriend);
             
-            Ui_->ignore_button->setVisible(contactIsUnknown);
-            Ui_->report_spam_button->setVisible(contactIsUnknown);
+            Ui_->ignoreButton_->setVisible(contactIsUnknown);
+            Ui_->spamButton_->setVisible(contactIsUnknown);
 
             if (contactIsUnknown)
             {
                 auto uin = uin_;
-                Ui_->do_text_message->disconnect();
-                connect(Ui_->do_text_message, &QPushButton::clicked, [uin]()
+                Ui_->messageButton_->disconnect();
+                connect(Ui_->messageButton_, &QPushButton::clicked, [uin]()
                 {
                     Logic::GetContactListModel()->add_contact_to_contact_list(uin, [uin](bool result)
                     {
@@ -718,19 +783,19 @@ namespace Ui
                         }
                     });
                 });
-                Ui_->do_voice_message->disconnect();
-                Ui_->do_video_message->disconnect();
+                Ui_->voiceButton_->disconnect();
+                Ui_->videoButton_->disconnect();
             }
             else
             {
-                Ui_->do_text_message->disconnect();
-                connect(Ui_->do_text_message, &QPushButton::clicked, [uin]()
+                Ui_->messageButton_->disconnect();
+                connect(Ui_->messageButton_, &QPushButton::clicked, [uin]()
                 {
                     Logic::GetContactListModel()->setCurrent(uin, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
                 });
-                Ui_->do_voice_message->disconnect();
-                connect(Ui_->do_voice_message, &QPushButton::clicked, [uin]()
+                Ui_->voiceButton_->disconnect();
+                connect(Ui_->voiceButton_, &QPushButton::clicked, [uin]()
                 {
                     Logic::GetContactListModel()->setCurrent(uin, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
@@ -738,8 +803,8 @@ namespace Ui
                     QTimer::singleShot(500, [uin]() { Ui::GetDispatcher()->getVoipController().setStartA(uin.toUtf8(), false); });
                     GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::profile_call);
                 });
-                Ui_->do_video_message->disconnect();
-                connect(Ui_->do_video_message, &QPushButton::clicked, [uin]()
+                Ui_->videoButton_->disconnect();
+                connect(Ui_->videoButton_, &QPushButton::clicked, [uin]()
                 {
                     Logic::GetContactListModel()->setCurrent(uin, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
@@ -751,20 +816,19 @@ namespace Ui
         }
         updateActionButton();
 
-        if (avatar_)
-        {
-            // just in case. it must be deleted when a profile requested.
-            delete avatar_;
-            avatar_ = nullptr;
-        }
+        auto dname = Ui_->fullName_->text();
         if (!avatar_)
         {
-            avatar_ = new ContactAvatarWidget(Ui_->avatar, uin, dname, Utils::scale_value(180));
-            Ui_->avatar_layout->addWidget(avatar_);
+            avatar_ = new ContactAvatarWidget(Ui_->avatar_, uin, dname, Utils::scale_value(180));
+            Ui_->avatarLayout_->addWidget(avatar_);
+        }
+        else
+        {
+            avatar_->UpdateParams(uin_, dname);
         }
     }
     
-    void ProfileSettingsWidget::onAvatarLoaded(QString uin)
+    void ProfileSettingsWidget::onAvatarLoaded(QString _uin)
     {
         if (avatar_)
             avatar_->update();
@@ -797,144 +861,169 @@ namespace Ui
 
     void ProfileSettingsWidget::setStateOnline()
     {
-        Ui_->state_button->setVisible(true);
-        Ui_->state_button->setIcon(QIcon(":/resources/content_status_online_200.png"));
-        Ui_->state_sign->setText(QT_TR_NOOP("Online"));
+        Ui_->statusButton_->setVisible(true);
+        Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_online_200.png"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Online"));
     }
     
     void ProfileSettingsWidget::setStateOffline()
     {
-        Ui_->state_button->setVisible(true);
-        Ui_->state_button->setIcon(QIcon(":/resources/content_status_offline_200.png"));
-        Ui_->state_sign->setText(QT_TR_NOOP("Offline"));
+        Ui_->statusButton_->setVisible(true);
+        Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_offline_200.png"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Offline"));
     }
     
     void ProfileSettingsWidget::setStateDoNotDisturb()
     {
-        Ui_->state_button->setVisible(true);
-        Ui_->state_button->setIcon(QIcon(":/resources/content_status_dnd_200.png"));
-        Ui_->state_sign->setText(QT_TR_NOOP("Do not disturb"));
+        Ui_->statusButton_->setVisible(true);
+        Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_dnd_200.png"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Do not disturb"));
     }
     
     void ProfileSettingsWidget::setStateInvisible()
     {
-        Ui_->state_button->setVisible(true);
-        Ui_->state_button->setIcon(QIcon(":/resources/content_status_invisible_200.png"));
-        Ui_->state_sign->setText(QT_TR_NOOP("Invisible"));
+        Ui_->statusButton_->setVisible(true);
+        Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_invisible_200.png"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Invisible"));
     }
     
-    void ProfileSettingsWidget::setFullName(const QString& val)
+    void ProfileSettingsWidget::setFullName(const QString& _val)
     {
-        Ui_->full_name->setText(val);
+        Ui_->fullName_->setText(_val);
     }
 
-    void ProfileSettingsWidget::setICQNumber(const QString& val)
+    void ProfileSettingsWidget::setICQNumber(const QString& _val)
     {
-        Ui_->icq_number->setText(val);
-        Ui_->icq_number->setVisible(val.length());
-        Ui_->icq_number_head->setVisible(val.length());
+        Ui_->uin_->setText(_val);
+        Ui_->uin_->setVisible(_val.length());
+        Ui_->uinHead_->setVisible(_val.length());
     }
 
-    void ProfileSettingsWidget::setPhone(const QString& val, bool forSelf)
+    void ProfileSettingsWidget::setPhone(const QString& _val, bool _forSelf)
     {
-        Ui_->phone->setText(val);
-        Ui_->phone->setVisible(val.length());
-        Ui_->phone_head->setVisible(val.length());
-        Ui_->phone_bottom->setVisible(forSelf && val.length());
+        Ui_->phone_->setText(_val);
+        Ui_->phone_->setVisible(_val.length());
+        Ui_->phoneHead_->setVisible(_forSelf || !_val.isEmpty());
+        Ui_->attach_phone_label->setVisible(_forSelf && _val.isEmpty());
+
+        if (_forSelf)
+        {
+            QString phone_text = "";
+            if (_val.length())
+            {
+                phone_text = QT_TRANSLATE_NOOP("profile_page", "Only visible for those, who has it in the phone book");
+            }
+            else
+            {
+                phone_text = QT_TRANSLATE_NOOP("profile_page", "for safety and spam protection");
+            }
+
+            Ui_->phoneBottom_->setText(phone_text);
+        }
+
+        Ui_->phoneBottom_->setVisible(_forSelf);
     }
 
-    void ProfileSettingsWidget::setFirstName(const QString& val)
+    void ProfileSettingsWidget::setFirstName(const QString& _val)
     {
-        Ui_->first_name->setText(val);
-        Ui_->first_name->setVisible(val.length());
-        Ui_->first_name_head->setVisible(val.length());
+        Ui_->firstName_->setText(_val);
+        Ui_->firstName_->setVisible(_val.length());
+        Ui_->firstNameHead_->setVisible(_val.length());
     }
 
-    void ProfileSettingsWidget::setLastName(const QString& val)
+    void ProfileSettingsWidget::setLastName(const QString& _val)
     {
-        Ui_->last_name->setText(val);
-        Ui_->last_name->setVisible(val.length());
-        Ui_->last_name_head->setVisible(val.length());
+        Ui_->lastName_->setText(_val);
+        Ui_->lastName_->setVisible(_val.length());
+        Ui_->lastNameHead_->setVisible(_val.length());
     }
 
-    void ProfileSettingsWidget::setBirthdate(const QString& val)
+    void ProfileSettingsWidget::setBirthdate(const QString& _val)
     {
-        Ui_->birthdate->setText(val);
-        Ui_->birthdate->setVisible(val.length());
-        Ui_->birthdate_head->setVisible(val.length());
+        Ui_->birthdate_->setText(_val);
+        Ui_->birthdate_->setVisible(_val.length());
+        Ui_->birthdateHead_->setVisible(_val.length());
     }
 
-    void ProfileSettingsWidget::setGender(const QString& val)
+    void ProfileSettingsWidget::setGender(const QString& _val)
     {
-        if (val.toLower() == "male")
-            Ui_->gender->setText(QT_TR_NOOP("Male"));
-        else if (val.toLower() == "female")
-            Ui_->gender->setText(QT_TR_NOOP("Female"));
+        if (_val.toLower() == "male")
+            Ui_->gender_->setText(QT_TRANSLATE_NOOP("profile_page", "Male"));
+        else if (_val.toLower() == "female")
+            Ui_->gender_->setText(QT_TRANSLATE_NOOP("profile_page", "Female"));
         else
-            Ui_->gender->setText("");
-        Ui_->gender->setVisible(Ui_->gender->text().length());
-        Ui_->gender_head->setVisible(Ui_->gender->text().length());
+            Ui_->gender_->setText("");
+        Ui_->gender_->setVisible(Ui_->gender_->text().length());
+        Ui_->genderHead_->setVisible(Ui_->gender_->text().length());
     }
 
-    void ProfileSettingsWidget::setCountry(const QString& val)
+    void ProfileSettingsWidget::setCountry(const QString& _val)
     {
-        Ui_->country->setText(val);
-        Ui_->country->setVisible(val.length());
-        Ui_->country_head->setVisible(val.length());
+        Ui_->country_->setText(_val);
+        Ui_->country_->setVisible(_val.length());
+        Ui_->countryHead_->setVisible(_val.length());
     }
 
-    void ProfileSettingsWidget::setCity(const QString& val)
+    void ProfileSettingsWidget::setCity(const QString& _val)
     {
-        Ui_->city->setText(val);
-        Ui_->city->setVisible(val.length());
-        Ui_->city_head->setVisible(val.length());
+        Ui_->city_->setText(_val);
+        Ui_->city_->setVisible(_val.length());
+        Ui_->cityHead_->setVisible(_val.length());
     }
 
-    void ProfileSettingsWidget::setAbout(const QString& val)
+    void ProfileSettingsWidget::setAbout(const QString& _val)
     {
-        Ui_->about->setText(val);
-        Ui_->about->setVisible(val.length());
-        Ui_->about_head->setVisible(val.length());
+        Ui_->about_->setText(_val);
+        Ui_->about_->setVisible(_val.length());
+        Ui_->aboutHead_->setVisible(_val.length());
     }
 
     void ProfileSettingsWidget::updateActionButton()
     {
         if (actionButtonState_ == EDIT_PROFILE)
         {
-            Ui_->action_button->setText(QT_TR_NOOP("Edit profile"));
-            Ui_->action_button->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-            Ui_->action_button->setMenu(nullptr);
+            Ui_->optionsButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Edit profile"));
+            Ui_->optionsButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            Ui_->optionsButton_->setMenu(nullptr);
 
-            Ui_->avatar_area->setMinimumWidth(Utils::scale_value(260));
-            Ui_->avatar_area_layout->setContentsMargins(Utils::scale_value(48), Utils::scale_value(24), Utils::scale_value(32), 0);
+            Ui_->avatarWidget_->setMinimumWidth(Utils::scale_value(260));
+            Ui_->avatarWidgetLayout_->setContentsMargins(Utils::scale_value(48), Utils::scale_value(24), Utils::scale_value(32), 0);
 
             // temporary disabled
-            Ui_->state_button->setMenu(Ui_->state_button_menu);
-            Ui_->info_state_area_layout->setContentsMargins(Utils::scale_value(2), 0, 0, 0);
+            Ui_->statusButton_->setMenu(Ui_->statusMenu_);
+            Ui_->statusLayout_->setContentsMargins(Utils::scale_value(2), 0, 0, 0);
             // remove lines below after set_state is implemented.
             /*
-            Ui_->state_button->setMenu(nullptr);
-            Ui_->state_button->setVisible(false);
-            Ui_->info_state_area_layout->setContentsMargins(Utils::scale_value(16), 0, 0, 0);
+            Ui_->statusButton_->setMenu(nullptr);
+            Ui_->statusButton_->setVisible(false);
+            Ui_->statusLayout_->setContentsMargins(Utils::scale_value(16), 0, 0, 0);
             */
         }
         else if (actionButtonState_ == USER_ACTIONS)
         {
-            Ui_->action_button->setText("");
-            Ui_->action_button->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-            Ui_->action_button->setMenu(Ui_->action_button_menu);
+            Ui_->optionsButton_->setText("");
+            Ui_->optionsButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+            Ui_->optionsButton_->setMenu(Ui_->optionsMenu_);
 
-            Ui_->avatar_area->setMinimumWidth(Utils::scale_value(236));
-            Ui_->avatar_area_layout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(24), Utils::scale_value(32), 0);
+            Ui_->avatarWidget_->setMinimumWidth(Utils::scale_value(236));
+            Ui_->avatarWidgetLayout_->setContentsMargins(Utils::scale_value(24), Utils::scale_value(24), Utils::scale_value(32), 0);
 
-            Ui_->state_button->setMenu(nullptr);
-            if (Ui_->state_button->isVisible())
-                Ui_->info_state_area_layout->setContentsMargins(Utils::scale_value(2), 0, 0, 0);
+            Ui_->statusButton_->setMenu(nullptr);
+            if (Ui_->statusButton_->isVisible())
+                Ui_->statusLayout_->setContentsMargins(Utils::scale_value(2), 0, 0, 0);
             else
-                Ui_->info_state_area_layout->setContentsMargins(Utils::scale_value(16), 0, 0, 0);
+                Ui_->statusLayout_->setContentsMargins(Utils::scale_value(16), 0, 0, 0);
         }
-        Utils::ApplyPropertyParameter(Ui_->action_button, "self", actionButtonState_ == EDIT_PROFILE);
-        Utils::ApplyPropertyParameter(Ui_->state_button, "self", actionButtonState_ == EDIT_PROFILE);
-        Utils::ApplyPropertyParameter(Ui_->state_sign, "self", actionButtonState_ == EDIT_PROFILE);
+        Utils::ApplyPropertyParameter(Ui_->optionsButton_, "self", actionButtonState_ == EDIT_PROFILE);
+        Utils::ApplyPropertyParameter(Ui_->statusButton_, "self", actionButtonState_ == EDIT_PROFILE);
+        Utils::ApplyPropertyParameter(Ui_->statusLabel_, "self", actionButtonState_ == EDIT_PROFILE);
+    }
+
+    void ProfileSettingsWidget::recvFlags(int _flags)
+    {
+        if (actionButtonState_ == EDIT_PROFILE)
+        {
+            Ui_->attach_uin_label->setVisible(_flags & 0x1000);
+        }
     }
 }

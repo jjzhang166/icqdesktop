@@ -2,27 +2,34 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="cs" sourcelanguage="en">
 <context>
-    <name>Form</name>
+    <name>QWidgetTextControl</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
+        <source>&amp;Undo</source>
+        <translation>Zpět</translation>
     </message>
     <message>
-        <source>Добавить к существующему звонку</source>
-        <translation></translation>
+        <source>&amp;Redo</source>
+        <translation>Znovu</translation>
     </message>
     <message>
-        <source>У вас есть активный звонок.
-Что вы хотите сделать?</source>
-        <translation></translation>
+        <source>&amp;Copy</source>
+        <translation>Kopírovat</translation>
     </message>
     <message>
-        <source>Начать новый звонок</source>
-        <translation></translation>
+        <source>&amp;Paste</source>
+        <translation>Vložit</translation>
     </message>
     <message>
-        <source>Отклонить</source>
-        <translation></translation>
+        <source>Cu&amp;t</source>
+        <translation>Vyjmout</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Vybrat vše</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Smazat</translation>
     </message>
 </context>
 <context>
@@ -37,139 +44,10 @@
     </message>
 </context>
 <context>
-    <name>Ui::ProfileSettingsWidget</name>
+    <name>attach_page</name>
     <message>
-        <source>Profile</source>
-        <translation>Profil</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translatorcomment>Move the user to ignore list</translatorcomment>
-        <translation>Ignorovat</translation>
-    </message>
-    <message>
-        <source>Report spam</source>
-        <translatorcomment>To report spam from this user</translatorcomment>
-        <translation>Nahlásit Spam</translation>
-    </message>
-    <message>
-        <source>Edit profile</source>
-        <translation>Upravit profil</translation>
-    </message>
-    <message>
-        <source>Only visible for those, who has it in the phone book</source>
-        <translation>Viditelné pouze pro ty, kteří je mají v telefonním seznamu</translation>
-    </message>
-    <message>
-        <source>First name</source>
-        <translation>Jméno</translation>
-    </message>
-    <message>
-        <source>Last name</source>
-        <translation>Příjmení</translation>
-    </message>
-    <message>
-        <source>Birthdate</source>
-        <translation>Datum narození</translation>
-    </message>
-    <message>
-        <source>Gender</source>
-        <translation>Pohlaví</translation>
-    </message>
-    <message>
-        <source>Country</source>
-        <translation>Země</translation>
-    </message>
-    <message>
-        <source>City</source>
-        <translation>Město</translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translatorcomment>&quot;About me&quot; in user&apos;s profile</translatorcomment>
-        <translation>O mně</translation>
-    </message>
-    <message>
-        <source>Online</source>
-        <translation>Online</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Nerušit</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Neviditelný/á</translation>
-    </message>
-    <message>
-        <source>Report Spam</source>
-        <translatorcomment>To report spam from this user</translatorcomment>
-        <translation>Nahlásit spam</translation>
-    </message>
-    <message>
-        <source>Phone number</source>
-        <translation>Telefonní číslo</translation>
-    </message>
-    <message>
-        <source>Seen </source>
-        <translatorcomment>Date and time, when the user was online</translatorcomment>
-        <translation>Naposledy viděn </translation>
-    </message>
-    <message>
-        <source>today</source>
-        <translation>dnes</translation>
-    </message>
-    <message>
-        <source>yesterday</source>
-        <translation>včera</translation>
-    </message>
-    <message>
-        <source> at </source>
-        <translatorcomment>example: last seen at 12:00</translatorcomment>
-        <translation> v </translation>
-    </message>
-    <message>
-        <source>Male</source>
-        <translation>Muž</translation>
-    </message>
-    <message>
-        <source>Female</source>
-        <translation>Žena</translation>
-    </message>
-    <message>
-        <source>Offline</source>
-        <translation>Offline</translation>
-    </message>
-    <message>
-        <source>UIN</source>
-        <translation>UIN</translation>
-    </message>
-    <message>
-        <source>Ignore list</source>
-        <translation>Seznam ignorovaných</translation>
-    </message>
-</context>
-<context>
-    <name>Ui::RecentMessagesAlert</name>
-    <message>
-        <source>View all</source>
-        <translatorcomment>View all unread messages</translatorcomment>
-        <translation>Zobrazit vše</translation>
-    </message>
-</context>
-<context>
-    <name>Ui::TrayIcon</name>
-    <message>
-        <source>Online</source>
-        <translation>Online</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Nerušit</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Neviditelný/á</translation>
+        <source>Continue</source>
+        <translation>Pokračovat</translation>
     </message>
 </context>
 <context>
@@ -221,7 +99,6 @@
     </message>
     <message>
         <source> changed theme to </source>
-        <translatorcomment>someone changed groupchat theme to smth</translatorcomment>
         <translation> změnil téma na </translation>
     </message>
     <message>
@@ -310,6 +187,22 @@
     <message>
         <source> joined the chat</source>
         <translation> se připojil k chatu</translation>
+    </message>
+    <message>
+        <source>You changed description to &quot;</source>
+        <translation>Změnil jsi popis na &quot;</translation>
+    </message>
+    <message>
+        <source> changed description to &quot;</source>
+        <translation> změnil popis na &quot;</translation>
+    </message>
+    <message>
+        <source>You changed picture of chat</source>
+        <translation>Změnil jsi obrázek chatu</translation>
+    </message>
+    <message>
+        <source> changed picture of chat</source>
+        <translation> změnil obrázek chatu</translation>
     </message>
 </context>
 <context>
@@ -510,7 +403,6 @@
     </message>
     <message>
         <source>Thank you for contacting us!</source>
-        <translatorcomment>In other words, &quot;thanks for your review!&quot;, you can use this one if it sounds better in your language</translatorcomment>
         <translation>Děkujeme za to, že jsi nás kontaktoval/a!</translation>
     </message>
     <message>
@@ -589,10 +481,6 @@
         <translation>Vymazat</translation>
     </message>
     <message>
-        <source>Quit</source>
-        <translation>Ukončit</translation>
-    </message>
-    <message>
         <source>Add contact</source>
         <translation>Přidat kontakt</translation>
     </message>
@@ -619,10 +507,6 @@
     <message>
         <source>Change wallpaper</source>
         <translation>Změnit tapetu</translation>
-    </message>
-    <message>
-        <source>Show</source>
-        <translation>Otevřít</translation>
     </message>
     <message>
         <source>Favorite contact</source>
@@ -1655,13 +1539,6 @@
     </message>
 </context>
 <context>
-    <name>ignore_list</name>
-    <message>
-        <source>You have no ignored contacts</source>
-        <translation>Nemáš žádné ignorované kontakty</translation>
-    </message>
-</context>
-<context>
     <name>input_widget</name>
     <message>
         <source>Message...</source>
@@ -1763,6 +1640,17 @@ your phone number</source>
         <source>Error occured, try again later</source>
         <translation>Vyskytla se chyba, zkus to znovu později</translation>
     </message>
+    <message>
+        <source>This phone number is already attached to another account. Please edit phone number and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>notifications_alert</name>
+    <message>
+        <source>View all</source>
+        <translation>Zobrazit vše</translation>
+    </message>
 </context>
 <context>
     <name>placeholders</name>
@@ -1843,6 +1731,129 @@ your phone number</source>
     </message>
 </context>
 <context>
+    <name>profile_page</name>
+    <message>
+        <source>Ignore list</source>
+        <translation>Seznam ignorovaných</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Profil</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <translation>Ignorovat</translation>
+    </message>
+    <message>
+        <source>Report spam</source>
+        <translation>Nahlásit Spam</translation>
+    </message>
+    <message>
+        <source>Edit profile</source>
+        <translation>Upravit profil</translation>
+    </message>
+    <message>
+        <source>UIN</source>
+        <translation>UIN</translation>
+    </message>
+    <message>
+        <source>Phone number</source>
+        <translation>Telefonní číslo</translation>
+    </message>
+    <message>
+        <source>Only visible for those, who has it in the phone book</source>
+        <translation>Viditelné pouze pro ty, kteří je mají v telefonním seznamu</translation>
+    </message>
+    <message>
+        <source>First name</source>
+        <translation>Jméno</translation>
+    </message>
+    <message>
+        <source>Last name</source>
+        <translation>Příjmení</translation>
+    </message>
+    <message>
+        <source>Birthdate</source>
+        <translation>Datum narození</translation>
+    </message>
+    <message>
+        <source>Gender</source>
+        <translation>Pohlaví</translation>
+    </message>
+    <message>
+        <source>Country</source>
+        <translation>Země</translation>
+    </message>
+    <message>
+        <source>City</source>
+        <translation>Město</translation>
+    </message>
+    <message>
+        <source>Online</source>
+        <translation>Online</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Nerušit</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Neviditelný/á</translation>
+    </message>
+    <message>
+        <source>Report Spam</source>
+        <translation>Nahlásit spam</translation>
+    </message>
+    <message>
+        <source>Seen </source>
+        <translation>Naposledy viděn </translation>
+    </message>
+    <message>
+        <source>today</source>
+        <translation>dnes</translation>
+    </message>
+    <message>
+        <source>yesterday</source>
+        <translation>včera</translation>
+    </message>
+    <message>
+        <source> at </source>
+        <translation> v </translation>
+    </message>
+    <message>
+        <source>Offline</source>
+        <translation>Offline</translation>
+    </message>
+    <message>
+        <source>Male</source>
+        <translation>Muž</translation>
+    </message>
+    <message>
+        <source>Female</source>
+        <translation>Žena</translation>
+    </message>
+    <message>
+        <source>You have no ignored contacts</source>
+        <translation>Nemáš žádné ignorované kontakty</translation>
+    </message>
+    <message>
+        <source>About me</source>
+        <translation>O mně</translation>
+    </message>
+    <message>
+        <source>for safety and spam protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attach phone number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect to ICQ account</source>
+        <translation>Připojit k ICQ účtu</translation>
+    </message>
+</context>
+<context>
     <name>ptt_widget</name>
     <message>
         <source>unclear message</source>
@@ -1894,33 +1905,6 @@ your phone number</source>
         <source>years</source>
         <comment>21</comment>
         <translation>let</translation>
-    </message>
-</context>
-<context>
-    <name>settings_languages</name>
-    <message>
-        <source>ru</source>
-        <translation>Русский</translation>
-    </message>
-    <message>
-        <source>en</source>
-        <translation>English</translation>
-    </message>
-    <message>
-        <source>uk</source>
-        <translation>Українська</translation>
-    </message>
-    <message>
-        <source>de</source>
-        <translation>Deutsch</translation>
-    </message>
-    <message>
-        <source>pt</source>
-        <translation>Português</translation>
-    </message>
-    <message>
-        <source>cs</source>
-        <translation>Český</translation>
     </message>
 </context>
 <context>
@@ -2071,7 +2055,6 @@ your phone number</source>
     </message>
     <message>
         <source>Play sounds</source>
-        <translatorcomment>&quot;to play sounds&quot; setting (on/off)</translatorcomment>
         <translation>Přehrát zvuky</translation>
     </message>
     <message>
@@ -2082,6 +2065,30 @@ your phone number</source>
     <message>
         <source>Wallpapers</source>
         <translation>Tapeta</translation>
+    </message>
+    <message>
+        <source>ru</source>
+        <translation>Русский</translation>
+    </message>
+    <message>
+        <source>en</source>
+        <translation>English</translation>
+    </message>
+    <message>
+        <source>uk</source>
+        <translation>Українська</translation>
+    </message>
+    <message>
+        <source>de</source>
+        <translation>Deutsch</translation>
+    </message>
+    <message>
+        <source>pt</source>
+        <translation>Português</translation>
+    </message>
+    <message>
+        <source>cs</source>
+        <translation>Český</translation>
     </message>
 </context>
 <context>
@@ -2104,6 +2111,29 @@ your phone number</source>
     </message>
 </context>
 <context>
+    <name>tray_menu</name>
+    <message>
+        <source>Online</source>
+        <translation>Online</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Nerušit</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Neviditelný/á</translation>
+    </message>
+    <message>
+        <source>Quit</source>
+        <translation>Ukončit</translation>
+    </message>
+    <message>
+        <source>Show</source>
+        <translation>Otevřít</translation>
+    </message>
+</context>
+<context>
     <name>typing_widget</name>
     <message>
         <source>is typing</source>
@@ -2112,13 +2142,6 @@ your phone number</source>
     <message>
         <source>are typing</source>
         <translation>píšou</translation>
-    </message>
-</context>
-<context>
-    <name>videoSetting</name>
-    <message>
-        <source>Settings</source>
-        <translation>Nastavení</translation>
     </message>
 </context>
 <context>

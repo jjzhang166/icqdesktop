@@ -404,6 +404,7 @@ call clean.bat
     <ClCompile Include="ui\main_window\pages\start_page.cpp" />
     <ClCompile Include="ui\main_window\moc_main_window.cpp" />
     <ClCompile Include="logic\tasks\update_from_8x_version.cpp" />
+    <ClCompile Include="logic\tasks\unistall_8x.cpp" />
     <ClCompile Include="utils\7z\7z.cpp" />
     <ClCompile Include="utils\links\shell_link.cpp" />
     <ClCompile Include="utils\links\Win7Features.cpp" />
@@ -451,6 +452,7 @@ call clean.bat
     <ClInclude Include="ui\main_window\pages\progress_page.h" />
     <ClInclude Include="ui\main_window\pages\start_page.h" />
     <ClInclude Include="logic\tasks\update_from_8x_version.h" />
+    <ClInclude Include="logic\tasks\unistall_8x.h" />
     <ClInclude Include="utils\7z\7z.h" />
     <ClInclude Include="utils\7z\7z_header.h" />
     <ClInclude Include="utils\7z\7z_types.h" />

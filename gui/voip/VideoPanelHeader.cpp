@@ -13,6 +13,38 @@
 #define DEFAULT_WINDOW_ROUND_RECT SCALED_VALUE(5)
 #define DEFAULT_TIME_BUTTONS_OFFSET SCALED_VALUE(300)
 
+#ifdef __APPLE__
+    const QString closeButtonStyle =
+        "QPushButton { border-image: url(:/resources/video_panel/videoctrl_close_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
+        "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_close_100_hover.png); background-color: #e81123; } "
+        "QPushButton:pressed { border-image: url(:/resources/video_panel/videoctrl_close_100_active.png); background-color: #d00516; }";
+
+    const QString minButtonStyle =
+        "QPushButton { border-image: url(:/resources/video_panel/videoctrl_minimize_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
+        "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_minimize_100_hover.png); background-color: #d3d3d3; } "
+        "QPushButton:pressed { border-image: url(:/resources/video_panel/videoctrl_minimize_100_active.png); background-color: #9b9b9b; }";
+
+    const QString maxButtonStyle =
+        "QPushButton { border-image: url(:/resources/video_panel/videoctrl_bigwindow_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
+        "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_bigwindow_100_hover.png); background-color: #d3d3d3; } "
+        "QPushButton:pressed { border-image: url(:/resources/video_panel/videoctrl_bigwindow_100_active.png); background-color: #9b9b9b; }";
+#else
+	const QString closeButtonStyle =
+		"QPushButton { background-image: url(:/resources/video_panel/videoctrl_close_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
+        "QPushButton:hover { background-image: url(:/resources/video_panel/videoctrl_close_100_hover.png); background-color: #e81123; }"
+        "QPushButton:pressed { background-image: url(:/resources/video_panel/videoctrl_close_100_active.png); background-color: #d00516; } ";
+
+	const QString minButtonStyle =
+		"QPushButton { background-image: url(:/resources/video_panel/videoctrl_minimize_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
+        "QPushButton:hover { background-image: url(:/resources/video_panel/videoctrl_minimize_100_hover.png); background-color: #d3d3d3; }"
+        "QPushButton:pressed { background-image: url(:/resources/video_panel/videoctrl_minimize_100_active.png); background-color: #9b9b9b; } ";
+
+	const QString maxButtonStyle =
+		"QPushButton { background-image: url(:/resources/video_panel/videoctrl_bigwindow_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
+        "QPushButton:hover { background-image: url(:/resources/video_panel/videoctrl_bigwindow_100_hover.png); background-color: #d3d3d3; }"
+        "QPushButton:pressed { background-image: url(:/resources/video_panel/videoctrl_bigwindow_100_active.png); background-color: #9b9b9b; } ";
+#endif
+
 std::string Ui::getFotmatedTime(unsigned ts) {
     int h = ts / (60 * 60);
     int m = (ts / 60) % 60;
@@ -170,9 +202,10 @@ Ui::VideoPanelHeader::VideoPanelHeader(QWidget* parent, int items)
     }
 
     QWidget* parentWidget = _lowWidget;
-    auto __addButton = [this, parentWidget, layout] (const char* propertyName, const char* slot)->QPushButton* {
+    auto __addButton = [this, parentWidget, layout] (const QString& propertyName, const char* slot)->QPushButton* {
         QPushButton* btn = new voipTools::BoundBox<QPushButton>(parentWidget);
-        btn->setProperty(propertyName, true);
+
+        Utils::ApplyStyle(btn, propertyName);
         btn->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
         btn->setCursor(QCursor(Qt::PointingHandCursor));
         btn->setFlat(true);
@@ -188,7 +221,7 @@ Ui::VideoPanelHeader::VideoPanelHeader(QWidget* parent, int items)
             layout->addSpacerItem(_callTimeSpacer);
             spacerBetweenBtnsAndTimeAdded = true;
         }
-        _btnMin = __addButton("VideoPanelHeaderMin", SLOT(_onMinimize()));
+        _btnMin = __addButton(minButtonStyle, SLOT(_onMinimize()));
     }
 
     if (_items_to_show & kVPH_ShowMax) {
@@ -197,7 +230,7 @@ Ui::VideoPanelHeader::VideoPanelHeader(QWidget* parent, int items)
             layout->addSpacerItem(_callTimeSpacer);
             spacerBetweenBtnsAndTimeAdded = true;
         }
-        _btnMax = __addButton("VideoPanelHeaderMax", SLOT(_onMaximize()));
+        _btnMax = __addButton(maxButtonStyle, SLOT(_onMaximize()));
     }
 
     if (_items_to_show & kVPH_ShowClose) {
@@ -206,7 +239,13 @@ Ui::VideoPanelHeader::VideoPanelHeader(QWidget* parent, int items)
             layout->addSpacerItem(_callTimeSpacer);
             spacerBetweenBtnsAndTimeAdded = true;
         }
-        _btnClose = __addButton("VideoPanelHeaderClose", SLOT(_onClose()));
+        _btnClose = __addButton(closeButtonStyle, SLOT(_onClose()));
+    }
+
+    if (!spacerBetweenBtnsAndTimeAdded) {
+        _callTimeSpacer = new QSpacerItem(1, 1, QSizePolicy::Expanding);
+        layout->addSpacerItem(_callTimeSpacer);
+        spacerBetweenBtnsAndTimeAdded = true;
     }
 }
 

@@ -5,12 +5,14 @@
 #include <memory>
 
 namespace voip_manager {
+    struct VoipProxySettings;
     class VoipManager;
 }
 
 namespace core
 {
-	class base_im;
+    struct proxy_settings;
+    class base_im;
 	class login_info;
 	class phone_info;
 	class coll_helper;
@@ -77,6 +79,7 @@ namespace core
         void on_favorite(int64_t _seq, coll_helper& _params);
         void on_unfavorite(int64_t _seq, coll_helper& _params);
 
+
         void on_voip_call_message(int64_t _seq, coll_helper& _params);
         void on_voip_avatar_msg(std::shared_ptr<base_im> im, coll_helper& _params);
         void on_voip_background_msg(std::shared_ptr<base_im> im, coll_helper& _params);
@@ -92,13 +95,16 @@ namespace core
         void on_stats(int64_t _seq, coll_helper& _params);
         
 		std::shared_ptr<base_im> get_im(coll_helper& _params) const;
+        void on_get_flags(int64_t _seq, coll_helper& _params);
+
+        void fromInternalProxySettings2Voip(const core::proxy_settings& proxySettings, voip_manager::VoipProxySettings& voipProxySettings);
 
 	public:
 
 		void on_message_from_gui(const char * _message, int64_t _seq, coll_helper& _params);
         std::shared_ptr<base_im> get_im_by_id(int32_t _id) const;
         void update_login(im_login_id& _login);
-        void unlogin();
+        void logout();
 		
 		im_container(voip_manager::VoipManager& voip_manager);
 		virtual ~im_container();

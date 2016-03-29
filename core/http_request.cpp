@@ -246,6 +246,19 @@ struct curl_context
             CURLFORM_END);
     }
 
+    void set_form_filedata(const char* _field_name, const char* _file_name, tools::binary_stream& _data)
+    {
+        const auto size = _data.available();
+        const auto data = _data.read_available();
+        curl_formadd(&post, &last,
+                     CURLFORM_COPYNAME, _field_name,
+                     CURLFORM_BUFFER, _file_name,
+                     CURLFORM_BUFFERPTR, data,
+                     CURLFORM_BUFFERLENGTH, size,
+                     CURLFORM_CONTENTTYPE, "application/octet-stream",
+                     CURLFORM_END);
+    }
+    
     bool execute_request()
     {
         CURLcode res = curl_easy_perform(curl_);
@@ -398,7 +411,7 @@ static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char*
         bs.write<std::string>("\n");
     }
 
-    bs.write((const char*) _data, _size);
+    bs.write((const char*)_data, (uint32_t)_size);
 
     g_core->get_network_log().write_data(bs);
 
@@ -461,7 +474,7 @@ void http_request_simple::push_post_form_parameter(const std::string& name, cons
 
 void http_request_simple::push_post_form_file(const std::wstring& name, const std::wstring& file_name)
 {
-    post_form_files_.insert(std::make_pair(tools::from_utf16(name), tools::from_utf16(file_name)));
+    push_post_form_file(tools::from_utf16(name), tools::from_utf16(file_name));
 }
 
 void http_request_simple::push_post_form_file(const std::string& name, const std::string& file_name)
@@ -469,6 +482,17 @@ void http_request_simple::push_post_form_file(const std::string& name, const std
     assert(!name.empty());
     assert(!file_name.empty());
     post_form_files_.insert(std::make_pair(name, file_name));
+}
+
+void http_request_simple::push_post_form_filedata(const std::wstring& name, const std::wstring& file_name)
+{
+    assert(!name.empty());
+    assert(!file_name.empty());
+    file_binary_stream file_data;
+    file_data.file_name_ = file_name.substr(file_name.find_last_of(L"\\/") + 1);
+    file_data.file_stream_.load_from_file(file_name);
+    if (file_data.file_stream_.available())
+        post_form_filedatas_.insert(std::make_pair(tools::from_utf16(name), file_data));
 }
 
 void http_request_simple::set_url(const std::wstring& url)
@@ -497,8 +521,9 @@ void http_request_simple::set_timeout(int32_t _timeout_ms)
     timeout_ = _timeout_ms;
 }
 
-void http_request_simple::set_post_params(curl_context* _ctx)
+std::string http_request_simple::get_post_param() const
 {
+    std::string result = ""; 
     if (!post_parameters_.empty())
     {
         std::stringstream ss_post_params;
@@ -514,9 +539,17 @@ void http_request_simple::set_post_params(curl_context* _ctx)
                 ss_post_params << '=' << iter->second;
         }
 
-        std::string s_temp = ss_post_params.str();
-        set_post_data(s_temp.c_str(), (int32_t)s_temp.length(), true);
+        result = ss_post_params.str();
     }
+    return result;
+}
+
+void http_request_simple::set_post_params(curl_context* _ctx)
+{
+    auto post_params = get_post_param();
+
+    if (!post_params.empty())
+        set_post_data(post_params.c_str(), (int32_t)post_params.length(), true);
 
     for (auto iter = post_form_parameters_.begin(); iter != post_form_parameters_.end(); ++iter)
     {
@@ -527,6 +560,11 @@ void http_request_simple::set_post_params(curl_context* _ctx)
     for (auto iter = post_form_files_.begin(); iter != post_form_files_.end(); ++iter)
     {
         _ctx->set_form_file(iter->first.c_str(), iter->second.c_str());
+    }
+
+    for (auto iter = post_form_filedatas_.begin(); iter != post_form_filedatas_.end(); ++iter)
+    {
+        _ctx->set_form_filedata(iter->first.c_str(), tools::from_utf16(iter->second.file_name_).c_str(), iter->second.file_stream_);
     }
 
     if (post_data_ && post_data_size_)
@@ -723,4 +761,9 @@ ithread_callback* core::http_request_simple::create_http_handlers()
     assert(!g_handles);
     g_handles = new http_handles();
     return g_handles;
+}
+
+std::string core::http_request_simple::get_post_url()
+{
+    return url_ + "?" + get_post_param();
 }

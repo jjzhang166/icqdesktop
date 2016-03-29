@@ -28,6 +28,7 @@ namespace core
         bool load();
         
         void start_save();
+        void clear_values();
         
         virtual void set_value(const std::string& _name, const tools::binary_stream& _data);
         

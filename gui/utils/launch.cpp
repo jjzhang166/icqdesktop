@@ -46,5 +46,13 @@ int launch::main(int argc, char *argv[])
 		return 1;
 	}
 
+    QT_TRANSLATE_NOOP("QWidgetTextControl", "&Undo");
+    QT_TRANSLATE_NOOP("QWidgetTextControl", "&Redo");
+    QT_TRANSLATE_NOOP("QWidgetTextControl", "Cu&t");
+    QT_TRANSLATE_NOOP("QWidgetTextControl", "&Copy");
+    QT_TRANSLATE_NOOP("QWidgetTextControl", "&Paste");
+    QT_TRANSLATE_NOOP("QWidgetTextControl", "Delete");
+    QT_TRANSLATE_NOOP("QWidgetTextControl", "Select All");
+
     return app.exec();
 }

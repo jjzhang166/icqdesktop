@@ -15,6 +15,8 @@ namespace installer
             bool autoupdate_from_8x_;
             bool nolaunch_from_8x_;
 
+            QString folder_for_delete_;
+
         public:
 
             install_config()
@@ -47,6 +49,8 @@ namespace installer
             bool is_autoupdate_from_8x() const { return autoupdate_from_8x_; }
             void set_nolaunch_from_8x(bool _val) { nolaunch_from_8x_ = _val; }
             bool is_nolaunch_from_8x() const { return nolaunch_from_8x_; }
+            void set_folder_for_delete(const QString& _folder) { folder_for_delete_ = _folder; }
+            const QString& get_folder_for_delete() const { return folder_for_delete_; }
         };
 
         QString get_product_folder();

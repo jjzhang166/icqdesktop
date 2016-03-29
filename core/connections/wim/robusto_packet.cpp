@@ -12,7 +12,7 @@ using namespace wim;
 robusto_packet::robusto_packet(const wim_packet_params& params)
 	:	wim_packet(params)
 {
-	
+
 }
 
 robusto_packet::~robusto_packet()
@@ -34,7 +34,7 @@ int32_t robusto_packet::parse_results(const rapidjson::Value& _node_results)
 const std::string robusto_packet::get_req_id() const
 {
 	time_t ts = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - params_.time_offset_;
-	
+
 	std::stringstream ss;
 	ss << robusto_params_.robusto_req_id_ << "-" << (uint32_t) ts;
 
@@ -89,7 +89,7 @@ int32_t robusto_packet::parse_response(std::shared_ptr<core::tools::binary_strea
 	{
 
 	}
-	
+
 	return 0;
 }
 
@@ -100,7 +100,7 @@ int32_t robusto_packet::on_response_error_code()
 	{
 		return wpie_error_robusto_token_invalid;
 	}
-	
+
 	return wpie_error_message_unknown;
 }
 

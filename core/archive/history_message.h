@@ -211,6 +211,8 @@ namespace core
 
 			static chat_event_data_uptr make_simple_event(const chat_event_type _type);
 
+            static chat_event_data_uptr make_generic_event(const rapidjson::Value& _text_node);
+
 			void apply_persons(const archive::persons_map &_persons);
 
 			void serialize(Out icollection* _collection, const bool _is_outgoing) const;
@@ -225,6 +227,10 @@ namespace core
 			void deserialize_chat_modifications(const tools::tlvpack &_pack);
 
 			void deserialize_mchat_members(const tools::tlvpack &_pack);
+
+            void deserialize_mchat_modifications(const tools::tlvpack &_pack);
+
+            bool has_generic_text() const;
 
 			bool has_mchat_members() const;
 
@@ -255,8 +261,10 @@ namespace core
 			struct
 			{
 				std::string new_name_;
+                std::string new_description_;
 			} chat_;
 
+            std::string generic_;
 		};
 
 		class history_message

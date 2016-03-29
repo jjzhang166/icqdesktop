@@ -2,7 +2,7 @@
 #include "ThemesSettingsWidget.h"
 #include "../../../controls/TextEmojiWidget.h"
 #include "../../../utils/utils.h"
-#include "../../../controls/CustomButton.h"
+#include "../../../controls/BackButton.h"
 #include "../../../utils/InterConnector.h"
 #include "ThemesWidget.h"
 
@@ -15,12 +15,14 @@ namespace Ui
     
     void ThemesSettingsWidget::setBackButton(bool _do_set)
     {
-        backBackButtonWidget_->setVisible(_do_set);
+        back_button_->setVisible(_do_set);
+        back_button_and_caption_spacer_->setVisible(_do_set);
+        caption_without_back_button_spacer_->setVisible(!_do_set);
     }
     
     void ThemesSettingsWidget::setTargetContact(QString _aimId)
     {
-        themesWidget_->set_target_contact(_aimId);
+        themes_widget_->set_target_contact(_aimId);
     }
     
     void ThemesSettingsWidget::init(QWidget *parent)
@@ -32,55 +34,49 @@ namespace Ui
         main_layout_->setObjectName(QStringLiteral("main_layout"));
         main_layout_->setContentsMargins(0, 0, 0, 0);
         
-        themesWidget_ = new ThemesWidget(this, Utils::scale_value(15));
-        
-        QWidget *v_spacer1 = new QWidget();
-        v_spacer1->setFixedHeight(Utils::scale_value(10));
-        v_spacer1->setStyleSheet("background-color: white;");
-        main_layout_->addWidget(v_spacer1);
+        themes_widget_ = new ThemesWidget(this, Utils::scale_value(8));
         
         auto themesCaption = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(24));
         themesCaption->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpapers"));
         
-        theme_caption_layout_ = new QHBoxLayout(parent);
-        theme_caption_layout_->setContentsMargins(0, 0, 0, 0);
+        
+        back_button_ = new BackButton(this);
+        back_button_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        back_button_->setFlat(true);
+        back_button_->setFocusPolicy(Qt::NoFocus);
+        back_button_->setCursor(Qt::PointingHandCursor);
+        
+        theme_caption_layout_ = new QHBoxLayout(this);
+        theme_caption_layout_->setContentsMargins(Utils::scale_value(24), 0, 0, 0);
         theme_caption_layout_->setSpacing(0);
         
-        QWidget *h_spacer1 = new QWidget();
-        h_spacer1->setFixedWidth(Utils::scale_value(20));
-        h_spacer1->setStyleSheet("background-color: white;");
-        theme_caption_layout_->addWidget(h_spacer1);
+        caption_without_back_button_spacer_ = new QWidget(this);
+        caption_without_back_button_spacer_->setFixedWidth(Utils::scale_value(24));
+        caption_without_back_button_spacer_->setFixedHeight(Utils::scale_value(80));
+        caption_without_back_button_spacer_->setStyleSheet("background-color: white;");
+        caption_without_back_button_spacer_->setVisible(false);
         
-        backBackButtonWidget_ = new QWidget(this);
-        backBackButtonWidget_->setFixedHeight(Utils::scale_value(29));
-        backBackButtonWidget_->setFixedWidth(Utils::scale_value(30));
-        backBackButtonWidget_->setStyleSheet("background-color: white;");
-        backButton_ = new CustomButton(backBackButtonWidget_, ":/resources/contr_back_100.png");
-        backButton_->setFixedHeight(Utils::scale_value(29));
-        Utils::ApplyStyle(backButton_, "background-color: #f1f1f1; border-width: 0dip; border-style: solid; border-radius: 14dip;");
+        theme_caption_layout_->addWidget(caption_without_back_button_spacer_);
         
-        theme_caption_layout_->addWidget(backBackButtonWidget_);
+        theme_caption_layout_->addWidget(back_button_);
         
-        QWidget *h_spacer2 = new QWidget();
-        h_spacer2->setFixedWidth(Utils::scale_value(20));
-        h_spacer2->setStyleSheet("background-color: white;");
-        theme_caption_layout_->addWidget(h_spacer2);
+        back_button_and_caption_spacer_ = new QWidget(this);
+        back_button_and_caption_spacer_->setFixedWidth(Utils::scale_value(15));
+        back_button_and_caption_spacer_->setFixedHeight(Utils::scale_value(80));
+        back_button_and_caption_spacer_->setStyleSheet("background-color: white;");
         
+        theme_caption_layout_->addWidget(back_button_and_caption_spacer_);
         theme_caption_layout_->addWidget(themesCaption);
         
         QHBoxLayout *horizontal_layout = new QHBoxLayout(parent);
         horizontal_layout->setContentsMargins(0, 0, 0, 0);
-        horizontal_layout->addWidget(themesWidget_);
-        main_layout_->addLayout(theme_caption_layout_);
-        
-        QWidget *v_spacer2 = new QWidget();
-        v_spacer2->setFixedHeight(Utils::scale_value(10));
-        v_spacer2->setStyleSheet("background-color: white;");
-        main_layout_->addWidget(v_spacer2);
+        horizontal_layout->addWidget(themes_widget_);
+
+        themes_widget_->addCaptionLayout(theme_caption_layout_);
         
         main_layout_->addLayout(horizontal_layout);
         
-        connect(backButton_, SIGNAL(clicked()), this, SLOT(backPressed()));
+        connect(back_button_, SIGNAL(clicked()), this, SLOT(backPressed()));
     }
     
     void ThemesSettingsWidget::backPressed()

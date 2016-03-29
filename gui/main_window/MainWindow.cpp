@@ -19,6 +19,7 @@
 #include "history_control/MessagesModel.h"
 #include "history_control/HistoryControlPage.h"
 #include "../../common.shared/crash_handler.h"
+#include "history_control/MessagesScrollArea.h"
 
 #include "ContactDialog.h"
 
@@ -180,6 +181,9 @@ namespace Ui
     MainWindow::MainWindow(QApplication* app)
 		: main_page_(nullptr)
 		, login_page_(nullptr)
+#ifdef __APPLE__
+        , accounts_page_(nullptr)
+#endif //_APPLE__
 		, app_(app)
 		, event_filter_(new TitleWidgetEventFilter(this))
 		, tray_icon_(new TrayIcon(this))
@@ -287,7 +291,7 @@ namespace Ui
         stacked_widget_->setCurrentIndex(-1);
         QMetaObject::connectSlotsByName(this);
 
-        if (!get_gui_settings()->get_value(settings_keep_logged_in, true))
+        if (!get_gui_settings()->get_value(settings_keep_logged_in, true))// || !get_gui_settings()->contains_value(settings_keep_logged_in))
         {
             showLoginPage();
         }
@@ -596,8 +600,12 @@ namespace Ui
 
 	void MainWindow::changeEvent(QEvent* event)
 	{
-		if(event->type() == QEvent::WindowStateChange)
+		if (event->type() == QEvent::WindowStateChange)
 		{
+            if (platform::is_apple() && !isMaximized())
+            {
+                emit Utils::InterConnector::instance().closeAnyPopupWindow();
+            }
 			maximize_button_->setProperty("MinimizeButton", isMaximized());
 			maximize_button_->setProperty("MaximizeButton", !isMaximized());
 			maximize_button_->setStyle(QApplication::style());
@@ -828,6 +836,8 @@ namespace Ui
 	void MainWindow::showLoginPage()
 	{
 #ifdef __APPLE__
+        mac_support_->createMenuBar(true);
+        
         mac_support_->forceEnglishInputSource();
         
         if (!get_gui_settings()->get_value<bool>(settings_mac_accounts_migrated, false))
@@ -836,6 +846,10 @@ namespace Ui
             
             if (accountId.length() > 0)
             {
+                // Move it out of ifdef-block if it's needed for other platforms
+                main_page_ = nullptr;
+                MainPage::reset();
+
                 showMigrateAccountPage(accountId);
                 return;
             }
@@ -844,15 +858,11 @@ namespace Ui
 
         if (!login_page_)
         {
-            login_page_ = new LoginPage(this);
+            login_page_ = new LoginPage(this, true /* is_login */);
             stacked_widget_->addWidget(login_page_);
 
 			connect(login_page_, SIGNAL(loggedIn()), this, SLOT(showMainPage()), Qt::QueuedConnection);
         }
-
-#ifdef __APPLE__
-        mac_support_->createMenuBar(true);
-#endif
         
 		stacked_widget_->setCurrentWidget(login_page_);
         GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::reg_page_phone);
@@ -899,14 +909,34 @@ namespace Ui
         QWidget* focused = QApplication::focusWidget();
         if( focused != 0 )
         {
-            QApplication::postEvent( focused,
-                                    new QKeyEvent( QEvent::KeyPress,
-                                                  Qt::Key_C,
-                                                  Qt::ControlModifier ));
-            QApplication::postEvent( focused,
-                                    new QKeyEvent( QEvent::KeyRelease,
-                                                  Qt::Key_C,
-                                                  Qt::ControlModifier ));
+            bool handled = false;
+            
+            if (platform::is_apple())
+            {
+                Ui::MessagesScrollArea * area = dynamic_cast<Ui::MessagesScrollArea*>(focused);
+
+                if (area)
+                {
+                    QString text = area->getSelectedText();
+#ifdef __APPLE__
+                    MacSupport::replacePasteboard(text);
+#endif
+                    
+                    handled = true;
+                }
+            }
+            
+            if (!handled)
+            {
+                QApplication::postEvent( focused,
+                                        new QKeyEvent( QEvent::KeyPress,
+                                                      Qt::Key_C,
+                                                      Qt::ControlModifier ));
+                QApplication::postEvent( focused,
+                                        new QKeyEvent( QEvent::KeyRelease,
+                                                      Qt::Key_C,
+                                                      Qt::ControlModifier ));
+            }
         }
     }
     

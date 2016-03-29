@@ -82,11 +82,11 @@ int32_t start_session::init_request_full_start_session(std::shared_ptr<core::htt
     //provided by calling fetchEvent or validateSid Api methods
     request->push_post_parameter("inactiveView", "offline");
 
-#ifdef _DEBUG
-    request->push_post_parameter("activeTimeout", "1800"); //30 minutes
+#ifdef __APPLE__
+    request->push_post_parameter("activeTimeout", "15"); // seconds
 #else
-    request->push_post_parameter("activeTimeout", "7200"); //2 hours
-#endif
+    request->push_post_parameter("activeTimeout", "30"); // seconds
+#endif // __APPLE__
 
     time_t ts = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - params_.time_offset_;
     request->push_post_parameter("ts", tools::from_int64(ts));

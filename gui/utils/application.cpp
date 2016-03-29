@@ -121,13 +121,14 @@ namespace Utils
         return true;
     }
 
-    void Application::open_url(QUrl url)
+    void Application::open_url(const QUrl& url)
     {
-        QString urlStr = url.toString().remove(QString(QChar::SoftHyphen));
+        QString urlStr = url.toString(QUrl::FullyEncoded);
         if (urlStr.isEmpty())
             return;
 
-        QString decoded = url.fromPercentEncoding(urlStr.toStdString().c_str());
+        QString decoded = url.fromPercentEncoding(urlStr.toUtf8());
+        decoded.remove(QString(QChar::SoftHyphen));
         
         QDesktopServices::openUrl(decoded);
     }

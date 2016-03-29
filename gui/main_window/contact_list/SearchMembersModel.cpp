@@ -8,6 +8,7 @@
 #include "../../utils/utils.h"
 #include "../../core_dispatcher.h"
 #include "../../utils/gui_coll_helper.h"
+#include "../../utils/InterConnector.h"
 
 namespace Logic
 {

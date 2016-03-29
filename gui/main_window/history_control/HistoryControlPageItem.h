@@ -4,7 +4,7 @@ namespace Ui
 {
 
 	typedef std::unique_ptr<class HistoryControlPageItem> HistoryControlPageItemUptr;
-    
+
     namespace themes
     {
         class theme;
@@ -35,11 +35,11 @@ namespace Ui
         virtual void select();
 
         virtual void setTopMargin(const bool value);
-        
+
         virtual void setContact(const QString& _aimId);
-        
+
         virtual QString getContact() const { return aimId_; }
-        
+
         themes::themePtr theme() const;
 
 
@@ -47,10 +47,10 @@ namespace Ui
         bool HasTopMargin_;
 
         bool HasAvatar_;
-        
+
     protected:
         QString aimId_;
-        
+
         bool Selected_;
 	};
 

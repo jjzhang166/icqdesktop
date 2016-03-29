@@ -222,15 +222,23 @@
     <file>resources/placeholders/content_illustration_good_150.png</file>
     <file>resources/placeholders/content_illustration_good_200.png</file>
 
-    <file>resources/typing_animation100.gif</file>
-    <file>resources/typing_animation125.gif</file>
-    <file>resources/typing_animation150.gif</file>
-    <file>resources/typing_animation200.gif</file>
+    <file>resources/gifs/typing_animation100.gif</file>
+    <file>resources/gifs/typing_animation125.gif</file>
+    <file>resources/gifs/typing_animation150.gif</file>
+    <file>resources/gifs/typing_animation200.gif</file>
+    <file>resources/gifs/typing_animation100_white.gif</file>
+    <file>resources/gifs/typing_animation125_white.gif</file>
+    <file>resources/gifs/typing_animation150_white.gif</file>
+    <file>resources/gifs/typing_animation200_white.gif</file>
 
-    <file>resources/r_spiner100.gif</file>
-    <file>resources/r_spiner125.gif</file>
-    <file>resources/r_spiner150.gif</file>
-    <file>resources/r_spiner200.gif</file>
+    <file>resources/gifs/l_spiner100.gif</file>
+    <file>resources/gifs/l_spiner125.gif</file>
+    <file>resources/gifs/l_spiner150.gif</file>
+    <file>resources/gifs/l_spiner200.gif</file>
+    <file>resources/gifs/r_spiner100.gif</file>
+    <file>resources/gifs/r_spiner125.gif</file>
+    <file>resources/gifs/r_spiner150.gif</file>
+    <file>resources/gifs/r_spiner200.gif</file>
 	
 	<file>resources/cl_favorites_100.png</file>
 	<file>resources/cl_favorites_125.png</file>
@@ -588,10 +596,10 @@
     <file>resources/contr_writemsg_mini_200_active.png</file>
     <file>resources/contr_writemsg_mini_200_hover.png</file>
 
-    <file>resources/icq_logo_watermark_100.png</file>
-    <file>resources/icq_logo_watermark_125.png</file>
-    <file>resources/icq_logo_watermark_150.png</file>
-    <file>resources/icq_logo_watermark_200.png</file>
+    <file>resources/video_panel/icq_logo_watermark_100.png</file>
+    <file>resources/video_panel/icq_logo_watermark_125.png</file>
+    <file>resources/video_panel/icq_logo_watermark_150.png</file>
+    <file>resources/video_panel/icq_logo_watermark_200.png</file>
 
     <file>resources/controls_cotext_addimg_100.png</file>
     <file>resources/controls_cotext_addimg_100_active.png</file>

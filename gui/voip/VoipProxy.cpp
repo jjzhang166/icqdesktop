@@ -255,7 +255,8 @@ void voip_proxy::VoipController::handlePacket(core::coll_helper& coll_params) {
         std::vector<voip_manager::Contact> contacts;
         contacts << coll_params;
 
-		emit onVoipCallNameChanged(contacts);
+        _activePeerList.swap(contacts);
+		emit onVoipCallNameChanged(_activePeerList);
     } else if (sig_type == "voip_window_add_complete") {
 	    intptr_t hwnd;
         hwnd << coll_params;
@@ -358,6 +359,10 @@ void voip_proxy::VoipController::handlePacket(core::coll_helper& coll_params) {
         const bool enabled = coll_params.get_value_as_bool("param");
         emit onVoipMediaRemoteVideo(enabled);
 	}
+}
+
+void voip_proxy::VoipController::updateActivePeerList() {
+    emit onVoipCallNameChanged(_activePeerList);
 }
 
 void voip_proxy::VoipController::setHangup() {
@@ -541,7 +546,7 @@ void voip_proxy::VoipController::setWindowAdd(quintptr hwnd, bool primary_wnd, b
 
         if (INCLUDE_WATERMARK && primary_wnd) {
             std::stringstream resourceStr;
-            resourceStr << ":/resources/icq_logo_watermark_" << Utils::scale_value(100) << ".png";
+            resourceStr << ":/resources/video_panel/icq_logo_watermark_" << Utils::scale_value(100) << ".png";
 			QImage watermark(resourceStr.str().c_str());
 
 			auto data_size = watermark.byteCount();

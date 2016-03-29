@@ -31,6 +31,8 @@ namespace Ui
         QHBoxLayout* hlayout = new QHBoxLayout();
         vlayout->setContentsMargins(0, 0, 0, 0);
         hlayout->setContentsMargins(0, 0, 0, 0);
+        vlayout->setSpacing(0);
+        hlayout->setSpacing(0);
         vlayout->setAlignment(Qt::AlignTop);
         hlayout->setAlignment(Qt::AlignRight);
         vlayout->addLayout(hlayout);

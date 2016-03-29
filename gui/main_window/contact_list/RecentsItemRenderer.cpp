@@ -10,6 +10,8 @@
 #include "RecentsItemRenderer.h"
 #include "RecentsModel.h"
 
+#include "../../gui_settings.h"
+
 namespace
 {
 
@@ -230,17 +232,18 @@ namespace
 		textControl->setFixedWidth(maxWidth);
         textControl->setWordWrapMode(QTextOption::WrapMode::NoWrap);
 
-        QFont font = textControl->font();
-#ifndef __APPLE__
-        font.setBold(true); // for now
-#endif
+        auto messageTextMaxWidth = maxWidth;
+
+        const auto font = textControl->font();
+
         auto &doc = *textControl->document();
         doc.clear();
 
         auto cursor = textControl->textCursor();
 
         const auto &senderNick = visData.senderNick_;
-        if (!senderNick.isEmpty() && !visData.IsTyping_)
+        const auto showLastMessage = Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true);
+        if (!senderNick.isEmpty() && !visData.IsTyping_ && showLastMessage)
         {
             static const QString fix(": ");
 
@@ -252,7 +255,7 @@ namespace
             const auto charFormat = cursor.charFormat();
 
             auto boldCharFormat = charFormat;
-            boldCharFormat.setFontWeight(QFont::Bold);
+            boldCharFormat.setFont(Utils::appFont(Utils::FontsFamily::SEGOE_UI_SEMIBOLD, Utils::scale_value(14)));
 
             cursor.setCharFormat(boldCharFormat);
 
@@ -264,12 +267,14 @@ namespace
             );
 
             cursor.setCharFormat(charFormat);
+
+            messageTextMaxWidth -= doc.idealWidth();
         }
 
         const auto text = visData.Status_.trimmed().replace("\n", " ").remove("\r");
 
         QFontMetrics m(font);
-		const auto elidedText = m.elidedText(text, Qt::ElideRight, maxWidth);
+		const auto elidedText = m.elidedText(text, Qt::ElideRight, messageTextMaxWidth);
 
 		Logic::Text2Doc(elidedText, cursor, Logic::Text2DocHtmlMode::Pass, false);
 
@@ -292,7 +297,7 @@ namespace
 	{
 		assert(!visData.ContactName_.isEmpty());
 
-		static auto textControl = CreateTextBrowser("name", L::getNameStylesheet(), L::nameHeight.px());
+        static auto textControl = CreateTextBrowser("name", L::getNameStylesheet(), L::nameHeight.px() + (platform::is_apple()?1:0) );
 
 		const auto maxWidth = (rightBorderPx - L::nameX.px() - L::nameRightPadding.px());
 		textControl->setFixedWidth(maxWidth);
@@ -309,7 +314,7 @@ namespace
         if (platform::is_apple())
         {
             qreal realHeight = doc.documentLayout()->documentSize().toSize().height();
-            qreal correction = (realHeight > 20)?-2:2;
+            qreal correction = (realHeight > 21)?-2:2;
 
 //                                    qDebug() << "text " << elidedString << " height " << realHeight << " d " << correction;
 
@@ -472,7 +477,7 @@ namespace
 		painter.setFont(L::unreadsFont.font());
 		painter.setPen(Qt::white);
 		const auto textX = (unreadsX + (balloonWidth - unreadsWidth) / 2);
-		const auto textY = (L::unreadsY.px() + (ballonHeight + unreadsHeight) / 2);
+        const auto textY = (L::unreadsY.px() + (ballonHeight + unreadsHeight) / 2) + (platform::is_apple()?1:0);
 		painter.drawText(textX, textY, text);
 
 		return (unreadsX - L::unreadsLeftPadding.px());

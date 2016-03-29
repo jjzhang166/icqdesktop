@@ -45,17 +45,17 @@ QBrush getBodyBrush(const bool isOutgoing, const bool isSelected, int _theme_id)
     
     grad.setCoordinateMode(QGradient::ObjectBoundingMode);
     
-    QColor outgoingSelectedBackgroundColor0 = _theme ? _theme->outgoing_bubble_.bg1_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(0.9 * 255));
-    QColor incomingSelectedBackgroundColor0 = _theme ? _theme->incoming_bubble_.bg1_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(1.0 * 255));
+    QColor outgoingSelectedBackgroundColor0 = !isSelected ? _theme->outgoing_bubble_.bg1_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(0.9 * 255));
+    QColor incomingSelectedBackgroundColor0 = !isSelected ? _theme->incoming_bubble_.bg1_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(1.0 * 255));
     
-    QColor outgoingSelectedBackgroundColor1 = _theme ? _theme->outgoing_bubble_.bg2_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(0.72 * 255));
-    QColor incomingSelectedBackgroundColor1 = _theme ? _theme->incoming_bubble_.bg2_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(0.72 * 255));
+    QColor outgoingSelectedBackgroundColor1 = !isSelected ? _theme->outgoing_bubble_.bg2_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(0.72 * 255));
+    QColor incomingSelectedBackgroundColor1 = !isSelected ? _theme->incoming_bubble_.bg2_color_ : QColor(0x57, 0x9e, 0x1c, (int32_t)(0.72 * 255));
     
-    QColor outgoingBackgroundColor0 = _theme ? _theme->outgoing_bubble_.bg1_color_ : QColor(0xd8, 0xd4, 0xce, (int32_t)(0.9 * 255));
-    QColor incomingBackgroundColor0 = _theme ? _theme->incoming_bubble_.bg1_color_ : QColor(0xff, 0xff, 0xff, (int32_t)(1.0 * 255));
+    QColor outgoingBackgroundColor0 = !isSelected ? _theme->outgoing_bubble_.bg1_color_ : QColor(0xd8, 0xd4, 0xce, (int32_t)(0.9 * 255));
+    QColor incomingBackgroundColor0 = !isSelected ? _theme->incoming_bubble_.bg1_color_ : QColor(0xff, 0xff, 0xff, (int32_t)(1.0 * 255));
     
-    QColor outgoingBackgroundColor1 = _theme ? _theme->outgoing_bubble_.bg2_color_ : QColor(0xd5, 0xd2, 0xce, (int32_t)(0.72 * 255));
-    QColor incomingBackgroundColor1 = _theme ? _theme->incoming_bubble_.bg2_color_ : QColor(0xff, 0xff, 0xff, (int32_t)(0.72 * 255));
+    QColor outgoingBackgroundColor1 = !isSelected ? _theme->outgoing_bubble_.bg2_color_ : QColor(0xd5, 0xd2, 0xce, (int32_t)(0.72 * 255));
+    QColor incomingBackgroundColor1 = !isSelected ? _theme->incoming_bubble_.bg2_color_ : QColor(0xff, 0xff, 0xff, (int32_t)(0.72 * 255));
     
     if (isSelected)
     {

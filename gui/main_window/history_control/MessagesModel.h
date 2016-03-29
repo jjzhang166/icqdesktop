@@ -278,6 +278,7 @@ namespace Logic
 		void deliveredToServer(QString);
 		void messageIdFetched(QString, Logic::MessageKey);
         void pttPlayed(qint64);
+        void canFetchMore(QString);
 
 	private Q_SLOTS:
 		void messageBuddies(std::shared_ptr<Data::MessageBuddies>, QString, Ui::MessagesBuddiesOpt, bool, qint64);
@@ -330,6 +331,7 @@ namespace Logic
 		QHash<QString, std::set<InternalIndex>> PendingMessages_;
 		QHash<QString, qint64> LastRequested_;
 		QStringList Requested_;
+        QStringList Subscribed_;
 		QList<qint64> Sequences_;
 
 		QHash<QString, MessageKey> LastKey_;

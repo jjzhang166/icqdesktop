@@ -63,6 +63,7 @@ namespace Ui
 
     Q_SIGNALS:
         void clicked();
+        void setSize(int, int);
         
     public:
         TextEmojiWidget(QWidget* _parent, Utils::FontsFamily _font_family, int _font_size, const QColor& _color, int _size_to_baseline = -1);

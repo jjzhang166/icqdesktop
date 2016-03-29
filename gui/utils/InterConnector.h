@@ -20,8 +20,8 @@ namespace Utils
         CommonSettingsType_Themes,
         CommonSettingsType_About,
         CommonSettingsType_ContactUs,
-        CommonSettingsType_ConnectPhone,
-        CommonSettingsType_ConnectUin,
+        CommonSettingsType_AttachPhone,
+        CommonSettingsType_AttachUin,
 
         max
     };
@@ -44,6 +44,10 @@ Q_SIGNALS:
         void profileSettingsUnknownAdd(QString uin);
         void profileSettingsUnknownIgnore(QString uin);
         void profileSettingsUnknownSpam(QString uin);
+        void profileSettingsUpdateInterface();
+
+        void attachPhoneBack();
+        void attachUinBack();
 
         void makeSearchWidgetVisible(bool);
         void showIconInTaskbar(bool _show);
@@ -62,10 +66,10 @@ Q_SIGNALS:
         void setToAllTheme(QString);
         void setTheme(QString);
 
-        void stopTyping(QString, QString);
-
         void closeAnyPopupWindow();
 
+        void forceRefreshList(QAbstractItemModel *, bool);
+        
     public:
         static InterConnector& instance();
         ~InterConnector();

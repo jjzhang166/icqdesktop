@@ -11,7 +11,7 @@ QWidget#scroll_area
     border-right-style: solid;
     border-right-width: 1dip;
     border-right-color: #dadada;
-	background-color: rgba(255, 255, 255, 95%);
+	background-color: rgba(255, 255, 255, 90%);
     padding-left: 0;
     padding-top: 0;
     padding-right: -1dip;

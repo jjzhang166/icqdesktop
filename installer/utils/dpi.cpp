@@ -3,27 +3,32 @@
 
 namespace installer
 {
-	namespace ui
-	{
-		namespace dpi
-		{
-			double scale_coefficient = 1.0;
+    namespace ui
+    {
+        namespace dpi
+        {
+            double scale_coefficient = 1.0;
 
-			bool init()
-			{
-				double dpi_count = QApplication::primaryScreen()->logicalDotsPerInchX();
+            bool init()
+            {
+                double dpi_count = QApplication::primaryScreen()->logicalDotsPerInchX();
 
-				scale_coefficient = ((std::min)(dpi_count / (double)(96), double(2.0)));
+                scale_coefficient = ((std::min)(dpi_count / (double)(96), double(2.0)));
 
-				return true;
-			}
+                if (scale_coefficient != 1.0 && scale_coefficient != 1.25 && scale_coefficient != 1.5 && scale_coefficient != 2.0)
+                {
+                    scale_coefficient = 1.0;
+                }
 
-			double scale(const double& _value)
-			{
-				static bool res = init();
+                return true;
+            }
 
-				return (scale_coefficient * _value);
-			}
-		}
-	}
+            double scale(const double& _value)
+            {
+                static bool res = init();
+
+                return (scale_coefficient * _value);
+            }
+        }
+    }
 }

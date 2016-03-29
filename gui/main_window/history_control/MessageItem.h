@@ -133,6 +133,9 @@ namespace Ui
         void avatarClicked();
 		void menu(QAction*);
 
+        void createContentMenu();
+        void createMenu();
+        
 	protected:
         virtual void leaveEvent(QEvent*) override;
 

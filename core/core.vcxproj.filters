@@ -137,6 +137,9 @@
     <ClCompile Include="proxy_settings.cpp" />
     <ClCompile Include="themes\theme_settings.cpp" />
     <ClCompile Include="themes\themes.cpp" />
+    <ClCompile Include="connections\wim\packets\attach_phone.cpp" />
+    <ClCompile Include="connections\wim\packets\attach_uin.cpp" />
+    <ClCompile Include="connections\wim\packets\get_flags.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="archive\opened_dialog.h" />
@@ -278,6 +281,9 @@
     <ClInclude Include="themes\theme_settings.h" />
     <ClInclude Include="themes\themes.h" />
     <ClInclude Include="..\common.shared\keys.h" />
+    <ClInclude Include="connections\wim\packets\attach_phone.h" />
+    <ClInclude Include="connections\wim\packets\attach_uin.h" />
+    <ClInclude Include="connections\wim\packets\get_flags.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

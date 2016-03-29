@@ -19,5 +19,7 @@ namespace Ui
 
 		ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _display_name, int _size);
         ~ContactAvatarWidget();
+
+        void UpdateParams(const QString& _aimid, const QString& _display_name);
 	};
 }

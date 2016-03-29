@@ -797,13 +797,31 @@ namespace Logic
             }
 			emitUpdated(updatedValues, aimId, hole ? HOLE : BASE);
         }
-        else if (!updatedIndexes.empty())
+        else
         {
-            emitUpdated(updatedIndexes, aimId, REQUESTED);
+            if (!updatedIndexes.empty())
+                emitUpdated(updatedIndexes, aimId, REQUESTED);
+
+            if (Subscribed_.contains(aimId))
+            {
+                Subscribed_.removeAll(aimId);
+                emit canFetchMore(aimId);
+            }
         }
 
-		if (option == Ui::MessagesBuddiesOpt::FromServer)
-			setFirstMessage(aimId, Indexes_[aimId].begin()->Key_.Id_);
+        const auto isFromServer = (option == Ui::MessagesBuddiesOpt::FromServer);
+		if (isFromServer)
+        {
+            const auto &index = Indexes_[aimId];
+
+            if (index.size() >= preloadCount())
+            {
+			    setFirstMessage(
+                    aimId,
+                    index.begin()->Key_.Id_
+                );
+            }
+        }
 	}
 
 	void MessagesModel::processPendingMessage(Data::MessageBuddies& msgs, const QString& aimId, const Ui::MessagesBuddiesOpt state)
@@ -891,29 +909,29 @@ namespace Logic
 				{
 					if (!PendingMessages_[aimId].empty())
 					{
-						std::set<InternalIndex>::reverse_iterator last = PendingMessages_[aimId].rbegin();
-						while (last != PendingMessages_[aimId].rend())
+						std::set<InternalIndex>::iterator pending = PendingMessages_[aimId].begin();
+						while (pending != PendingMessages_[aimId].end())
 						{
-							const auto &existingKeys = last->GetMessageKeys();
+							const auto &existingKeys = pending->GetMessageKeys();
 
 							std::set<MessageKey>::iterator existKey = std::find(existingKeys.begin(), existingKeys.end(), key);
 							if (existKey != existingKeys.end())
 							{
 								Messages_[aimId].erase(internal(*existKey));
-								last->RemoveMessageKey(*existKey);
+								pending->RemoveMessageKey(*existKey);
                                 if (existingKeys.empty())
                                 {
-                                    PendingMessages_[aimId].erase(last.base());
+                                    PendingMessages_[aimId].erase(pending);
                                 }
                                 else
                                 {
                                     QList<MessageKey> updatedValues;
-                                    updatedValues << last->Key_;
+                                    updatedValues << pending->Key_;
                                     emitUpdated(updatedValues, aimId, PENDING);
                                 }
 								break;
 							}
-							++last;
+							++pending;
 						}
 					}
 
@@ -1006,6 +1024,12 @@ namespace Logic
 				result.Id_ = -1;
 			}
 		}
+
+        if (first)
+        {
+            result.Id_ = -1;
+            result.InternalId_.clear();
+        }
 
 		return result;
 	}
@@ -1261,6 +1285,9 @@ namespace Logic
 
 	Ui::HistoryControlPageItem* MessagesModel::fill(const Data::MessageBuddy& msg, QWidget* parent) const
 	{
+        if (msg.IsEmpty())
+            return 0;
+
         const auto isServiceMessage = (!msg.IsBase() && !msg.IsFileSharing() && !msg.IsSticker() && !msg.IsChatEvent() && !msg.IsVoipEvent());
 		if (isServiceMessage)
 		{
@@ -1279,7 +1306,7 @@ namespace Logic
 			std::unique_ptr<Ui::ChatEventItem> item(new Ui::ChatEventItem(parent, msg.GetChatEvent()));
             item->setContact(msg.AimId_);
             item->setHasAvatar(msg.HasAvatar());
-			item->setFixedSize(ItemWidth_, item->sizeHint().height());
+			item->setFixedWidth(ItemWidth_);
 			return item.release();
 		}
 
@@ -1390,7 +1417,7 @@ namespace Logic
                     std::unique_ptr<Ui::ChatEventItem> item(new Ui::ChatEventItem(parent, buddy->GetChatEvent()));
                     item->setContact(buddy->AimId_);
                     item->setHasAvatar(buddy->HasAvatar());
-                    item->setFixedSize(ItemWidth_, item->sizeHint().height());
+                    item->setFixedWidth(ItemWidth_);
                     result->layout()->addWidget(item.release());
                 }
                 else if (index.IsVoipEvent())
@@ -1482,7 +1509,7 @@ namespace Logic
 
 		result->setFixedWidth(ItemWidth_);
 		result->setProperty("New", true);
-		return result.release();
+		return first ?  0 : result.release();
 	}
 
 	QWidget* MessagesModel::fillItemById(const QString& aimId, const MessageKey& key,  QWidget* parent, qint64 newId)
@@ -1634,6 +1661,9 @@ namespace Logic
 		if (LastKey_[aimId].isEmpty() || LastKey_[aimId].isPending() || (LastKey_[aimId].Prev_ != -1 && Indexes_[aimId].begin()->contains(LastKey_[aimId].Id_)))
 			requestMessages(aimId);
 
+        if (result.isEmpty())
+            Subscribed_ << aimId;
+
 		return result;
 	}
 
@@ -1705,8 +1735,10 @@ namespace Logic
 			Indexes_[aimId].begin()->contains(LastKey_[aimId].Id_)))
 			requestMessages(aimId);
 
-        if (result.size() != 0)
+        if (!result.isEmpty())
             Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::history_preload);
+        else
+            Subscribed_ << aimId;
 
 		return result;
 	}
@@ -1766,7 +1798,7 @@ namespace Logic
 		}
 
         const auto &index = Indexes_[aimId];
-        if (!index.empty())
+        if (index.size() > preloadCount())
         {
 		    setFirstMessage(aimId, index.begin()->Key_.Id_);
         }

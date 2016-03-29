@@ -74,6 +74,11 @@ namespace Ui
 		connect(Logic::GetContactListModel(), SIGNAL(contactChanged(QString)), this, SLOT(updateIcon()), Qt::QueuedConnection);
         connect(Ui::GetDispatcher(), SIGNAL(myInfo()), this, SLOT(myInfo()));
         connect(Ui::GetDispatcher(), SIGNAL(needLogin()), this, SLOT(loggedOut()), Qt::QueuedConnection);
+        
+#ifdef __APPLE__
+        ncSupported(); //setup notification manager
+#endif //__APPLE__
+        
 	}
 
 	TrayIcon::~TrayIcon()
@@ -217,6 +222,9 @@ namespace Ui
 	void TrayIcon::dlgState(Data::DlgState state)
 	{
 		bool canNotify = state.Visible_ && (!ShowedMessages_.contains(state.AimId_) || (state.LastMsgId_ != -1 && ShowedMessages_[state.AimId_] < state.LastMsgId_));
+        if (state.GetText().isEmpty())
+            canNotify = false;
+
 		if (!state.Outgoing_)
 		{
 			if (state.UnreadCount_ != 0 && canNotify && !Logic::GetContactListModel()->isMuted(state.AimId_))
@@ -346,9 +354,9 @@ namespace Ui
         
 #ifdef __APPLE__
         
-        onlineAction_ = Menu_->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TR_NOOP("Online"), this, SLOT(menuStateOnline()));
-        dndAction_ = Menu_->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TR_NOOP("Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
-        invAction_ = Menu_->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TR_NOOP("Invisible"), this, SLOT(menuStateInvisible()));
+        onlineAction_ = Menu_->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TRANSLATE_NOOP("tray_menu", "Online"), this, SLOT(menuStateOnline()));
+        dndAction_ = Menu_->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TRANSLATE_NOOP("tray_menu", "Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
+        invAction_ = Menu_->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TRANSLATE_NOOP("tray_menu", "Invisible"), this, SLOT(menuStateInvisible()));
         
         updateStatus();
         
@@ -358,13 +366,13 @@ namespace Ui
 //        Menu_->addAction(QIcon(), QT_TRANSLATE_NOOP("context_menu", "Check for updates..."), parent(), SLOT(checkForUpdates()));
 //        Menu_->addSeparator();
 //#endif
-        Menu_->addAction(QT_TRANSLATE_NOOP("context_menu","Quit"), parent(), SLOT(exit()));
+        Menu_->addAction(QT_TRANSLATE_NOOP("tray_menu","Quit"), parent(), SLOT(exit()));
 #else
 #ifdef __linux__
-        Menu_->addActionWithIcon(QIcon(), QT_TRANSLATE_NOOP("context_menu","Show"), parent(), SLOT(activate()));
-        Menu_->addActionWithIcon(QIcon(), QT_TRANSLATE_NOOP("context_menu","Quit"), parent(), SLOT(exit()));
+        Menu_->addActionWithIcon(QIcon(), QT_TRANSLATE_NOOP("tray_menu","Show"), parent(), SLOT(activate()));
+        Menu_->addActionWithIcon(QIcon(), QT_TRANSLATE_NOOP("tray_menu","Quit"), parent(), SLOT(exit()));
 #else
-        Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_quit_100.png")), QT_TRANSLATE_NOOP("context_menu","Quit"), parent(), SLOT(exit()));
+        Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_quit_100.png")), QT_TRANSLATE_NOOP("tray_menu","Quit"), parent(), SLOT(exit()));
 #endif //__linux__
 #endif
         
@@ -476,6 +484,7 @@ namespace Ui
             {
                 NotificationCenterManager_.reset(new NotificationCenterManager());
                 connect(NotificationCenterManager_.get(), SIGNAL(messageClicked(QString)), this, SLOT(messageClicked(QString)), Qt::QueuedConnection);
+                connect(NotificationCenterManager_.get(), SIGNAL(osxThemeChanged()), this, SLOT(myInfo()), Qt::QueuedConnection);
             }
             return true;
         }

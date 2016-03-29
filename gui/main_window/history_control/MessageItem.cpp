@@ -78,6 +78,7 @@ namespace Ui
         , Sender_(nullptr)
         , ContentWidget_(nullptr)
         , Menu_(0)
+        , ContentMenu_(0)
         , ClickedOnAvatar_(false)
         , Layout_(nullptr)
         , StatusWidget_(nullptr)
@@ -92,6 +93,7 @@ namespace Ui
 		, Data_(new MessageData())
         , Direction_(NONE)
 		, Menu_(0)
+        , ContentMenu_(0)
         , ClickedOnAvatar_(false)
         , Layout_(new MessageItemLayout(this))
         , StatusWidget_(new MessageStatusWidget(this))
@@ -334,23 +336,32 @@ namespace Ui
         HistoryControlPageItem::resizeEvent(e);
     }
 
-    void MessageItem::initMenu()
+    void MessageItem::createMenu()
     {
         Menu_ = new ContextMenu(this);
         Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_copy_100.png")), QT_TRANSLATE_NOOP("context_menu", "Copy"), makeData("copy"));
         Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_quote_100.png")), QT_TRANSLATE_NOOP("context_menu", "Quote"), makeData("quote"));
-        Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_delete_100.png")), QT_TRANSLATE_NOOP("context_menu", "Delete"), makeData("delete"));
-
+        //Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_delete_100.png")), QT_TRANSLATE_NOOP("context_menu", "Delete"), makeData("delete"));
+        
         connect(Menu_, &ContextMenu::triggered, this, &MessageItem::menu, Qt::QueuedConnection);
-
+    }
+    
+    void MessageItem::createContentMenu()
+    {
         ContentMenu_ = new ContextMenu(this);
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_download_100.png")), QT_TRANSLATE_NOOP("context_menu", "Save as..."), makeData("save_as"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_attach_100.png")), QT_TRANSLATE_NOOP("context_menu", "Copy file"), makeData("copy_file"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_link_100.png")), QT_TRANSLATE_NOOP("context_menu", "Copy link"), makeData("copy_link"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_quote_100.png")), QT_TRANSLATE_NOOP("context_menu", "Quote"), makeData("quote"));
-        ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_delete_100.png")), QT_TRANSLATE_NOOP("context_menu", "Delete"), makeData("delete"));
-
+        //ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_delete_100.png")), QT_TRANSLATE_NOOP("context_menu", "Delete"), makeData("delete"));
+        
         connect(ContentMenu_, &ContextMenu::triggered, this, &MessageItem::menu, Qt::QueuedConnection);
+    }
+
+    void MessageItem::initMenu()
+    {
+        createMenu();
+        createContentMenu();
     }
 
     void MessageItem::createMessageBody()
@@ -370,6 +381,8 @@ namespace Ui
             false
         );
         updateMessageBodyColor();
+        
+        QString styleSheet = QString("background: transparent; selection-background-color: %1;").arg(Utils::getSelectionColor().name());
 
         MessageBody_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         MessageBody_->setFrameStyle(QFrame::NoFrame);
@@ -378,7 +391,7 @@ namespace Ui
         MessageBody_->setOpenLinks(true);
         MessageBody_->setOpenExternalLinks(true);
         MessageBody_->setWordWrapMode(QTextOption::WordWrap);
-        MessageBody_->setStyleSheet("background: transparent;");
+        MessageBody_->setStyleSheet(styleSheet);
         MessageBody_->setFocusPolicy(Qt::NoFocus);
         MessageBody_->document()->setDocumentMargin(0);
     }
@@ -429,7 +442,7 @@ namespace Ui
         }
 
         assert(!Bubble_.isEmpty());
-        p.fillPath(Bubble_, MessageStyle::getBodyBrush(Data_->Outgoing_, isSelected(),theme()->get_id()));
+        p.fillPath(Bubble_, MessageStyle::getBodyBrush(Data_->Outgoing_, isSelected(), theme()->get_id()));
 
     }
 
@@ -979,7 +992,7 @@ namespace Ui
             return QString();
         }
 
-		if (MessageBody_ && !MessageBody_->isAllSelected())
+		if (textonly && MessageBody_ && !MessageBody_->isAllSelected())
         {
 			return MessageBody_->selection();
         }
@@ -1010,10 +1023,13 @@ namespace Ui
 
         if (MessageBody_)
 		{
-			format += MessageBody_->selection();
-			format += "\n";
-
-            return format;
+            if (!MessageBody_->selection().isEmpty())
+            {
+			    format += MessageBody_->selection();
+			    format += "\n\n";
+                return format;
+            }
+            return QString();
 		}
 
         assert(isSelected() || !selectedText.isEmpty());
@@ -1028,7 +1044,7 @@ namespace Ui
         }
 
         if (!textonly)
-            format += "\n";
+            format += "\n\n";
 
         return format;
 	}
@@ -1145,7 +1161,7 @@ namespace Ui
 		}
         if (auto item = qobject_cast<HistoryControl::ImagePreviewWidget*>(ContentWidget_))
         {
-            if (!item->isMessageBubbleVisible())
+            if (!item->isImageBubbleVisible() || item->isTextPresented())
             {
                 return true;
             }
@@ -1443,7 +1459,7 @@ namespace Ui
         updateSenderControlColor();
         if (StatusWidget_)
         {
-            StatusWidget_->setMessageBubbleVisible(isMessageBubbleVisible());
+            StatusWidget_->setMessageBubbleVisible(isMessageBubbleVisible() );
         }
         update();
         return true;

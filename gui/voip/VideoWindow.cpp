@@ -7,6 +7,7 @@
 #include "../utils/utils.h"
 #include "../cache/avatars/AvatarStorage.h"
 #include "../main_window/contact_list/ContactListModel.h"
+#include "../gui_settings.h"
 
 #include "VideoFrame.h"
 #include "VoipTools.h"
@@ -21,6 +22,9 @@ namespace {
     enum { kMinimumW = 328, kMinimumH = 164 };
     enum { kDefaultW = 640, kDefaultH = 480 };
     enum { kAnimationDefDuration = 500 };
+
+    const std::string videoWndWName = "video_window_w";
+    const std::string videoWndHName = "video_window_h";
 
     bool windowIsOverlapped(platform_specific::GraphicsPanel* window, quintptr* exclude, int size) {
         if (!window) {
@@ -262,7 +266,19 @@ Ui::VideoWindow::VideoWindow()
     detached_wnd_->hideFrame();
 
     setMinimumSize(Utils::scale_value(kMinimumW), Utils::scale_value(kMinimumH));
-    resize(Utils::scale_value(kDefaultW), Utils::scale_value(kDefaultH));
+
+    int storedW = Utils::scale_value(kDefaultW);
+    int storedH = Utils::scale_value(kDefaultH);
+    if (qt_gui_settings* settings = Ui::get_gui_settings()) {
+        const int tmpW = settings->get_value<int>(videoWndWName.c_str(), -1);
+        const int tmpH = settings->get_value<int>(videoWndHName.c_str(), -1);
+        
+        if (tmpW > 0 && tmpH > 0) {
+            storedW = tmpW;
+            storedH = tmpH;
+        }
+    }
+    resize(storedW, storedH);
 }
 
 Ui::VideoWindow::~VideoWindow() {
@@ -571,7 +587,7 @@ void Ui::VideoWindow::_checkPanelsVisibility(bool forceHide /*= false*/) {
     video_panel_->setFullscreenMode(isInFullscreen());
     video_panel_header_->setFullscreenMode(isInFullscreen());
 
-    if (!isVisible() || forceHide) {
+    if (isHidden() || isMinimized() || forceHide) {
         video_panel_->hide();
         video_panel_header_->hide();
         video_panel_header_with_avatars_->hide();
@@ -629,7 +645,6 @@ void Ui::VideoWindow::onVoipCallNameChanged(const std::vector<voip_manager::Cont
     for(unsigned ix = 0; ix < contacts.size(); ix++) {
         users.push_back(contacts[ix].contact);
         
-        // F*KN QSTRING...WHO USE IT???????????!!!!!!!!!!!!
         std::string n = Logic::GetContactListModel()->getDisplayName(contacts[ix].contact.c_str()).toUtf8().data();
         friendly_names.push_back(n);
     }
@@ -685,6 +700,11 @@ void Ui::VideoWindow::closeEvent(QCloseEvent* e) {
 
 void Ui::VideoWindow::resizeEvent(QResizeEvent* e) {
     AspectRatioResizebleWnd::resizeEvent(e);
+    
+    if (qt_gui_settings* settings = Ui::get_gui_settings()) {
+        settings->set_value<int>(videoWndWName.c_str(), width());
+        settings->set_value<int>(videoWndHName.c_str(), height());
+    }
 
 #ifdef _WIN32
     int border_width = Utils::scale_value(2);
@@ -707,7 +727,7 @@ void Ui::VideoWindow::onVoipCallDestroyed(const voip_manager::ContactEx& contact
         unuseAspect();
         have_remote_video_ = false;
         _escPressed();
-        //resize(Utils::scale_value(kDefaultW), Utils::scale_value(kDefaultH));
+
         video_panel_header_with_avatars_->setStatus(QT_TRANSLATE_NOOP("voip_pages", "Outgoing call").toUtf8());
     }
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CustomAbstractListModel.h"
+
 #include "../../types/contact.h"
 #include "../../types/message.h"
 
@@ -20,7 +22,7 @@ namespace Logic
 	class contact_profile;
 	typedef std::shared_ptr<contact_profile> profile_ptr;
 
-	class ContactListModel : public QAbstractListModel
+	class ContactListModel : public CustomAbstractListModel
 	{
 		Q_OBJECT
 
@@ -51,9 +53,16 @@ namespace Logic
 		void searchPatternChanged(QString);
 		void refresh();
 		void searchResult(QStringList);
+
+        void auth_add_contact(QString _aimid);
+        void stats_auth_add_contact(QString _aimid);
+        void unknown_contact_profile_spam_contact(QString _aimid);
+        void auth_spam_contact(QString _aimid);
+	    void auth_delete_contact(QString _aimid);
+        void auth_ignore_contact(QString _aimid);
+        void stats_spam_profile(QString _aimid);
 		
 	public:
-		
 		explicit ContactListModel(QObject *parent);
 		ContactItem* getContactItem(const QString& _aimId);
         void setCurrentCallbackHappened(Ui::HistoryControlPage *page);
@@ -88,7 +97,7 @@ namespace Logic
 		void get_contact_profile(const QString& _aimId, std::function<void(profile_ptr, int32_t)> _call_back = [](profile_ptr, int32_t){});
 		void add_contact_to_contact_list(const QString& _aimid, std::function<void(bool)> _call_back = [](bool){});
 		void remove_contact_from_contact_list(const QString& _aimid);
-        bool block_spam_contact(const QString& _aimid);
+        bool block_spam_contact(const QString& _aimid, bool _with_confirmation = true);
 		void ignore_contact(const QString& _aimid, bool ignore);
 		bool ignore_and_remove_from_cl_contact(const QString& _aimid);
         void static get_ignore_list();
@@ -104,8 +113,9 @@ namespace Logic
         int get_service_index() const;
         QString contactToTryOnTheme() const;
 
+        void refreshList();
+
 	private:
-		
 		std::shared_ptr<bool>	ref_;
         std::function<void(Ui::HistoryControlPage*)> gotPageCallback_;
 		void rebuild_index();

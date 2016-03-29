@@ -45,9 +45,7 @@ namespace Utils
 		
 	public Q_SLOTS:
 		void initMainWindow();
-
-    private Q_SLOTS:
-        void open_url(QUrl url);
+        void open_url(const QUrl& url);
 
 	private:
 		void init_win7_features();

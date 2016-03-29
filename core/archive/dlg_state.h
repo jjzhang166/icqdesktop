@@ -16,7 +16,7 @@ namespace core
 	{
 		class storage;
 		class history_message;
-		
+
 		class dlg_state
 		{
 			uint32_t							unread_count_;
@@ -41,7 +41,7 @@ namespace core
 
 			void set_unread_count(uint32_t _unread_count) { unread_count_ = _unread_count; }
 			uint32_t get_unread_count() const { return unread_count_; }
-			
+
 			void set_last_msgid(int64_t _last_msgid) { last_msgid_ = _last_msgid; }
 			int64_t get_last_msgid() const { return last_msgid_; }
 
@@ -54,9 +54,9 @@ namespace core
 			void set_theirs_last_delivered(int64_t _val) { theirs_last_delivered_ = _val; }
 			int64_t	get_theirs_last_delivered() const { return theirs_last_delivered_; }
 
-			void set_visible(bool _val) { visible_ = _val; } 
+			void set_visible(bool _val) { visible_ = _val; }
 			bool get_visible() const { return visible_; }
-						
+
 			const history_message& get_last_message() const;
 			void set_last_message(const history_message& _message);
 
@@ -65,7 +65,7 @@ namespace core
 
 			void serialize(icollection* _collection, const time_t _offset, const time_t _last_successful_fetch, bool _serialize_message = true) const;
 			void serialize(core::tools::binary_stream& _data) const;
-			
+
 			bool unserialize(core::tools::binary_stream& _data);
 		};
 		//////////////////////////////////////////////////////////////////////////

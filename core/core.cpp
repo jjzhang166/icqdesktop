@@ -48,9 +48,9 @@ core_dispatcher::core_dispatcher()
     std::locale::global(loc);
 #endif
     search_count_.store(0);
-        
+
     __LOG(log::init(utils::get_logs_path(), false);)
-            
+
     profiler::enable(::build::is_debug());
 }
 
@@ -180,7 +180,7 @@ void core::core_dispatcher::unlink_gui()
     excute_core_context([this]
     {
         // NOTE : this order is important!
-        
+
         voip_manager_.reset();
         im_container_.reset();
         gui_settings_.reset();
@@ -211,13 +211,13 @@ void core::core_dispatcher::post_message_to_gui(const char * _message, int64_t _
 {
     __LOG(core::log::info("core", boost::format("post message to gui, message=%1%\nparameters: %2%") % _message % (_message_data ? _message_data->log() : ""));)
 
-        if (!gui_connector_)
-        {
-            assert(!"gui unlinked");
-            return;
-        }
+    if (!gui_connector_)
+    {
+        assert(!"gui unlinked");
+        return;
+    }
 
-        gui_connector_->receive(_message, _seq, _message_data);
+    gui_connector_->receive(_message, _seq, _message_data);
 }
 
 
@@ -285,7 +285,7 @@ void core_dispatcher::start_session_stats()
     std::locale loc("");
     props.emplace_back(std::make_pair("Sys_Language", loc.name()));
     props.emplace_back(std::make_pair("Sys_OS_Version", core::tools::system::get_os_version_string()));
-    
+
     insert_event(core::stats::stats_event_names::start_session, props);
 }
 
@@ -332,9 +332,9 @@ void core_dispatcher::post_gui_settings()
 void core_dispatcher::post_theme_settings()
 {
     coll_helper cl_coll(create_collection(), true);
-    
+
     theme_settings_->serialize(cl_coll);
-    
+
     post_message_to_gui("theme_settings", 0, cl_coll.get());
 }
 
@@ -364,12 +364,12 @@ void core::core_dispatcher::on_message_update_theme_settings_value(int64_t _seq,
 {
     std::string value_name = _params.get_value_as_string("name");
     istream* value_data = _params.get_value_as_stream("value");
-    
+
     tools::binary_stream bs_data;
     int size = value_data->size();
     if (size)
         bs_data.write((const char*) value_data->read(size), size);
-    
+
     theme_settings_->set_value(value_name, bs_data);
     theme_settings_->save_if_needed();
 }
@@ -382,8 +382,12 @@ void core::core_dispatcher::on_message_set_default_theme_id(int64_t _seq, coll_h
     if (theme)
     {
         theme_settings_->set_value("default_theme", *theme);
-        theme_settings_->save_if_needed();
     }
+    else
+    {
+        theme_settings_->clear_values();
+    }
+    theme_settings_->save_if_needed();
 }
 
 void core::core_dispatcher::on_message_log(coll_helper _params) const
@@ -445,7 +449,7 @@ void core::core_dispatcher::receive_message_from_gui(const char * _message, int6
         if (message_string != "log")
         {
             core::log::info("core", boost::format("message from gui, message=%1%\nparameters: %2%") % _message % (_message_data ? _message_data->log() : ""));
-        })	
+        })
 
         if (_message_data)
             _message_data->addref();
@@ -582,7 +586,7 @@ void core::core_dispatcher::unlogin()
 {
     excute_core_context([this]()
     {
-        im_container_->unlogin();
+        im_container_->logout();
     });
 }
 
@@ -598,7 +602,7 @@ proxy_settings core_dispatcher::get_proxy_settings()
 
 proxy_settings core_dispatcher::get_registry_proxy_settings()
 {
-    return proxy_settings_manager_->get();
+    return proxy_settings_manager_->get_registry_settings();
 }
 
 void core_dispatcher::switch_proxy_settings()

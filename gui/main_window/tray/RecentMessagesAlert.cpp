@@ -123,7 +123,7 @@ namespace Ui
 		LabelEx* viewAllLabel = new LabelEx(this);
 		viewAllLabel->setProperty("ViewAllLink", true);
 		viewAllLabel->setStyle(QApplication::style());
-		viewAllLabel->setText(QT_TR_NOOP("View all"));
+		viewAllLabel->setText(QT_TRANSLATE_NOOP("notifications_alert", "View all"));
 		viewAllLabel->setCursor(QCursor(Qt::PointingHandCursor));
 		widgetLayout->addWidget(viewAllLabel);
 		ViewAllWidget_->setLayout(widgetLayout);

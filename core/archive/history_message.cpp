@@ -26,6 +26,7 @@ namespace
 		buddy_reg,
 		buddy_found,
 		birthday,
+        generic,
 
 		max,
 	};
@@ -42,6 +43,7 @@ namespace
 	const std::string c_reqid					= "reqId";
 	const std::string c_friendly				= "friendly";
 	const std::string c_added_to_buddy_list		= "addedToBuddyList";
+    const std::string c_event_class             = "event";
 
 	std::string parse_sender_aimid(const rapidjson::Value &_node);
 
@@ -49,7 +51,11 @@ namespace
 
     void find_person(const std::string &_aimid, const persons_map &_persons, Out std::string &_friendly);
 
+    bool is_generic_event(const rapidjson::Value& _node);
+
 	chat_event_type_class probe_for_chat_event(const rapidjson::Value& _node);
+
+    chat_event_type_class probe_for_modified_event(const rapidjson::Value& _node);
 
 	StrSet read_members(const rapidjson::Value &_parent);
 
@@ -186,6 +192,8 @@ enum message_fields : uint32_t
     mf_voip_sender_aimid                        = 29,
     mf_voip_duration                            = 30,
     mf_voip_is_incoming                         = 31,
+    mf_chat_event_generic_text                  = 32,
+    mf_chat_event_new_chat_description          = 33
 
 };
 
@@ -780,33 +788,67 @@ chat_event_data_uptr chat_event_data::make_modified_event(const rapidjson::Value
 	}
 
 	const auto new_name_iter = modified_event.FindMember("name");
-	if (new_name_iter == modified_event.MemberEnd())
-	{
-		return nullptr;
-	}
+    const auto is_name_modified = (new_name_iter != modified_event.MemberEnd());
+    if (is_name_modified)
+    {
+	    const auto &new_name_node = new_name_iter->value;
+	    if (!new_name_node.IsString())
+	    {
+		    return nullptr;
+	    }
 
-	const auto &new_name_node = new_name_iter->value;
-	if (!new_name_node.IsString())
-	{
-		return nullptr;
-	}
+	    const std::string new_name = new_name_node.GetString();
 
-	const std::string new_name = new_name_node.GetString();
+	    chat_event_data_uptr result(
+		    new chat_event_data(chat_event_type::chat_name_modified)
+	    );
 
-	chat_event_data_uptr result(
-		new chat_event_data(chat_event_type::chat_name_modified)
-	);
+	    assert(result->sender_aimid_.empty());
+	    result->sender_aimid_ = sender_aimid;
 
-	assert(result->sender_aimid_.empty());
-	result->sender_aimid_ = sender_aimid;
+	    if (!new_name.empty())
+	    {
+		    assert(result->chat_.new_name_.empty());
+		    result->chat_.new_name_ = new_name;
+	    }
 
-	if (!new_name.empty())
-	{
-		assert(result->chat_.new_name_.empty());
-		result->chat_.new_name_ = new_name;
-	}
+	    return result;
+    }
 
-	return result;
+    const auto avatar_last_modified_iter = modified_event.FindMember("avatarLastModified");
+    const auto is_avatar_modified = (avatar_last_modified_iter != modified_event.MemberEnd());
+    if (is_avatar_modified)
+    {
+        chat_event_data_uptr result(
+            new chat_event_data(chat_event_type::avatar_modified)
+        );
+
+        assert(result->sender_aimid_.empty());
+        result->sender_aimid_ = sender_aimid;
+
+        return result;
+    }
+
+    const auto about_iter = modified_event.FindMember("about");
+    const auto is_about_changed = (
+        (about_iter != modified_event.MemberEnd()) &&
+        about_iter->value.IsString()
+    );
+    if (is_about_changed)
+    {
+        chat_event_data_uptr result(
+            new chat_event_data(chat_event_type::chat_description_modified)
+        );
+
+        result->chat_.new_description_ = about_iter->value.GetString();
+
+        assert(result->sender_aimid_.empty());
+        result->sender_aimid_ = sender_aimid;
+
+        return result;
+    }
+
+    return nullptr;
 }
 
 chat_event_data_uptr chat_event_data::make_from_tlv(const tools::tlvpack& _pack)
@@ -826,6 +868,21 @@ chat_event_data_uptr chat_event_data::make_simple_event(const chat_event_type _t
 			_type
 		)
 	);
+}
+
+chat_event_data_uptr chat_event_data::make_generic_event(const rapidjson::Value& _text_node)
+{
+    assert(_text_node.IsString());
+
+    chat_event_data_uptr result(
+        new chat_event_data(
+            chat_event_type::generic
+        )
+    );
+
+    result->generic_ = _text_node.GetString();
+
+    return result;
 }
 
 chat_event_data::chat_event_data(const chat_event_type _type)
@@ -862,6 +919,12 @@ chat_event_data::chat_event_data(const tools::tlvpack& _pack)
 	{
 		deserialize_chat_modifications(_pack);
 	}
+
+    if (has_generic_text())
+    {
+        generic_ = _pack.get_item(message_fields::mf_chat_event_generic_text)->get_value<std::string>();
+        assert(!generic_.empty());
+    }
 }
 
 void chat_event_data::apply_persons(const archive::persons_map &_persons)
@@ -911,6 +974,12 @@ void chat_event_data::serialize(
 	{
 		serialize_chat_modifications(Out coll);
 	}
+
+    if (has_generic_text())
+    {
+        assert(!generic_.empty());
+        coll.set<std::string>("generic", generic_);
+    }
 }
 
 void chat_event_data::serialize(Out tools::tlvpack &_pack) const
@@ -932,6 +1001,12 @@ void chat_event_data::serialize(Out tools::tlvpack &_pack) const
 	{
 		serialize_chat_modifications(Out _pack);
 	}
+
+    if (has_generic_text())
+    {
+        assert(!generic_.empty());
+        _pack.push_child(core::tools::tlv(message_fields::mf_chat_event_generic_text, generic_));
+    }
 }
 
 void chat_event_data::deserialize_chat_modifications(const tools::tlvpack &_pack)
@@ -948,6 +1023,14 @@ void chat_event_data::deserialize_chat_modifications(const tools::tlvpack &_pack
 
 		chat_.new_name_ = std::move(new_name);
 	}
+
+    if (type_ == chat_event_type::chat_description_modified)
+    {
+        const auto item = _pack.get_item(mf_chat_event_new_chat_description);
+        assert(item);
+
+        chat_.new_description_ = item->get_value<std::string>();
+    }
 }
 
 void chat_event_data::deserialize_mchat_members(const tools::tlvpack &_pack)
@@ -967,6 +1050,14 @@ void chat_event_data::deserialize_mchat_members(const tools::tlvpack &_pack)
 	}
 }
 
+bool chat_event_data::has_generic_text() const
+{
+    assert(type_ >= chat_event_type::min);
+    assert(type_ <= chat_event_type::max);
+
+    return (type_ == chat_event_type::generic);
+}
+
 bool chat_event_data::has_mchat_members() const
 {
 	assert(type_ >= chat_event_type::min);
@@ -984,7 +1075,8 @@ bool chat_event_data::has_chat_modifications() const
 	assert(type_ >= chat_event_type::min);
 	assert(type_ <= chat_event_type::max);
 
-	return (type_ == chat_event_type::chat_name_modified);
+	return ((type_ == chat_event_type::chat_name_modified) ||
+            (type_ == chat_event_type::chat_description_modified));
 }
 
 bool chat_event_data::has_sender_aimid() const
@@ -998,7 +1090,9 @@ bool chat_event_data::has_sender_aimid() const
 			(type_ == chat_event_type::mchat_invite) ||
 			(type_ == chat_event_type::mchat_leave) ||
 			(type_ == chat_event_type::mchat_del_members) ||
-			(type_ == chat_event_type::mchat_kicked));
+			(type_ == chat_event_type::mchat_kicked) ||
+            (type_ == chat_event_type::avatar_modified) ||
+            (type_ == chat_event_type::chat_description_modified));
 }
 
 void chat_event_data::serialize_chat_modifications(Out coll_helper &_coll) const
@@ -1010,6 +1104,11 @@ void chat_event_data::serialize_chat_modifications(Out coll_helper &_coll) const
 
 		_coll.set_value_as_string("chat/new_name", new_name);
 	}
+
+    if (type_ == chat_event_type::chat_description_modified)
+    {
+        _coll.set<std::string>("chat/new_description", chat_.new_description_);
+    }
 }
 
 void chat_event_data::serialize_chat_modifications(Out tools::tlvpack &_pack) const
@@ -1021,6 +1120,11 @@ void chat_event_data::serialize_chat_modifications(Out tools::tlvpack &_pack) co
 
 		_pack.push_child(tools::tlv(message_fields::mf_chat_event_new_chat_name, new_name));
 	}
+
+    if (type_ == chat_event_type::chat_description_modified)
+    {
+        _pack.push_child(tools::tlv(mf_chat_event_new_chat_description, chat_.new_description_));
+    }
 }
 
 void chat_event_data::serialize_mchat_members(Out coll_helper &_coll) const
@@ -1519,6 +1623,12 @@ int32_t history_message::unserialize(const rapidjson::Value& _node,
 			);
 			break;
 
+        case chat_event_type_class::generic:
+            chat_event_ = chat_event_data::make_generic_event(
+                _node.FindMember("text")->value
+            );
+            break;
+
 		default:
 			assert(!"unexpected event class");
 	}
@@ -1763,6 +1873,61 @@ namespace
         }
     }
 
+    bool is_generic_event(const rapidjson::Value& _node)
+    {
+        assert(_node.IsObject());
+
+        const auto text_iter = _node.FindMember("text");
+        if (
+            (text_iter == _node.MemberEnd()) ||
+            !text_iter->value.IsString()
+        )
+        {
+            return false;
+        }
+
+        const auto class_iter = _node.FindMember("class");
+        if (
+            (class_iter != _node.MemberEnd()) &&
+            class_iter->value.IsString() &&
+            (class_iter->value.GetString() == c_event_class)
+        )
+        {
+            return true;
+        }
+
+        const auto chat_node_iter = _node.FindMember("chat");
+        if (chat_node_iter == _node.MemberEnd())
+        {
+            return false;
+        }
+
+        const auto &chat_node = chat_node_iter->value;
+        if (!chat_node.IsObject())
+        {
+            return false;
+        }
+
+        const auto modified_info_iter = chat_node.FindMember("modifiedInfo");
+        if (modified_info_iter == chat_node.MemberEnd())
+        {
+            return false;
+        }
+
+        const auto &modified_info = modified_info_iter->value;
+        if (!modified_info.IsObject())
+        {
+            return false;
+        }
+
+        if (modified_info.HasMember("public"))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
 	chat_event_type_class probe_for_chat_event(const rapidjson::Value& _node)
 	{
 		const auto added_to_buddy_list_iter = _node.FindMember("addedToBuddyList");
@@ -1772,49 +1937,79 @@ namespace
 		}
 
 		const auto buddy_reg_iter = _node.FindMember("buddyReg");
-		if (buddy_reg_iter!= _node.MemberEnd())
+		if (buddy_reg_iter != _node.MemberEnd())
 		{
 			return chat_event_type_class::buddy_reg;
 		}
 
 		const auto buddy_bday_iter = _node.FindMember("bday");
-		if (buddy_bday_iter!= _node.MemberEnd())
+		if (buddy_bday_iter != _node.MemberEnd())
 		{
 			return chat_event_type_class::birthday;
 		}
 
 		const auto buddy_found_iter = _node.FindMember("buddyFound");
-		if (buddy_found_iter!= _node.MemberEnd())
+		if (buddy_found_iter != _node.MemberEnd())
 		{
 			return chat_event_type_class::buddy_found;
 		}
 
-		const auto chat_node_iter = _node.FindMember("chat");
-		if (chat_node_iter == _node.MemberEnd())
-		{
-			return chat_event_type_class::unknown;
-		}
+        const auto modified_event = probe_for_modified_event(_node);
+        if (modified_event != chat_event_type_class::unknown)
+        {
+            return modified_event;
+        }
 
-		const auto &chat_node = chat_node_iter->value;
-		if (!chat_node.IsObject())
-		{
-			return chat_event_type_class::unknown;
-		}
-
-		const auto modified_info_iter = chat_node.FindMember("modifiedInfo");
-		if (modified_info_iter != chat_node.MemberEnd())
-		{
-			return chat_event_type_class::chat_modified;
-		}
-
-		const auto member_event_iter = chat_node.FindMember("memberEvent");
-		if (member_event_iter != chat_node.MemberEnd())
-		{
-			return chat_event_type_class::mchat;
-		}
+        if (is_generic_event(_node))
+        {
+            return chat_event_type_class::generic;
+        }
 
 		return chat_event_type_class::unknown;
 	}
+
+    chat_event_type_class probe_for_modified_event(const rapidjson::Value& _node)
+    {
+        assert(_node.IsObject());
+
+        const auto chat_node_iter = _node.FindMember("chat");
+        if (chat_node_iter == _node.MemberEnd())
+        {
+            return chat_event_type_class::unknown;
+        }
+
+        const auto &chat_node = chat_node_iter->value;
+        if (!chat_node.IsObject())
+        {
+            return chat_event_type_class::unknown;
+        }
+
+        const auto modified_info_iter = chat_node.FindMember("modifiedInfo");
+        if (modified_info_iter != chat_node.MemberEnd())
+        {
+            const auto &modified_info = modified_info_iter->value;
+
+            if (
+                modified_info.IsObject() &&
+                (
+                    modified_info.HasMember("name") ||
+                    modified_info.HasMember("avatarLastModified") ||
+                    modified_info.HasMember("about")
+                )
+            )
+            {
+                return chat_event_type_class::chat_modified;
+            }
+        }
+
+        const auto member_event_iter = chat_node.FindMember("memberEvent");
+        if (member_event_iter != chat_node.MemberEnd())
+        {
+            return chat_event_type_class::mchat;
+        }
+
+        return chat_event_type_class::unknown;
+    }
 
 	StrSet read_members(const rapidjson::Value &_parent)
 	{

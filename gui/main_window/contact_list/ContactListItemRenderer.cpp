@@ -323,7 +323,19 @@ namespace
         Logic::Text2Doc(elidedString, cursor, Logic::Text2DocHtmlMode::Pass, false);
         Logic::FormatDocument(doc, L::contactNameHeight.px());
 
-        textControl->render(&painter, QPoint(L::GetContactNameX(_isWithCheckBox).px(), y));
+        if (platform::is_apple())
+        {
+            qreal realHeight = doc.documentLayout()->documentSize().toSize().height();
+            qreal correction = (realHeight > 20)?0:2;
+            
+//            qDebug() << "text " << elidedString << " height " << realHeight << " d " << correction;
+            
+            textControl->render(&painter, QPoint(L::GetContactNameX(_isWithCheckBox).px(), y + correction));
+        }
+        else
+        {
+            textControl->render(&painter, QPoint(L::GetContactNameX(_isWithCheckBox).px(), y));
+        }
     }
 
     int RenderDate(QPainter &painter, const QDateTime &ts, int _regim, const ContactListVisualData &item, bool _shortView)
@@ -375,7 +387,7 @@ namespace
             static QBrush hoverBrush(QColor(220, 220, 220, 0.4 * 255));
             painter.setBrush(hoverBrush);
         }
-        else
+        if (isSelected)
         {
             static QBrush selectedBrush(QColor(202, 230, 179, 0.7 * 255));
             painter.setBrush(selectedBrush);

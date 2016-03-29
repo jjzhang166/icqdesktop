@@ -13,10 +13,15 @@ namespace Ui {
         ThemesModel *themesModel_;
         themes::themes_list themes_list_;
         QMap<int,bool> loaded_themes_;
+        QGridLayout *grid_layout_;
+        
+        bool firstThemeAdded__;
+        void checkFirstTheme_(themes::themePtr theme);
     public:
         ThemesWidget(QWidget* _parent, int _spacing);
         void onThemeGot(themes::themePtr theme);
         void set_target_contact(QString _aimId);
+        void addCaptionLayout(QLayout* _layout);
     };
 
 }

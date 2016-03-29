@@ -4,13 +4,6 @@
 #include "libvoip/include/voip/voip2.h"
 #include <string>
 #include <vector>
-#include "../../corelib/collection_helper.h"
-#include <codecvt>
-
-//#include <functional> 
-//#include <assert.h>
-//#include <vector>
-//#include <sstream>
 
 namespace voip_manager {
     enum eNotificationTypes {
@@ -54,6 +47,23 @@ namespace voip_manager {
         kNotificationType_VoipResetComplete,
         kNotificationType_VoipWindowRemoveComplete,
         kNotificationType_VoipWindowAddComplete
+    };
+
+    struct VoipProxySettings {
+        enum eProxyType {
+            kProxyType_None = 0,
+            kProxyType_Http,
+            kProxyType_Socks4,
+            kProxyType_Socks4a,
+            kProxyType_Socks5
+        };
+
+        eProxyType   type;
+        std::wstring serverUrl;
+        std::wstring userName;
+        std::wstring userPassword;
+
+        VoipProxySettings() : type(kProxyType_None) { }
     };
 
     struct DeviceState {
@@ -127,7 +137,7 @@ namespace voip_manager {
         unsigned call_count;
         bool     incoming;
 
-        ContactEx() : call_count(0) {
+        ContactEx() : call_count(0), incoming(false) {
 
         }
     };
@@ -139,12 +149,14 @@ namespace voip_manager {
         bool isActive;
     };
 
-    enum { kAvatarRequestId   = 0xb00b1e  };
-    enum { kAvatarDefaultSize = 160 };
-	enum { kAvatarRequestSize = 650 };
-    enum { kNickTextW         = kAvatarDefaultSize * 2 };
-    enum { kNickTextH         = 25      };
-    enum { kDetachedWndAvatarSize = 180 };
+    enum { kAvatarRequestId          = 0xb00b1e               };
+    enum { kAvatarDefaultSize        = 160                    };
+	enum { kAvatarRequestSize        = 650                    };
+    enum { kNickTextW                = kAvatarDefaultSize * 2 };
+    enum { kNickTextH                = 25                     };
+    enum { kDetachedWndAvatarSize    = 180                    };
+    enum { kLogoFromBoundOffset      = 15                     };
+    enum { kUseVoipProtocolAsDefault = 1                      };
 
     struct BitmapDescription {
         void*    data;
@@ -185,6 +197,7 @@ namespace voip_manager {
     public:
         virtual ~ICallManager() { }
     public:
+        virtual void        call_set_proxy      (const VoipProxySettings& proxySettings) = 0;
         virtual void        call_create         (const Contact& contact, bool video, bool add)= 0;
         virtual void        call_stop           ()                                  = 0;
         virtual void        call_stop_smart     (const std::function<void()>&)            = 0;

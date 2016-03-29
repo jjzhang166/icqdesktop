@@ -69,7 +69,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntDir>release\</IntDir>
     <OutDir>..\lib\</OutDir>
-    <IncludePath>%BOOST_INCLUDE%;$(IncludePath)</IncludePath>
+    <IncludePath>..\external\windows\boost\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -80,7 +80,7 @@
     <OutDir>..\lib\</OutDir>
     <IntDir>debug\</IntDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>%BOOST_INCLUDE%;$(IncludePath)</IncludePath>
+    <IncludePath>..\external\windows\boost\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>$(ProjectName)d</TargetName>
@@ -203,7 +203,10 @@
     <ClInclude Include="connections\wim\packets\add_buddy.h" />
     <ClInclude Include="connections\wim\packets\add_chat.h" />
     <ClInclude Include="connections\wim\packets\add_members.h" />
+    <ClInclude Include="connections\wim\packets\attach_phone.h" />
+    <ClInclude Include="connections\wim\packets\attach_uin.h" />
     <ClInclude Include="connections\wim\packets\end_session.h" />
+    <ClInclude Include="connections\wim\packets\get_flags.h" />
     <ClInclude Include="connections\wim\packets\get_permit_deny.h" />
     <ClInclude Include="connections\wim\packets\get_themes_index.h" />
     <ClInclude Include="connections\wim\packets\mute_buddy.h" />
@@ -336,7 +339,10 @@
     <ClCompile Include="connections\wim\packets\add_buddy.cpp" />
     <ClCompile Include="connections\wim\packets\add_chat.cpp" />
     <ClCompile Include="connections\wim\packets\add_members.cpp" />
+    <ClCompile Include="connections\wim\packets\attach_phone.cpp" />
+    <ClCompile Include="connections\wim\packets\attach_uin.cpp" />
     <ClCompile Include="connections\wim\packets\end_session.cpp" />
+    <ClCompile Include="connections\wim\packets\get_flags.cpp" />
     <ClCompile Include="connections\wim\packets\get_themes_index.cpp" />
     <ClCompile Include="connections\wim\packets\get_permit_deny.cpp" />
     <ClCompile Include="connections\wim\packets\remove_members.cpp" />

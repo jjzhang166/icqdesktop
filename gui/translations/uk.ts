@@ -2,27 +2,34 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="uk" sourcelanguage="en">
 <context>
-    <name>Form</name>
+    <name>QWidgetTextControl</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
+        <source>&amp;Undo</source>
+        <translation>Скасувати</translation>
     </message>
     <message>
-        <source>Добавить к существующему звонку</source>
-        <translation></translation>
+        <source>&amp;Redo</source>
+        <translation>Повторити</translation>
     </message>
     <message>
-        <source>У вас есть активный звонок.
-Что вы хотите сделать?</source>
-        <translation></translation>
+        <source>&amp;Copy</source>
+        <translation>Копіювати</translation>
     </message>
     <message>
-        <source>Начать новый звонок</source>
-        <translation></translation>
+        <source>&amp;Paste</source>
+        <translation>Вставити</translation>
     </message>
     <message>
-        <source>Отклонить</source>
-        <translation></translation>
+        <source>Cu&amp;t</source>
+        <translation>Вирізати</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Виділити все</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Видалити</translation>
     </message>
 </context>
 <context>
@@ -37,139 +44,10 @@
     </message>
 </context>
 <context>
-    <name>Ui::ProfileSettingsWidget</name>
+    <name>attach_page</name>
     <message>
-        <source>Profile</source>
-        <translation>Профіль</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translatorcomment>Move the user to ignore list</translatorcomment>
-        <translation>Ігнорувати</translation>
-    </message>
-    <message>
-        <source>Report spam</source>
-        <translatorcomment>To report spam from this user</translatorcomment>
-        <translation>Повідомити про спам</translation>
-    </message>
-    <message>
-        <source>Edit profile</source>
-        <translation>Змінити профіль</translation>
-    </message>
-    <message>
-        <source>Only visible for those, who has it in the phone book</source>
-        <translation>Видний лише для тих, хто наявний у телефонній книзі</translation>
-    </message>
-    <message>
-        <source>First name</source>
-        <translation>Ім&apos;я</translation>
-    </message>
-    <message>
-        <source>Last name</source>
-        <translation>Прізвище</translation>
-    </message>
-    <message>
-        <source>Birthdate</source>
-        <translation>Дата народження</translation>
-    </message>
-    <message>
-        <source>Gender</source>
-        <translation>Стать</translation>
-    </message>
-    <message>
-        <source>Country</source>
-        <translation>Країна</translation>
-    </message>
-    <message>
-        <source>City</source>
-        <translation>Місто</translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translatorcomment>&quot;About me&quot; in user&apos;s profile</translatorcomment>
-        <translation>Про мене</translation>
-    </message>
-    <message>
-        <source>Online</source>
-        <translation>Онлайн</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Не турбувати</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Невидимий</translation>
-    </message>
-    <message>
-        <source>Report Spam</source>
-        <translatorcomment>To report spam from this user</translatorcomment>
-        <translation>Спам</translation>
-    </message>
-    <message>
-        <source>Phone number</source>
-        <translation>Номер телефону</translation>
-    </message>
-    <message>
-        <source>Seen </source>
-        <translatorcomment>Date and time, when the user was online</translatorcomment>
-        <translation>Був </translation>
-    </message>
-    <message>
-        <source>today</source>
-        <translation>сьогодні</translation>
-    </message>
-    <message>
-        <source>yesterday</source>
-        <translation>вчора</translation>
-    </message>
-    <message>
-        <source> at </source>
-        <translatorcomment>example: last seen at 12:00</translatorcomment>
-        <translation> в </translation>
-    </message>
-    <message>
-        <source>Male</source>
-        <translation>Чоловік</translation>
-    </message>
-    <message>
-        <source>Female</source>
-        <translation>Жінка</translation>
-    </message>
-    <message>
-        <source>Offline</source>
-        <translation>Офлайн</translation>
-    </message>
-    <message>
-        <source>UIN</source>
-        <translation>UIN</translation>
-    </message>
-    <message>
-        <source>Ignore list</source>
-        <translation>Список ігнорованих</translation>
-    </message>
-</context>
-<context>
-    <name>Ui::RecentMessagesAlert</name>
-    <message>
-        <source>View all</source>
-        <translatorcomment>View all unread messages</translatorcomment>
-        <translation>Переглянути все</translation>
-    </message>
-</context>
-<context>
-    <name>Ui::TrayIcon</name>
-    <message>
-        <source>Online</source>
-        <translation>Онлайн</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Не турбувати</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Невидимий</translation>
+        <source>Continue</source>
+        <translation>Продовжувати</translation>
     </message>
 </context>
 <context>
@@ -221,7 +99,6 @@
     </message>
     <message>
         <source> changed theme to </source>
-        <translatorcomment>someone changed groupchat theme to smth</translatorcomment>
         <translation> змінив тему на </translation>
     </message>
     <message>
@@ -310,6 +187,22 @@
     <message>
         <source> joined the chat</source>
         <translation> війшов в чат</translation>
+    </message>
+    <message>
+        <source>You changed description to &quot;</source>
+        <translation>Ви змінили опис на &quot;</translation>
+    </message>
+    <message>
+        <source> changed description to &quot;</source>
+        <translation> змінив опис на &quot;</translation>
+    </message>
+    <message>
+        <source>You changed picture of chat</source>
+        <translation>Ви змінили зображення чату</translation>
+    </message>
+    <message>
+        <source> changed picture of chat</source>
+        <translation> змінив зображення чату</translation>
     </message>
 </context>
 <context>
@@ -510,7 +403,6 @@
     </message>
     <message>
         <source>Thank you for contacting us!</source>
-        <translatorcomment>In other words, &quot;thanks for your review!&quot;, you can use this one if it sounds better in your language</translatorcomment>
         <translation>Дякуємо, що звернулися!</translation>
     </message>
     <message>
@@ -589,10 +481,6 @@
         <translation>Видалити</translation>
     </message>
     <message>
-        <source>Quit</source>
-        <translation>Вихід</translation>
-    </message>
-    <message>
         <source>Add contact</source>
         <translation>Додати контакт</translation>
     </message>
@@ -619,10 +507,6 @@
     <message>
         <source>Change wallpaper</source>
         <translation>Змінити фон</translation>
-    </message>
-    <message>
-        <source>Show</source>
-        <translation>Відкрити</translation>
     </message>
     <message>
         <source>Favorite contact</source>
@@ -1656,13 +1540,6 @@
     </message>
 </context>
 <context>
-    <name>ignore_list</name>
-    <message>
-        <source>You have no ignored contacts</source>
-        <translation>У вас немає жодних ігнорованих контактів</translation>
-    </message>
-</context>
-<context>
     <name>input_widget</name>
     <message>
         <source>Message...</source>
@@ -1765,6 +1642,17 @@ your phone number</source>
         <source>Error occured, try again later</source>
         <translation>Сталася помилка, спробуйте ще раз пізніше</translation>
     </message>
+    <message>
+        <source>This phone number is already attached to another account. Please edit phone number and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>notifications_alert</name>
+    <message>
+        <source>View all</source>
+        <translation>Переглянути все</translation>
+    </message>
 </context>
 <context>
     <name>placeholders</name>
@@ -1845,6 +1733,129 @@ your phone number</source>
     </message>
 </context>
 <context>
+    <name>profile_page</name>
+    <message>
+        <source>Ignore list</source>
+        <translation>Список ігнорованих</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Профіль</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <translation>Ігнорувати</translation>
+    </message>
+    <message>
+        <source>Report spam</source>
+        <translation>Повідомити про спам</translation>
+    </message>
+    <message>
+        <source>Edit profile</source>
+        <translation>Змінити профіль</translation>
+    </message>
+    <message>
+        <source>UIN</source>
+        <translation>UIN</translation>
+    </message>
+    <message>
+        <source>Phone number</source>
+        <translation>Номер телефону</translation>
+    </message>
+    <message>
+        <source>Only visible for those, who has it in the phone book</source>
+        <translation>Видний лише для тих, хто наявний у телефонній книзі</translation>
+    </message>
+    <message>
+        <source>First name</source>
+        <translation>Ім&apos;я</translation>
+    </message>
+    <message>
+        <source>Last name</source>
+        <translation>Прізвище</translation>
+    </message>
+    <message>
+        <source>Birthdate</source>
+        <translation>Дата народження</translation>
+    </message>
+    <message>
+        <source>Gender</source>
+        <translation>Стать</translation>
+    </message>
+    <message>
+        <source>Country</source>
+        <translation>Країна</translation>
+    </message>
+    <message>
+        <source>City</source>
+        <translation>Місто</translation>
+    </message>
+    <message>
+        <source>Online</source>
+        <translation>Онлайн</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Не турбувати</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Невидимий</translation>
+    </message>
+    <message>
+        <source>Report Spam</source>
+        <translation>Спам</translation>
+    </message>
+    <message>
+        <source>Seen </source>
+        <translation>Був </translation>
+    </message>
+    <message>
+        <source>today</source>
+        <translation>сьогодні</translation>
+    </message>
+    <message>
+        <source>yesterday</source>
+        <translation>вчора</translation>
+    </message>
+    <message>
+        <source> at </source>
+        <translation> в </translation>
+    </message>
+    <message>
+        <source>Offline</source>
+        <translation>Офлайн</translation>
+    </message>
+    <message>
+        <source>Male</source>
+        <translation>Чоловік</translation>
+    </message>
+    <message>
+        <source>Female</source>
+        <translation>Жінка</translation>
+    </message>
+    <message>
+        <source>You have no ignored contacts</source>
+        <translation>У вас немає жодних ігнорованих контактів</translation>
+    </message>
+    <message>
+        <source>About me</source>
+        <translation>Про мене</translation>
+    </message>
+    <message>
+        <source>for safety and spam protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attach phone number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect to ICQ account</source>
+        <translation>Прив&apos;язати акаунт ICQ</translation>
+    </message>
+</context>
+<context>
     <name>ptt_widget</name>
     <message>
         <source>unclear message</source>
@@ -1896,33 +1907,6 @@ your phone number</source>
         <source>years</source>
         <comment>21</comment>
         <translation>рік</translation>
-    </message>
-</context>
-<context>
-    <name>settings_languages</name>
-    <message>
-        <source>ru</source>
-        <translation>Русский</translation>
-    </message>
-    <message>
-        <source>en</source>
-        <translation>English</translation>
-    </message>
-    <message>
-        <source>uk</source>
-        <translation>Українська</translation>
-    </message>
-    <message>
-        <source>de</source>
-        <translation>Deutsch</translation>
-    </message>
-    <message>
-        <source>pt</source>
-        <translation>Português</translation>
-    </message>
-    <message>
-        <source>cs</source>
-        <translation>Český</translation>
     </message>
 </context>
 <context>
@@ -2009,7 +1993,7 @@ your phone number</source>
     </message>
     <message>
         <source>Notifications</source>
-        <translation>Уведомления</translation>
+        <translation>Сповіщення</translation>
     </message>
     <message>
         <source>About ICQ</source>
@@ -2073,7 +2057,6 @@ your phone number</source>
     </message>
     <message>
         <source>Play sounds</source>
-        <translatorcomment>&quot;to play sounds&quot; setting (on/off)</translatorcomment>
         <translation>Увімкнути звуки</translation>
     </message>
     <message>
@@ -2084,6 +2067,30 @@ your phone number</source>
     <message>
         <source>Wallpapers</source>
         <translation>Шпалери</translation>
+    </message>
+    <message>
+        <source>ru</source>
+        <translation>Русский</translation>
+    </message>
+    <message>
+        <source>en</source>
+        <translation>English</translation>
+    </message>
+    <message>
+        <source>uk</source>
+        <translation>Українська</translation>
+    </message>
+    <message>
+        <source>de</source>
+        <translation>Deutsch</translation>
+    </message>
+    <message>
+        <source>pt</source>
+        <translation>Português</translation>
+    </message>
+    <message>
+        <source>cs</source>
+        <translation>Český</translation>
     </message>
 </context>
 <context>
@@ -2106,6 +2113,29 @@ your phone number</source>
     </message>
 </context>
 <context>
+    <name>tray_menu</name>
+    <message>
+        <source>Online</source>
+        <translation>Онлайн</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Не турбувати</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Невидимий</translation>
+    </message>
+    <message>
+        <source>Quit</source>
+        <translation>Вихід</translation>
+    </message>
+    <message>
+        <source>Show</source>
+        <translation>Відкрити</translation>
+    </message>
+</context>
+<context>
     <name>typing_widget</name>
     <message>
         <source>is typing</source>
@@ -2114,13 +2144,6 @@ your phone number</source>
     <message>
         <source>are typing</source>
         <translation>друкують</translation>
-    </message>
-</context>
-<context>
-    <name>videoSetting</name>
-    <message>
-        <source>Settings</source>
-        <translation>Налаштування</translation>
     </message>
 </context>
 <context>

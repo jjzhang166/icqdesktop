@@ -53,7 +53,7 @@ namespace voip_proxy {
         void onVoipCallConnected(const voip_manager::ContactEx& contact_ex);
 		void onVoipCallTimeChanged(unsigned sec_elapsed, bool have_call);
         void onVoipFrameSizeChanged(const voip_manager::FrameSize& fs);
-        void onVoipResetComplete(); //hack for correct close...bliat'
+        void onVoipResetComplete(); //hack for correct close
         void onVoipWindowRemoveComplete(quintptr win_id);
         void onVoipWindowAddComplete(quintptr win_id);
 
@@ -62,8 +62,9 @@ namespace voip_proxy {
 
 	private:
 		Ui::core_dispatcher& _dispatcher;
-		QTimer _call_time_timer;
-		unsigned _call_time_elapsed;
+		QTimer               _call_time_timer;
+		unsigned             _call_time_elapsed;
+        std::vector<voip_manager::Contact> _activePeerList;
 
 		void _loadUserBitmaps(Ui::gui_coll_helper& collection, QPixmap* avatar, const std::string& contact, int size);
 
@@ -73,6 +74,7 @@ namespace voip_proxy {
 
 	public:
         void voipReset();
+        void updateActivePeerList();
 
 		void setWindowAdd(quintptr hwnd, bool primary_wnd, bool system_wnd, int panel_height);
 		void setWindowRemove(quintptr hwnd);

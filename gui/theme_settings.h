@@ -50,7 +50,7 @@ namespace Ui
         void requestThemeImage(int _theme_id, std::function<void(themes::themePtr)> requestThemeCallback);
         void processNoDefaultThemeCase();
         QString serializedContactsThemes() const;
-        void contactsThemesDump(QString s) const;
+        void unloadUnusedThemesImages();
         
         void saveThemesMapping();
         void restoreThemesMapping();

@@ -2,7 +2,7 @@
 
 namespace Ui
 {
-    class CustomButton;
+    class BackButton;
     class ThemesWidget;
     class ThemesSettingsWidget : public QWidget
     {
@@ -11,10 +11,10 @@ namespace Ui
         QTableView* themes_table_view_;
         QHBoxLayout* theme_caption_layout_;
         void init(QWidget *widget);
-        CustomButton* backButton_;
-        QString targetContact_;
-        ThemesWidget *themesWidget_;
-        QWidget *backBackButtonWidget_;
+        BackButton* back_button_;
+        ThemesWidget *themes_widget_;
+        QWidget *back_button_and_caption_spacer_;
+        QWidget *caption_without_back_button_spacer_;
     public:
         ThemesSettingsWidget(QWidget* _parent);
         void setBackButton(bool _do_set);

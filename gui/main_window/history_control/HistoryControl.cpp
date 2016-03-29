@@ -99,6 +99,8 @@ namespace Ui
 	void HistoryControl::contactSelected(QString _aimId)
 	{
         assert(!_aimId.isEmpty());
+        if (!Logic::GetContactListModel()->getContactItem(_aimId))
+            return;
 
         HistoryControlPage* oldPage = qobject_cast<HistoryControlPage*>(stacked_widget_->currentWidget());
 		if (oldPage)

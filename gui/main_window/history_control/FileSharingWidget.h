@@ -28,9 +28,9 @@ namespace HistoryControl
 
 	// --------------------------------------------------------------------------------------------------------------------------------
 	// Public
-        
-    Q_SIGNALS:
-        void stateChanged();
+
+//    Q_SIGNALS:
+//        void stateChanged();
 
 	public:
         FileSharingWidget(const FileSharingInfoSptr& fsInfo, QString _aimId);
@@ -151,8 +151,6 @@ namespace HistoryControl
 
 		QPropertyAnimation *BaseAngleAnimation_;
 
-        State StateToResume_;
-
         int RetryCount_;
 
         bool SaveAs_;
@@ -233,8 +231,6 @@ namespace HistoryControl
 
 		void requestPreview();
 
-        void resumeState();
-
 		void resumeUploading();
 
         void retryRequest();
@@ -246,8 +242,6 @@ namespace HistoryControl
 		void setInitialWidgetSizeAndState();
 
 		void setState(const State state);
-
-        void setStateToResume(const State state);
 
 		void startDataTransferAnimation();
 

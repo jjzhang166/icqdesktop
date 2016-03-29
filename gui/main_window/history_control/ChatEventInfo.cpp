@@ -12,6 +12,11 @@
 
 using namespace core;
 
+namespace
+{
+    void cleanupFriendlyName(QString &name);
+}
+
 namespace HistoryControl
 {
 
@@ -25,6 +30,18 @@ namespace HistoryControl
 			type, isOutgoing, myAimid
 		));
 
+        const auto isGeneric = (type == core::chat_event_type::generic);
+        if (isGeneric)
+        {
+            assert(!info.is_value_exist("sender_friendly"));
+
+            eventInfo->setGenericText(
+                info.get<QString>("generic")
+            );
+
+            return eventInfo;
+        }
+
 		const auto isBuddyReg = (type == core::chat_event_type::buddy_reg);
 		const auto isBuddyFound = (type == core::chat_event_type::buddy_found);
 		const auto isBirthday = (type == core::chat_event_type::birthday);
@@ -35,11 +52,12 @@ namespace HistoryControl
 		}
 
 		eventInfo->setSenderFriendly	(
-			info.get_value_as_string("sender_friendly")
+			info.get<QString>("sender_friendly")
 		);
 
 		const auto isAddedToBuddyList = (type == core::chat_event_type::added_to_buddy_list);
-		if (isAddedToBuddyList)
+        const auto isAvatarModified = (type == core::chat_event_type::avatar_modified);
+		if (isAddedToBuddyList || isAvatarModified)
 		{
 			return eventInfo;
 		}
@@ -47,13 +65,23 @@ namespace HistoryControl
 		const auto isChatNameModified = (type == core::chat_event_type::chat_name_modified);
 		if (isChatNameModified)
 		{
-			auto newChatName = info.get<QString>("chat/new_name");
+			const auto newChatName = info.get<QString>("chat/new_name");
 			assert(!newChatName.isEmpty());
 
 			eventInfo->setNewName(newChatName);
 
 			return eventInfo;
 		}
+
+        const auto isChatDescriptionModified = (type == core::chat_event_type::chat_description_modified);
+        if (isChatDescriptionModified)
+        {
+            const auto newDescription = info.get<QString>("chat/new_description");
+
+            eventInfo->setNewDescription(newDescription);
+
+            return eventInfo;
+        }
 
 		const auto isMchatAddMembers = (type == core::chat_event_type::mchat_add_members);
 		const auto isMchatInvite = (type == core::chat_event_type::mchat_invite);
@@ -92,6 +120,9 @@ namespace HistoryControl
 			case chat_event_type::added_to_buddy_list:
 				return formatAddedToBuddyListText();
 
+            case chat_event_type::avatar_modified:
+                return formatAvatarModifiedText();
+
 			case chat_event_type::birthday:
 				return formatBirthdayText();
 
@@ -103,6 +134,9 @@ namespace HistoryControl
 
 			case chat_event_type::chat_name_modified:
 				return formatChatNameModifiedText();
+
+            case chat_event_type::generic:
+                return formatGenericText();
 
 			case chat_event_type::mchat_add_members:
 				return formatMchatAddMembersText();
@@ -116,8 +150,12 @@ namespace HistoryControl
 			case chat_event_type::mchat_del_members:
 				return formatMchatDelMembersText();
 
+            case chat_event_type::chat_description_modified:
+                return formatChatDescriptionModified();
+
 			case chat_event_type::mchat_kicked:
 				return formatMchatKickedText();
+
             default:
                 break;
 		}
@@ -148,6 +186,26 @@ namespace HistoryControl
 
 		return result;
 	}
+
+    QString ChatEventInfo::formatAvatarModifiedText() const
+    {
+        assert(Type_ == chat_event_type::avatar_modified);
+
+        QString result;
+        result.reserve(512);
+
+        if (IsOutgoing_)
+        {
+            result += QT_TRANSLATE_NOOP("chat_event", "You changed picture of chat");
+        }
+        else
+        {
+            result += SenderFriendly_;
+            result += QT_TRANSLATE_NOOP("chat_event", " changed picture of chat");
+        }
+
+        return result;
+    }
 
 	QString ChatEventInfo::formatBirthdayText() const
 	{
@@ -198,6 +256,14 @@ namespace HistoryControl
 		return result;
 	}
 
+    QString ChatEventInfo::formatGenericText() const
+    {
+        assert(Type_ == chat_event_type::generic);
+        assert(!Generic_.isEmpty());
+
+        return Generic_;
+    }
+
 	QString ChatEventInfo::formatMchatAddMembersText() const
 	{
 		assert(Type_ == chat_event_type::mchat_add_members);
@@ -228,6 +294,30 @@ namespace HistoryControl
 
 		return result;
 	}
+
+    QString ChatEventInfo::formatChatDescriptionModified() const
+    {
+        assert(Type_ == chat_event_type::chat_description_modified);
+
+        QString result;
+        result.reserve(512);
+
+        if (IsOutgoing_)
+        {
+            result += QT_TRANSLATE_NOOP("chat_event", "You changed description to \"");
+            result += Chat_.NewDescription_;
+        }
+        else
+        {
+            result += SenderFriendly_;
+            result += QT_TRANSLATE_NOOP("chat_event", " changed description to \"");
+            result += Chat_.NewDescription_;
+        }
+
+        result += "\"";
+
+        return result;
+    }
 
 	QString ChatEventInfo::formatMchatInviteText() const
 	{
@@ -408,6 +498,21 @@ namespace HistoryControl
 		return (Mchat_.MembersFriendly_.size() > 1);
 	}
 
+    void ChatEventInfo::setGenericText(const QString &text)
+    {
+        assert(Generic_.isEmpty());
+        assert(!text.isEmpty());
+
+        Generic_ = text;
+    }
+
+    void ChatEventInfo::setNewDescription(const QString &newDescription)
+    {
+        assert(Chat_.NewDescription_.isEmpty());
+
+        Chat_.NewDescription_ = newDescription;
+    }
+
 	void ChatEventInfo::setNewName(const QString &newName)
 	{
 		assert(Chat_.NewName_.isEmpty());
@@ -422,6 +527,7 @@ namespace HistoryControl
 		assert(!friendly.isEmpty());
 
 		SenderFriendly_ = friendly;
+        cleanupFriendlyName(SenderFriendly_);
 	}
 
 	void ChatEventInfo::setMchatMembers(const core::iarray &members)
@@ -435,7 +541,10 @@ namespace HistoryControl
 			auto member = members.get_at(index);
 			assert(member);
 
-			membersFriendly << member->get_as_string();
+            QString memberFriendly = member->get_as_string();
+            cleanupFriendlyName(memberFriendly);
+
+			membersFriendly << memberFriendly;
 		}
 
 		membersFriendly.removeDuplicates();
@@ -443,4 +552,14 @@ namespace HistoryControl
 		assert(membersFriendly.size() == members.size());
 	}
 
+}
+
+namespace
+{
+    void cleanupFriendlyName(QString &name)
+    {
+        assert(!name.isEmpty());
+
+        name.remove("@uin.icq", Qt::CaseInsensitive);
+    }
 }

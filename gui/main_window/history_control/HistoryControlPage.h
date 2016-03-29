@@ -32,13 +32,10 @@ namespace Ui
     class TextEmojiWidget;
     class MessagesWidget;
     class MessagesScrollArea;
-    enum ThemePanelChoice {
-        ThemePanelCancel,
-        ThemePanelSet,
-        ThemePanelSetToAll,
-        ThemePanelBackToSettings
-    };
-
+    class HistoryControlPageThemePanel;
+    
+    enum ThemePanelChoice: int;
+    
 	class MessagesWidgetEventFilter : public QObject
 	{
 		Q_OBJECT
@@ -126,17 +123,21 @@ namespace Ui
 
 	public Q_SLOTS:
 		void messageKeyUpdated(QString, Logic::MessageKey);
-        void typing(QString, QVector< QString >);
-        void stopTyping(QString, QVector< QString >, int);
         void scrollMovedToBottom();
+        
+        void typingAimId(QString, QString);
+        void typingName(QString, QString);
+        void stopTypingAimId(QString, QString);
+        void stopTypingName(QString, QString);
+
 	public:
         HistoryControlPage(QWidget* parent, QString aimId);
+        void updateTopThemeButtonsVisibility();
 
         void SetContactStatusClickable(bool _is_enabled);
 
         ~HistoryControlPage();
 
-        typedef std::function<void(ThemePanelChoice)> ThemePanelCallback;
 		void updateNewPlate(bool);
 		qint64 getNewPlateId() const;
 		void newPlateShowed();
@@ -148,6 +149,8 @@ namespace Ui
 
         bool touchScrollInProgress() const;
         void updateWidgetsTheme();
+        
+        typedef std::function<void(ThemePanelChoice)> ThemePanelCallback;
         void showThemesTopPanel(bool _show, bool _showSetToCurrent, ThemePanelCallback callback);
         
         void update(QString);
@@ -166,19 +169,17 @@ namespace Ui
 		void deleted(QList<Logic::MessageKey>, QString);
 		void requestMoreMessagesSlot();
 		void downPressed();
-        void backFromThemePressed();
-        void cancelThemePressed();
-        void setToAllThemePressed();
-        void setThemePressed();
 		void autoScroll(bool);
 		void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
         void chatInfoFailed(qint64 seq, core::group_chat_info_errors);
         void updateChatInfo();
         void onReachedFetchingDistance();
+        void fetchMore(QString);
 
 		void contactChanged(QString);
 		void insertNextMessageSlot();
 		void removeWidget(Logic::MessageKey);
+        void createMenu();
         void updateMenu(QString);
 
 		void copy(QString);
@@ -186,10 +187,9 @@ namespace Ui
 
 		void contact_authorized(QString _aimid, bool _res);
 		void auth_add_contact(QString _aimid);
-        void stats_auth_add_contact(QString _aimid);
 		void auth_spam_contact(QString _aimid);
 		void auth_delete_contact(QString _aimid);
-        void auth_ignore_contact(QString _aimid);
+
 		void add_member();
 		void edit_members();
 		void popup_menu(QAction* _action);
@@ -203,12 +203,9 @@ namespace Ui
 
 	private:
 	    void updateName();
-        ThemePanelCallback themesTopPanelCallback_;
 		class PositionInfo;
         int set_theme_id_;
-        QPushButton* setThemeButton_;
         QSpacerItem* h_spacer_3_;
-        bool selectionThemeFromSettings_;
 		typedef std::shared_ptr<PositionInfo> PositionInfoSptr;
 		typedef std::list<PositionInfoSptr> PositionInfoList;
 		typedef PositionInfoList::iterator PositionInfoListIter;
@@ -286,7 +283,7 @@ namespace Ui
         char const*                             dbg_where_postponed_;
 
         QWidget *top_widget_;
-        QWidget *top_theme_widget_;
+        HistoryControlPageThemePanel *top_theme_widget_;
         QHBoxLayout *horizontal_layout_;
         QWidget *contact_widget_;
         QVBoxLayout *vertical_layout_;

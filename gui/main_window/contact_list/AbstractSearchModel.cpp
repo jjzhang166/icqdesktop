@@ -10,8 +10,7 @@
 
 namespace Logic
 {
-    AbstractSearchModel::AbstractSearchModel(QObject *parent)
-        : QAbstractListModel(parent)
+    AbstractSearchModel::AbstractSearchModel(QObject *parent/* = 0*/): CustomAbstractListModel(parent)
     {     
     }
     

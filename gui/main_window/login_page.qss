@@ -90,17 +90,6 @@ QLineEdit[CountryCodeEdit="true"]
 	font-size: 18dip;
 }
 
-QLineEdit[PhoneNumberEdit="true"]
-{
-	background-color: transparent;
-	border-style: outset;
-	min-height: 48dip;
-	max-height: 48dip;
-	font-size: 18dip;
-	text-align: left;
-	padding-left: 10dip;
-}
-
 QWidget[EnterPhoneWidget="true"]
 {
 	background-color: transparent;
@@ -123,9 +112,34 @@ QWidget[EnterPhoneWidgetFocused="true"]
 
 QWidget[EnterPhoneWidgetError="true"]
 {
-	background-color: #fbdbd9;
-	border-style: none;
+	background-color: transparent;
+	border-bottom-color: #e20b00;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
 	margin-top: 4dip;
+}
+
+QLineEdit[PhoneNumberEdit="true"]
+{
+	background-color: transparent;
+	border-style: outset;
+	min-height: 48dip;
+	max-height: 48dip;
+	font-size: 18dip;
+	text-align: left;
+	padding-left: 10dip;
+}
+
+QLineEdit[PhoneNumberError="true"]
+{
+	background-color: transparent;
+	border-style: outset;
+	min-height: 48dip;
+	max-height: 48dip;
+	font-size: 18dip;
+	text-align: left;
+	padding-left: 10dip;
+	color: #e20b00;
 }
 
 QWidget[LoginButtonWidget="true"]
@@ -266,11 +280,15 @@ QLineEdit[EnteredCode="true"]:focus
 
 QLineEdit[EnteredCodeError="true"]
 {
-	background-color: #fbdbd9;
+	background-color: transparent;
+	border-style: none;
+	color: #e20b00;
+	border-bottom-color: #e20b00;
+	border-bottom-width: 1dip;
+	border-bottom-style: solid;
 	min-height: 48dip;
 	max-height: 48dip;
 	font-size: 18dip;
-	border-style: none;
 }
 
 QLineEdit[Uin="true"]
@@ -299,12 +317,13 @@ QLineEdit[Uin="true"]:focus
 
 QLineEdit[UinError="true"]
 {
-	background-color: #fbdbd9;
 	min-height: 48dip;
 	max-height: 48dip;
 	font-size: 18dip;
+	background-color: transparent;
 	border-style: none;
-	border-bottom-color: #fbdbd9;
+	color: #e20b00;
+	border-bottom-color: #e20b00;
 	border-bottom-width: 1dip;
 	border-bottom-style: solid;
 }
@@ -368,7 +387,7 @@ QLabel[ErrorLabel="true"]
 	color: #e20b00;
 }
 
-QWidget[ErrorWIdget="true"]
+QWidget[ErrorWidget="true"]
 {
 	min-height: 30dip;
 	max-height: 30dip;

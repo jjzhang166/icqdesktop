@@ -22,7 +22,7 @@ namespace Ui
     {
         return (
             withStatusIcon ?
-                Utils::scale_value(53) :
+                Utils::scale_value(54) :
                 Utils::scale_value(30)
         );
     }

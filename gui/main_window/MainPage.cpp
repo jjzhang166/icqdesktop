@@ -135,9 +135,13 @@ namespace Ui
         connect(&Utils::InterConnector::instance(), SIGNAL(profileSettingsShow(QString)), this, SLOT(onProfileSettingsShow(QString)), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(themesSettingsShow(bool,QString)), this, SLOT(onThemesSettingsShow(bool,QString)), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(generalSettingsShow(int)), this, SLOT(onGeneralSettingsShow(int)), Qt::QueuedConnection);
+
         connect(&Utils::InterConnector::instance(), SIGNAL(profileSettingsBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(generalSettingsBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(themesSettingsBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), SIGNAL(attachPhoneBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), SIGNAL(attachUinBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
+
         connect(&Utils::InterConnector::instance(), SIGNAL(makeSearchWidgetVisible(bool)), search_widget_, SLOT(setVisible(bool)), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(popPagesToRoot()), pages_, SLOT(poproot()), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(profileSettingsDoMessage(QString)), contact_list_widget_, SLOT(select(QString)), Qt::QueuedConnection);
@@ -207,7 +211,6 @@ namespace Ui
     
     void MainPage::onThemesSettingsShow(bool _show_back_button, QString _aimId)
     {
-        __INFO("themes", "_aimId is " << _aimId);
         themes_settings_->setBackButton(_show_back_button);
         themes_settings_->setTargetContact(_aimId);
         pages_->push(themes_settings_);
@@ -516,8 +519,8 @@ namespace Ui
                 case Utils::CommonSettingsType::CommonSettingsType_Themes:
                 case Utils::CommonSettingsType::CommonSettingsType_About:
                 case Utils::CommonSettingsType::CommonSettingsType_ContactUs:
-                case Utils::CommonSettingsType::CommonSettingsType_ConnectPhone:
-                case Utils::CommonSettingsType::CommonSettingsType_ConnectUin:
+                case Utils::CommonSettingsType::CommonSettingsType_AttachPhone:
+                case Utils::CommonSettingsType::CommonSettingsType_AttachUin:
                     Utils::InterConnector::instance().generalSettingsShow((int)item);
                     break;
                 case Utils::CommonSettingsType::CommonSettingsType_Profile:
@@ -532,6 +535,7 @@ namespace Ui
 	void MainPage::onVoipShowVideoWindow(bool enabled) {
 		if (!video_window_) {
 		    video_window_ = new(std::nothrow) VideoWindow();
+            Ui::GetDispatcher()->getVoipController().updateActivePeerList();
 		}
 
 		if (!!video_window_) {

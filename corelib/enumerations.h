@@ -82,6 +82,12 @@ namespace core
 
 		birthday,
 
+        avatar_modified,
+
+        generic,
+
+        chat_description_modified,
+
 		max
 	};
 
@@ -239,10 +245,10 @@ namespace core
             reg_edit_phone = 12,
             reg_error_uin = 13,
             reg_error_other = 14,
-            
+
             main_window_fullscreen = 15,
             main_window_resize = 16,
-            
+
             groupchat_from_create_button = 17,
             groupchat_from_dialog = 18,
             groupchat_created = 19,
@@ -252,7 +258,7 @@ namespace core
             groupchat_leave = 23,
             livechat_leave = 24,
             groupchat_rename = 25,
-            
+
             filesharing_sent_count = 26,
             filesharing_sent = 27,
             filesharing_sent_success = 28,
@@ -265,30 +271,30 @@ namespace core
             filesharing_download_file = 37,
             filesharing_download_cancel = 38,
             filesharing_download_success = 39,
-            
+
             smile_sent_picker = 40,
             smile_sent_from_recents = 41,
             sticker_sent_from_picker = 42,
             sticker_sent_from_recents = 43,
             picker_cathegory_click = 45,
             picker_tab_click = 46,
-            
+
             alert_click = 48,
             alert_viewall = 49,
             alert_close = 50,
-            
+
             spam_cl_menu = 51,
             spam_auth_widget = 52,
             spam_dialog_menu = 53,
             spam_profile_page = 54,
-            
+
             recents_close = 55,
             recents_read = 56,
             recents_readall = 57,
             mute_recents_menu = 58,
             mute_dialog_menu = 59,
             unmute = 60,
-            
+
             ignore_recents_menu = 61,
             ignore_cl_menu = 62,
             ignore_auth_widget = 63,
@@ -296,20 +302,20 @@ namespace core
             ignore_profile_page = 65,
             ignorelist_open = 66,
             ignorelist_remove = 67,
-            
+
             cl_empty_write_msg = 68,
             cl_empty_android = 69,
             cl_empty_ios = 70,
             cl_empty_find_friends = 71,
             cl_search = 72,
             cl_load = 73,
-            
+
             myprofile_edit = 74,
             myprofile_open = 75,
             myprofile_online = 76,
             myprofile_invisible = 77,
             myprofile_dnd = 78,
-            
+
             profile_cl = 79,
             profile_dialog_menu = 80,
             profile_auth_widget = 81,
@@ -318,37 +324,37 @@ namespace core
             profile_members_list = 84,
             profile_call = 85,
             profile_video_call = 86,
-            
+
             add_user_profile_page = 87,
             add_user_auth_widget = 89,
             add_user_dialog = 90,
             delete_auth_widget = 91,
             delete_dialog_menu = 92,
             delete_cl_menu = 93,
-            
+
             search_open_page = 94,
             search_no_results = 99,
             add_user_search_results = 100,
             search = 101,
-            
+
             message_send_button = 102,
             message_enter_button = 103,
-            
+
             open_chat_recents = 104,
             open_chat_search_recents = 105,
             open_chat_cl = 106,
             open_chat_search_cl = 107,
-            
+
             message_sent = 108,
             message_sent_read = 109,
             message_sent_groupchat = 110,
             message_sent_livechat = 111,
             message_sent_preview = 112,
             message_pending = 113,
-            
+
             history_new_messages_botton = 117,
             history_preload = 118,
-            
+
             gui_load = 119,
 
             feedback_show = 120,
