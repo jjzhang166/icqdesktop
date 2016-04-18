@@ -1,7 +1,6 @@
 #include "stdafx.h"
 
-#include "../../../corelib/collection_helper.h"
-#include "../../collection_helper_ext.h"
+#include "../../utils/gui_coll_helper.h"
 #include "../../../corelib/enumerations.h"
 
 #include "../../my_info.h"

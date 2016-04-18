@@ -46,6 +46,8 @@ namespace HistoryControl
 
 		virtual bool isBlockElement() const override;
 
+        virtual bool canReplace() const override;
+
 		virtual bool canUnload() const override;
 
 		virtual QString toLogString() const override;
@@ -66,7 +68,7 @@ namespace HistoryControl
 	// Protected
 
 	protected:
-        virtual void initialize() override;
+        virtual void initializeInternal() override;
 
         virtual bool isPreloaderVisible() const override;
 
@@ -96,13 +98,19 @@ namespace HistoryControl
 
 		void fileSharingUploadingProgress(QString, qint64);
 
+        void fileSharingUploadingResult(QString, bool, QString, bool);
+
         void metaDownloadError(qint64, QString, qint32);
+
+        void previewDownloaded(qint64, QString, QPixmap, QString);
 
 	// --------------------------------------------------------------------------------------------------------------------------------
 	// Private Member Variables
 
 	private:
 		enum class State;
+
+        enum class PreviewState;
 
 		struct
 		{
@@ -157,6 +165,10 @@ namespace HistoryControl
 
         bool CopyFile_;
 
+        PreviewState PreviewState_;
+
+        int64_t PreviewDownloadId_;
+
 	// --------------------------------------------------------------------------------------------------------------------------------
 	// Private Methods
 
@@ -178,6 +190,8 @@ namespace HistoryControl
         void convertToPlainImageView();
 
 		void convertToUploadErrorView();
+
+        void enablePreviewSignals(const bool connected);
 
 		const QRect& getControlButtonRect() const;
 

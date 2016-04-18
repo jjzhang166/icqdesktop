@@ -6,24 +6,24 @@
 
 namespace core
 {
-	namespace tools
-	{
-		class semaphore
-		{
-			std::mutex					mtx_;
-			std::condition_variable		cv_;
+    namespace tools
+    {
+        class semaphore
+        {
+            std::mutex					mtx_;
+            std::condition_variable		cv_;
 
-			unsigned long				count_;
+            unsigned long				count_;
 
-		public:
+        public:
 
-			void notify();
-			void wait();
+            void notify();
+            void wait();
 
-			semaphore(unsigned long count = 0);
-			virtual ~semaphore();
-		};
-	}
+            semaphore(unsigned long count = 0);
+            virtual ~semaphore();
+        };
+    }
 }
 
 #endif //__SEMAPHORE_H__

@@ -245,6 +245,21 @@
     <ClCompile Include="main_window\contact_list\CustomAbstractListModel.cpp" />
     <ClCompile Include="main_window\history_control\HistoryControlPageThemePanel.cpp" />
     <ClCompile Include="main_window\history_control\moc_HistoryControlPageThemePanel.cpp" />
+    <ClCompile Include="main_window\settings\AttachPhone.cpp" />
+    <ClCompile Include="main_window\settings\AttachUin.cpp" />
+    <ClCompile Include="main_window\IntroduceYourself.cpp" />
+    <ClCompile Include="main_window\moc_IntroduceYourself.cpp" />
+    <ClCompile Include="controls\ConnectionSettingsWidget.cpp" />
+    <ClCompile Include="controls\moc_ConnectionSettingsWidget.cpp" />
+    <ClCompile Include="controls\GeneralCreator.cpp" />
+    <ClCompile Include="main_window\livechats\LiveChatProfile.cpp" />
+    <ClCompile Include="main_window\livechats\moc_LiveChatProfile.cpp" />
+    <ClCompile Include="main_window\livechats\LiveChatMembersControl.cpp" />
+    <ClCompile Include="main_window\livechats\moc_LiveChatMembersControl.cpp" />
+    <ClCompile Include="main_window\GroupChatOperations.cpp" />
+    <ClCompile Include="types\typing.cpp" />
+    <ClCompile Include="utils\IntValidator.cpp" />
+    <ClCompile Include="utils\moc_IntValidator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common.shared\version_info_constants.h" />
@@ -363,7 +378,6 @@
     <ClInclude Include="main_window\history_control\ImagePreviewWidget.h" />
     <ClInclude Include="main_window\history_control\HistoryControlPageItem.h" />
     <ClInclude Include="controls\DpiAwareImage.h" />
-    <ClInclude Include="collection_helper_ext.h" />
     <ClInclude Include="main_window\contact_list\SearchMembersModel.h" />
     <ClInclude Include="main_window\contact_list\AbstractSearchModel.h" />
     <ClInclude Include="main_window\history_control\VoipEventInfo.h" />
@@ -390,6 +404,14 @@
     <ClInclude Include="..\common.shared\keys.h" />
     <ClInclude Include="main_window\contact_list\CustomAbstractListModel.h" />
     <ClInclude Include="main_window\history_control\HistoryControlPageThemePanel.h" />
+    <ClInclude Include="main_window\IntroduceYourself.h" />
+    <ClInclude Include="controls\ConnectionSettingsWidget.h" />
+    <ClInclude Include="controls\GeneralCreator.h" />
+    <ClInclude Include="main_window\livechats\LiveChatProfile.h" />
+    <ClInclude Include="main_window\livechats\LiveChatMembersControl.h" />
+    <ClInclude Include="main_window\GroupChatOperations.h" />
+    <ClInclude Include="types\typing.h" />
+    <ClInclude Include="utils\IntValidator.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

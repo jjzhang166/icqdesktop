@@ -3,6 +3,7 @@
 #include "MessagesModel.h"
 
 #include "../../types/chat.h"
+#include "../../types/typing.h"
 #include "../contact_list/ChatMembersModel.h"
 #include "../../../corelib/enumerations.h"
 
@@ -33,9 +34,9 @@ namespace Ui
     class MessagesWidget;
     class MessagesScrollArea;
     class HistoryControlPageThemePanel;
-    
+
     enum ThemePanelChoice: int;
-    
+
 	class MessagesWidgetEventFilter : public QObject
 	{
 		Q_OBJECT
@@ -100,7 +101,7 @@ namespace Ui
         QWidget* Widget_;
         unsigned Mode_;
     };
-    
+
     namespace themes
     {
         class theme;
@@ -124,11 +125,9 @@ namespace Ui
 	public Q_SLOTS:
 		void messageKeyUpdated(QString, Logic::MessageKey);
         void scrollMovedToBottom();
-        
-        void typingAimId(QString, QString);
-        void typingName(QString, QString);
-        void stopTypingAimId(QString, QString);
-        void stopTypingName(QString, QString);
+
+        void typingStatus(Logic::TypingFires _typing, bool _isTyping);
+        void indentChanged(Logic::MessageKey, bool);
 
 	public:
         HistoryControlPage(QWidget* parent, QString aimId);
@@ -149,10 +148,10 @@ namespace Ui
 
         bool touchScrollInProgress() const;
         void updateWidgetsTheme();
-        
+
         typedef std::function<void(ThemePanelChoice)> ThemePanelCallback;
         void showThemesTopPanel(bool _show, bool _showSetToCurrent, ThemePanelCallback callback);
-        
+
         void update(QString);
 
 	protected:
@@ -242,11 +241,11 @@ namespace Ui
 		bool isScrolling() const;
 		QWidget* getWidgetByKey(const Logic::MessageKey& key);
 		WidgetRemovalResult removeExistingWidgetByKey(const Logic::MessageKey& key);
-		bool hasMessageItemAt(const qint32 pos) const;
-		void onFinishAddMembers(bool _isAccept);
-		void clearAddMembers();
+        void replaceExistingWidgetByKey(const Logic::MessageKey& key, QWidget* widget);
+
         void loadChatInfo(bool is_full_list_loaded_);
         void rename_chat();
+        void rename_contact();
 
         void setState(const State state, const char *dbgWhere);
         bool isState(const State state) const;
@@ -258,6 +257,10 @@ namespace Ui
         void switchToIdleState(const char *dbgWhere);
         void switchToInsertingState(const char *dbgWhere);
         void switchToFetchingState(const char *dbgWhere);
+
+        bool isChatAdmin() const;
+
+        void onDeleteHistory();
 
 		QString									aimId_;
 		ServiceMessageItem*						messages_overlay_first_;
@@ -275,6 +278,7 @@ namespace Ui
         Logic::ChatMembersModel*                chat_members_model_;
         QPushButton*                            edit_members_button_;
         QPushButton*                            favorite_star_;
+        QPushButton*                            official_mark_;
         MessagesScrollArea*						messages_area_;
 
         State                                   state_;

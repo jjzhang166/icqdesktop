@@ -1,6 +1,6 @@
 #include "stdafx.h"
+
 #include "contact_profile.h"
-#include "../../collection_helper_ext.h"
 
 namespace Logic
 {

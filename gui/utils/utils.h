@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../corelib/enumerations.h"
+
 class QApplication;
 
 namespace Utils
@@ -25,7 +27,7 @@ namespace Utils
     {
     private:
         std::map<std::string, QMetaObject::Connection> connections_;
-        
+
     public:
         SignalsDisconnector();
         ~SignalsDisconnector();
@@ -53,14 +55,19 @@ namespace Utils
         return res;
 #endif
     }
-    
+
+    inline const std::string QStringToString(const QString& s)
+    {
+        return s.toUtf8().constData();
+    }
+
     QMap<QString, QString> GetCountryCodes();
 
     QString ScaleStyle(const QString& _style, double scale);
 
     void ApplyStyle(QWidget *widget, QString style);
     void ApplyPropertyParameter(QWidget *widget, const char *property, QVariant parameter);
-    
+
     void SetFont(QString* qss);
 
     QString LoadStyle(const QString& qss_file, double scale, bool import_common_style = true);
@@ -69,7 +76,7 @@ namespace Utils
 
     QStringList GetPossibleStrings(const QString& text);
 
-    QPixmap RoundImage(const QPixmap &img, const QString& state);
+    QPixmap RoundImage(const QPixmap &img, const QString& state, bool mini_icons = false);
 
     QPixmap DrawStatus(const QString& state, int scale);
 
@@ -87,7 +94,7 @@ namespace Utils
 	void grabTouchWidget(QWidget* target, bool topWidget = false);
 
     void removeLineBreaks(QString& source);
-    
+
     bool isValidEmailAddress(const QString &email);
 
     bool foregroundWndIsFullscreened();
@@ -103,11 +110,11 @@ namespace Utils
 
         MAX
     };
-    
+
     QFont appFont(const FontsFamily _fontFamily, int size);
     QFont::Weight appFontWeight(const FontsFamily _fontFamily);
     QString appFontWeightQss(const FontsFamily _fontFamily);
-    
+
     const QString& appFontFamily(const FontsFamily _fontFamily);
 
     QColor getSelectionColor();
@@ -140,7 +147,7 @@ namespace Utils
 #endif //WIN32
 
     const uint get_input_maximum_chars();
-    
+
     bool state_equals_online(const QString &state);
 
     int calc_age(const QDateTime& _birthdate);
@@ -149,7 +156,7 @@ namespace Utils
 
     void drawText(QPainter & painter, const QPointF & point, int flags,
         const QString & text, QRectF * boundingRect = 0);
-    
+
     const QString &DefaultDownloadsPath();
 
     bool is_image_extension(const QString &ext);
@@ -163,4 +170,42 @@ namespace Utils
 
     void post_stats_with_settings();
     QRect GetMainRect();
+    QPoint GetMainWindowCenter();
+
+    void UpdateProfile(const std::vector<std::pair<std::string, QString>>& _fields);
+
+    QString get_item_safe(const std::vector<QString>& _values, size_t _selected, QString _default);
+
+    bool NameEditor(
+        QWidget* _parent,
+        const QString& _chat_name,
+        const QString& _button_text,
+        const QString& _header_text,
+        Out QString& result_chat_name);
+
+    bool GetConfirmationWithTwoButtons(const QString& _button_left, const QString& _button_right,
+        const QString& _message_text, const QString& _label_text, QWidget* _parent);
+
+    struct ProxySettings
+    {
+        const static int invalid_port = -1;
+
+        core::proxy_types type;
+        QString username;
+        bool need_auth;
+        QString password;
+        QString proxy_server;
+        int port;
+
+        ProxySettings(core::proxy_types _type, QString _username, QString _password,
+            QString _proxy, int _port, bool _need_auth);
+
+        ProxySettings();
+
+        void post_to_core();
+    };
+
+    ProxySettings* get_proxy_settings();
+
+    bool loadPixmap(const QString &path, Out QPixmap &pixmap);
 }

@@ -8,6 +8,7 @@ std::make_tuple(PixmapResourceId::ContentMuteNotifyNew,				"cl",				"mutenotify_
 
 std::make_tuple(PixmapResourceId::FileSharingDownload,				"file_sharing",		"download"),
 std::make_tuple(PixmapResourceId::FileSharingPlainCancel,			"file_sharing",		"plain_cancel"),
+std::make_tuple(PixmapResourceId::FileSharingMediaCancel,			"file_sharing",		"media_cancel"),
 std::make_tuple(PixmapResourceId::FileSharingFileTypeIconUnknown,	"file_sharing",		"file_type_unknown"),
 
 std::make_tuple(PixmapResourceId::PreviewerClose,					"previewer",		"close"),

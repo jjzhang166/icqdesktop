@@ -16,42 +16,53 @@ fetch_event_typing::~fetch_event_typing()
 
 int32_t fetch_event_typing::parse(const rapidjson::Value& _node_event_data)
 {
+    const auto it_status = _node_event_data.FindMember("typingStatus");
+
+    if (it_status != _node_event_data.MemberEnd() && it_status->value.IsString())
     {
-        const auto it = _node_event_data.FindMember("typingStatus");
-        if (it != _node_event_data.MemberEnd() && it->value.IsString())
+        std::string status = it_status->value.GetString();
+        is_typing_ = (status == "typing");
+    }
+
+    const auto it_aimid = _node_event_data.FindMember("aimId");
+
+    if (it_aimid != _node_event_data.MemberEnd() && it_aimid->value.IsString())
+    {
+        aimid_ = it_aimid->value.GetString();
+    }
+    else
+    {
+        return -1;
+    }
+
+    const auto it_attr = _node_event_data.FindMember("MChat_Attrs");
+
+    if (it_attr != _node_event_data.MemberEnd() && it_attr->value.IsObject())
+    {
+        const auto itsender = it_attr->value.FindMember("sender");
+
+        if (itsender != it_attr->value.MemberEnd() && itsender->value.IsString())
         {
-            std::string status = it->value.GetString();
-            isTyping_ = (status == "typing");
+            chatter_aimid_ = itsender->value.GetString();
         }
-    }
-    {
-        const auto it = _node_event_data.FindMember("aimId");
-        if (it != _node_event_data.MemberEnd() && it->value.IsString())
-            aimId_ = it->value.GetString();
-        else
-            return -1;
-    }
-    {
-        const auto it = _node_event_data.FindMember("MChat_Attrs");
-        if (it != _node_event_data.MemberEnd() && it->value.IsObject())
+
+        const auto itoptions = it_attr->value.FindMember("options");
+
+        if (itoptions != it_attr->value.MemberEnd() && itoptions->value.IsObject())
         {
-            const auto itsender = it->value.FindMember("sender");
-            if (itsender != it->value.MemberEnd() && itsender->value.IsString())
-                chatterAimId_ = itsender->value.GetString();
-            
-            const auto itoptions = it->value.FindMember("options");
-            if (itoptions != it->value.MemberEnd() && itoptions->value.IsObject())
+            const auto itname = itoptions->value.FindMember("senderName");
+
+            if (itname != itoptions->value.MemberEnd() && itname->value.IsString())
             {
-                const auto itname = itoptions->value.FindMember("senderName");
-                if (itname != itoptions->value.MemberEnd() && itname->value.IsString())
-                    chatterName_ = itname->value.GetString();
+                chatter_name_ = itname->value.GetString();
             }
         }
     }
+
     return 0;
 }
 
 void fetch_event_typing::on_im(std::shared_ptr<core::wim::im> _im, std::shared_ptr<auto_callback> _on_complete)
 {
-	_im->on_event_typing(this, _on_complete);
+    _im->on_event_typing(this, _on_complete);
 }

@@ -25,6 +25,7 @@ namespace Logic
 		bool recently() const;
 		bool is_chat() const;
 		bool is_muted() const;
+        bool is_official() const;
 		bool is_not_auth() const;
 		void reset_not_auth();
 

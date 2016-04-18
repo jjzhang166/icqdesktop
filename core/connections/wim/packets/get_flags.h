@@ -7,34 +7,34 @@
 
 namespace core
 {
-	namespace tools
-	{
-		class http_request_simple;
-	}
+    namespace tools
+    {
+        class http_request_simple;
+    }
 }
 
 
 namespace core
 {
-	namespace wim
-	{
-		class get_flags : public wim_packet
-		{
-			virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
-			virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
+    namespace wim
+    {
+        class get_flags : public wim_packet
+        {
+            virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
+            virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
 
             int flags_;
 
-		public:
+        public:
 
-			get_flags(const wim_packet_params& _params);
+            get_flags(const wim_packet_params& _params);
 
             int flags() const;
 
-			virtual ~get_flags();
-		};
+            virtual ~get_flags();
+        };
 
-	}
+    }
 
 }
 

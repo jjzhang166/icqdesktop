@@ -22,21 +22,20 @@ namespace Ui
         setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint);
         setStyle(new MenuStyle());
 		setStyleSheet(QString("QMenu {\
-                       background-color: #ffffff;\
-                       border: 1px solid #d4d4d4;\
+                       background-color: #f2f2f2;\
+                       border: 1px solid #cccccc;\
                        }\
                        QMenu::item {\
                        padding-left: %1px;\
                        background-color: transparent;\
-                       color: #282828;\
+                       color: #000000;\
                        padding-top: %4px;\
                        padding-bottom: %4px;\
                        padding-right: %2px;\
                        }\
                        QMenu::item:selected\
                        {\
-                       background-color: #579e1c;\
-                       color: #ffffff;\
+                       background-color: #e2e2e2;\
                        padding-left: %1px;\
                        padding-top: %4px;\
                        padding-bottom: %4px;\
@@ -47,7 +46,7 @@ namespace Ui
                        padding-left:%3px;\
                        }").arg(Utils::scale_value(40)).arg(Utils::scale_value(12)).arg(Utils::scale_value(22)).arg(Utils::scale_value(6)));
 
-        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15));
+        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16));
         setFont(font);
         if (platform::is_apple())
         {
@@ -65,6 +64,54 @@ namespace Ui
     QAction* ContextMenu::addActionWithIcon(const QIcon& icon, const QString& name, const QObject *receiver, const char* member)
     {
         return addAction(icon, name, receiver, member);
+    }
+
+    bool ContextMenu::hasAction(const QString& command)
+    {
+        assert(!command.isEmpty());
+
+        for (const auto action : actions())
+        {
+            const auto actionParams = action->data().toMap();
+
+            const auto commandIter = actionParams.find("command");
+            if (commandIter == actionParams.end())
+            {
+                continue;
+            }
+
+            const auto actionCommand = commandIter->toString();
+            if (actionCommand == command)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void ContextMenu::removeAction(const QString& command)
+    {
+        assert(!command.isEmpty());
+
+        for (auto action : actions())
+        {
+            const auto actionParams = action->data().toMap();
+
+            const auto commandIter = actionParams.find("command");
+            if (commandIter == actionParams.end())
+            {
+                continue;
+            }
+
+            const auto actionCommand = commandIter->toString();
+            if (actionCommand == command)
+            {
+                QWidget::removeAction(action);
+
+                return;
+            }
+        }
     }
 
     void ContextMenu::invertRight(bool invert)
@@ -93,7 +140,7 @@ namespace Ui
         QMenu::hideEvent(e);
     }
 
-    void ContextMenu::showEvent(QShowEvent *e)
+    void ContextMenu::showEvent(QShowEvent*)
     {
 		if (InvertRight_ || Indent_ != 0)
 		{

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../types/message.h"
+#include "../../types/typing.h"
 
 namespace Ui
 {
@@ -22,13 +23,14 @@ namespace Logic
 		int itemSize() const;
 		void blockState(bool value);
         
-        void addChatter(QString aimId, QString chatter);
-        void removeChatter(QString aimId, QString chatter);
+        void addTyping(const TypingFires& _typing);
+        void removeTyping(const TypingFires& _typing);
 
         void setDragIndex(const QModelIndex& index);
 
 	private:
-        std::map<QString, std::set<QString>> typers_;
+
+        std::list<TypingFires> typings_;
         
 		struct ItemKey
 		{

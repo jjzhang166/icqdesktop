@@ -23,6 +23,9 @@ namespace Ui
 
         typedef std::list<PositionWidget> WidgetsList;
 
+        // the left value is inclusive, the right value is exclusive
+        typedef std::pair<int32_t, int32_t> Interval;
+
         MessagesScrollAreaLayout(
             MessagesScrollArea *scrollArea,
             MessagesScrollbar *messagesScrollbar,
@@ -57,7 +60,7 @@ namespace Ui
 
         int32_t getViewportAbsY() const;
 
-        QRect getViewportScrollBounds() const;
+        Interval getViewportScrollBounds() const;
 
         int32_t getViewportHeight() const;
 
@@ -123,9 +126,13 @@ namespace Ui
 
         void debugValidateGeometry();
 
+        void dumpGeometry(const QString &notes);
+
         int32_t evalViewportAbsMiddleY() const;
 
-        QRect getItemsAbsBoundingRect() const;
+        Interval getItemsAbsBounds() const;
+
+        int32_t getRelY(const int32_t y) const;
 
         int32_t getTypingWidgetHeight() const;
 

@@ -12,6 +12,7 @@ namespace Utils
     enum class CommonSettingsType
     {
         min = -1,
+
         CommonSettingsType_None,
         CommonSettingsType_Profile,
         CommonSettingsType_General,
@@ -22,6 +23,21 @@ namespace Utils
         CommonSettingsType_ContactUs,
         CommonSettingsType_AttachPhone,
         CommonSettingsType_AttachUin,
+
+        max
+    };
+
+    enum class PlaceholdersType
+    {
+        min = -1,
+
+        PlaceholdersType_FindFriend,
+        PlaceholdersType_HideFindFriend,
+
+        PlaceholdersType_IntroduceYourself,
+        PlaceholdersType_HideIntroduceYourself,
+        PlaceholdersType_SetExistanseOnIntroduceYourself,
+        PlaceholdersType_SetExistanseOffIntroduceYourself,
 
         max
     };
@@ -54,8 +70,7 @@ Q_SIGNALS:
 
         void popPagesToRoot();
 
-        void showNoContactsYetSuggestions();
-        void hideNoContactsYetSuggestions();
+        void showPlaceholder(PlaceholdersType);
         void showNoContactsYet();
         void hideNoContactsYet();
         void showNoRecentsYet();
@@ -69,6 +84,9 @@ Q_SIGNALS:
         void closeAnyPopupWindow();
 
         void forceRefreshList(QAbstractItemModel *, bool);
+        void updateFocus();
+        
+        void schemeUrlClicked(QString);
         
     public:
         static InterConnector& instance();
@@ -79,6 +97,9 @@ Q_SIGNALS:
         Ui::HistoryControlPage* getHistoryPage(const QString& aimId) const;
         Ui::ContactDialog* getContactDialog() const;
 
+        void setDragOverlay(bool enable);
+        bool isDragOverlay() const;
+
     private:
         InterConnector();
 
@@ -87,5 +108,6 @@ Q_SIGNALS:
         InterConnector& operator=(const InterConnector&);
 
         Ui::MainWindow* MainWindow_;
+        bool dragOverlay_;
     };
 }

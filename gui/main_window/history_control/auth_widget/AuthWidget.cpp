@@ -150,7 +150,7 @@ namespace Ui
     AuthWidget::AuthWidget(QWidget* _parent, const QString& _aimid)
         :	QWidget(_parent),
         root_layout_(new QVBoxLayout()),
-        avatar_(new ContactAvatarWidget(this, _aimid, Logic::GetContactListModel()->getDisplayName(_aimid), Utils::scale_value(avatar_size))),
+        avatar_(new ContactAvatarWidget(this, _aimid, Logic::GetContactListModel()->getDisplayName(_aimid), Utils::scale_value(avatar_size), true)),
         aimid_(_aimid),
         info_widget_(new ContactInfoWidget(this, _aimid))
     {
@@ -179,7 +179,6 @@ namespace Ui
 
         avatar_->raise();
 
-        connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(on_avatar_loaded(QString)), Qt::QueuedConnection);
         connect(avatar_, SIGNAL(clicked()), this, SLOT(avatar_clicked()), Qt::QueuedConnection);
 
         connect(info_widget_, &ContactInfoWidget::add_contact, [this](){ emit add_contact(aimid_); });
@@ -189,11 +188,6 @@ namespace Ui
 
     AuthWidget::~AuthWidget()
     {
-    }
-
-    void AuthWidget::on_avatar_loaded(QString _aimid)
-    {
-        avatar_->update();
     }
 
     void AuthWidget::place_avatar()

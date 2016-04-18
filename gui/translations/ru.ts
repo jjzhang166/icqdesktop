@@ -44,10 +44,34 @@
     </message>
 </context>
 <context>
-    <name>attach_page</name>
+    <name>about_us</name>
     <message>
-        <source>Continue</source>
-        <translation>Продолжить</translation>
+        <source>About ICQ</source>
+        <translation>О программе</translation>
+    </message>
+    <message>
+        <source>ICQ</source>
+        <translation>ICQ</translation>
+    </message>
+    <message>
+        <source>This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit</source>
+        <translation>Этот продукт содержит программное обеспечение, разработанное проектом OpenSSL для использования в OpenSSL Toolkit</translation>
+    </message>
+    <message>
+        <source>http://openssl.org</source>
+        <translation>http://openssl.org</translation>
+    </message>
+    <message>
+        <source>Copyright © 2012, the WebRTC project authors. All rights reserved.</source>
+        <translation>Copyright © 2012, авторы проекта WebRTC. Все права защищены.</translation>
+    </message>
+    <message>
+        <source>Emoji provided free by Emoji One</source>
+        <translation>Emoji предоставлены бесплатно Emoji One</translation>
+    </message>
+    <message>
+        <source>© ICQ LLC</source>
+        <translation>© ICQ LLC</translation>
     </message>
 </context>
 <context>
@@ -273,6 +297,41 @@
     <message>
         <source>New messages</source>
         <translation>Новые сообщения</translation>
+    </message>
+</context>
+<context>
+    <name>connection_settings</name>
+    <message>
+        <source>Type:</source>
+        <translation>Тип:</translation>
+    </message>
+    <message>
+        <source>Hostname</source>
+        <translation>Имя хоста</translation>
+    </message>
+    <message>
+        <source>Port</source>
+        <translation>Порт</translation>
+    </message>
+    <message>
+        <source>Proxy server requires password</source>
+        <translation>Необходима авторизация прокси-сервера</translation>
+    </message>
+    <message>
+        <source>Username</source>
+        <translation>Логин</translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation>Пароль</translation>
+    </message>
+    <message>
+        <source>Connection settings</source>
+        <translation>Настройки соединения</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Готово</translation>
     </message>
 </context>
 <context>
@@ -506,6 +565,18 @@
     <message>
         <source>Unfavorite contact</source>
         <translation>Удалить из избранных</translation>
+    </message>
+    <message>
+        <source>Delete for me</source>
+        <translation>Удалить у меня</translation>
+    </message>
+    <message>
+        <source>Delete for all</source>
+        <translation>Удалить у всех</translation>
+    </message>
+    <message>
+        <source>Erase history</source>
+        <translation>Удалить историю</translation>
     </message>
 </context>
 <context>
@@ -1501,10 +1572,6 @@
         <translation>Готово</translation>
     </message>
     <message>
-        <source>Groupchat Name</source>
-        <translation>Имя групчата</translation>
-    </message>
-    <message>
         <source>Create</source>
         <translation>Создать</translation>
     </message>
@@ -1524,10 +1591,6 @@
         <source>View all </source>
         <translation>Все </translation>
     </message>
-    <message>
-        <source>Save</source>
-        <translation>Сохранить</translation>
-    </message>
 </context>
 <context>
     <name>input_widget</name>
@@ -1542,6 +1605,33 @@
     <message>
         <source>RECENTS</source>
         <translation>ПОСЛЕДНИЕ</translation>
+    </message>
+</context>
+<context>
+    <name>livechats</name>
+    <message>
+        <source>friend</source>
+        <comment>1</comment>
+        <translation>друг</translation>
+    </message>
+    <message>
+        <source>friends</source>
+        <comment>2</comment>
+        <translation>друга</translation>
+    </message>
+    <message>
+        <source>friends</source>
+        <comment>5</comment>
+        <translation>друзей</translation>
+    </message>
+    <message>
+        <source>friends</source>
+        <comment>21</comment>
+        <translation>друг</translation>
+    </message>
+    <message>
+        <source>Join chat</source>
+        <translation>Вступить в чат</translation>
     </message>
 </context>
 <context>
@@ -1631,10 +1721,6 @@ your phone number</source>
         <source>Error occured, try again later</source>
         <translation>Произошла ошибка, попробуйте еще раз</translation>
     </message>
-    <message>
-        <source>This phone number is already attached to another account. Please edit phone number and try again.</source>
-        <translation>Этот номер телефона уже используется. Измените номер и попробуйте еще раз.</translation>
-    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1676,6 +1762,30 @@ your phone number</source>
     <message>
         <source>You have no opened chats yet</source>
         <translation>У вас нет открытых чатов</translation>
+    </message>
+    <message>
+        <source>Introduce yourself</source>
+        <translation>Представьтесь</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Продолжить</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation>Пропустить</translation>
+    </message>
+    <message>
+        <source>Your nickname cannot be longer than 20 symbols</source>
+        <translation>Имя не может быть длиннее 20 символов</translation>
+    </message>
+    <message>
+        <source>Error occured, try again later</source>
+        <translation>Произошла ошибка, попробуйте еще раз</translation>
+    </message>
+    <message>
+        <source>Your name</source>
+        <translation>Ваше имя</translation>
     </message>
 </context>
 <context>
@@ -1719,6 +1829,26 @@ your phone number</source>
     <message>
         <source>Are you sure this contact is spam?</source>
         <translation>Вы уверены, что это спам?</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Сохранить</translation>
+    </message>
+    <message>
+        <source>Contact name</source>
+        <translation>Имя контакта</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Имя чата</translation>
+    </message>
+    <message>
+        <source>Sign out</source>
+        <translation>Выйти</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to erase chat history?</source>
+        <translation>Вы уверены, что хотите удалить историю переписки?</translation>
     </message>
 </context>
 <context>
@@ -1842,6 +1972,12 @@ your phone number</source>
     <message>
         <source>Connect to ICQ account</source>
         <translation>Подключить аккаунт ICQ</translation>
+    </message>
+    <message>
+        <source>This phone number is already attached to another account.
+Please edit phone number and try again.</source>
+        <translation>Этот номер телефона уже используется.
+Измените номер и попробуйте еще раз.</translation>
     </message>
 </context>
 <context>
@@ -1985,30 +2121,6 @@ your phone number</source>
         <translation>Оповещения</translation>
     </message>
     <message>
-        <source>About ICQ</source>
-        <translation>О программе</translation>
-    </message>
-    <message>
-        <source>ICQ</source>
-        <translation>ICQ</translation>
-    </message>
-    <message>
-        <source>This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit</source>
-        <translation>Этот продукт содержит программное обеспечение, разработанное проектом OpenSSL для использования в OpenSSL Toolkit</translation>
-    </message>
-    <message>
-        <source>http://openssl.org</source>
-        <translation>http://openssl.org</translation>
-    </message>
-    <message>
-        <source>Copyright © 2012, the WebRTC project authors. All rights reserved.</source>
-        <translation>Copyright © 2012, the WebRTC project authors. Все права защищены.</translation>
-    </message>
-    <message>
-        <source>© ICQ LLC</source>
-        <translation>© ICQ LLC</translation>
-    </message>
-    <message>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
@@ -2035,10 +2147,6 @@ your phone number</source>
     <message>
         <source>Change account</source>
         <translation>Сменить аккаунт</translation>
-    </message>
-    <message>
-        <source>Emoji provided free by Emoji One</source>
-        <translation>Emoji provided free by Emoji One</translation>
     </message>
     <message>
         <source>Sounds</source>
@@ -2079,6 +2187,14 @@ your phone number</source>
     <message>
         <source>cs</source>
         <translation>Český</translation>
+    </message>
+    <message>
+        <source>Connection type:</source>
+        <translation>Тип подключения:</translation>
+    </message>
+    <message>
+        <source>Connection settings</source>
+        <translation>Настройки соединения</translation>
     </message>
 </context>
 <context>

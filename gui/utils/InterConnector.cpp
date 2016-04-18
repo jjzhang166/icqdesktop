@@ -14,6 +14,7 @@ namespace Utils
     }
 
     InterConnector::InterConnector()
+        : dragOverlay_(false)
     {
         //
     }
@@ -57,5 +58,15 @@ namespace Utils
         }
 
         return mainPage->getContactDialog();
+    }
+
+    void InterConnector::setDragOverlay(bool enable)
+    {
+        dragOverlay_ = enable;
+    }
+
+    bool InterConnector::isDragOverlay() const
+    {
+        return dragOverlay_;
     }
 }

@@ -17,6 +17,7 @@ namespace Ui
         setFixedHeight(h);
         themeButton->setFixedWidth(w);
         themeButton->setFixedHeight(h);
+        themeButton->setCursor(Qt::PointingHandCursor);
         borderWidget_->setFixedWidth(w);
         borderWidget_->setFixedHeight(h);
         

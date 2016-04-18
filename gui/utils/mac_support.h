@@ -49,6 +49,8 @@ public:
     
     void activateWindow(unsigned long long view = 0);
     
+    void registerDelegate();
+    
 private:
     void setupDockClickHandler();
 };

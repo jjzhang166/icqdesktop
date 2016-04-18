@@ -57,6 +57,7 @@ namespace Ui
     {
         hide();
         e->accept();
+        Utils::InterConnector::instance().setDragOverlay(false);
     }
 
     void DragOverlayWindow::dragMoveEvent(QDragMoveEvent *e)
@@ -101,6 +102,7 @@ namespace Ui
 
         e->acceptProposedAction();
         hide();
+        Utils::InterConnector::instance().setDragOverlay(false);
     }
 
 	ContactDialog::ContactDialog(QWidget* _parent)
@@ -205,11 +207,13 @@ namespace Ui
         dragOverlayWindow_->resize(width(), height());
         dragOverlayWindow_->show();
         overlayUpdateTimer_->start();
+        Utils::InterConnector::instance().setDragOverlay(true);
     }
 
     void ContactDialog::hideDragOverlay()
     {
         dragOverlayWindow_->hide();
+        Utils::InterConnector::instance().setDragOverlay(false);
     }
 
     void ContactDialog::dragEnterEvent(QDragEnterEvent *e)

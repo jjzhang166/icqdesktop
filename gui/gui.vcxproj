@@ -188,6 +188,9 @@ copy %%f ..\..\..\..\$(OutDir)
 )
 </Command>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -373,13 +376,19 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClCompile Include="..\common.shared\common_defs.cpp" />
     <ClCompile Include="..\common.shared\crash_handler.cpp" />
     <ClCompile Include="..\gui.shared\translator_base.cpp" />
+    <ClCompile Include="main_window\GroupChatOperations.cpp" />
+    <ClCompile Include="main_window\livechats\LiveChatMembersControl.cpp" />
+    <ClCompile Include="main_window\livechats\LiveChatProfile.cpp" />
     <ClCompile Include="app_config.cpp" />
     <ClCompile Include="controls\Alert.cpp" />
     <ClCompile Include="controls\BackButton.cpp" />
     <ClCompile Include="controls\BackgroundWidget.cpp" />
+    <ClCompile Include="controls\ConnectionSettingsWidget.cpp" />
     <ClCompile Include="controls\ContactAvatarWidget.cpp" />
     <ClCompile Include="controls\DpiAwareImage.cpp" />
     <ClCompile Include="controls\FlatMenu.cpp" />
+    <ClCompile Include="controls\GeneralCreator.cpp" />
+    <ClCompile Include="controls\moc_ConnectionSettingsWidget.cpp" />
     <ClCompile Include="controls\moc_FlatMenu.cpp" />
     <ClCompile Include="controls\moc_Alert.cpp" />
     <ClCompile Include="controls\moc_ContactAvatarWidget.cpp" />
@@ -438,6 +447,10 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClCompile Include="main_window\history_control\VoipEventInfo.cpp" />
     <ClCompile Include="main_window\history_control\VoipEventItem.cpp" />
     <ClCompile Include="main_window\history_control\MessagesScrollbar.cpp" />
+    <ClCompile Include="main_window\IntroduceYourself.cpp" />
+    <ClCompile Include="main_window\livechats\moc_LiveChatMembersControl.cpp" />
+    <ClCompile Include="main_window\livechats\moc_LiveChatProfile.cpp" />
+    <ClCompile Include="main_window\moc_IntroduceYourself.cpp" />
     <ClCompile Include="main_window\search_contacts\results\FoundContacts.cpp" />
     <ClCompile Include="main_window\search_contacts\results\ContactWidget.cpp" />
     <ClCompile Include="controls\FlowLayout.cpp" />
@@ -460,6 +473,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClCompile Include="controls\TextEmojiWidget.cpp" />
     <ClCompile Include="remote_proc.cpp" />
     <ClCompile Include="theme_settings.cpp" />
+    <ClCompile Include="types\typing.cpp" />
     <ClCompile Include="utils\gui_coll_helper.cpp" />
     <ClCompile Include="main_window\history_control\KnownFileTypes.cpp" />
     <ClCompile Include="main_window\search_contacts\ComboButton.cpp" />
@@ -500,7 +514,9 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClCompile Include="main_window\search_contacts\results\SearchResults.cpp" />
     <ClCompile Include="main_window\search_contacts\search_params.cpp" />
     <ClCompile Include="utils\InterConnector.cpp" />
+    <ClCompile Include="utils\IntValidator.cpp" />
     <ClCompile Include="utils\moc_InterConnector.cpp" />
+    <ClCompile Include="utils\moc_IntValidator.cpp" />
     <ClCompile Include="utils\PainterPath.cpp" />
     <ClCompile Include="utils\Text.cpp" />
     <ClCompile Include="utils\Text2DocConverter.cpp" />
@@ -632,12 +648,16 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClInclude Include="..\common.shared\keys.h" />
     <ClInclude Include="..\common.shared\version_info_constants.h" />
     <ClInclude Include="..\gui.shared\translator_base.h" />
+    <ClInclude Include="main_window\GroupChatOperations.h" />
+    <ClInclude Include="main_window\livechats\LiveChatMembersControl.h" />
+    <ClInclude Include="main_window\livechats\LiveChatProfile.h" />
     <ClInclude Include="app_config.h" />
-    <ClInclude Include="collection_helper_ext.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="controls\Alert.h" />
+    <ClInclude Include="controls\ConnectionSettingsWidget.h" />
     <ClInclude Include="controls\DpiAwareImage.h" />
     <ClInclude Include="controls\FlatMenu.h" />
+    <ClInclude Include="controls\GeneralCreator.h" />
     <ClInclude Include="controls\PictureWidget.h" />
     <ClInclude Include="controls\WidgetsNavigator.h" />
     <ClInclude Include="cp_afxres.h" />
@@ -675,6 +695,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClInclude Include="main_window\history_control\StickerWidget.h" />
     <ClInclude Include="main_window\history_control\VoipEventInfo.h" />
     <ClInclude Include="main_window\history_control\VoipEventItem.h" />
+    <ClInclude Include="main_window\IntroduceYourself.h" />
     <ClInclude Include="main_window\search_contacts\results\FoundContacts.h" />
     <ClInclude Include="main_window\search_contacts\results\ContactWidget.h" />
     <ClInclude Include="controls\FlowLayout.h" />
@@ -685,6 +706,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClInclude Include="previewer\PreviewWidget.h" />
     <ClInclude Include="controls\TextEmojiWidget.h" />
     <ClInclude Include="themes\ResourceIds.h" />
+    <ClInclude Include="types\typing.h" />
     <ClInclude Include="utils\gui_coll_helper.h" />
     <ClInclude Include="main_window\history_control\KnownFileTypes.h" />
     <ClInclude Include="main_window\search_contacts\ComboButton.h" />
@@ -721,6 +743,7 @@ copy $(SolutionDir)core\Voip\libvoip\lib\debug\*.* $(SolutionDir)bin\debug</Comm
     <ClInclude Include="main_window\search_contacts\results\SearchResults.h" />
     <ClInclude Include="main_window\search_contacts\search_params.h" />
     <ClInclude Include="utils\InterConnector.h" />
+    <ClInclude Include="utils\IntValidator.h" />
     <ClInclude Include="utils\PainterPath.h" />
     <ClInclude Include="utils\Text.h" />
     <ClInclude Include="utils\Text2DocConverter.h" />

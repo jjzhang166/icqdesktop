@@ -84,12 +84,12 @@ namespace voip_manager {
 }
 
 namespace {
-    std::string from_unicode_to_utf8(const std::wstring& str) {
+    inline std::string from_unicode_to_utf8(const std::wstring& str) {
         std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> cv;
         return cv.to_bytes(str);
     }
 
-    std::wstring from_utf8_to_unicode(const std::string& str) {
+    inline std::wstring from_utf8_to_unicode(const std::string& str) {
         std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> cv;
         return cv.from_bytes(str.c_str());
     }
@@ -628,6 +628,7 @@ namespace voip_manager {
         void FrameSizeChanged         (voip::hwnd_t hwnd, float aspectRatio) override;
         void InterruptByGsmCall       (bool gsmCallStarted) override;
         void VideoStreamChanged       (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, bool havePicture) override;
+        void MinimalBandwidthMode_StateChanged(bool mbmEnabledLocal, bool mbmEnabledRemote);
 
         //=========================== VoipConnection ===========================
         void SendVoipMsg(const char* from, voip2::VoipOutgoingMsg voipOutgoingMsg, const char *data, unsigned len, unsigned msg_idx) override;
@@ -780,7 +781,11 @@ namespace voip_manager {
         path += core::utils::get_product_data_path();
         VOIP_ASSERT_RETURN_VAL(!path.empty(), false);
 
+#ifdef _WIN32
         path += L"\\settings\\voip_config.txt";
+#else 
+        path += L"/settings/voip_config.txt";
+#endif
         return true;
     }
 
@@ -791,7 +796,11 @@ namespace voip_manager {
         path += core::utils::get_product_data_path();
         VOIP_ASSERT_RETURN_VAL(!path.empty(), false);
 
+#ifdef _WIN32
         path += L"\\voip_log.txt";
+#else
+        path += L"/voip_log.txt";
+#endif
         return true;
     }
 
@@ -910,7 +919,7 @@ namespace voip_manager {
             }
 
             using namespace voip2;
-            std::string stat_file_path = from_unicode_to_utf8(getFilePath());
+            std::string stat_file_path = from_unicode_to_utf8(core::utils::get_product_data_path());
             VOIP_ASSERT_RETURN_VAL(!stat_file_path.empty(), NULL);
 
             std::string app_name;
@@ -1106,6 +1115,11 @@ namespace voip_manager {
     }
 
     void VoipManagerImpl::VideoStreamChanged(const char* account_uid, const char* user_id, voip::hwnd_t hwnd, bool havePicture) {
+        
+    }
+
+    void VoipManagerImpl::MinimalBandwidthMode_StateChanged(bool mbmEnabledLocal, bool mbmEnabledRemote)
+    {
         
     }
 

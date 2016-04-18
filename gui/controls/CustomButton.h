@@ -13,7 +13,7 @@ namespace Ui
 #endif
     
 	const QString main_button_style =
-		"QPushButton { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #ffffff; font-size: 16dip; background-color: #579e1c; border-style: solid; border-width: 2dip; border-color: #427a13; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 28dip; min-height: 28dip; } QPushButton:hover { background-color: #57a813; } QPushButton:pressed { background-color: #50901b; } ";
+		"QPushButton { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #ffffff; font-size: 16dip; background-color: #579e1c; border-style: none; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 32dip; min-height: 32dip; } QPushButton:hover { background-color: #57a813; } QPushButton:pressed { background-color: #50901b; } ";
 	
 	const QString grey_button_style =
 		"QPushButton { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #282828; font-size: 16dip; background-color: #c5c5c5; border-style: none; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 32dip; min-height: 32dip; } QPushButton:hover { background-color: #d2d2d2; } QPushButton:pressed { background-color: #bbbbbb; } ";

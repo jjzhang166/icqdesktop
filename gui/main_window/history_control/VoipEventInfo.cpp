@@ -3,12 +3,10 @@
 #include "../../themes/ResourceIds.h"
 #include "../../themes/ThemePixmap.h"
 
+#include "../../utils/gui_coll_helper.h"
 #include "../../../corelib/enumerations.h"
-#include "../../../corelib/collection_helper.h"
-#include "../../collection_helper_ext.h"
 
 #include "VoipEventInfo.h"
-
 
 namespace HistoryControl
 {

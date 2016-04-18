@@ -2,6 +2,7 @@
 #include "gui_settings.h"
 #include "core_dispatcher.h"
 #include "utils/gui_coll_helper.h"
+#include "my_info.h"
 
 namespace Ui
 {
@@ -175,5 +176,10 @@ namespace Ui
     {
         static std::unique_ptr<qt_gui_settings> settings(new qt_gui_settings());
         return settings.get();
+    }
+
+    const std::string get_account_setting_name(const std::string& setting_name)
+    {
+        return MyInfo()->aimId().toUtf8().constData() + std::string("/") + setting_name;
     }
 }

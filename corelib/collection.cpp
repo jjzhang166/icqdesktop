@@ -106,7 +106,7 @@ void core::collection_value::set_as_int64(int64_t val)
     data__.int64_value_ = val;
 }
 
-int64_t core::collection_value::get_as_int64()
+int64_t core::collection_value::get_as_int64() const
 {
     if (type_ != collection_value_type::vt_int64)
     {
@@ -302,7 +302,9 @@ const char* core::collection_value::log() const
     case core::vt_collection:
         return "<collection>";
     case core::vt_stream:
-        return "<stream>";
+        log_data_ = (char*) malloc(40);
+        sprintf(log_data_, "<stream size=%d>", data__.istream_value_->size());
+        break;
     case core::vt_array:
         log_data_ = (char*) malloc(40);
         sprintf(log_data_, "<array size=%d>", data__.array_value_->size());

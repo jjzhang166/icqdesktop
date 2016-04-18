@@ -35,7 +35,7 @@ namespace Ui
     protected:
         virtual void mouseMoveEvent(QMouseEvent *) override;
 
-        virtual void mousePressEvent(QMouseEvent *) override;
+        virtual void mouseReleaseEvent(QMouseEvent *) override;
 
         virtual void leaveEvent(QEvent *) override;
 

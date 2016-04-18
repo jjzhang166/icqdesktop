@@ -26,25 +26,17 @@ namespace Ui
 	class MessageData
 	{
 	public:
-		MessageData()
-			: AvatarVisible_(false)
-			, SenderVisible_(false)
-			, IndentBefore_(false)
-			, Sending_(false)
-            , DeliveredToServer_(false)
-            , DeliveredToClient_(false)
-			, Id_(-1)
-			, AvatarSize_(-1)
-			, Time_(0)
-		{
-		}
+		MessageData();
+
+        bool isChatAdmin() const;
+
+        bool isOutgoing() const;
 
 		bool AvatarVisible_;
 		bool SenderVisible_;
 		bool IndentBefore_;
 		bool Sending_;
 		QDate Date_;
-		bool Outgoing_;
 		bool DeliveredToServer_;
         bool DeliveredToClient_;
 		bool Chat_;
@@ -57,6 +49,18 @@ namespace Ui
         QString SenderFriendly_;
 		int AvatarSize_;
 		qint32 Time_;
+
+        struct IsChatAdminField
+        {
+            bool IsChatAdmin_;
+            bool Set_;
+        } IsChatAdmin_;
+
+        struct IsOutgoingField
+        {
+            bool Outgoing_;
+            bool Set_;
+        } Outgoing_;
 	};
 
 	enum SelectDirection
@@ -84,7 +88,7 @@ namespace Ui
 		~MessageItem();
 
 		virtual QString formatRecentsText() const override;
-        
+
         virtual void setContact(const QString& _aimId) override;
 
 		void selectByPos(const QPoint& pos);
@@ -101,21 +105,26 @@ namespace Ui
 		void setMchatSender(const QString& sender);
 		void setOutgoing(const bool isOutgoing, const bool sending, const bool isDeliveredToServer, const bool isDeliveredToClient, const bool isMChat);
 		void setTime(const int32_t time);
-		void setContentWidget(::HistoryControl::MessageContentWidget *widget, bool preview);
+		void setContentWidget(::HistoryControl::MessageContentWidget *widget);
 		void setStickerText(const QString& text);
 		virtual void setTopMargin(const bool value) override;
+        virtual themes::themePtr theme() const override;
 		void setDate(const QDate& date);
 		void replace();
 		bool selected();
 		QDate date() const;
 		qint64 getId() const;
-		bool isPersistent() const;
+		bool isRemovable() const;
+        bool isUpdateable() const;
 		QString toLogString() const;
         virtual void select();
         virtual void clearSelection();
         void manualUpdateGeometry(const int32_t widgetWidth);
+        void setChatAdminFlag(const bool isChatAdmin);
+        void updateMenus();
+        QString contentClass() const;
 
-		bool updateData(const std::shared_ptr<MessageData> &data);
+		void updateWith(MessageItem &messageItem);
 		std::shared_ptr<MessageData> getData();
 
         void loadAvatar(const QString& sender, const QString& senderName, const int size);
@@ -124,7 +133,7 @@ namespace Ui
 
     public Q_SLOTS:
         bool updateData();
-        
+
 	private Q_SLOTS:
         void deliveredToClient(qint64);
 		void deliveredToClient(QString);
@@ -135,7 +144,7 @@ namespace Ui
 
         void createContentMenu();
         void createMenu();
-        
+
 	protected:
         virtual void leaveEvent(QEvent*) override;
 
@@ -150,12 +159,14 @@ namespace Ui
         virtual void resizeEvent(QResizeEvent*) override;
 
 	private:
+        void addDeleteAllMenuItem();
+
         void initMenu();
 
         void createMessageBody();
-        
+
         void updateMessageBodyColor();
-        
+
         void updateSenderControlColor();
 
         void createSenderControl();
@@ -184,6 +195,8 @@ namespace Ui
 
         Themes::PixmapResourceId getDeliveryStatusResId() const;
 
+        void initializeContentWidget();
+
         bool isAvatarVisible() const;
 
         bool isBlockItem() const;
@@ -193,6 +206,8 @@ namespace Ui
         bool isOverAvatar(const QPoint &p) const;
 
         bool isSending() const;
+
+        void removeDeleteAllMenuItem();
 
         void updateBubbleGeometry(const QRect &bubbleGeometry);
 

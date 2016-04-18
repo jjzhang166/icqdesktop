@@ -34,7 +34,8 @@ namespace ContactList
 			const QDateTime &lastSeen,
 			const int unreadsCounter,
 			const bool muted,
-            const QString &senderNick);
+            const QString &senderNick,
+            const bool isOfficial);
 
 		const DeliveryState DeliveryState_;
 

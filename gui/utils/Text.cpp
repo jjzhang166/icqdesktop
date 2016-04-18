@@ -13,7 +13,8 @@ namespace Utils
 
         if (platform::is_windows())
         {
-            const auto isMultiline = (textHeight >= Utils::scale_value(40));
+            static bool isVistaOrLater = platform::is_windows_vista_or_late();
+            const auto isMultiline = (textHeight >= Utils::scale_value(isVistaOrLater ? 40 : 34));
             const auto fix = (
                 isMultiline ?
                     Utils::scale_value(9) :

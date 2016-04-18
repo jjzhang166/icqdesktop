@@ -17,7 +17,8 @@ namespace ContactList
 			const bool haveLastSeen,
 			const QDateTime &lastSeen,
 			bool isWithCheckBox,
-            bool isChatMember);
+            bool isChatMember,
+            bool official);
 	};
 
 	void RenderServiceContact(QPainter &painter, const bool _isHovered, const bool _isActive, int _regim, QString _name, Data::ContactType _type);

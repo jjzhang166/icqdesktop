@@ -27,10 +27,10 @@ using namespace wim;
 const auto default_fetch_timeout = std::chrono::milliseconds(500);
 
 fetch::fetch(
-    const wim_packet_params& _params, 
-    const std::string& _fetch_url, 
-    time_t _timeout, 
-    timepoint _fetch_time, 
+    const wim_packet_params& _params,
+    const std::string& _fetch_url,
+    time_t _timeout,
+    timepoint _fetch_time,
     std::function<bool(int32_t)> _wait_function)
     :
     wim_packet(_params),
@@ -123,7 +123,7 @@ int32_t fetch::parse_response_data(const rapidjson::Value& _data)
     try
     {
         bool have_webrtc_event = false;
-        
+
         auto iter_events = _data.FindMember("events");
 
         if (iter_events != _data.MemberEnd() && iter_events->value.IsArray())
@@ -137,7 +137,7 @@ int32_t fetch::parse_response_data(const rapidjson::Value& _data)
                     iter_type->value.IsString())
                 {
                     std::string event_type = iter_type->value.GetString();
-                    
+
                     if (event_type == "buddylist")
                         push_event(std::make_shared<fetch_event_buddy_list>())->parse(iter_event_data->value);
                     else if (event_type == "presence")
@@ -191,7 +191,7 @@ int32_t fetch::parse_response_data(const rapidjson::Value& _data)
             ts_ = iter_ts->value.GetUint();
             time_offset_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - ts_;
         }
-        
+
         if (have_webrtc_event) {
             auto we = std::make_shared<webrtc_event>();
             if (!!we) {

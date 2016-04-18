@@ -16,10 +16,14 @@
 #include "../app_config.h"
 #include "../../gui.shared/constants.h"
 #include "../../common.shared/version_info.h"
+#include "launch.h"
+#include "InterConnector.h"
 
 namespace
 {
     const int shadow_width = 10;
+    const QString hostIcqCom  = "icq.com";
+    const QString liveChatPrefix = "/chat/";
 }
 
 namespace Utils
@@ -67,7 +71,12 @@ namespace Utils
 
         peer_.reset(new LocalPeer(0, !isMainInstance()));
         if (isMainInstance())
+        {
             peer_->listen();
+        }
+
+        QObject::connect(&Utils::InterConnector::instance(), SIGNAL(schemeUrlClicked(QString)), this, SLOT(receiveUrlCommand(QString)), Qt::DirectConnection);
+        QObject::connect(app_.get(), &QGuiApplication::applicationStateChanged, this, &Application::applicationStateChanged, Qt::DirectConnection);
     }
 
     Application::~Application()
@@ -121,6 +130,27 @@ namespace Utils
         return true;
     }
 
+    bool Application::parseLocalUrl(const QString& _urlString)
+    {
+        QUrl url(_urlString);
+
+        const QString hostString = url.host(); //icq.com
+        const QString path = url.path(); // /chat/novosibisk
+
+        if (hostString == hostIcqCom && path.length() > liveChatPrefix.length() && path.mid(0, liveChatPrefix.length()) == liveChatPrefix)
+        {
+            QString stamp = path.mid(liveChatPrefix.length());
+            if (stamp[stamp.length() - 1] == '/')
+                stamp = stamp.mid(0, stamp.length() - 1);
+
+            Logic::GetContactListModel()->joinLiveChat(stamp, false);
+
+            return true;
+        }
+
+        return false;
+    }
+
     void Application::open_url(const QUrl& url)
     {
         QString urlStr = url.toString(QUrl::FullyEncoded);
@@ -129,7 +159,12 @@ namespace Utils
 
         QString decoded = url.fromPercentEncoding(urlStr.toUtf8());
         decoded.remove(QString(QChar::SoftHyphen));
-        
+
+        if (parseLocalUrl(decoded))
+        {
+            return;
+        }
+
         QDesktopServices::openUrl(decoded);
     }
     
@@ -145,10 +180,17 @@ namespace Utils
         QDesktopServices::unsetUrlHandler("https");
     }
 
-    void Application::switchInstance()
+    void Application::switchInstance(launch::CommandLineParser& _cmd_parser)
     {
 #ifdef _WIN32
+
+        if (_cmd_parser.isUrlCommand())
+        {
+            peer_->send_url_command(_cmd_parser.getUrlCommand());
+        }
+
         unsigned int hwnd = peer_->get_hwnd_and_activate();
+
         if (hwnd)
         {
             ::SetForegroundWindow((HWND) hwnd);
@@ -226,6 +268,57 @@ namespace Utils
 #endif //_WIN32
     }
 
+    void Application::parseUrlCommand(const QString& _urlCommand)
+    {
+        const QUrl url(_urlCommand);
+
+        const QString host = url.host();
+
+        const QUrlQuery urlQuery(url);
+
+        const auto items = urlQuery.queryItems();
+
+        const QString path = url.path();
+
+        if (host == QString(url_command_join_livechat))
+        {
+            if (path.isEmpty())
+                return;
+
+            QString stamp = path.mid(1);
+            if (stamp.isEmpty())
+                return;
+
+            if (stamp[stamp.length() - 1] == '/')
+                stamp = stamp.mid(0, stamp.length() - 1);
+
+            bool silent = false;
+
+            for (const auto& query_param : items)
+            {
+                if (query_param.first == "join" && query_param.second == "1")
+                {
+                    silent = true;
+                }
+            }
+
+            Logic::GetContactListModel()->joinLiveChat(stamp, silent);
+        }
+        else if (host == QString(url_command_open_profile))
+        {
+            const QString aimid = path.mid(1);
+            if (aimid.isEmpty())
+                return;
+
+            emit Utils::InterConnector::instance().profileSettingsShow(aimid);
+        }
+    }
+
+    void Application::receiveUrlCommand(QString _urlCommand)
+    {
+        parseUrlCommand(_urlCommand);
+    }
+
     bool Application::updating()
     {
 #ifdef _WIN32
@@ -284,5 +377,13 @@ namespace Utils
 
 #endif //_WIN32
         return false;
+    }
+
+    void Application::applicationStateChanged(Qt::ApplicationState state)
+    {
+        if (platform::is_apple() && state == Qt::ApplicationInactive)
+        {
+            emit Utils::InterConnector::instance().closeAnyPopupWindow();
+        }
     }
 }

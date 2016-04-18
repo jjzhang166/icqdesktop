@@ -234,7 +234,7 @@ namespace installer
                 if (val & HOTKEY_CTRLENTER)
                     settings->send_hotkey_ = Qt::Key_Control;
                 else if (val & HOTKEY_DBENTER)
-                    settings->send_hotkey_ = Qt::Key_Enter;
+                    settings->send_hotkey_ = 0;
                 else
                     settings->send_hotkey_ = 0;
             }
@@ -266,11 +266,13 @@ namespace installer
             if (!base.Open(get_options_database_filename()))
                 return;
 
-            if (_accounts)
-                read_accounts(base);
+            read_accounts(base);
 
             if (_settings)
                 read_settings(base);
+
+            if (!_accounts)
+                accounts_list_.clear();
 
             base.Close();
         }

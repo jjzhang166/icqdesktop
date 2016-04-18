@@ -7,132 +7,132 @@
 
 namespace core
 {
-	namespace tools
-	{
-		const std::string from_utf16(const std::wstring& _source_16)
-		{
+    namespace tools
+    {
+        const std::string from_utf16(const std::wstring& _source_16)
+        {
 #ifdef __linux__
-			return std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().to_bytes(_source_16);
+            return std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().to_bytes(_source_16);
 #else
-			return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>().to_bytes(_source_16);
+            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>().to_bytes(_source_16);
 #endif //__linux__
-		}
+        }
 
-		const std::wstring from_utf8(const std::string& _source_8)
-		{
+        const std::wstring from_utf8(const std::string& _source_8)
+        {
 #ifdef __linux__
-			return std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(_source_8);
+            return std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(_source_8);
 #else
-			return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>().from_bytes(_source_8);
+            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>().from_bytes(_source_8);
 #endif //__linux__
-		}
+        }
 
-		const std::string from_int64(int64_t _val)
-		{
-			std::stringstream ss;
-			ss << _val;
+        const std::string from_int64(int64_t _val)
+        {
+            std::stringstream ss;
+            ss << _val;
 
-			return ss.str();
-		}
+            return ss.str();
+        }
 
-		bool is_digit(char _c)
-		{
-			return (_c >= '0' && _c <= '9');
-		}
+        bool is_digit(char _c)
+        {
+            return (_c >= '0' && _c <= '9');
+        }
 
-		bool is_latin(char _c)
-		{
-			if ((_c >= 'a' && _c <= 'z') || (_c >= 'A' && _c <= 'Z'))
-				return true;
+        bool is_latin(char _c)
+        {
+            if ((_c >= 'a' && _c <= 'z') || (_c >= 'A' && _c <= 'Z'))
+                return true;
 
-			return false;
-		}
+            return false;
+        }
 
-		bool is_phone(const std::string& _value)
-		{
-			if (_value.empty())
-				return false;
+        bool is_phone(const std::string& _value)
+        {
+            if (_value.empty())
+                return false;
 
-			for (auto iter = _value.begin(); iter != _value.end(); ++iter)
-			{
-				if (iter == _value.begin() && (*iter) == '+')
-					continue;
+            for (auto iter = _value.begin(); iter != _value.end(); ++iter)
+            {
+                if (iter == _value.begin() && (*iter) == '+')
+                    continue;
 
-				if (!is_digit(*iter))
-					return false;
-			}
+                if (!is_digit(*iter))
+                    return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		bool is_number(const std::string& _value)
-		{
-			for (auto c : _value)
-			{
-				if (!is_digit(c))
-					return false;
-			}
+        bool is_number(const std::string& _value)
+        {
+            for (auto c : _value)
+            {
+                if (!is_digit(c))
+                    return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		bool is_uin(const std::string& _value)
-		{
-			return is_number(_value);
-		}
+        bool is_uin(const std::string& _value)
+        {
+            return is_number(_value);
+        }
 
-		bool is_email_sym(char _c)
-		{
-			if (_c < -1 || _c>0x7F || (!isalpha(_c) && !isdigit(_c) && _c != '_' && _c != '.' && _c != '-'))
-				return false;
+        bool is_email_sym(char _c)
+        {
+            if (_c < -1 || _c>0x7F || (!isalpha(_c) && !isdigit(_c) && _c != '_' && _c != '.' && _c != '-'))
+                return false;
 
-			return true;
-		}
+            return true;
+        }
 
-		int is_email_domain(char _c)
-		{
-			return is_email_sym(_c);
-		}
+        int is_email_domain(char _c)
+        {
+            return is_email_sym(_c);
+        }
 
 
-		bool is_email(const std::string& _value)
-		{
-			bool alpha = 0;
-			int32_t name = 0, domain = 0, dots = 0;
+        bool is_email(const std::string& _value)
+        {
+            bool alpha = 0;
+            int32_t name = 0, domain = 0, dots = 0;
 
-			for (auto c : _value)
-			{
-				if (c == '@')
-				{
-					if (alpha)
-						return false;
+            for (auto c : _value)
+            {
+                if (c == '@')
+                {
+                    if (alpha)
+                        return false;
 
-					alpha = true;
-				}
-				else if (!alpha)
-				{
-					if (!is_email_sym(c))
-						return false;
+                    alpha = true;
+                }
+                else if (!alpha)
+                {
+                    if (!is_email_sym(c))
+                        return false;
 
-					++name;
-				}
-				else
-				{
-					if (!is_email_domain(c))
-						return false;
+                    ++name;
+                }
+                else
+                {
+                    if (!is_email_domain(c))
+                        return false;
 
-					if (c == '.')
-						++dots;
+                    if (c == '.')
+                        ++dots;
 
-					++domain;
-				}
-			}
+                    ++domain;
+                }
+            }
 
-			if (alpha && name > 0 && domain - dots > 0 && dots > 0)
-				return true;
+            if (alpha && name > 0 && domain - dots > 0 && dots > 0)
+                return true;
 
-			return false;
-		}
+            return false;
+        }
 
 #ifdef _WIN32
         std::wstring short_path_for(std::wstring const& filename)
@@ -143,7 +143,7 @@ namespace core
             return buffer.data();
         }
 #endif // _WIN32
-        
+
         const std::string wstring_to_string(const std::wstring& _wstr)
         {
 #if defined(__linux__)
@@ -169,5 +169,5 @@ namespace core
             auto result = b * 65536 + d;
             return std::to_string(result);
         }
-	}
+    }
 }

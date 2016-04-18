@@ -17,23 +17,23 @@ namespace voip_manager {
 
 namespace core
 {
-	class main_thread;
-	class im_container;
-	class coll_helper;
-	class core_settings;
-	class gui_settings;
+    class main_thread;
+    class im_container;
+    class coll_helper;
+    class core_settings;
+    class gui_settings;
     class theme_settings;
-	class base_im;
-	class scheduler;
-	class async_task;
-	class async_executer;
-	struct async_task_handlers;
+    class base_im;
+    class scheduler;
+    class async_task;
+    class async_executer;
+    struct async_task_handlers;
     class im_login_id;
     class ithread_callback;
     class network_log;
     struct proxy_settings;
     class proxy_settings_manager;
-        
+
     namespace archive
     {
         class local_history;
@@ -82,6 +82,8 @@ namespace core
         icore_factory* core_factory_;
         std::unique_ptr<async_executer> save_thread_;
         std::shared_ptr<archive::local_history> local_history_;
+
+        std::mutex user_proxy_mutex_;
 
         // updater
         std::unique_ptr<update::updater> updater_;
@@ -139,6 +141,7 @@ namespace core
         std::shared_ptr<base_im> find_im_by_id(unsigned _id);
 
         void update_login(im_login_id& _login);
+        void replace_uin_in_login(im_login_id& old_login, im_login_id& new_login);
 
         void post_voip_message(unsigned _id, const voip_manager::VoipProtoMsg& msg);
         void post_voip_alloc(unsigned _id, const char* _data, size_t _len);
@@ -154,8 +157,16 @@ namespace core
 
         proxy_settings get_proxy_settings();
         proxy_settings get_registry_proxy_settings();
+        proxy_settings get_user_proxy_settings();
+        void set_user_proxy_settings(const proxy_settings& _user_proxy_settings);
+
         void switch_proxy_settings();
-        
+
+        proxy_settings get_core_proxy_settings();
+        void post_user_proxy_to_gui();
+
+        std::thread::id get_core_thread_id() const;
+
         //template<typename __ParamType> void on_voip_signal(voip_manager::eNotificationTypes type, const __ParamType* param) {
         //    coll_helper coll(create_collection(), true); 
         //    type >> coll; 

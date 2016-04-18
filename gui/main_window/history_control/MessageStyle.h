@@ -15,4 +15,6 @@ QColor getOutgoingBodyColorB(const double alpha);
 
 QBrush getBodyBrush(const bool isOutgoing, const bool isSelected, int theme_id);
 
+int32_t getTopPadding(const bool hasTopMargin);
+
 UI_MESSAGE_STYLE_NS_END

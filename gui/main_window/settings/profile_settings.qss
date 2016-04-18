@@ -181,8 +181,29 @@ QPushButton#optionsButton_[self="false"]
     color: #579e1c;
     text-align: center;
     margin-top: 9dip;
-    qproperty-icon: url(:/resources/contr_options_100.png);
+    border-image: url(:/resources/contr_options_round_100.png);
 }
+QPushButton#optionsButton_:hover[self="false"]
+{
+    width: 40dip;
+    height: 40dip;
+    border: none;
+    color: #579e1c;
+    text-align: center;
+    margin-top: 9dip;
+    border-image: url(:/resources/contr_options_round_100_hover.png);
+}
+QPushButton#optionsButton_:pressed[self="false"]
+{
+    width: 40dip;
+    height: 40dip;
+    border: none;
+    color: #579e1c;
+    text-align: center;
+    margin-top: 9dip;
+    border-image: url(:/resources/contr_options_round_100_active.png);
+}
+
 QPushButton#optionsButton_:pressed[self="true"]
 {
     background-color: transparent;

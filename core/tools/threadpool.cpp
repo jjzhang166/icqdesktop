@@ -10,73 +10,74 @@ using namespace tools;
 #endif //__linux__
 
 threadpool::threadpool(const unsigned count, std::function<void()> _on_thread_exit)
-	:	stop_(false)
+    :	stop_(false)
 {
-	creator_thread_id_ = boost::this_thread::get_id();
+    creator_thread_id_ = boost::this_thread::get_id();
 
-	threads_.reserve(count);
+    threads_.reserve(count);
 
-	const auto worker = [this, _on_thread_exit]
-	{
-		for(;;)
-		{
-			task nextTask;
+    const auto worker = [this, _on_thread_exit]
+    {
+        for(;;)
+        {
+            task nextTask;
 
-			{
-				std::unique_lock<std::mutex> lock(queue_mutex_);
-				condition_.wait(lock, [this]
-				{
-					return stop_ || !tasks_.empty();
-				});
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex_);
+                condition_.wait(lock, [this]
+                {
+                    return stop_ || !tasks_.empty();
+                });
 
-				if (stop_ && tasks_.empty())
-				{
-					break;
-				}
+                if (stop_ && tasks_.empty())
+                {
+                    break;
+                }
 
-				nextTask = std::move(tasks_.front());
-				tasks_.pop();
-			}
+                nextTask = std::move(tasks_.front());
+                tasks_.pop();
+            }
 
-			nextTask();
-		}
+            nextTask();
+        }
 
         _on_thread_exit();
-	};
+    };
 
-	for (unsigned i = 0; i < count; i++)
-	{
-		threads_.emplace_back(worker);
-	}
+    for (unsigned i = 0; i < count; i++)
+    {
+        threads_.emplace_back(worker);
+        threads_ids_.emplace_back(threads_[i].get_id());
+    }
 }
 
 
 threadpool::~threadpool()
 {
-	if (creator_thread_id_ != boost::this_thread::get_id())
-	{
-		assert(!"invalid destroy thread");
-	}
+    if (creator_thread_id_ != boost::this_thread::get_id())
+    {
+        assert(!"invalid destroy thread");
+    }
 
-	stop_ = true;
+    stop_ = true;
 
-	condition_.notify_all();
+    condition_.notify_all();
 
-	for (auto &worker: threads_)
-	{
-		worker.join();
-	}
+    for (auto &worker: threads_)
+    {
+        worker.join();
+    }
 
 }
 
 bool threadpool::enqueue(const task _task)
 {
-	{
-		std::unique_lock<std::mutex> lock(queue_mutex_);
-		if (stop_)
-		{
-			return false;
-		}
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex_);
+        if (stop_)
+        {
+            return false;
+        }
 #ifdef __linux__
         sigset_t set;
         sigemptyset(&set);
@@ -84,7 +85,7 @@ bool threadpool::enqueue(const task _task)
         if (pthread_sigmask(SIG_BLOCK, &set, NULL) != 0)
             assert(false);
 #endif //__linux__
-        
+
 #ifdef _WIN32
         tasks_.emplace([_task]
         {
@@ -95,9 +96,14 @@ bool threadpool::enqueue(const task _task)
 #else
         tasks_.emplace(_task);
 #endif // _WIN32
-	}
+    }
 
-	condition_.notify_one();
+    condition_.notify_one();
 
-	return true;
+    return true;
+}
+
+const std::vector<std::thread::id> threadpool::get_threads_ids() const
+{
+    return threads_ids_;
 }

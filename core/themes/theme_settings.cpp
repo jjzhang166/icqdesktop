@@ -33,9 +33,9 @@ void core::theme_settings::set_value(const std::string& _name, const themes::the
         set_value("thumb", thumb_bs_data);
     }
     
-    const int theme_id = _theme.get_theme_id();   
+    const int32_t theme_id = _theme.get_theme_id();
     tools::binary_stream bs_id;
-    bs_id.write((const char*)&theme_id, sizeof(int));
+    bs_id.write((const char*)&theme_id, sizeof(int32_t));
     set_value("id", bs_id);
     
     const bool tile = _theme.is_tile();

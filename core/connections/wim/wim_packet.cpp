@@ -30,7 +30,7 @@ wim_packet::~wim_packet()
 
 int32_t wim_packet::execute()
 {
-    auto request = std::make_shared<core::http_request_simple>(params_.stop_handler_);
+    auto request = std::make_shared<core::http_request_simple>(params_.proxy_, params_.stop_handler_);
 
     ++repeat_count_;
 

@@ -46,6 +46,11 @@ namespace Ui
 
     void HistoryControlPageItem::setTopMargin(const bool value)
     {
+        if (HasTopMargin_ == value)
+        {
+            return;
+        }
+
         HasTopMargin_ = value;
 
         updateGeometry();
@@ -63,39 +68,13 @@ namespace Ui
         updateGeometry();
     }
 
-//    void HistoryControlPageItem::resizeEvent(QResizeEvent *e)
-//    {
-//        QWidget::resizeEvent(e);
-//
-//        const auto &newSize = e->size();
-//
-//        if (LastSize_.height() != newSize.height())
-//        {
-//            emit heightChangedEvent(LastSize_, newSize);
-//        }
-//
-//        LastSize_ = newSize;
-//    }
-//
-//    void HistoryControlPageItem::showEvent(QShowEvent *e)
-//    {
-//        QWidget::showEvent(e);
-//
-//        if (LastSize_ != size())
-//        {
-//            //emit heightChangedEvent(QSize(0, 0), size());
-//        }
-//
-//        LastSize_ = size();
-//    }
-    
     void HistoryControlPageItem::setContact(const QString& _aimId)
     {
         aimId_ = _aimId;
     }
-    
+
     themes::themePtr HistoryControlPageItem::theme() const
     {
-        return get_qt_theme_settings()->themeForContact(aimId_);  //
+        return get_qt_theme_settings()->themeForContact(aimId_);
     }
 }

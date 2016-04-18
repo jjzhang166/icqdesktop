@@ -4,17 +4,17 @@
 
 namespace core
 {
-	namespace wim
-	{
-		class search_contacts_response
-		{
+    namespace wim
+    {
+        class search_contacts_response
+        {
             struct chunk
             {
                 std::string aimid_;
                 std::string stamp_;
                 std::string type_;
                 int32_t score_;
-                
+
                 std::string first_name_;
                 std::string last_name_;
                 std::string nick_name_;
@@ -35,12 +35,12 @@ namespace core
             };
             std::vector<chunk> data_;
 
-		public:
-			search_contacts_response();
-			
-			int32_t unserialize(const rapidjson::Value& _node);
-			void serialize(core::coll_helper _coll);
-		};
+        public:
+            search_contacts_response();
 
-	}
+            int32_t unserialize(const rapidjson::Value& _node);
+            void serialize(core::coll_helper _coll);
+        };
+
+    }
 }

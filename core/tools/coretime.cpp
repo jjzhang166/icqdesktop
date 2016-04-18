@@ -4,18 +4,18 @@
 
 namespace core
 {
-	namespace tools
-	{
-		namespace time
-		{
-			using namespace std::chrono;
+    namespace tools
+    {
+        namespace time
+        {
+            using namespace std::chrono;
 
-			int64_t now_ms()
-			{
-				const auto &now = time_point_cast<milliseconds>(high_resolution_clock::now());
-				return now.time_since_epoch().count();
-			}
+            int64_t now_ms()
+            {
+                const auto &now = time_point_cast<milliseconds>(high_resolution_clock::now());
+                return now.time_since_epoch().count();
+            }
 
-		}
-	}
+        }
+    }
 }

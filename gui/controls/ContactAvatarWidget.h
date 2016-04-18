@@ -15,9 +15,12 @@ namespace Ui
 
 		virtual void paintEvent(QPaintEvent* _e) override;
 
+    private Q_SLOTS:
+        void avatarChanged(QString);
+
 	public:
 
-		ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _display_name, int _size);
+		ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _display_name, int _size, bool _autoUpdate = false);
         ~ContactAvatarWidget();
 
         void UpdateParams(const QString& _aimid, const QString& _display_name);

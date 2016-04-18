@@ -83,11 +83,6 @@ namespace HistoryControl
         return TextControl_;
     }
 
-    void PreviewContentWidget::initialize()
-    {
-        MessageContentWidget::initialize();
-    }
-
     void PreviewContentWidget::select(const bool value)
     {
         MessageContentWidget::select(value);

@@ -63,6 +63,7 @@ namespace Ui
 		void showMessage(const Data::DlgState& state);
 		TrayPosition getTrayPosition() const;
 		void markShowed(const QString&);
+        bool canShowNotificationsWin() const;
         
         void updateStatus();
         void setMacIcon();

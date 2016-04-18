@@ -15,6 +15,7 @@ namespace Themes
 
 		FileSharingDownload,
 		FileSharingPlainCancel,
+        FileSharingMediaCancel,
 		FileSharingFileTypeIconUnknown,
 
 		PreviewerClose,

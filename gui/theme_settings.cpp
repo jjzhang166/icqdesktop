@@ -58,7 +58,7 @@ namespace Ui
         QByteArray imageDataArray;
         QByteArray thumbDataArray;
         QString contactsThemes;
-        int theme_id = -1;
+        int32_t theme_id = -1;
         bool tile = false;
 
         for (int i = 0; i < values_array->size(); ++i)
@@ -74,9 +74,17 @@ namespace Ui
             
             if (name == "id")
             {
-                if (len == 4)
+                if (len == sizeof(int32_t))
                 {
-                    theme_id = *(data) | *(data+1) << 8 | *(data+2) << 16 | *(data+3) << 24;
+                    theme_id = *((int32_t*) data);
+                }
+                else if (len == 8)
+                {
+                    theme_id = (int32_t) *((int64_t*) data);
+                }
+                else
+                {
+                    assert(false);
                 }
             }
             else if (name == "image")
@@ -395,21 +403,21 @@ namespace Ui
     
     QString qt_theme_settings::serializedContactsThemes() const
     {
-        QString result = "-";
-        if (contactsThemes_.size())
-        {
-            result = "";
-        }
+        if (contactsThemes_.empty())
+            return "-";
+
+        QString result;
+
         for (auto iter = contactsThemes_.begin(); iter != contactsThemes_.end(); ++iter)
         {
+            if (!result.isEmpty())
+                result += ",";
+
             QString aimId = iter.key();
             int themeId = iter.value();
-            result.append(QString("%1:%2,").arg(aimId).arg(themeId));
+            result.append(QString("%1:%2").arg(aimId).arg(themeId));
         }
-        if (contactsThemes_.size())
-        {
-            result.remove(result.length()-1, 1);
-        }
+        
         return result;
     }
     

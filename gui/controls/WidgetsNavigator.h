@@ -13,9 +13,12 @@ namespace Ui
 
     private:
         std::stack< int > history_;
+        std::unordered_map<QWidget*, int> indexes;
         
     public:
         explicit WidgetsNavigator(QWidget *parent = nullptr);
+        void insertWidget(int index, QWidget *widget);
+        void removeWidget(QWidget *widget);
         ~WidgetsNavigator();
     };
 }

@@ -83,9 +83,10 @@ Ui--InputWidget
 	border-top-style: solid;
 }
 
-
 Ui--TextEditEx
 {
+	font-family: %FONT_FAMILY%;
+	font-weight: %FONT_WEIGHT%;
 	background: #fafafa;
 	border-radius: 8dip;
 	border-color: #d7d7d7;

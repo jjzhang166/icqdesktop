@@ -27,7 +27,7 @@ namespace HistoryControl
 
 		virtual bool canUnload() const override;
 
-		virtual void initialize() override;
+		virtual void initializeInternal() override;
 
 		virtual bool isBlockElement() const override;
 

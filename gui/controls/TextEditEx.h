@@ -8,6 +8,7 @@ namespace Ui
         Q_OBJECT
 
     Q_SIGNALS:
+
         void focusIn();
         void focusOut();
         void clicked();
@@ -19,8 +20,8 @@ namespace Ui
         void setSize(int, int);
         void keyPressed(int);
 
-        private Q_SLOTS:
-            void edit_content_changed();
+    private Q_SLOTS:
+        void edit_content_changed();
 
     private:
 
@@ -33,9 +34,9 @@ namespace Ui
         QColor color_;
         int prev_pos_;
         bool input_;
-        bool is_fit_to_text_;
+        bool isFitToText_;
 
-        bool is_catch_enter_;
+        bool isCatchEnter_;
 
         QString getPlainText(int _from, int _to = -1) const;
         void init(int fontSize);
@@ -46,9 +47,10 @@ namespace Ui
         TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QColor& color, bool input, bool _isFitToText);
 
         QString getPlainText() const;
-        void setPlainText(const QString& _text);
-        void merge_resources(const ResourceMap& _resources);
-        void insert_emoji(int _main, int _ext);
+        void setPlainText(const QString& _text, bool _convertLinks = true);
+
+        void mergeResources(const ResourceMap& _resources);
+        void insertEmoji(int _main, int _ext);
         void insertPlainText_(const QString& _text);
 
         void selectByPos(const QPoint& p);
@@ -57,7 +59,8 @@ namespace Ui
         QString selection();
 
         QSize getTextSize() const;
-        void set_catch_enter(bool _is_catch_enter);
+        void setCatchEnter(bool _isCatchEnter);
+        int adjustHeight(int _width);
 
     protected:
         virtual void focusInEvent(QFocusEvent*) override;
@@ -71,6 +74,6 @@ namespace Ui
         virtual QMimeData* createMimeDataFromSelection() const override;
         virtual bool canInsertFromMimeData(const QMimeData* _source) const override;
         virtual void insertFromMimeData(const QMimeData* _source) override;
-        virtual bool catch_enter(int _modifiers);
+        virtual bool catchEnter(int _modifiers);
     };
 }

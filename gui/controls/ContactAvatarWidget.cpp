@@ -5,11 +5,14 @@
 
 namespace Ui
 {
-	ContactAvatarWidget::ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _display_name, int _size)
+	ContactAvatarWidget::ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _display_name, int _size, bool _autoUpdate)
 		:	QPushButton(_parent), aimid_(_aimid), display_name_(_display_name), size_(_size)
 	{
 		setFixedHeight(_size);
 		setFixedWidth(_size);
+
+        if (_autoUpdate)
+            connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatarChanged(QString)), Qt::QueuedConnection);
 	}
 
     ContactAvatarWidget::~ContactAvatarWidget()
@@ -34,5 +37,11 @@ namespace Ui
     {
         aimid_ = _aimid;
         display_name_ = _display_name;
+    }
+
+    void ContactAvatarWidget::avatarChanged(QString _aimId)
+    {
+        if (_aimId == aimid_)
+            update();
     }
 }

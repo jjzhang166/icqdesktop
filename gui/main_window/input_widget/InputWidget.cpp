@@ -21,7 +21,7 @@ namespace Ui
         setUndoRedoEnabled(true);
     }
 
-    bool input_edit::catch_enter(int _modifiers)
+    bool input_edit::catchEnter(int _modifiers)
     {
         int key1_to_send = get_gui_settings()->get_value<int>(settings_key1_to_send_message, 0);
         if (key1_to_send != 0)
@@ -49,6 +49,7 @@ namespace Ui
         , active_height_(Utils::scale_value(widget_min_height))
         , need_height_(active_height_)
         , anim_height_(0)
+        , is_initializing_(false)
     {
 
         setVisible(false);
@@ -109,7 +110,7 @@ namespace Ui
             emit smilesMenuSignal();
         });
 
-        connect(text_edit_, SIGNAL(keyPressed(int)), this, SLOT(typed(int)));
+        connect(text_edit_, SIGNAL(textChanged()), this, SLOT(typed()));
         
         active_document_height_ = text_edit_->document()->size().height();
 
@@ -242,7 +243,7 @@ namespace Ui
 
     void InputWidget::insert_emoji(int32_t _main, int32_t _ext)
     {
-        text_edit_->insert_emoji(_main, _ext);
+        text_edit_->insertEmoji(_main, _ext);
 
         text_edit_->setFocus();
     }
@@ -330,9 +331,10 @@ namespace Ui
 
         setVisible(true);
         activateWindow();
-
+        is_initializing_ = true;
         text_edit_->setPlainText(Logic::GetContactListModel()->getInputText(contact_));
         text_edit_->setFocus(Qt::FocusReason::MouseFocusReason);
+        is_initializing_ = false;
     }
     
     void InputWidget::hide()
@@ -355,8 +357,11 @@ namespace Ui
         return active_height_;
     }
     
-    void InputWidget::typed(int /*key*/)
+    void InputWidget::typed()
     {
+        if (is_initializing_)
+            return;
+
         static uint prevTypedTime = 0;
         uint currTypedTime = QDateTime::currentDateTime().toTime_t();
         if ((currTypedTime - prevTypedTime) > 2)

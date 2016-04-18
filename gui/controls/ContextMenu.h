@@ -5,18 +5,25 @@ namespace Ui
     class MenuStyle: public QProxyStyle
     {
         Q_OBJECT
+
     public:
         virtual int pixelMetric(PixelMetric metric, const QStyleOption * option = 0, const QWidget * widget = 0 ) const;
+
     };
 
    class ContextMenu : public QMenu
    {
        Q_OBJECT
+
    public:
        ContextMenu(QWidget* parent);
 
        QAction* addActionWithIcon(const QIcon& icon, const QString& name, const QVariant& data);
        QAction* addActionWithIcon(const QIcon& icon, const QString& name, const QObject *receiver, const char* member);
+
+       bool hasAction(const QString& command);
+
+       void removeAction(const QString& command);
 
        void invertRight(bool invert);
        void setIndent(int indent);
@@ -27,7 +34,7 @@ namespace Ui
    protected:
        virtual void showEvent(QShowEvent *e) override;
        virtual void hideEvent(QHideEvent *e) override;
-       
+
    private:
        bool InvertRight_;
        int Indent_;

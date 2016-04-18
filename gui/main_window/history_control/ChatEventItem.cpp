@@ -10,6 +10,8 @@
 #include "../../utils/utils.h"
 
 #include "ChatEventInfo.h"
+#include "MessageStyle.h"
+
 #include "ChatEventItem.h"
 
 namespace Ui
@@ -204,7 +206,7 @@ namespace Ui
 		p.setRenderHint(QPainter::SmoothPixmapTransform);
 		p.setRenderHint(QPainter::TextAntialiasing);
 
-		if (!Icon_->isNull())
+        if (!Icon_->isNull())
 		{
 			const auto iconX = (BubbleRect_.left() + getIconLeftPadding());
 
@@ -261,9 +263,15 @@ namespace Ui
 		BubbleRect_ = QRect(0, 0, bubbleWidth, bubbleHeight);
 		BubbleRect_.moveCenter(QRect(0, 0, newWidth, bubbleHeight).center());
 
+        const auto topPadding = MessageStyle::getTopPadding(hasTopMargin());
+        BubbleRect_.moveTop(topPadding);
+
         // setup geometry
 
-        setFixedSize(newWidth, bubbleHeight);
+        auto widgetHeight = bubbleHeight;
+        widgetHeight += topPadding;
+
+        setFixedSize(newWidth, widgetHeight);
 
         auto textWidgetLeft = BubbleRect_.left();
 
@@ -316,7 +324,7 @@ namespace Ui
 
         int32_t getWidgetFontSize()
         {
-            return (Utils::scale_value(12) * qApp->devicePixelRatio());
+            return (Utils::scale_value(12));
         }
 
 		qint32 getWidgetMinHeight()

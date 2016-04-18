@@ -46,7 +46,7 @@ int32_t search_contacts_response::unserialize(const rapidjson::Value& array)
         }
         data_.push_back(c);
     }
-	return 0;
+    return 0;
 }
 
 void search_contacts_response::serialize(core::coll_helper root_coll)
@@ -58,7 +58,7 @@ void search_contacts_response::serialize(core::coll_helper root_coll)
     for (auto c: data_)
     {
         coll_helper coll(root_coll->create_collection(), true);
-        
+
         coll.set_value_as_string("aimid", c.aimid_);
         coll.set_value_as_string("stamp", c.stamp_);
         coll.set_value_as_string("type", c.type_);
@@ -86,7 +86,7 @@ void search_contacts_response::serialize(core::coll_helper root_coll)
         ifptr<ivalue> val(root_coll->create_value());
         val->set_as_collection(coll.get());
         array->push_back(val.get());
-        
+
         root_coll.set_value_as_array("data", array.get());
     }
 }

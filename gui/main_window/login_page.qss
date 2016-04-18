@@ -184,8 +184,8 @@ QWidget[BackButtonWidget="true"]
 QWidget[CenterContolWidget="true"]
 {
 	background-color: transparent;
-	max-width: 600dip;
-	min-width: 600dip;
+	max-width: 1000dip;
+	min-width: 400dip;
 }
 
 QWidget[CenterControlWidgetBack="true"]
@@ -354,32 +354,6 @@ QLineEdit[Password="true"]:focus
 	border-bottom-style: solid;
 }
 
-QCheckBox
-{
-    font-size: 15dip;
-    font-family: "%FONT_FAMILY_LIGHT%";
-    font-weight: %FONT_WEIGHT_LIGHT%;
-    color: #696969;
-	padding-top: 4dip;
-    spacing: 8dip;
-}
-
-QCheckBox::indicator
-{
-    width: 20dip;
-    height: 20dip;
-    image: url(":/resources/widgets/content_uncheck_100.png");
-	image-position: left;
-}
-
-QCheckBox::indicator::checked
-{
-    width: 20dip;
-    height: 20dip;
-    image: url(":/resources/widgets/content_check_100.png");
-	image-position: left;
-}
-
 QLabel[ErrorLabel="true"]
 {
 	font-size: 15dip;
@@ -390,7 +364,6 @@ QLabel[ErrorLabel="true"]
 QWidget[ErrorWidget="true"]
 {
 	min-height: 30dip;
-	max-height: 30dip;
 }
 
 QWidget[NextButtonWidget="true"]

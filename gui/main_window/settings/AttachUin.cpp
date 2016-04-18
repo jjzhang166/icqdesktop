@@ -14,13 +14,12 @@
 #include "../contact_list/contact_profile.h"
 #include "../../controls/CustomButton.h"
 #include "../LoginPage.h"
+#include "../../controls/GeneralCreator.h"
 
 using namespace Ui;
 
 void GeneralSettingsWidget::Creator::initAttachUin(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/)
 {
-    static std::map<QString, QString> filesToSend;
-
     auto scroll_area = new QScrollArea(parent);
     scroll_area->setWidgetResizable(true);
     Utils::grabTouchWidget(scroll_area->viewport(), true);
@@ -41,7 +40,9 @@ void GeneralSettingsWidget::Creator::initAttachUin(QWidget* parent, std::map<std
     layout->setContentsMargins(0, 0, 0, 0);
     
     LoginPage* page = new LoginPage(scroll_area, false /* is_login */);
-    addBackButton(scroll_area, layout, [page]() 
+    page->switchLoginType();
+
+    GeneralCreator::addBackButton(scroll_area, layout, [page]() 
     {
         page->prevPage();
         page->switchLoginType();
@@ -49,10 +50,9 @@ void GeneralSettingsWidget::Creator::initAttachUin(QWidget* parent, std::map<std
     });
     layout->addWidget(scroll_area);
 
-    addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("profile_page", "Connect to ICQ account"));
+    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("profile_page", "Connect to ICQ account"));
 
     scroll_area_content_layout->addWidget(page);
-    page->switchLoginType();
 
     connect(page, &LoginPage::attached, [page]() 
     {
@@ -61,9 +61,9 @@ void GeneralSettingsWidget::Creator::initAttachUin(QWidget* parent, std::map<std
 
         core::coll_helper helper(GetDispatcher()->create_collection(), true);
         GetDispatcher()->post_message_to_core("load_flags", helper.get());
-        page->prevPage();
-        page->switchLoginType();
         emit Utils::InterConnector::instance().attachUinBack();
         emit Utils::InterConnector::instance().profileSettingsUpdateInterface();
     });
+
+    connect(&Utils::InterConnector::instance(), &Utils::InterConnector::updateFocus, page, &LoginPage::updateFocus);
 }

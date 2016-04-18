@@ -1,3 +1,4 @@
+#import "stdafx.h"
 #import "launch.h"
 
 int main(int argc, char *argv[])

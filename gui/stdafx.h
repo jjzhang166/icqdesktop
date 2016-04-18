@@ -25,6 +25,7 @@
 #include <deque>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 #include <atomic>
 #include <codecvt>
 #include <assert.h>
@@ -136,7 +137,7 @@
 
 #include <QMovie>
 #include <QGestureEvent>
- 
+
 #undef min
 #undef max
 #undef small
@@ -259,14 +260,8 @@
 #include <QtGui/qmovie.h>
 #include <QtWidgets/qgesture.h>
 #include <QtCore/quuid.h>
-/*
-#include <QtNetwork/qnetworkrequest.h>
-#include <QtNetwork/qnetworkreply.h>
-#include <QtNetwork/qnetworkaccessmanager.h>
-#include <QtNetwork/qhttpmultipart.h>
 #include <QtCore/qurlquery.h>
-*/
- 
+
 #define assert(e) { }
 
 #include "../corelib/common.h"
@@ -392,6 +387,7 @@
 #import <QtGui/qmovie.h>
 #import <QtWidgets/qgesture.h>
 #import <QtCore/QUuid.h>
+#import <QtCore/qurlquery.h>
 /*
 #import <QtNetwork/qnetworkrequest.h>
 #import <QtNetwork/qnetworkreply.h>

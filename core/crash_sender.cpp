@@ -16,15 +16,19 @@ namespace core
 {
     namespace dump
     {
-        bool report_sender::send_to_hockey_app(const std::string& _login)
+        bool report_sender::send_to_hockey_app(const std::string& _login, const proxy_settings& _proxy)
         {                
             // http://support.hockeyapp.net/kb/api/api-crashes
-            core::http_request_simple post_request;
+            core::http_request_simple post_request(_proxy);
             post_request.set_url(hockeyapp_url);
             post_request.set_post_form(true);
             post_request.push_post_form_parameter("contact", _login);
             post_request.push_post_form_filedata(L"log", utils::get_report_log_path());
-            post_request.push_post_form_filedata(L"attachment0", utils::get_report_mini_dump_path());
+
+            auto dump_name = utils::get_report_mini_dump_path();
+            auto size = boost::filesystem::file_size(dump_name);
+            if (size < 1024 * 1024) // 1 mb
+                post_request.push_post_form_filedata(L"attachment0", dump_name);
             return post_request.post();
         }
 
@@ -60,14 +64,16 @@ namespace core
             {
                 send_thread_.reset(new async_executer());
 
+                auto user_proxy = g_core->get_user_proxy_settings();
+
                 std::weak_ptr<report_sender> wr_this = shared_from_this();
-                send_thread_->run_async_function([wr_this]
+                send_thread_->run_async_function([wr_this, user_proxy]
                 {
                     auto ptr_this = wr_this.lock();
                     if (!ptr_this)
                         return 0;
 
-                    if (ptr_this->send_to_hockey_app(ptr_this->login_))
+                    if (ptr_this->send_to_hockey_app(ptr_this->login_, user_proxy))
                         ptr_this->clear_report_folder();
                     return 0;
                 });

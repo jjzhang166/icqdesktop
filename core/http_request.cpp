@@ -9,6 +9,7 @@
 #include "core.h"
 #include "proxy_settings.h"
 #include "network_log.h"
+#include "../corelib/enumerations.h"
 
 using namespace core;
 
@@ -142,6 +143,8 @@ struct curl_context
         curl_easy_setopt(curl_, CURLOPT_TCP_KEEPINTVL, 5L);
         curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
 
+        curl_easy_setopt(curl_, CURLOPT_ACCEPT_ENCODING, "gzip");
+
         std::string user_agent = core::utils::get_user_agent();
         curl_easy_setopt(curl_, CURLOPT_USERAGENT, user_agent.c_str());
 
@@ -159,6 +162,11 @@ struct curl_context
         if (_proxy_settings.use_proxy_)
         {
             curl_easy_setopt(curl_, CURLOPT_PROXY, tools::from_utf16(_proxy_settings.proxy_server_).c_str());
+
+            if (_proxy_settings.proxy_port_ != proxy_settings::default_proxy_port)
+            {
+                curl_easy_setopt(curl_, CURLOPT_PROXYPORT, _proxy_settings.proxy_port_);
+            }
             curl_easy_setopt(curl_, CURLOPT_PROXYTYPE, _proxy_settings.proxy_type_);
 
             if (_proxy_settings.need_auth_)
@@ -276,11 +284,24 @@ struct curl_context
     }
 };
 
-static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userp)
+static size_t write_memory_callback(void* _contents, size_t _size, size_t _nmemb, void* _userp)
 {
-    size_t realsize = size * nmemb;
+    curl_context* ctx = (curl_context*) _userp;
 
-    ((curl_context*) userp)->output_->write((char*) contents, (uint32_t)realsize);
+    size_t realsize = _size * _nmemb;
+
+    ctx->output_->write((char*) _contents, (uint32_t) realsize);
+
+    tools::binary_stream bs;
+
+    bs.write((const char*) _contents, (uint32_t) realsize);
+
+    if (ctx->is_need_log())
+    {
+        g_core->get_network_log().write_data(bs);
+    }
+
+    bs.reset();
 
     return realsize;
 }
@@ -293,61 +314,6 @@ static int32_t progress_callback(void* ptr, double TotalToDownload, double NowDo
     return 0;
 }
 
-static void dump_function(const char *text, std::stringstream& _ss_out, unsigned char *ptr, size_t size, bool nohex)
-{
-//   size_t i;
-//    size_t c;
-
-//    unsigned int width=0x10;
-
-//    if(nohex)
-        /* without the hex output, we can fit more on screen */ 
-//            width = 0x80;
-
-    char buffer[1024] = {0};
-
-    sprintf(buffer, "%s, %10.10ld bytes (0x%8.8lx)\n",
-        text, (long)size, (long)size);
-
-    _ss_out << buffer;
-
-    for (size_t i = 0; i < size; i++)
-    {
-    //    sprintf(buffer, "%4.4lx: ", (long)i);
-    //    _ss_out << buffer;
-
-    /*    if(!nohex) {
-            
-            for(c = 0; c < width; c++)
-                if(i+c < size)
-                {
-                    sprintf(buffer, "%02x ", ptr[i+c]);
-                    _ss_out << buffer;
-                }
-                else
-                {
-                    _ss_out << "   ";
-                }
-        }*/
-
-      /*  for(c = 0; (c < width) && (i+c < size); c++) {
-            // check for 0D0A; if found, skip past and start a new line of output 
-            if (nohex && (i+c+1 < size) && ptr[i+c]==0x0D && ptr[i+c+1]==0x0A) {
-                i+=(c+2-width);
-                break;
-            }*/
-
-            sprintf(buffer, "%c", (ptr[i]>=0x20) && (ptr[i]<0x80) ? ptr[i] : '.');
-            _ss_out << buffer;
-
-        /*    // check again for 0D0A, to avoid an extra \n if it's at width 
-            if (nohex && (i+c+2 < size) && ptr[i+c+1]==0x0D && ptr[i+c+2]==0x0A) {
-                i+=(c+3-width);
-                break;
-            }
-        }*/
-    }
-}
 
 std::vector<std::string> get_filter_keywords()
 {
@@ -398,7 +364,7 @@ static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char*
     case CURLINFO_DATA_IN:
     case CURLINFO_SSL_DATA_IN:
     //    text = "<= Recv data";
-        break;
+        return 0;
     default:
         break;
     }
@@ -421,7 +387,7 @@ static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char*
 }
 
 
-http_request_simple::http_request_simple(std::function<bool()> stop_func)
+http_request_simple::http_request_simple(proxy_settings _proxy_settings, std::function<bool()> stop_func)
     :	is_stop_(stop_func),
     output_(new tools::binary_stream()),
     is_time_condition_(false),
@@ -435,7 +401,8 @@ http_request_simple::http_request_simple(std::function<bool()> stop_func)
     range_to_(-1),
     is_post_form_(false),
     need_log_(true),
-    keep_alive_(false)
+    keep_alive_(false),
+    proxy_settings_(_proxy_settings)
 {
 }
 
@@ -580,7 +547,13 @@ bool http_request_simple::send_request(bool _post, bool switch_proxy)
 {
     curl_context ctx(is_stop_, keep_alive_);
 
-    if (!ctx.init(connect_timeout_, timeout_, switch_proxy ? g_core->get_registry_proxy_settings() : g_core->get_proxy_settings()))
+    auto is_user_proxy = proxy_settings_.proxy_type_ != (int)core::proxy_types::auto_proxy;
+
+    auto current_proxy = switch_proxy ? g_core->get_registry_proxy_settings() : g_core->get_proxy_settings();
+    if (is_user_proxy)
+        current_proxy = proxy_settings_;
+
+    if (!ctx.init(connect_timeout_, timeout_, current_proxy))
     {
         assert(false);
         return false;
@@ -599,24 +572,31 @@ bool http_request_simple::send_request(bool _post, bool switch_proxy)
 
     ctx.set_custom_header_params(custom_headers_);
     ctx.set_url(url_.c_str());
-
-    static std::atomic<bool> first(true);
     
-    if (!ctx.execute_request())
+    if (is_user_proxy)
     {
-        if (first)
-        {
-            if (switch_proxy)
-                return false;
-            
-            return send_request(_post, true);
-        }
-        return false;
+        if (!ctx.execute_request())
+            return false;
     }
+    else
+    {
+        static std::atomic<bool> first(true);
+        if (!ctx.execute_request())
+        {
+            if (first)
+            {
+                if (switch_proxy)
+                    return false;
+            
+                return send_request(_post, true);
+            }
+            return false;
+        }
 
-    first = false;
-    if (switch_proxy)
-        g_core->switch_proxy_settings();
+        first = false;
+        if (switch_proxy)
+            g_core->switch_proxy_settings();
+    }
 
     response_code_ = ctx.get_response_code();
     output_ = ctx.get_response();
@@ -766,4 +746,9 @@ ithread_callback* core::http_request_simple::create_http_handlers()
 std::string core::http_request_simple::get_post_url()
 {
     return url_ + "?" + get_post_param();
+}
+
+proxy_settings core::http_request_simple::get_user_proxy() const
+{
+    return proxy_settings_; 
 }

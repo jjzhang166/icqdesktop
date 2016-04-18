@@ -30,7 +30,7 @@ namespace Ui
 		void sendCode();
 		void setPhoneFocusIn();
 		void setPhoneFocusOut();
-		void getSmsResult(int64_t, int);
+		void getSmsResult(int64_t, int, int);
 		void loginResult(int64_t, int);
 		void loginResultAttachUin(int64_t, int);
 		void loginResultAttachPhone(int64_t, int);
@@ -45,6 +45,8 @@ namespace Ui
     public Q_SLOTS:
 		void prevPage();
 		void switchLoginType();
+		void updateFocus();
+        void openProxySettings();
 
 	public:
 		LoginPage(QWidget* parent, bool is_login);
@@ -74,6 +76,7 @@ namespace Ui
 		QPushButton*				next_page_link_;
 		QWidget*					country_search_widget_;
         BackButton*                 prev_page_link_;
+        QPushButton*                proxy_settings_link_;
 		QPushButton*				edit_phone_button_;
 		QPushButton*				switch_login_link_;
 		QPushButton*				resend_button_;
@@ -87,5 +90,6 @@ namespace Ui
 		QLabel*						hint_label_;
         bool                        is_login_;
         int64_t                     send_seq_;
+        int                         code_length_;
 	};
 }

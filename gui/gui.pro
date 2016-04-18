@@ -167,7 +167,16 @@ SOURCES += \
     main_window/settings/AboutUs.cpp \
     main_window/settings/ContactUs.cpp \
     main_window/contact_list/CustomAbstractListModel.cpp \
-    main_window/history_control/HistoryControlPageThemePanel.cpp
+    main_window/history_control/HistoryControlPageThemePanel.cpp \
+    main_window/settings/AttachPhone.cpp \
+    main_window/settings/AttachUin.cpp \
+    controls/ConnectionSettingsWidget.cpp \
+    main_window/IntroduceYourself.cpp \
+    main_window/livechats/LiveChatMembersControl.cpp \
+    main_window/livechats/LiveChatProfile.cpp \
+    types/typing.cpp \
+    controls/GeneralCreator.cpp \
+    main_window/GroupChatOperations.cpp
 
 HEADERS  += \
     app_config.h \
@@ -320,7 +329,14 @@ HEADERS  += \
     main_window/settings/themes/ThemesWidget.h \
     main_window/settings/themes/ThemeWidget.h \
     main_window/contact_list/CustomAbstractListModel.h \
-    main_window/history_control/HistoryControlPageThemePanel.h
+    main_window/history_control/HistoryControlPageThemePanel.h \
+    controls/ConnectionSettingsWidget.h \
+    main_window/IntroduceYourself.h \
+    main_window/livechats/LiveChatMembersControl.h \
+    main_window/livechats/LiveChatProfile.h \
+    types/typing.h \
+    controls/GeneralCreator.h \
+    main_window/GroupChatOperations.h
 
 DEFINES += STRIP_VOIP
 QMAKE_CXXFLAGS += -std=c++0x

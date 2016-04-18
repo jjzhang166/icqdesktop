@@ -8,7 +8,7 @@ namespace Ui
 {
     class input_edit : public TextEditEx
     {
-        virtual bool catch_enter(int _modifiers) override;
+        virtual bool catchEnter(int _modifiers) override;
 
     public:
 
@@ -40,7 +40,7 @@ Q_SIGNALS:
         void send_sticker(int32_t _set_id, int32_t _sticker_id);
         void resize_to(int _height);
         
-        void typed(int);
+        void typed();
 
         void stats_message_enter();
         void stats_message_send();
@@ -69,6 +69,7 @@ Q_SIGNALS:
         int active_height_;
         int need_height_;
         int active_document_height_;
+        bool is_initializing_;
 
     protected:
 

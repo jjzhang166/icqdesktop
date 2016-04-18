@@ -87,6 +87,14 @@ namespace HistoryControl
 		return !!Size_;
 	}
 
+    void FileSharingInfo::SetUri(const QString &uri)
+    {
+        assert(Uri_.isEmpty());
+        assert(IsOutgoing());
+
+        Uri_ = uri;
+    }
+
 	QString FileSharingInfo::ToLogString() const
 	{
 		QString logStr;

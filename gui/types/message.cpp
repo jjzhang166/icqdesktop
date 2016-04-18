@@ -2,9 +2,8 @@
 
 #include "message.h"
 
+#include "../utils/gui_coll_helper.h"
 #include "../../corelib/enumerations.h"
-#include "../../corelib/collection_helper.h"
-
 #include "../utils/log/log.h"
 
 #include "../main_window/history_control/FileSharingInfo.h"
@@ -35,7 +34,7 @@ namespace
     bool containsImagePreviewUri(const QString &text, Out QStringRef &uri);
 
     bool containsPttAudio(const QString& text, Out int& duration);
-    
+
     bool containsImage(const QString& text);
 
     int decodeSymbols(const QString& str)
@@ -76,16 +75,46 @@ namespace Data
 		, HasAvatar_(false)
 		, IndentBefore_(false)
 		, Filled_(false)
+        , Deleted_(false)
 	{
 
 	}
 
-    bool MessageBuddy::IsEmpty() const
+    void MessageBuddy::ApplyModification(const MessageBuddy &modification)
     {
-        return Id_ == -1 && InternalId_.isEmpty();
+        assert(modification.Id_ == Id_);
+
+        EraseEventData();
+
+        if (modification.IsBase())
+        {
+            SetText(modification.GetText());
+
+            Type_ = core::message_type::base;
+
+            return;
+        }
+
+        if (modification.IsChatEvent())
+        {
+            SetChatEvent(
+                std::make_shared<HistoryControl::ChatEventInfo>(
+                    *modification.GetChatEvent()
+                )
+            );
+
+            Type_ = core::message_type::chat_event;
+
+            return;
+        }
     }
 
-	bool MessageBuddy::CheckInvariant() const
+    bool MessageBuddy::IsEmpty() const
+    {
+        return (Id_ == -1) && InternalId_.isEmpty();
+    }
+
+    bool MessageBuddy::CheckInvariant() const
 	{
 		if (Outgoing_)
 		{
@@ -119,14 +148,21 @@ namespace Data
         assert(Type_ > core::message_type::min);
         assert(Type_ < core::message_type::max);
 
-        QString uri;
-        if (FileSharing_.get())
-            uri = FileSharing_->GetUri();
+        auto pttDuration = 0;
 
-        int duration;
-        return containsPttAudio(Text_, duration) || containsPttAudio(uri, duration);
+        if (containsPttAudio(Text_, Out pttDuration))
+        {
+            return true;
+        }
+
+        if (!FileSharing_ || FileSharing_->IsOutgoing())
+        {
+            return false;
+        }
+
+        return containsPttAudio(FileSharing_->GetUri(), Out pttDuration);
     }
-    
+
     bool MessageBuddy::ContainsImage() const
     {
         assert(Type_ > core::message_type::min);
@@ -135,8 +171,22 @@ namespace Data
         QString uri;
         if (FileSharing_.get())
             uri = FileSharing_->GetUri();
-        
+
         return containsImage(Text_) || containsImage(uri);
+    }
+
+    bool MessageBuddy::GetIndentWith(const MessageBuddy &buddy)
+    {
+        if (buddy.IsServiceMessage())
+        {
+            return false;
+        }
+
+        return (
+            (ChatSender_ != buddy.ChatSender_) ||
+            (IsOutgoingVoip() != buddy.IsOutgoingVoip()) ||
+            buddy.IsChatEvent()
+        );
     }
 
 	bool MessageBuddy::IsBase() const
@@ -154,6 +204,11 @@ namespace Data
 
 		return (Type_ == core::message_type::chat_event);
 	}
+
+    bool MessageBuddy::IsDeleted() const
+    {
+        return Deleted_;
+    }
 
 	bool MessageBuddy::IsDeliveredToClient() const
 	{
@@ -205,7 +260,7 @@ namespace Data
 
 	bool MessageBuddy::IsStandalone() const
 	{
-		return (IsFileSharing() || IsSticker() || IsChatEvent() || IsVoipEvent() || ContainsPreviewableLink());
+		return (IsFileSharing() || IsSticker() || IsChatEvent() || IsVoipEvent() || ContainsPreviewableLink() || IsDeleted());
 	}
 
     bool MessageBuddy::IsVoipEvent() const
@@ -218,8 +273,15 @@ namespace Data
 		return ChatEvent_;
 	}
 
+    const QString& MessageBuddy::GetChatSender() const
+    {
+        return ChatSender_;
+    }
+
 	const QDate& MessageBuddy::GetDate() const
 	{
+        assert(Date_.isValid());
+
 		return Date_;
 	}
 
@@ -274,6 +336,14 @@ namespace Data
 		return NotificationKeys_;
 	}
 
+    core::message_type MessageBuddy::GetType() const
+    {
+        assert(Type_ > core::message_type::min);
+        assert(Type_ < core::message_type::max);
+
+        return Type_;
+    }
+
     const HistoryControl::VoipEventInfoSptr& MessageBuddy::GetVoipEvent() const
     {
         return VoipEvent_;
@@ -282,6 +352,11 @@ namespace Data
     bool MessageBuddy::HasAvatar() const
     {
         return HasAvatar_;
+    }
+
+    bool MessageBuddy::HasChatSender() const
+    {
+        return !ChatSender_.isEmpty();
     }
 
 	bool MessageBuddy::HasId() const
@@ -305,14 +380,8 @@ namespace Data
 	{
 		if (merge)
 		{
-			assert(!IsFileSharing());
-			assert(!IsSticker());
-			assert(!IsChatEvent());
-            assert(!IsVoipEvent());
-			assert(!buddy.IsFileSharing());
-			assert(!buddy.IsSticker());
-			assert(!buddy.IsChatEvent());
-            assert(!buddy.IsVoipEvent());
+            assert(!IsStandalone());
+            assert(!buddy.IsStandalone());
 
 			if (HasText())
 			{
@@ -330,6 +399,7 @@ namespace Data
 		Unread_ = buddy.Unread_;
 		DeliveredToClient_ = buddy.DeliveredToClient_;
 		Date_ = buddy.Date_;
+        Deleted_ = buddy.Deleted_;
 
 		SetFileSharing(buddy.GetFileSharing());
 		SetSticker(buddy.GetSticker());
@@ -339,6 +409,14 @@ namespace Data
 		NotificationKeys_.append(buddy.NotificationKeys_);
 	}
 
+    void MessageBuddy::EraseEventData()
+    {
+        FileSharing_.reset();
+        Sticker_.reset();
+        ChatEvent_.reset();
+        VoipEvent_.reset();
+    }
+
 	void MessageBuddy::SetChatEvent(const HistoryControl::ChatEventInfoSptr& chatEvent)
 	{
 		assert(!chatEvent || (!Sticker_ && !FileSharing_ && !VoipEvent_));
@@ -346,10 +424,22 @@ namespace Data
 		ChatEvent_ = chatEvent;
 	}
 
+    void MessageBuddy::SetChatSender(const QString& chatSender)
+    {
+        ChatSender_ = chatSender;
+    }
+
 	void MessageBuddy::SetDate(const QDate &date)
 	{
+        assert(date.isValid());
+
 		Date_ = date;
 	}
+
+    void MessageBuddy::SetDeleted(const bool isDeleted)
+    {
+        Deleted_ = isDeleted;
+    }
 
 	void MessageBuddy::SetFileSharing(const HistoryControl::FileSharingInfoSptr& fileSharing)
 	{
@@ -385,6 +475,14 @@ namespace Data
 		Time_ = time;
 	}
 
+    void MessageBuddy::SetType(const core::message_type type)
+    {
+        assert(type > core::message_type::min);
+        assert(type < core::message_type::max);
+
+        Type_ = type;
+    }
+
     void MessageBuddy::SetVoipEvent(const HistoryControl::VoipEventInfoSptr &voip)
     {
         assert(!voip || (!Sticker_ && !ChatEvent_ && !FileSharing_));
@@ -394,7 +492,7 @@ namespace Data
 
 	Logic::MessageKey MessageBuddy::ToKey() const
 	{
-		return Logic::MessageKey(Id_, Prev_, InternalId_, PendingId_, Time_, Type_, IsOutgoing(), ContainsPreviewableLink(), Logic::control_type::ct_message);
+		return Logic::MessageKey(Id_, Prev_, InternalId_, PendingId_, Time_, Type_, IsOutgoing(), ContainsPreviewableLink(), IsDeleted(), Logic::control_type::ct_message);
 	}
 
 	void MessageBuddy::SetNotificationKeys(const QStringList &keys)
@@ -425,6 +523,13 @@ namespace Data
 		return Text_;
 	}
 
+    bool DlgState::HasLastMsgId() const
+    {
+        assert(LastMsgId_ >= -1);
+
+        return (LastMsgId_ > 0);
+    }
+
     bool DlgState::HasText() const
     {
         return !Text_.isEmpty();
@@ -435,7 +540,13 @@ namespace Data
 		Text_ = text;
 	}
 
-	void UnserializeMessageBuddies(core::coll_helper* helper, const QString &myAimid, Out QString &aimId, Out bool &havePending, Out MessageBuddies& messages)
+	void UnserializeMessageBuddies(
+        core::coll_helper* helper,
+        const QString &myAimid,
+        Out QString &aimId,
+        Out bool &havePending,
+        Out MessageBuddies& messages,
+        Out MessageBuddies& modifications)
 	{
 		assert(!myAimid.isEmpty());
 
@@ -443,19 +554,28 @@ namespace Data
 
 		aimId = helper->get_value_as_string("contact");
 		if (helper->is_value_exist("result") && !helper->get_value_as_bool("result"))
+        {
 			return;
+        }
 
 		const auto theirs_last_delivered = helper->get_value_as_int64("theirs_last_delivered", -1);
 		const auto theirs_last_read = helper->get_value_as_int64("theirs_last_read", -1);
 
 		core::iarray* msgArray = helper->get_value_as_array("messages");
 		unserializeMessages(msgArray, aimId, myAimid, theirs_last_delivered, theirs_last_read, Out messages);
+
 		if (helper->is_value_exist("pending_messages"))
 		{
 			Out havePending = true;
 			msgArray = helper->get_value_as_array("pending_messages");
 			unserializeMessages(msgArray, aimId, myAimid, theirs_last_delivered, theirs_last_read, Out messages);
 		}
+
+        if (helper->is_value_exist("modified"))
+        {
+            auto modificationsArray = helper->get_value_as_array("modified");
+            unserializeMessages(modificationsArray, aimId, myAimid, theirs_last_delivered, theirs_last_read, Out modifications);
+        }
 	}
 
 	void SerializeDlgState(core::coll_helper* helper, const DlgState& state)
@@ -471,29 +591,38 @@ namespace Data
 
 	void UnserializeDlgState(core::coll_helper* helper, const QString &myAimId, Out DlgState& state)
 	{
-		state.AimId_ = helper->get_value_as_string("contact");
-		state.UnreadCount_ = helper->get_value_as_int64("unreads");
-		state.LastMsgId_ = helper->get_value_as_int64("last_msg_id");
-		state.YoursLastRead_ = helper->get_value_as_int64("yours_last_read");
-		state.TheirsLastRead_ = helper->get_value_as_int64("theirs_last_read");
-		state.TheirsLastDelivered_ = helper->get_value_as_int64("theirs_last_delivered");
-		state.Visible_ = helper->get_value_as_bool("visible");
-		state.LastMessageFriendly_ = helper->get_value_as_string("last_message_friendly");
-        state.Chat_ = helper->get_value_as_bool("is_chat");
+        state.AimId_ = helper->get<QString>("contact");
+		state.UnreadCount_ = helper->get<int64_t>("unreads");
+		state.LastMsgId_ = helper->get<int64_t>("last_msg_id");
+		state.YoursLastRead_ = helper->get<int64_t>("yours_last_read");
+		state.TheirsLastRead_ = helper->get<int64_t>("theirs_last_read");
+		state.TheirsLastDelivered_ = helper->get<int64_t>("theirs_last_delivered");
+		state.Visible_ = helper->get<bool>("visible");
+		state.LastMessageFriendly_ = helper->get<QString>("last_message_friendly");
+        state.Friendly_ = helper->get<QString>("friendly");
+        state.Chat_ = helper->get<bool>("is_chat");
+        state.Official_ = helper->get<bool>("official");
         if (helper->is_value_exist("favorite_time"))
-            state.FavoriteTime_ = helper->get_value_as_int64("favorite_time");
-
+        {
+            state.FavoriteTime_ = helper->get<int64_t>("favorite_time");
+        }
 
         if (helper->is_value_exist("message"))
         {
 		    core::coll_helper value(helper->get_value_as_collection("message"), false);
 
 		    const auto messageBuddy = unserializeMessage(value, state.AimId_, myAimId, state.TheirsLastDelivered_, state.TheirsLastRead_);
-		    auto text = Logic::GetMessagesModel()->formatRecentsText(*messageBuddy);
-	        state.SetText(std::move(text));
+
+            const auto serializeMessage = helper->get<bool>("serialize_message");
+            if (serializeMessage)
+            {
+		        auto text = Logic::GetMessagesModel()->formatRecentsText(*messageBuddy);
+	            state.SetText(std::move(text));
+            }
+
             state.senderNick_ = messageBuddy->ChatFriendly_;
-		    state.Time_ = value.get_value_as_int("time");
-		    state.Outgoing_ = value.get_value_as_bool("outgoing");
+		    state.Time_ = value.get<int32_t>("time");
+		    state.Outgoing_ = value.get<bool>("outgoing");
         }
 	}
 }
@@ -580,7 +709,9 @@ namespace
 		message->InternalId_ = msgColl.get_value_as_string("internal_id");
 		message->Prev_ = msgColl.get_value_as_int64("prev_id");
 		message->AimId_ = aimId;
-		message->SetOutgoing(msgColl.get_value_as_bool("outgoing"));
+		message->SetOutgoing(msgColl.get<bool>("outgoing"));
+        message->SetDeleted(msgColl.get<bool>("deleted"));
+
 		if (message->IsOutgoing())
 		{
 			if ((message->Id_ != -1))
@@ -632,7 +763,7 @@ namespace
 			if (!chat->empty())
 			{
 				message->Chat_ = true;
-				message->ChatSender_ = chat.get_value_as_string("sender");
+				message->SetChatSender(chat.get_value_as_string("sender"));
 				message->ChatFriendly_ = chat.get_value_as_string("friendly");
 			}
 		}
@@ -641,7 +772,7 @@ namespace
 		{
 			core::coll_helper file_sharing(msgColl.get_value_as_collection("file_sharing"), false);
 
-			message->Type_ = core::message_type::file_sharing;
+			message->SetType(core::message_type::file_sharing);
 			message->SetFileSharing(std::make_shared<HistoryControl::FileSharingInfo>(file_sharing));
 		}
 
@@ -649,7 +780,7 @@ namespace
 		{
 			core::coll_helper sticker(msgColl.get_value_as_collection("sticker"), false);
 
-			message->Type_ = core::message_type::sticker;
+			message->SetType(core::message_type::sticker);
 			message->SetSticker(HistoryControl::StickerInfo::Make(sticker));
 		}
 
@@ -657,7 +788,7 @@ namespace
         {
             core::coll_helper voip(msgColl.get_value_as_collection("voip"), false);
 
-            message->Type_ = core::message_type::voip_event;
+            message->SetType(core::message_type::voip_event);
             message->SetVoipEvent(
                 HistoryControl::VoipEventInfo::Make(voip, timestamp)
             );
@@ -667,14 +798,15 @@ namespace
 		{
 			core::coll_helper chat_event(msgColl.get_value_as_collection("chat_event"), false);
 
-			message->Type_ = core::message_type::chat_event;
+			message->SetType(core::message_type::chat_event);
 
 			message->SetChatEvent(
 				HistoryControl::ChatEventInfo::Make(
 					chat_event,
 					message->IsOutgoing(),
 					myAimid
-			));
+			    )
+            );
 		}
 
 		return message;
@@ -757,7 +889,7 @@ namespace
 
         return false;
     }
-    
+
     bool containsImage(const QString& text)
     {
         const auto parts = text.splitRef(QChar(' '), QString::SkipEmptyParts);
@@ -769,17 +901,17 @@ namespace
             {
                 continue;
             }
-            
+
             auto index = part.lastIndexOf('/');
             if (index < 0)
             {
                 continue;
             }
-            
+
             ++index;
             return part.at(index) >= '0' && part.at(index) <= '7';
         }
-        
+
         return false;
     }
 }

@@ -7,3 +7,6 @@
 
 #define CORE_WIM_NS_BEGIN CORE_NS_BEGIN namespace wim {
 #define CORE_WIM_NS_END } CORE_NS_END
+
+#define CORE_ARCHIVE_NS_BEGIN CORE_NS_BEGIN namespace archive {
+#define CORE_ARCHIVE_NS_END } CORE_NS_END

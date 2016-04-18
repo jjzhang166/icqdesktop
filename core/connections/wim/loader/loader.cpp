@@ -436,9 +436,10 @@ std::shared_ptr<async_task_handlers> loader::download_file(
 {
     auto handler = std::make_shared<async_task_handlers>();
 
-    threads_->run_async_function([_params, _file_url, _file_name]()->int32_t
+    auto user_proxy = g_core->get_user_proxy_settings();
+    threads_->run_async_function([_params, _file_url, _file_name, user_proxy]()->int32_t
     {
-        core::http_request_simple request(_params.stop_handler_);
+        core::http_request_simple request(user_proxy, _params.stop_handler_);
 
         request.set_url(_file_url);
         request.set_need_log(false);
@@ -471,10 +472,10 @@ std::shared_ptr<download_file_sharing_preview_handler> loader::download_file_sha
     std::wstring file_name = _destination.empty() ? (_previews_folder + L"/" + core::tools::from_utf8(core::tools::md5(_file_url.c_str(), (uint32_t)_file_url.length()))) : _destination;
 
     auto handler = std::make_shared<download_file_sharing_preview_handler>();
-
     auto preview_data = std::make_shared<core::tools::binary_stream>();
+    auto user_proxy = g_core->get_user_proxy_settings();
 
-    threads_->run_async_function([_params, _file_url, _sign_url, file_name, preview_data]
+    threads_->run_async_function([_params, _file_url, _sign_url, file_name, preview_data, user_proxy]
     {
         boost::filesystem::wpath path_file(file_name);
 
@@ -482,7 +483,7 @@ std::shared_ptr<download_file_sharing_preview_handler> loader::download_file_sha
         {
             if (!boost::filesystem::exists(path_file) || i > 0)
             {
-                core::http_request_simple request(_params.stop_handler_);
+                core::http_request_simple request(user_proxy, _params.stop_handler_);
 
                 const auto &url = (_sign_url ? sign_loader_uri(_file_url, _params) : _file_url);
 

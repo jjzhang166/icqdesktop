@@ -4,6 +4,7 @@
 #include "../types/message.h"
 #include "../types/contact.h"
 #include "../types/chat.h"
+#include "../types/typing.h"
 #include "../main_window/history_control/MessagesModel.h"
 
 #ifdef _WIN32
@@ -16,35 +17,90 @@ Q_IMPORT_PLUGIN(QWindowsAudioPlugin);
 Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin);
 #endif
 
-int launch::main(int argc, char *argv[])
-{
-	Utils::Application app(argc, argv);
+const QString urlCommand = "-urlcommand";
 
-	if (!app.isMainInstance())
-	{
-		app.switchInstance();
-		return 0;
-	}
+launch::CommandLineParser::CommandLineParser(int _argc, char* _argv[])
+{
+    isUlrCommand_ = false;
+
+    if (_argc <= 0)
+    {
+        return;
+    }
+
+    executable_ = _argv[0];
+
+    for (int i = 1; i < _argc; ++i)
+    {
+        if (_argv[i] == urlCommand)
+        {
+            isUlrCommand_ = true;
+
+            ++i;
+
+            if (i >= _argc)
+                break;
+
+            urlCommand_ = _argv[i];
+        }
+    }
+}
+
+launch::CommandLineParser::~CommandLineParser()
+{
+
+}
+
+bool launch::CommandLineParser::isUrlCommand() const
+{
+    return isUlrCommand_;
+}
+
+const QString& launch::CommandLineParser::getUrlCommand() const
+{
+    return urlCommand_;
+}
+
+const QString& launch::CommandLineParser::getExecutable() const 
+{
+    return executable_;
+}
+
+int launch::main(int _argc, char* _argv[])
+{
+    Utils::Application app(_argc, _argv);
+    
+    CommandLineParser cmd_parser(_argc, _argv);
+
+    if (!app.isMainInstance())
+    {
+        app.switchInstance(cmd_parser);
+
+        return 0;
+    }
 
     if (app.updating())
+    {
         return 0;
+    }
 
-	if (app.init())
-	{
-		qRegisterMetaType<std::shared_ptr<Data::ContactList>>("std::shared_ptr<Data::ContactList>");
-		qRegisterMetaType<std::shared_ptr<Data::MessageBuddies>>("std::shared_ptr<Data::MessageBuddies>");
-		qRegisterMetaType<std::shared_ptr<Data::ChatInfo>>("std::shared_ptr<Data::ChatInfo>");
-		qRegisterMetaType<Data::DlgState>("Data::DlgState");
-		qRegisterMetaType<Logic::MessageKey>("Logic::MessageKey");
-		qRegisterMetaType<QList<Logic::MessageKey>>("QList<Logic::MessageKey>");
-		qRegisterMetaType<QScroller::State>("QScroller::State");
-		qRegisterMetaType<Ui::MessagesBuddiesOpt>("Ui::MessagesBuddiesOpt");
-		qRegisterMetaType<QSystemTrayIcon::ActivationReason>("QSystemTrayIcon::ActivationReason");
-	}
-	else
-	{
-		return 1;
-	}
+    if (app.init())
+    {
+        qRegisterMetaType<std::shared_ptr<Data::ContactList>>("std::shared_ptr<Data::ContactList>");
+        qRegisterMetaType<std::shared_ptr<Data::MessageBuddies>>("std::shared_ptr<Data::MessageBuddies>");
+        qRegisterMetaType<std::shared_ptr<Data::ChatInfo>>("std::shared_ptr<Data::ChatInfo>");
+        qRegisterMetaType<Data::DlgState>("Data::DlgState");
+        qRegisterMetaType<Logic::MessageKey>("Logic::MessageKey");
+        qRegisterMetaType<QList<Logic::MessageKey>>("QList<Logic::MessageKey>");
+        qRegisterMetaType<QScroller::State>("QScroller::State");
+        qRegisterMetaType<Ui::MessagesBuddiesOpt>("Ui::MessagesBuddiesOpt");
+        qRegisterMetaType<QSystemTrayIcon::ActivationReason>("QSystemTrayIcon::ActivationReason");
+        qRegisterMetaType<Logic::TypingFires>("Logic::TypingFires");
+    }
+    else
+    {
+        return 1;
+    }
 
     QT_TRANSLATE_NOOP("QWidgetTextControl", "&Undo");
     QT_TRANSLATE_NOOP("QWidgetTextControl", "&Redo");

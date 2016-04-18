@@ -44,10 +44,34 @@
     </message>
 </context>
 <context>
-    <name>attach_page</name>
+    <name>about_us</name>
     <message>
-        <source>Continue</source>
-        <translation>Continuar</translation>
+        <source>About ICQ</source>
+        <translation>Sobre o ICQ</translation>
+    </message>
+    <message>
+        <source>ICQ</source>
+        <translation>ICQ</translation>
+    </message>
+    <message>
+        <source>This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit</source>
+        <translation>Esse produto inclui software desenvolvido pelo projeto OpenSSL para ser usador no kit de ferramentas OpenSSL</translation>
+    </message>
+    <message>
+        <source>http://openssl.org</source>
+        <translation>http://openssl.org</translation>
+    </message>
+    <message>
+        <source>Copyright © 2012, the WebRTC project authors. All rights reserved.</source>
+        <translation>Copyright © 2012, autores do projeto WebRTC. Todos os direitos reservados.</translation>
+    </message>
+    <message>
+        <source>Emoji provided free by Emoji One</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>© ICQ LLC</source>
+        <translation>© ICQ LLC</translation>
     </message>
 </context>
 <context>
@@ -285,6 +309,41 @@
     </message>
 </context>
 <context>
+    <name>connection_settings</name>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hostname</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port</source>
+        <translation>Porta</translation>
+    </message>
+    <message>
+        <source>Proxy server requires password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation>Senha</translation>
+    </message>
+    <message>
+        <source>Connection settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Feito</translation>
+    </message>
+</context>
+<context>
     <name>contact_list</name>
     <message>
         <source>now</source>
@@ -515,6 +574,18 @@
     <message>
         <source>Unfavorite contact</source>
         <translation>Remover dos favoritos</translation>
+    </message>
+    <message>
+        <source>Delete for me</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete for all</source>
+        <translation>Excluir para todos</translation>
+    </message>
+    <message>
+        <source>Erase history</source>
+        <translation>Excluir histórico</translation>
     </message>
 </context>
 <context>
@@ -1510,10 +1581,6 @@
         <translation>Feito</translation>
     </message>
     <message>
-        <source>Groupchat Name</source>
-        <translation>Nome do grupo de bate-papo</translation>
-    </message>
-    <message>
         <source>Create</source>
         <translation>Criar</translation>
     </message>
@@ -1533,10 +1600,6 @@
         <source>View all </source>
         <translation>Exibir tudo </translation>
     </message>
-    <message>
-        <source>Save</source>
-        <translation>Salvar</translation>
-    </message>
 </context>
 <context>
     <name>input_widget</name>
@@ -1551,6 +1614,33 @@
     <message>
         <source>RECENTS</source>
         <translation>RECENTES</translation>
+    </message>
+</context>
+<context>
+    <name>livechats</name>
+    <message>
+        <source>friend</source>
+        <comment>1</comment>
+        <translation>amigo</translation>
+    </message>
+    <message>
+        <source>friends</source>
+        <comment>2</comment>
+        <translation>amigos</translation>
+    </message>
+    <message>
+        <source>friends</source>
+        <comment>5</comment>
+        <translation>amigos</translation>
+    </message>
+    <message>
+        <source>friends</source>
+        <comment>21</comment>
+        <translation>amigos</translation>
+    </message>
+    <message>
+        <source>Join chat</source>
+        <translation>Entrar no bate-papo</translation>
     </message>
 </context>
 <context>
@@ -1641,10 +1731,6 @@ o número do celular</translation>
         <source>Error occured, try again later</source>
         <translation>Ocorreu um erro, tente mais tarde</translation>
     </message>
-    <message>
-        <source>This phone number is already attached to another account. Please edit phone number and try again.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1686,6 +1772,30 @@ o número do celular</translation>
     <message>
         <source>You have no opened chats yet</source>
         <translation>Você ainda não tem nenhum bate-papo aberto</translation>
+    </message>
+    <message>
+        <source>Introduce yourself</source>
+        <translation>Apresente-se</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Continuar</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation>Pular</translation>
+    </message>
+    <message>
+        <source>Your nickname cannot be longer than 20 symbols</source>
+        <translation>O nome deve ter no máximo 20 caracteres</translation>
+    </message>
+    <message>
+        <source>Error occured, try again later</source>
+        <translation>Ocorreu um erro, tente mais tarde</translation>
+    </message>
+    <message>
+        <source>Your name</source>
+        <translation>Seu nome</translation>
     </message>
 </context>
 <context>
@@ -1729,6 +1839,26 @@ o número do celular</translation>
     <message>
         <source>Are you sure this contact is spam?</source>
         <translation>Ter certeza de que esse contato é &quot;spam&quot;?</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Salvar</translation>
+    </message>
+    <message>
+        <source>Contact name</source>
+        <translation>Nome de contato</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Nome do bate-papo</translation>
+    </message>
+    <message>
+        <source>Sign out</source>
+        <translation>Sair</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to erase chat history?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1843,15 +1973,21 @@ o número do celular</translation>
     </message>
     <message>
         <source>for safety and spam protection</source>
-        <translation type="unfinished"></translation>
+        <translation>para segurança e proteção contra spam</translation>
     </message>
     <message>
         <source>Attach phone number</source>
-        <translation type="unfinished"></translation>
+        <translation>Anexar número de telefone</translation>
     </message>
     <message>
         <source>Connect to ICQ account</source>
         <translation>Vincular à conta do ICQ</translation>
+    </message>
+    <message>
+        <source>This phone number is already attached to another account.
+Please edit phone number and try again.</source>
+        <translation>Esse número de telefone já está vinculado à outra conta.
+Edite-o e tente novamente.</translation>
     </message>
 </context>
 <context>
@@ -1995,30 +2131,6 @@ o número do celular</translation>
         <translation>Alertas</translation>
     </message>
     <message>
-        <source>About ICQ</source>
-        <translation>Sobre o ICQ</translation>
-    </message>
-    <message>
-        <source>ICQ</source>
-        <translation>ICQ</translation>
-    </message>
-    <message>
-        <source>This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit</source>
-        <translation>Esse produto inclui software desenvolvido pelo projeto OpenSSL para ser usador no kit de ferramentas OpenSSL</translation>
-    </message>
-    <message>
-        <source>http://openssl.org</source>
-        <translation>http://openssl.org</translation>
-    </message>
-    <message>
-        <source>Copyright © 2012, the WebRTC project authors. All rights reserved.</source>
-        <translation>Copyright © 2012, autores do projeto WebRTC. Todos os direitos reservados.</translation>
-    </message>
-    <message>
-        <source>© ICQ LLC</source>
-        <translation>© ICQ LLC</translation>
-    </message>
-    <message>
         <source>Settings</source>
         <translation>Configurações</translation>
     </message>
@@ -2045,10 +2157,6 @@ o número do celular</translation>
     <message>
         <source>Change account</source>
         <translation>Trocar de conta</translation>
-    </message>
-    <message>
-        <source>Emoji provided free by Emoji One</source>
-        <translation>Emoji provided free by Emoji One</translation>
     </message>
     <message>
         <source>Sounds</source>
@@ -2090,6 +2198,14 @@ o número do celular</translation>
     <message>
         <source>cs</source>
         <translation>Český</translation>
+    </message>
+    <message>
+        <source>Connection type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection settings</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

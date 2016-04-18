@@ -19,7 +19,25 @@ namespace Ui
     FlatMenu::FlatMenu(QWidget* parent/* = nullptr*/):
         QMenu(parent)
     {
+        setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint);
         setStyle(new FlatMenuStyle());
+        setStyleSheet(QString("QMenu {\
+                       background-color: #f2f2f2;\
+                       border: 1px solid #cccccc;\
+                       }\
+                       QMenu::item {\
+                       background-color: transparent;\
+                       color: #000000;\
+                       height: %1px;\
+                       }\
+                       QMenu::item:selected\
+                       {\
+                       background-color: #e2e2e2;\
+                       height: %1px;\
+                       }").arg(Utils::scale_value(40)));
+
+        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16));
+        setFont(font);
         if (platform::is_apple())
         {
             QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupWindow()), this, SLOT(close()));
@@ -35,7 +53,7 @@ namespace Ui
     {
         QMenu::paintEvent(event);
         QPainter p(this);
-        p.setClipRect(1, 1, geometry().width(), geometry().height());
+        p.setClipRect(0, 0, geometry().width(), geometry().height());
         setMask(p.clipRegion());
     }
 

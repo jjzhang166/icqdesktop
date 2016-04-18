@@ -31,6 +31,7 @@
 #include "../corelib/common.h"
 #include "tools/system.h"
 #include "proxy_settings.h"
+#include "tools/strings.h"
 
 using namespace core;
 
@@ -51,7 +52,7 @@ core_dispatcher::core_dispatcher()
 
     __LOG(log::init(utils::get_logs_path(), false);)
 
-    profiler::enable(::build::is_debug());
+        profiler::enable(::build::is_debug());
 }
 
 
@@ -61,7 +62,7 @@ core_dispatcher::~core_dispatcher()
 
     __LOG(log::shutdown();)
 
-    http_request_simple::shutdown_global();
+        http_request_simple::shutdown_global();
 }
 
 std::string core::core_dispatcher::get_uniq_device_id()
@@ -155,6 +156,7 @@ void core::core_dispatcher::start()
     post_theme_settings();
     post_gui_settings();
     post_app_config();
+    g_core->post_user_proxy_to_gui();
 #ifndef STRIP_VOIP
     voip_manager_.reset(new(std::nothrow) voip_manager::VoipManager(*this));
     assert(!!voip_manager_);
@@ -209,7 +211,17 @@ void core::core_dispatcher::unlink_gui()
 
 void core::core_dispatcher::post_message_to_gui(const char * _message, int64_t _seq, icollection* _message_data)
 {
-    __LOG(core::log::info("core", boost::format("post message to gui, message=%1%\nparameters: %2%") % _message % (_message_data ? _message_data->log() : ""));)
+    tools::binary_stream bs;
+    bs.write<std::string>("CORE->GUI: message=");
+    bs.write<std::string>(_message);
+    bs.write<std::string>("\r\n");
+    if (_message_data)
+    {
+        bs.write<std::string>(_message_data->log());
+    }
+    get_network_log().write_data(bs);
+
+    //__LOG(core::log::info("core", boost::format("post message to gui, message=%1%\nparameters: %2%") % _message % (_message_data ? _message_data->log() : ""));)
 
     if (!gui_connector_)
     {
@@ -444,52 +456,65 @@ void core::core_dispatcher::receive_message_from_gui(const char * _message, int6
 {
     // called from main thread
     std::string message_string = _message;
+        
+//     __LOG(
+//         if (message_string != "log")
+//         {
+//             core::log::info("core", boost::format("message from gui, message=%1%\nparameters: %2%") % _message % (_message_data ? _message_data->log() : ""));
+//         })
 
-    __LOG(
+    if (_message_data)
+        _message_data->addref();
+
+    if (message_string == "search")
+        begin_search();
+
+    excute_core_context([this, message_string, _seq, _message_data]
+    {
         if (message_string != "log")
         {
-            core::log::info("core", boost::format("message from gui, message=%1%\nparameters: %2%") % _message % (_message_data ? _message_data->log() : ""));
-        })
+            tools::binary_stream bs;
+            bs.write<std::string>("GUI->CORE: message=");
+            bs.write<std::string>(message_string);
+            bs.write<std::string>("\r\n");
+            if (_message_data)
+            {
+                bs.write<std::string>(_message_data->log());
+            }
+            get_network_log().write_data(bs);
+        }
+        
+        coll_helper params(_message_data, true);
 
-        if (_message_data)
-            _message_data->addref();
-
-        if (message_string == "search")
-            begin_search();
-
-        excute_core_context([this, message_string, _seq, _message_data]
+        if (message_string == "settings/value/set")
         {
-            coll_helper params(_message_data, true);
-
-            if (message_string == "settings/value/set")
-            {
-                on_message_update_gui_settings_value(_seq, params);
-            }
-            else if (message_string == "log")
-            {
-                on_message_log(params);
-            }
-            else if (message_string == "profiler/proc/start")
-            {
-                on_message_profiler_proc_start(params);
-            }
-            else if (message_string == "profiler/proc/stop")
-            {
-                on_message_profiler_proc_stop(params);
-            }
-            else if (message_string == "themes/settings/set")
-            {
-                on_message_update_theme_settings_value(_seq, params);
-            }
-            else if (message_string == "themes/default/id")
-            {
-                on_message_set_default_theme_id(_seq, params);
-            }
-            else
-            {
-                im_container_->on_message_from_gui(message_string.c_str(), _seq, params);
-            }
-        });
+            on_message_update_gui_settings_value(_seq, params);
+        }
+        else if (message_string == "log")
+        {
+            on_message_log(params);
+        }
+        else if (message_string == "profiler/proc/start")
+        {
+            on_message_profiler_proc_start(params);
+        }
+        else if (message_string == "profiler/proc/stop")
+        {
+            on_message_profiler_proc_stop(params);
+        }
+        else if (message_string == "themes/settings/set")
+        {
+            on_message_update_theme_settings_value(_seq, params);
+        }
+        else if (message_string == "themes/default/id")
+        {
+            on_message_set_default_theme_id(_seq, params);
+        }
+        else
+        {
+            im_container_->on_message_from_gui(message_string.c_str(), _seq, params);
+        }
+    });
 }
 
 std::string core::core_dispatcher::get_root_login()
@@ -547,6 +572,11 @@ void core::core_dispatcher::update_login(im_login_id& _login)
 {
     im_container_->update_login(_login);
     start_session_stats();
+}
+
+void core::core_dispatcher::replace_uin_in_login(im_login_id& old_login, im_login_id& new_login)
+{
+    im_container_->replace_uin_in_login(old_login, new_login);
 }
 
 void core::core_dispatcher::post_voip_message(unsigned _id, const voip_manager::VoipProtoMsg& msg) {
@@ -608,4 +638,30 @@ proxy_settings core_dispatcher::get_registry_proxy_settings()
 void core_dispatcher::switch_proxy_settings()
 {
     proxy_settings_manager_->switch_settings();
+}
+
+proxy_settings core_dispatcher::get_user_proxy_settings()
+{
+    assert(g_core->get_core_thread_id() == std::this_thread::get_id());
+    return settings_->get_user_proxy_settings();
+}
+
+void core_dispatcher::set_user_proxy_settings(const proxy_settings& _user_proxy_settings)
+{
+    assert(g_core->get_core_thread_id() == std::this_thread::get_id());
+    settings_->set_user_proxy_settings(_user_proxy_settings);
+    g_core->post_user_proxy_to_gui();
+}
+
+void core_dispatcher::post_user_proxy_to_gui()
+{
+    auto user_proxy = g_core->get_user_proxy_settings();
+    coll_helper cl_coll(create_collection(), true);
+    user_proxy.serialize(cl_coll);
+    g_core->post_message_to_gui("user_proxy/result", 0, cl_coll.get());
+}
+
+std::thread::id core_dispatcher::get_core_thread_id() const
+{
+   return core_thread_->get_core_thread_id();
 }

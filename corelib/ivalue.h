@@ -17,7 +17,7 @@ struct ivalue : ibase
     virtual int32_t get_as_int() = 0;
 
     virtual void set_as_int64(int64_t) = 0;
-    virtual int64_t get_as_int64() = 0;
+    virtual int64_t get_as_int64() const = 0;
 
     virtual void set_as_string(const char*, int32_t) = 0;
     virtual const char* get_as_string() const = 0;

@@ -7,30 +7,31 @@
 
 namespace core
 {
-	namespace tools
-	{
-		class http_request_simple;
-		class binary_stream;
-	}
+    namespace tools
+    {
+        class http_request_simple;
+        class binary_stream;
+    }
 }
 
 namespace core
 {
-	namespace wim
-	{
-		class send_imstat : public wim_packet
-		{
-			virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
-			virtual int32_t execute_request(std::shared_ptr<core::http_request_simple> _request) override;
-			
-			std::string		data_;
+    namespace wim
+    {
+        class send_imstat : public wim_packet
+        {
+            virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
+            virtual int32_t execute_request(std::shared_ptr<core::http_request_simple> _request) override;
+            virtual int32_t parse_response(std::shared_ptr<core::tools::binary_stream> response) override;
 
-		public:
-			
-			send_imstat(const wim_packet_params& _params, const std::string& _data);
-			virtual ~send_imstat();
-		};
-	}
+            std::string		data_;
+
+        public:
+
+            send_imstat(const wim_packet_params& _params, const std::string& _data);
+            virtual ~send_imstat();
+        };
+    }
 }
 
 #endif //__STARTSESSION_H_

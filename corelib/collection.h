@@ -40,7 +40,7 @@ namespace core
         virtual int32_t get_as_int() override;
 
         virtual void set_as_int64(int64_t) override;
-        virtual int64_t get_as_int64() override;
+        virtual int64_t get_as_int64() const override;
 
         virtual void set_as_string(const char*, int32_t len) override;
         virtual const char* get_as_string() const override;

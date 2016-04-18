@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "HistoryControlPageThemePanel.h"
+#include "../../controls/BackButton.h"
 #include "../../controls/CustomButton.h"
 #include "../../utils/utils.h"
 #include "HistoryControlPage.h"
@@ -17,13 +18,10 @@ namespace Ui
         h_spacer_0_ = new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
         main_layout->addSpacerItem(h_spacer_0_);
         
-        backFromThemeButton_ = new CustomButton(this, Utils::parse_image_name(":/resources/contr_back_100.png"));
+        backFromThemeButton_ = new BackButton(this);
         connect(backFromThemeButton_, SIGNAL(clicked()), this, SLOT(backFromThemePressed()), Qt::QueuedConnection);
-        backFromThemeButton_->setFixedWidth(Utils::scale_value(40));
-        backFromThemeButton_->setFixedHeight(Utils::scale_value(40));
         backFromThemeButton_->setCursor(Qt::PointingHandCursor);
         main_layout->addWidget(backFromThemeButton_);
-        Utils::ApplyStyle(backFromThemeButton_, "QPushButton {background-color: #f1f1f1; border-width: 0dip; border-style: solid; border-radius: 20dip;} QPushButton:hover {background-color: #eaeaea;} QPushButton:hover {background-color: #e5e5e5;}");
         
         h_spacer_4_ = new QSpacerItem(Utils::scale_value(10), 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
         main_layout->addSpacerItem(h_spacer_4_);

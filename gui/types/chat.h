@@ -24,6 +24,8 @@ namespace Data
 		QString LastName_;
 		QString NickName_;
 
+        const QString getFriendly() const;
+
 		bool Friend_;
 		bool NoAvatar_;
 	};
@@ -31,22 +33,22 @@ namespace Data
 	class ChatInfo
 	{
 	public:
-		ChatInfo()
-		{
-		}
+		ChatInfo();
 
 		QString AimId_;
 		QString Name_;
+        QString Location_;
 		QString About_;
 		QString YourRole_;
 		QString Owner_;
 		QString MembersVersion_;
 		QString InfoVersion_;
+        QString Stamp_;
 
-		qint32 CreateTime_;
-		qint32 MembersCount_;
-		qint32 FriendsCount;
-		qint32 BlockedCount_;
+		int32_t CreateTime_;
+		int32_t MembersCount_;
+		int32_t FriendsCount;
+		int32_t BlockedCount_;
 
 		bool YouBlocked_;
 		bool Public_;

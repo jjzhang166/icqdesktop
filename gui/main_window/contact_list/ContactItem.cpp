@@ -70,6 +70,11 @@ namespace Logic
 		return contact_->Muted_;
 	}
 
+    bool ContactItem::is_official() const
+    {
+        return contact_->IsOfficial_;
+    }
+
 	bool ContactItem::is_checked() const
 	{
 		return contact_->IsChecked_;

@@ -156,8 +156,10 @@ namespace core
     {
         inline bool is_crash_handle_enabled()
         {
+            // XXX : don't change it
+            // use /settings/dump_type.txt: 0 for not handle crashes
+            //                              1 for make full dump 
             return true;
-            return !build::is_debug();
         }
     }
 }

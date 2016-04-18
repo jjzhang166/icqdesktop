@@ -5,10 +5,10 @@
 
 namespace core
 {
-	namespace archive
-	{
-		const int32_t history_block_size = 1000;
-	}
+    namespace archive
+    {
+        const int32_t history_block_size = 1000;
+    }
 }
 
 

@@ -3,6 +3,7 @@
 
 namespace Ui
 {
+    class BackButton;
     class CustomButton;
     class HistoryControlPage;
     
@@ -26,7 +27,7 @@ namespace Ui
         CustomButton *cancelButton_;
         CustomButton *setToAllButton_;
         CustomButton *setButton_;
-        CustomButton *backFromThemeButton_;
+        BackButton *backFromThemeButton_;
         
         QSpacerItem *h_spacer_0_;
         QSpacerItem *h_spacer_1_;

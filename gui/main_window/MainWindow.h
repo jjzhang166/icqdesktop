@@ -6,22 +6,30 @@ class MacSupport;
 
 class QApplication;
 
+namespace Utils
+{
+    struct ProxySettings;
+}
+
 namespace Ui
 {
-	class main_window;
-	class MainPage;
-	class LoginPage;
+    class main_window;
+    class MainPage;
+    class LoginPage;
 #ifdef __APPLE__
     class AccountsPage;
 #endif
-	class TrayIcon;
+    class TrayIcon;
     class HistoryControlPage;
     class BackgroundWidget;
+    class LiveChats;
 
     class ShadowWindow : public QWidget
     {
         Q_OBJECT
+
     public:
+
         ShadowWindow(QBrush brush, int shadowWidth);
         void setActive(bool value);
 
@@ -37,45 +45,45 @@ namespace Ui
         bool IsActive_;
     };
 
-	class TitleWidgetEventFilter : public QObject
-	{
-		Q_OBJECT
+    class TitleWidgetEventFilter : public QObject
+    {
+        Q_OBJECT
 Q_SIGNALS:
 
-		void doubleClick();
-		void moveRequest(QPoint);
+        void doubleClick();
+        void moveRequest(QPoint);
 
-	public:
-		TitleWidgetEventFilter(QObject* parent);
+    public:
+        TitleWidgetEventFilter(QObject* parent);
 
-	protected:
-		bool eventFilter(QObject* obj, QEvent* event);
+    protected:
+        bool eventFilter(QObject* obj, QEvent* event);
 
-	private:
-		QPoint clickPos;
-	};
+    private:
+        QPoint clickPos;
+    };
 
-	class MainWindow : public QMainWindow, QAbstractNativeEventFilter
-	{
-		Q_OBJECT
+    class MainWindow : public QMainWindow, QAbstractNativeEventFilter
+    {
+        Q_OBJECT
 
     Q_SIGNALS:
         void needActivate();
 
-	public Q_SLOTS:
+    public Q_SLOTS:
 
-		void showLoginPage();
-		void showMainPage();
+        void showLoginPage();
+        void showMainPage();
         void showMigrateAccountPage(QString accountId);
         void checkForUpdates();
         void showIconInTaskbar(bool);
         void activate();
         void updateMainMenu();
 
-	private Q_SLOTS:
+    private Q_SLOTS:
 
-		void maximize();
-		void moveRequest(QPoint);
+        void maximize();
+        void moveRequest(QPoint);
         void exit();
         void minimize();
         void guiSettingsChanged(QString);
@@ -98,11 +106,11 @@ Q_SIGNALS:
         void toggleFullScreen();
         void pasteEmoji();
 
-	public:
-		MainWindow(QApplication* app);
-		~MainWindow();
+    public:
+        MainWindow(QApplication* app);
+        ~MainWindow();
 
-		void activateFromEventLoop();
+        void activateFromEventLoop();
         bool isActive() const;
         void setBackgroundPixmap(QPixmap& _pixmap, const bool _tiling);
 
@@ -113,28 +121,28 @@ Q_SIGNALS:
         MainPage* getMainPage() const;
         const QString &activeAimId() const;
 
-	private:
-		void initSettings();
-//        void paintEvent(QPaintEvent *_e);
+    private:
+        void initSettings();
+        //        void paintEvent(QPaintEvent *_e);
 
-	protected:
-		bool nativeEventFilter(const QByteArray &, void * message, long * result);
+    protected:
+        bool nativeEventFilter(const QByteArray &, void * message, long * result);
 
-		virtual void resizeEvent(QResizeEvent* event);
-		virtual void moveEvent(QMoveEvent* event);
-		virtual void changeEvent(QEvent* event);
-		virtual void closeEvent(QCloseEvent* event);
+        virtual void resizeEvent(QResizeEvent* event);
+        virtual void moveEvent(QMoveEvent* event);
+        virtual void changeEvent(QEvent* event);
+        virtual void closeEvent(QCloseEvent* event);
         virtual void keyPressEvent(QKeyEvent* event);
         void hide_taskbar_icon();
         void show_taskbar_icon();
         void clear_global_objects();
 
-	private:
-		MainPage* main_page_;
-		LoginPage* login_page_;
-		QApplication* app_;
-		TitleWidgetEventFilter* event_filter_;
-		TrayIcon* tray_icon_;
+    private:
+        MainPage* main_page_;
+        LoginPage* login_page_;
+        QApplication* app_;
+        TitleWidgetEventFilter* event_filter_;
+        TrayIcon* tray_icon_;
         QPixmap backgroundPixmap_;
         QWidget *main_widget_;
         QVBoxLayout *vertical_layout_;
@@ -150,6 +158,8 @@ Q_SIGNALS:
         ShadowWindow* Shadow_;
         bool SkipRead_;
         bool TaskBarIconHidden_;
+
+        std::unique_ptr<LiveChats> liveChats_;
 
 #ifdef _WIN32
         HWND fake_parent_window_;

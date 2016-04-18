@@ -27,13 +27,13 @@ namespace HistoryControl
         virtual void saveAs() override;
 
         virtual QString toLink() const override;
-        
+
         bool isPreviewVisible() const;
-        
+
         bool isImageBubbleVisible() const;
 
     protected:
-        virtual void initialize() override;
+        virtual void initializeInternal() override;
 
         virtual bool isPlaceholderVisible() const override;
 
@@ -68,7 +68,7 @@ namespace HistoryControl
         bool LeftButtonPressed_;
 
         bool CopyFile_;
-        
+
     Q_SIGNALS:
         void stateChanged();
 	};

@@ -7,41 +7,43 @@
 
 namespace core
 {
-	namespace tools
-	{
-		class http_request_simple;
-	}
+    namespace tools
+    {
+        class http_request_simple;
+    }
 }
 
 namespace core
 {
-	namespace wim
-	{
-		class validate_phone : public wim_packet
-		{
-			std::string		phone_;
-			std::string		trans_id_;
+    namespace wim
+    {
+        class validate_phone : public wim_packet
+        {
+            std::string		phone_;
+            std::string		trans_id_;
             std::string     locale_;
-			bool			existing_;
+            int             code_length_;
+            bool			existing_;
 
-			virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
-			virtual int32_t on_response_error_code() override;
-			virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
+            virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
+            virtual int32_t on_response_error_code() override;
+            virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
 
-		public:
+        public:
 
-			validate_phone(
-				const wim_packet_params& params,
-				const std::string& phone,
+            validate_phone(
+                const wim_packet_params& params,
+                const std::string& phone,
                 const std::string& locale);
 
-			virtual ~validate_phone();
+            virtual ~validate_phone();
 
-			const std::string get_phone() const {return phone_;}
-			const bool get_existing() const {return existing_;}
-			const std::string get_trans_id() const {return trans_id_;}
-		};
-	}
+            const int get_code_length() const {return code_length_;}
+            const std::string get_phone() const {return phone_;}
+            const bool get_existing() const {return existing_;}
+            const std::string get_trans_id() const {return trans_id_;}
+        };
+    }
 }
 
 

@@ -26,6 +26,8 @@ namespace HistoryControl
 
 		bool HasSize() const;
 
+        void SetUri(const QString &uri);
+
 		QString ToLogString() const;
 
 	private:

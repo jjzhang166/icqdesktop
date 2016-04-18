@@ -34,6 +34,7 @@ namespace Data
 			, Unreads_(0)
 			, NotAuth_(false)
 			, IsChecked_(false)
+            , IsOfficial_(false)
 		{
 		}
 
@@ -57,6 +58,7 @@ namespace Data
 		bool		NotAuth_;
 		bool		Muted_;
 		bool		IsChecked_;
+        bool        IsOfficial_;
 	};
 
 	class Contact : public Buddy

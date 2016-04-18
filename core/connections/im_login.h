@@ -45,6 +45,7 @@ namespace core
 
         bool load();
         void save() const;
+        void replace_uin(im_login_id& old_login, im_login_id& new_login);
     };
 }
 

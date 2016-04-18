@@ -30,6 +30,8 @@ namespace Data
 	public:
 		MessageBuddy();
 
+        void ApplyModification(const MessageBuddy &modification);
+
         bool IsEmpty() const;
 
 		bool CheckInvariant() const;
@@ -37,12 +39,16 @@ namespace Data
         bool ContainsPreviewableLink() const;
 
         bool ContainsPttAudio() const;
-        
+
         bool ContainsImage() const;
+
+        bool GetIndentWith(const MessageBuddy &buddy);
 
 		bool IsBase() const;
 
 		bool IsChatEvent() const;
+
+        bool IsDeleted() const;
 
 		bool IsDeliveredToClient() const;
 
@@ -66,6 +72,8 @@ namespace Data
 
 		const HistoryControl::ChatEventInfoSptr& GetChatEvent() const;
 
+        const QString& GetChatSender() const;
+
 		const QDate& GetDate() const;
 
 		const HistoryControl::FileSharingInfoSptr& GetFileSharing() const;
@@ -86,9 +94,13 @@ namespace Data
 
 		const QStringList& GetNotificationKeys() const;
 
+        core::message_type GetType() const;
+
         const HistoryControl::VoipEventInfoSptr& GetVoipEvent() const;
 
         bool HasAvatar() const;
+
+        bool HasChatSender() const;
 
 		bool HasId() const;
 
@@ -98,9 +110,15 @@ namespace Data
 
 		void FillFrom(const MessageBuddy &buddy, const bool merge);
 
+        void EraseEventData();
+
 		void SetChatEvent(const HistoryControl::ChatEventInfoSptr& chatEvent);
 
+        void SetChatSender(const QString& chatSender);
+
 		void SetDate(const QDate &date);
+
+        void SetDeleted(const bool isDeleted);
 
 		void SetFileSharing(const HistoryControl::FileSharingInfoSptr& fileSharing);
 
@@ -120,6 +138,8 @@ namespace Data
 
 		void SetTime(const qint32 time);
 
+        void SetType(const core::message_type type);
+
         void SetVoipEvent(const HistoryControl::VoipEventInfoSptr &voipEvent);
 
 		Logic::MessageKey ToKey() const;
@@ -128,12 +148,10 @@ namespace Data
 		QString InternalId_;
 		qint64 Id_;
 		qint64 Prev_;
-		core::message_type Type_;
         int PendingId_;
         qint32 Time_;
 
 		bool Chat_;
-		QString ChatSender_;
 		QString ChatFriendly_;
 
 		//filled by model
@@ -147,7 +165,11 @@ namespace Data
 
 		QStringList NotificationKeys_;
 
+        QString ChatSender_;
+
 		QDate Date_;
+
+        bool Deleted_;
 
 		bool DeliveredToClient_;
 
@@ -156,6 +178,8 @@ namespace Data
         bool IndentBefore_;
 
 		bool Outgoing_;
+
+        core::message_type Type_;
 
 		HistoryControl::FileSharingInfoSptr FileSharing_;
 
@@ -180,6 +204,7 @@ namespace Data
 			, Outgoing_(false)
 			, Chat_(false)
 			, Visible_(true)
+            , Official_(false)
             , senderNick_(QString())
             , FavoriteTime_(-1)
 		{
@@ -191,6 +216,8 @@ namespace Data
 		}
 
 		const QString& GetText() const;
+
+        bool HasLastMsgId() const;
 
         bool HasText() const;
 
@@ -207,8 +234,10 @@ namespace Data
 		bool Outgoing_;
 		bool Chat_;
 		bool Visible_;
+        bool Official_;
 		QString LastMessageFriendly_;
         QString senderNick_;
+        QString Friendly_;
 
 	private:
 		QString Text_;
@@ -219,7 +248,13 @@ namespace Data
 	typedef QList<MessageBuddySptr> MessageBuddies;
 	typedef std::shared_ptr<MessageBuddies> MessageBuddiesSptr;
 
-	void UnserializeMessageBuddies(core::coll_helper* helper, const QString &myAimid, Out QString &aimId, Out bool &havePending, Out MessageBuddies& messages);
+	void UnserializeMessageBuddies(
+        core::coll_helper* helper,
+        const QString &myAimid,
+        Out QString &aimId,
+        Out bool &havePending,
+        Out MessageBuddies& messages,
+        Out MessageBuddies& modifications);
 
 	void SerializeDlgState(core::coll_helper* helper, const DlgState& state);
 	void UnserializeDlgState(core::coll_helper* helper, const QString &myAimId, Out DlgState& state);

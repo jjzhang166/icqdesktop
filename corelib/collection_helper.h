@@ -469,6 +469,24 @@ namespace core
 	}
 
     template<>
+    inline int64_t coll_helper::get<int64_t>(const char *_name) const
+    {
+        return get_value_as_int64(_name);
+    }
+
+    template<>
+    inline int64_t coll_helper::get<int64_t>(const char *_name, const int64_t _def) const
+    {
+        return get_value_as_int64(_name, _def);
+    }
+
+    template<>
+    inline bool coll_helper::get<bool>(const char *_name) const
+    {
+        return get_value_as_bool(_name);
+    }
+
+    template<>
     inline bool coll_helper::get<bool>(const char *_name, const bool _def) const
     {
         return get_value_as_bool(_name, _def);
@@ -501,6 +519,12 @@ namespace core
     }
 
     template<>
+    inline void coll_helper::set<uint32_t>(const char *_name, const uint32_t _value)
+    {
+        set_value_as_uint(_name, _value);
+    }
+
+    template<>
     inline void coll_helper::set<int64_t>(const char *_name, const int64_t _value)
     {
         set_value_as_int64(_name, _value);
@@ -516,6 +540,12 @@ namespace core
     inline void coll_helper::set<int32_t>(const char *_name, const int32_t &_value)
     {
         set_value_as_int(_name, _value);
+    }
+
+    template<>
+    inline void coll_helper::set<uint32_t>(const char *_name, const uint32_t &_value)
+    {
+        set_value_as_uint(_name, _value);
     }
 
     template<>

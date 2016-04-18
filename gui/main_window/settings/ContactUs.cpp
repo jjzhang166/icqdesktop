@@ -13,6 +13,7 @@
 #include "../../gui_settings.h"
 #include "../contact_list/contact_profile.h"
 #include "../../controls/CustomButton.h"
+#include "../../controls/GeneralCreator.h"
 
 using namespace Ui;
 
@@ -22,6 +23,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
 
     auto scroll_area = new QScrollArea(parent);
     scroll_area->setWidgetResizable(true);
+    scroll_area->setStyleSheet(Utils::LoadStyle(":/main_window/settings/contact_us.qss", Utils::get_scale_coefficient(), true));
     Utils::grabTouchWidget(scroll_area->viewport(), true);
 
     auto scroll_area_content = new QWidget(scroll_area);
@@ -40,10 +42,9 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(scroll_area);
 
-    addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("contactus_page", "Contact us"));
+    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("contactus_page", "Contact us"));
     {
         static quint64 filesSizeLimiter = 0;
-
         TextEditEx *suggestioner = nullptr;
         TextEmojiWidget *suggestionMinSizeError = nullptr;
         TextEmojiWidget *suggestionMaxSizeError = nullptr;
@@ -80,17 +81,12 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
             suggestioner->setAutoFillBackground(false);
             suggestioner->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             suggestioner->setTextInteractionFlags(Qt::TextEditable | Qt::TextEditorInteraction);
-            {
-                QString sgs = "QWidget[normal=\"true\"] { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; font-size: 18dip; color: #282828; background: #ffffff; border-radius: 8dip; border-color: #d7d7d7; border-width: 1dip; border-style: solid; padding-left: 12dip; padding-right: 0dip; padding-top: 10dip; padding-bottom: 10dip; } QWidget[normal=\"false\"] { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; font-size: 18dip; color: #e30f04; background: #ffffff; border-radius: 8dip; border-color: #e30f04; border-width: 1dip; border-style: solid; padding-left: 12dip; padding-right: 0dip; padding-top: 10dip; padding-bottom: 10dip; }";
-                suggestioner->setProperty("normal", true);
-                Utils::ApplyStyle(suggestioner, sgs);
-            }
+            suggestioner->setProperty("normal", true);
             {
                 suggestionerCover = new QWidget(suggestioner);
                 Utils::grabTouchWidget(suggestionerCover);
                 suggestionerCover->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
                 suggestionerCover->setFixedSize(suggestioner->minimumWidth(), suggestioner->minimumHeight());
-                suggestionerCover->setStyleSheet("background-color: #7fffffff; border: none;");
                 suggestionerCover->setVisible(false);
             }
             {
@@ -134,7 +130,6 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 Utils::grabTouchWidget(filerCover);
                 filerCover->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
                 filerCover->setFixedSize(filer->minimumWidth(), filer->minimumHeight());
-                filerCover->setStyleSheet("background-color: #7fffffff; border: none;");
                 filerCover->setVisible(false);
             }
             {
@@ -159,13 +154,10 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                     bf->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
                     bf->setFixedWidth(Utils::scale_value(440));
                     bf->setFixedHeight(Utils::scale_value(32));
+                    bf->setProperty("filer", true);
                     bfl->setContentsMargins(Utils::scale_value(12), 0, Utils::scale_value(12), 0);
                     bfl->setSpacing(Utils::scale_value(12));
                     bfl->setAlignment(Qt::AlignVCenter);
-                    {
-                        QString bfs = "background: #ebebeb; border-radius: 8dip; border-color: #d7d7d7; border-style: none; padding-left: 15dip; padding-right: 15dip; padding-top: 12dip; padding-bottom: 10dip;";
-                        Utils::ApplyStyle(bf, bfs);
-                    }
                     {
                         auto fns = new QWidget(bf);
                         auto fnsl = new QHBoxLayout(fns);
@@ -179,20 +171,14 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                             Utils::grabTouchWidget(fn);
                             fn->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
                             fn->setText(fileName);
-                            {
-                                QString fns = "font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; font-size: 16dip; color: #282828; padding: 0;";
-                                Utils::ApplyStyle(fn, fns);
-                            }
+                            fn->setProperty("fileName", true);
                             fnsl->addWidget(fn);
 
                             auto fs = new QLabel(fns);
                             Utils::grabTouchWidget(fs);
                             fs->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
                             fs->setText(QString(" - %1").arg(fileSize));
-                            {
-                                QString fss = "font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; font-size: 16dip; color: #696969; padding: 0;";
-                                Utils::ApplyStyle(fs, fss);
-                            }
+                            fs->setProperty("fileSize", true);
                             fnsl->addWidget(fs);
                         }
                         bfl->addWidget(fns);
@@ -327,11 +313,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
             emailer->setPlaceholderText(QT_TRANSLATE_NOOP("contactus_page", "Your Email"));
             emailer->setAutoFillBackground(false);
             emailer->setText(get_gui_settings()->get_value(settings_feedback_email, QString("")));
-            {
-                QString ms = "QWidget[normal=\"true\"] { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; font-size: 18dip; color: #282828; background: #ffffff; border-radius: 8dip; border-color: #d7d7d7; border-width: 1dip; border-style: solid; padding-left: 12dip; padding-right: 12dip; padding-top: 10dip; padding-bottom: 10dip; } QWidget[normal=\"false\"] { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; font-size: 18dip; color: #e30f04; background: #ffffff; border-radius: 8dip; border-color: #e30f04; border-width: 1dip; border-style: solid; padding-left: 12dip; padding-right: 12dip; padding-top: 10dip; padding-bottom: 10dip; }";
-                emailer->setProperty("normal", true);
-                Utils::ApplyStyle(emailer, ms);
-            }
+            emailer->setProperty("normal", true);
             Testing::setAccessibleName(emailer, "feedback_email");
 
             {
@@ -339,7 +321,6 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 Utils::grabTouchWidget(emailerCover);
                 emailerCover->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
                 emailerCover->setFixedSize(emailer->minimumWidth(), emailer->minimumHeight());
-                emailerCover->setStyleSheet("background-color: #7fffffff; border: none;");
                 emailerCover->setVisible(false);
             }
             sendingPageLayout->addWidget(emailer);

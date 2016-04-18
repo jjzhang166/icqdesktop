@@ -5,10 +5,10 @@
 
 namespace core
 {
-	namespace tools
-	{
-		std::string md5(const void* _data, int32_t _size);
-	}
+    namespace tools
+    {
+        std::string md5(const void* _data, int32_t _size);
+    }
 }
 
 

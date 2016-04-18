@@ -38,7 +38,7 @@ namespace
 
 	const auto DOWNLOADING_BAR_BASE_ANGLE_MAX = 450;
 
-	const auto PROGRESS_PEN_WIDTH = 2;
+	const auto PROGRESS_PEN_WIDTH = 1;
 
     const auto RETRY_MAX = 5;
 
@@ -67,8 +67,6 @@ namespace HistoryControl
 
 		ImageFile_Initial,
 		ImageFile_MetainfoLoaded,
-		ImageFile_MiniPreviewLoaded,
-		ImageFile_FullPreviewLoaded,
 		ImageFile_Downloading,
 		ImageFile_Downloaded,
 		ImageFile_Uploading,
@@ -80,6 +78,17 @@ namespace HistoryControl
 
 		Max
 	};
+
+    enum class FileSharingWidget::PreviewState
+    {
+        Min,
+
+        NoPreview,
+        MiniPreviewLoaded,
+        FullPreviewLoaded,
+
+        Max
+    };
 
 	void FileSharingWidget::setDownloadingBarBaseAngle(int _val)
 	{
@@ -105,6 +114,8 @@ namespace HistoryControl
         , RetryCount_(0)
         , CopyFile_(false)
         , SaveAs_(false)
+        , PreviewState_(PreviewState::NoPreview)
+        , PreviewDownloadId_(-1)
     {
     }
 
@@ -123,6 +134,8 @@ namespace HistoryControl
         , RetryCount_(0)
         , CopyFile_(false)
         , SaveAs_(false)
+        , PreviewState_(PreviewState::NoPreview)
+        , PreviewDownloadId_(-1)
 	{
 		assert(!ContactUin_.isEmpty());
 		assert(FsInfo_);
@@ -136,17 +149,28 @@ namespace HistoryControl
         {
 		    setPreviewGenuineSize(FsInfo_->GetSize());
         }
+
+        if (FsInfo_->IsOutgoing())
+        {
+            const auto &uploadingProcessId = FsInfo_->GetUploadingProcessId();
+            if (!uploadingProcessId.isEmpty())
+                connectFileUploadingSignals(true);
+        }
 	}
 
 	FileSharingWidget::~FileSharingWidget()
 	{
 	}
 
-	void FileSharingWidget::initialize()
+	void FileSharingWidget::initializeInternal()
 	{
-        PreviewContentWidget::initialize();
+        PreviewContentWidget::initializeInternal();
 
-		__TRACE("fs", "initializing file sharing widget\n" << FsInfo_->ToLogString());
+		__TRACE(
+            "fs",
+            "initializing file sharing widget\n" <<
+            FsInfo_->ToLogString()
+        );
 
 		setMouseTracking(true);
 
@@ -290,9 +314,7 @@ namespace HistoryControl
 
 	bool FileSharingWidget::canStartImageDownloading(const QPoint &mousePos) const
 	{
-        const auto isInRightState = isState(State::ImageFile_FullPreviewLoaded) ||
-                                    isState(State::ImageFile_MiniPreviewLoaded) ||
-                                    isState(State::ImageFile_MetainfoLoaded);
+        const auto isInRightState = isState(State::ImageFile_MetainfoLoaded);
 
 		return (isInRightState && isOverPreview(mousePos));
 	}
@@ -362,6 +384,26 @@ namespace HistoryControl
 			SIGNAL(fileSharingUploadingProgress(QString, qint64)),
 			SLOT(fileSharingUploadingProgress(QString, qint64)),
 			isConnected);
+
+        if (isConnected)
+        {
+            QObject::connect(
+                Ui::GetDispatcher(),
+                &Ui::core_dispatcher::fileSharingUploadingResult,
+                this,
+                &FileSharingWidget::fileSharingUploadingResult,
+                (Qt::ConnectionType)(Qt::QueuedConnection | Qt::UniqueConnection)
+            );
+        }
+        else
+        {
+            QObject::disconnect(
+                Ui::GetDispatcher(),
+                &Ui::core_dispatcher::fileSharingUploadingResult,
+                this,
+                &FileSharingWidget::fileSharingUploadingResult
+            );
+        }
 	}
 
 	void FileSharingWidget::convertToPlainFileView()
@@ -384,6 +426,29 @@ namespace HistoryControl
 		Metainfo_.FileSizeStr_.resize(0);
 	}
 
+    void FileSharingWidget::enablePreviewSignals(const bool connected)
+    {
+        if (connected)
+        {
+            QObject::connect(
+                Ui::GetDispatcher(),
+                &Ui::core_dispatcher::imageDownloaded,
+                this,
+                &FileSharingWidget::previewDownloaded,
+                (Qt::ConnectionType)(Qt::QueuedConnection | Qt::UniqueConnection)
+            );
+
+            return;
+        }
+
+        QObject::disconnect(
+            Ui::GetDispatcher(),
+            &Ui::core_dispatcher::imageDownloaded,
+            this,
+            &FileSharingWidget::previewDownloaded
+        );
+    }
+
 	bool FileSharingWidget::isBlockElement() const
 	{
 		return (isState(State::PlainFile_Initial) ||
@@ -396,7 +461,12 @@ namespace HistoryControl
 				isState(State::PlainFile_UploadError));
 	}
 
-	bool FileSharingWidget::canUnload() const
+    bool FileSharingWidget::canReplace() const
+    {
+        return false;
+    }
+
+    bool FileSharingWidget::canUnload() const
 	{
 		return (!isState(State::PlainFile_Initial) &&
 				!isState(State::PlainFile_CheckingLocalCopy) &&
@@ -436,7 +506,12 @@ namespace HistoryControl
 			}
 		}
 
-		if (canStartImageDownloading(mousePos))
+        const auto isClickable = (
+            canStartImageDownloading(mousePos) ||
+            isState(State::ImageFile_Downloaded) ||
+            isState(State::ImageFile_Uploaded)
+        );
+		if (isClickable)
 		{
 			setCursor(Qt::PointingHandCursor);
 			return;
@@ -452,7 +527,9 @@ namespace HistoryControl
 
         Ui::HistoryControlPage* page = Utils::InterConnector::instance().getHistoryPage(ContactUin_);
         if (page && page->touchScrollInProgress())
+        {
             return;
+        }
 
 		const auto isLeftClick = (event->button() == Qt::LeftButton);
 		if (!isLeftClick)
@@ -471,14 +548,16 @@ namespace HistoryControl
 			return;
 		}
 
-		const auto isStopDownloadButtonClicked = (clickedOnButton && isState(State::PlainFile_Downloading));
+        const auto isDownloading = (isState(State::PlainFile_Downloading) || isState(State::ImageFile_Downloading));
+		const auto isStopDownloadButtonClicked = (clickedOnButton && isDownloading);
 		if (isStopDownloadButtonClicked)
 		{
 			stopDownloading();
 			return;
 		}
 
-		const auto isStopUploadButtonClicked = (clickedOnButton && isState(State::PlainFile_Uploading));
+        const auto isUploading = (isState(State::PlainFile_Uploading) || isState(State::ImageFile_Uploading));
+		const auto isStopUploadButtonClicked = (clickedOnButton && isUploading);
 		if (isStopUploadButtonClicked)
 		{
 			stopUploading();
@@ -493,7 +572,11 @@ namespace HistoryControl
 			return;
 		}
 
-		if (isState(State::ImageFile_Downloaded) && isOverPreview(mousePos))
+        const auto fullImageReady = (
+            isState(State::ImageFile_Downloaded) ||
+            isState(State::ImageFile_Uploaded)
+        );
+		if (fullImageReady && isOverPreview(mousePos))
 		{
             if (platform::is_apple())
             {
@@ -510,6 +593,8 @@ namespace HistoryControl
         if (canStartImageDownloading(mousePos))
         {
             setState(State::ImageFile_Downloading);
+
+            startDownloadingFullImage();
         }
 	}
 
@@ -661,12 +746,13 @@ namespace HistoryControl
 
 	bool FileSharingWidget::isPreviewVisible() const
 	{
-		return isState(State::ImageFile_MiniPreviewLoaded) ||
-			   isState(State::ImageFile_FullPreviewLoaded) ||
-			   isState(State::ImageFile_Downloading) ||
-			   isState(State::ImageFile_Downloaded) ||
-			   isState(State::ImageFile_Uploading) ||
-			   isState(State::ImageFile_Uploaded);
+        assert(PreviewState_ > PreviewState::Min);
+        assert(PreviewState_ < PreviewState::Max);
+
+		return (
+            (PreviewState_ == PreviewState::MiniPreviewLoaded) ||
+            (PreviewState_ == PreviewState::FullPreviewLoaded)
+        );
 	}
 
 	bool FileSharingWidget::isState(const State state) const
@@ -681,10 +767,14 @@ namespace HistoryControl
 
 		QPixmap preview;
 
-		if (!preview.load(FsInfo_->GetLocalPath()))
+        Utils::loadPixmap(FsInfo_->GetLocalPath(), Out preview);
+
+		if (preview.isNull())
 		{
 			return false;
 		}
+
+        Preview_.FullImg_ = preview;
 
 		setPreview(preview);
 
@@ -762,37 +852,14 @@ namespace HistoryControl
 	{
         Ui::MainPage::instance()->cancelSelection();
 
-		assert(QFile::exists(DownloadedFileLocalPath_));
+        if (Preview_.FullImg_.isNull())
+        {
+            Utils::loadPixmap(DownloadedFileLocalPath_, Out Preview_.FullImg_);
+        }
 
         if (!Preview_.FullImg_.isNull())
 		{
 			Previewer::ShowPreview(Preview_.FullImg_);
-			return;
-		}
-
-		// try to load with the default image format first
-		Preview_.FullImg_.load(DownloadedFileLocalPath_);
-
-		if (!Preview_.FullImg_.isNull())
-		{
-			Previewer::ShowPreview(Preview_.FullImg_);
-			return;
-		}
-
-		// try to load the image with the explicitly specified format
-		// it's a workaround for the jfif/png issue and so on
-
-		static const char *availableFormats[] = { "jpg", "png", "gif", "bmp" };
-
-		for (auto fmt : availableFormats)
-		{
-			Preview_.FullImg_.load(DownloadedFileLocalPath_, fmt);
-
-			if (!Preview_.FullImg_.isNull())
-			{
-				Previewer::ShowPreview(Preview_.FullImg_);
-				return;
-			}
 		}
 	}
 
@@ -846,7 +913,7 @@ namespace HistoryControl
 		assert(angle <= (361 * 16));
 
 		const auto penWidth = Utils::scale_value(PROGRESS_PEN_WIDTH);
-		QPen pen(QBrush(0x579e1c), penWidth);
+		QPen pen(QBrush(Qt::black), penWidth);
 		p.setPen(pen);
 
 		const auto baseAngle = (DownloadingBarBaseAngle_ * 16);
@@ -953,7 +1020,8 @@ namespace HistoryControl
 		const auto procId = Ui::GetDispatcher()->downloadSharedFile(
 			ContactUin_,
 			FsInfo_->GetUri(),
-            Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()), QString(),
+            Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()),
+            QString(),
 			core::file_sharing_function::download_meta);
 
         setCurrentProcessId(procId);
@@ -961,32 +1029,28 @@ namespace HistoryControl
 
 	void FileSharingWidget::requestPreview()
 	{
-		const auto isImageMetainfoLoadedState = isState(State::ImageFile_MetainfoLoaded);
-		const auto isImageMiniPreviewLoadedState = isState(State::ImageFile_MiniPreviewLoaded);
-		assert(isImageMetainfoLoadedState || isImageMiniPreviewLoadedState);
+        if (PreviewState_ == PreviewState::FullPreviewLoaded)
+        {
+            assert(!"invalid preview state");
+            return;
+        }
 
-		if (!isImageMetainfoLoadedState && !isImageMiniPreviewLoadedState)
-		{
-			return;
-		}
-
-		const auto &previewUri = (isImageMetainfoLoadedState ? Metainfo_.MiniPreviewUri_ : Metainfo_.FullPreviewUri_);
+		const auto &previewUri = (
+            (PreviewState_ == PreviewState::NoPreview) ?
+                Metainfo_.MiniPreviewUri_ :
+                Metainfo_.FullPreviewUri_
+        );
 
 		if (previewUri.isEmpty())
 		{
-			if (isImageMetainfoLoadedState)
-			{
-				connectImageDownloadedSignal(false);
-			}
-
+            assert(!"unexpected preview uri");
 			return;
 		}
 
-		connectImageDownloadedSignal(true);
+        enablePreviewSignals(true);
 
-		const auto procId = Ui::GetDispatcher()->downloadImagePreview(previewUri);
-
-        setCurrentProcessId(procId);
+        assert(PreviewDownloadId_ == -1);
+		PreviewDownloadId_ = Ui::GetDispatcher()->downloadImagePreview(previewUri);
 	}
 
 	void FileSharingWidget::resumeUploading()
@@ -1019,8 +1083,6 @@ namespace HistoryControl
 
 		startDataTransferAnimation();
 
-		connectFileUploadingSignals(true);
-
 		__INFO(
 			"fs",
 			"resuming file sharing upload\n"
@@ -1043,7 +1105,7 @@ namespace HistoryControl
             return;
         }
 
-        assert(!"unexpected state");
+        assert(!"unexpected widget state");
     }
 
     bool FileSharingWidget::retryRequestLater()
@@ -1114,7 +1176,7 @@ namespace HistoryControl
 		setState(State::ImageFile_Initial);
 	}
 
-	void FileSharingWidget::setState(const State state)
+    void FileSharingWidget::setState(const State state)
 	{
 		assert(state > State::Min);
 		assert(state < State::Max);
@@ -1138,15 +1200,6 @@ namespace HistoryControl
 				break;
 
 			case State::PlainFile_Initial:
-                if (build::is_debug())
-				{
-// 					const auto isCheckingLocalCopy = isState(State::PlainFile_CheckingLocalCopy);
-// 					const auto isUploadError = isState(State::PlainFile_UploadError);
-// 					const auto isUploading = isState(State::PlainFile_Uploading);
-// 					const auto isUploaded = isState(State::PlainFile_Uploaded);
-
-				//	assert(isCheckingLocalCopy || isUploadError || isUploading || isUploaded);
-				}
 				break;
 
 			case State::PlainFile_CheckingLocalCopy:
@@ -1172,39 +1225,16 @@ namespace HistoryControl
 
 			case State::ImageFile_Initial:
 				{
-					assert(isState(State::ImageFile_MetainfoLoaded) ||
+                    assert(isState(State::ImageFile_MetainfoLoaded) ||
 						   isState(State::ImageFile_Uploading) ||
 						   isState(State::ImageFile_Uploaded) ||
                            isState(State::ImageFile_Downloading));
-                    if (isState(State::ImageFile_Initial))
-                    {
-                        startDownloadingFullImage();
-                    }
 				}
 				break;
 
 			case State::ImageFile_MetainfoLoaded:
-				assert(isState(State::ImageFile_MiniPreviewLoaded) ||
-					   isState(State::PlainFile_MetainfoLoaded) ||
+				assert(isState(State::PlainFile_MetainfoLoaded) ||
                        isState(State::ImageFile_Downloading));
-                if (isState(State::ImageFile_Downloading))
-                {
-                    startDownloadingFullImage();
-                }
-				break;
-
-			case State::ImageFile_MiniPreviewLoaded:
-				assert(isState(State::ImageFile_FullPreviewLoaded) ||
-                       isState(State::ImageFile_Downloading));
-                if (isState(State::ImageFile_Downloading))
-                {
-                    startDownloadingFullImage();
-                }
-				break;
-
-			case State::ImageFile_FullPreviewLoaded:
-				assert(isState(State::ImageFile_Downloading));
-				startDownloadingFullImage();
 				break;
 
 			case State::ImageFile_Downloading:
@@ -1285,8 +1315,13 @@ namespace HistoryControl
 		const auto procId = Ui::GetDispatcher()->downloadSharedFile(
 			ContactUin_,
 			FsInfo_->GetUri(),
-            Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()), QString(),
-			core::file_sharing_function::download_file);
+            Ui::get_gui_settings()->get_value<QString>(
+                settings_download_directory,
+                Utils::DefaultDownloadsPath()
+            ),
+            QString(),
+			core::file_sharing_function::download_file
+        );
 
         setCurrentProcessId(procId);
         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::filesharing_download_file);
@@ -1323,6 +1358,12 @@ namespace HistoryControl
 			setState(State::PlainFile_MetainfoLoaded);
 			connectFileDownloadSignals(false);
 		}
+
+        if (isState(State::ImageFile_Downloading))
+        {
+            setState(State::ImageFile_MetainfoLoaded);
+            connectImageDownloadedSignal(false);
+        }
 
 		Ui::GetDispatcher()->abortSharedFileDownloading(
 			ContactUin_,
@@ -1369,13 +1410,26 @@ namespace HistoryControl
 			return;
 		}
 
-        RetryCount_ = 0;
+        const auto isImageFileInitial = isState(State::ImageFile_Initial);
+        const auto isPlainFileInitial = isState(State::PlainFile_Initial);
 
-		connectMetainfoSignal(false);
+        assert(isImageFileInitial || isPlainFileInitial);
+
         resetCurrentProcessId();
 
-		assert(isState(State::ImageFile_Initial) ||
-			   isState(State::PlainFile_Initial));
+        const auto isPreviewNotReady = (
+            isImageFileInitial &&
+            (miniPreviewUri.isEmpty() || fullPreviewUri.isEmpty())
+        );
+        if (isPreviewNotReady)
+        {
+            retryRequestLater();
+            return;
+        }
+
+        connectMetainfoSignal(false);
+
+        RetryCount_ = 0;
 
 		Metainfo_.Filename_ = filename;
 		Metainfo_.FileSize_ = size;
@@ -1383,7 +1437,7 @@ namespace HistoryControl
 		Metainfo_.FullPreviewUri_ = fullPreviewUri;
 		Metainfo_.DownloadUri_ = downloadUri;
 
-		if (isState(State::ImageFile_Initial))
+		if (isImageFileInitial)
 		{
 			setState(State::ImageFile_MetainfoLoaded);
 			requestPreview();
@@ -1407,67 +1461,27 @@ namespace HistoryControl
 			return;
 		}
 
-        const auto isMetainfoLoaded = isState(State::ImageFile_MetainfoLoaded);
-		const auto isMiniPreviewLoaded = isState(State::ImageFile_MiniPreviewLoaded);
 		const auto isDownloading = isState(State::ImageFile_Downloading);
-		if (!isMetainfoLoaded && !isMiniPreviewLoaded && !isDownloading)
+		if (!isDownloading)
 		{
+            assert(!"unexpected widget state");
 			return;
 		}
 
-		if (isMetainfoLoaded)
-		{
-			assert(!Metainfo_.MiniPreviewUri_.isEmpty());
-			assert(uri == Metainfo_.MiniPreviewUri_);
-		}
-
-		if (isMiniPreviewLoaded)
-		{
-			assert(!Metainfo_.FullPreviewUri_.isEmpty());
-			assert(uri == Metainfo_.FullPreviewUri_);
-		}
-
-		if (isDownloading)
-		{
-			assert(!Metainfo_.DownloadUri_.isEmpty());
-			assert(uri == Metainfo_.DownloadUri_);
-		}
+		assert(!Metainfo_.DownloadUri_.isEmpty());
+		assert(uri == Metainfo_.DownloadUri_);
 
         resetCurrentProcessId();
 
-		if (preview.isNull() && isMetainfoLoaded)
+		if (preview.isNull())
 		{
-            if (!retryRequestLater())
-            {
-                connectImageDownloadedSignal(false);
-            }
-
+            connectImageDownloadedSignal(false);
 			return;
 		}
 
-		if (isDownloading)
-		{
-			Preview_.FullImg_ = preview;
-			setState(State::ImageFile_Downloaded);
-			connectImageDownloadedSignal(false);
-		}
-
-		if (isMetainfoLoaded || isMiniPreviewLoaded)
-		{
-			setPreview(preview);
-		}
-
-		if (isMetainfoLoaded)
-		{
-			setState(State::ImageFile_MiniPreviewLoaded);
-			requestPreview();
-		}
-
-		if (isMiniPreviewLoaded)
-		{
-			setState(State::ImageFile_FullPreviewLoaded);
-			connectImageDownloadedSignal(false);
-		}
+		Preview_.FullImg_ = preview;
+		setState(State::ImageFile_Downloaded);
+		connectImageDownloadedSignal(false);
 
         invalidateSizes();
 		update();
@@ -1609,8 +1623,6 @@ namespace HistoryControl
 
 		BytesTransferred_ = bytesUploaded;
 
-		const auto isCompleted = (bytesUploaded == Metainfo_.FileSize_);
-
 		__DISABLE(
 			__TRACE(
 				"fs",
@@ -1619,23 +1631,48 @@ namespace HistoryControl
 			);
 		);
 
-		if (isCompleted)
-		{
-			if (isState(State::ImageFile_Uploading))
-			{
-				setState(State::ImageFile_Uploaded);
-			}
-			else
-			{
-				setState(State::PlainFile_Uploaded);
-			}
-
-			connectFileUploadingSignals(false);
-			stopDataTransferAnimation();
-		}
-
-		update();
+        update();
 	}
+
+    void FileSharingWidget::fileSharingUploadingResult(QString uploadingProcessId, bool success, QString link, bool tooLargeFile)
+    {
+        (void)success;
+
+        const auto isMyProcessId = (uploadingProcessId == FsInfo_->GetUploadingProcessId());
+        if (!isMyProcessId)
+        {
+            return;
+        }
+
+        __TRACE(
+            "fs",
+            "uploading finished\n" <<
+            "    succeed=<" << logutils::yn(success) << ">\n"
+            "    link=<" << link << ">"
+        );
+
+        FsInfo_->SetUri(link);
+
+        if (isState(State::ImageFile_Uploading))
+        {
+            setState(State::ImageFile_Uploaded);
+        }
+        else
+        {
+            setState(State::PlainFile_Uploaded);
+        }
+
+        connectFileUploadingSignals(false);
+        stopDataTransferAnimation();
+
+        if (tooLargeFile)
+        {
+            emit removeMe();
+            return;
+        }
+
+        update();
+    }
 
     void FileSharingWidget::metaDownloadError(qint64 seq, QString, qint32)
     {
@@ -1657,6 +1694,48 @@ namespace HistoryControl
 
         invalidateSizes();
         update();
+    }
+
+    void FileSharingWidget::previewDownloaded(qint64 seq, QString uri, QPixmap preview, QString)
+    {
+        if (PreviewDownloadId_ != seq)
+        {
+            return;
+        }
+
+        assert(PreviewState_ != PreviewState::FullPreviewLoaded);
+
+        if (preview.isNull())
+        {
+            retryRequestLater();
+            return;
+        }
+
+        const auto isPreviewEmpty = (PreviewState_ == PreviewState::NoPreview);
+        if (isPreviewEmpty)
+        {
+            assert(Preview_.FullImg_.isNull());
+
+            setPreview(preview);
+
+            PreviewState_ = PreviewState::MiniPreviewLoaded;
+
+            PreviewDownloadId_ = -1;
+
+            requestPreview();
+
+            return;
+        }
+
+        assert(PreviewState_ == PreviewState::MiniPreviewLoaded);
+
+        setPreview(preview);
+
+        PreviewState_ = PreviewState::FullPreviewLoaded;
+
+        enablePreviewSignals(false);
+
+        PreviewDownloadId_ = -1;
     }
 
 }

@@ -2,13 +2,13 @@
 
 namespace core
 {
-	namespace tools
-	{
-		namespace time
-		{
+    namespace tools
+    {
+        namespace time
+        {
 
-			int64_t now_ms();
+            int64_t now_ms();
 
-		}
-	}
+        }
+    }
 }

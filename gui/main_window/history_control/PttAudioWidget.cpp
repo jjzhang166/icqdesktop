@@ -10,7 +10,7 @@
 #include "../../theme_settings.h"
 #include "MessageStyle.h"
 
-namespace 
+namespace
 {
     const int widget_width = 320;
     const int widget_height = 56;
@@ -61,13 +61,17 @@ namespace HistoryControl
         else
             AudioState_ = ptt_audio_ready;
         setMouseTracking(true);
-        
+
         RestartTimer_->setSingleShot(true);
         connect(RestartTimer_, SIGNAL(timeout()), this, SLOT(restartTextrecognition()), Qt::QueuedConnection);
         connect(Logic::GetMessagesModel(), SIGNAL(pttPlayed(qint64)), this, SLOT(pttPlayed(qint64)), Qt::QueuedConnection);
     }
 
-    void PttAudioWidget::initialize()
+    PttAudioWidget::~PttAudioWidget()
+    {
+    }
+
+    void PttAudioWidget::initializeInternal()
     {
         setFixedHeight(Utils::scale_value(widget_height));
         QTime time;
@@ -79,7 +83,7 @@ namespace HistoryControl
             time.setHMS(0, duration / 60, duration % 60);
         DurationText_ = time.toString("mm:ss");
 
-        connect(Ui::GetDispatcher(), SIGNAL(fileSharingMetadataDownloaded(qint64, QString, QString, QString, QString, QString, qint64, bool)), 
+        connect(Ui::GetDispatcher(), SIGNAL(fileSharingMetadataDownloaded(qint64, QString, QString, QString, QString, QString, qint64, bool)),
             SLOT(setFileInfo(qint64, QString, QString, QString, QString, QString, qint64, bool)), Qt::QueuedConnection);
 
         connect(Ui::GetDispatcher(), SIGNAL(fileSharingDownloadError(qint64, QString, qint32)), this, SLOT(messageDownloadError(qint64, QString, qint32)), Qt::QueuedConnection);
@@ -107,9 +111,9 @@ namespace HistoryControl
         p.save();
 
         updateHeight();
-        
+
         int theme_id = Ui::get_qt_theme_settings()->themeIdForContact(aimId_);
-        
+
         p.fillPath(getBodyPath(QRect(0, 0, width(), height()), Utils::scale_value(border_radious), IsOutgoing_, false), Ui::MessageStyle::getBodyBrush(IsOutgoing_, Selected_, theme_id));
         auto progressPath = getProgressPath(QRect(0, 0, width(), Utils::scale_value(widget_height)), Utils::scale_value(border_radious), IsOutgoing_, HaveText_);
         QBrush progressBrush(IsOutgoing_ ?
@@ -151,7 +155,7 @@ namespace HistoryControl
         }
 
         playImage += ".png";
-        
+
         double ratio = Utils::scale_bitmap(1);
 
         QPixmap pixmap = Utils::parse_image_name(playImage);
@@ -179,7 +183,7 @@ namespace HistoryControl
             p.setPen(pen);
 
             const auto baseAngle = (AngleValue_ * 16);
-            p.drawArc(QRect(width() - Utils::scale_value(text_button_right_margin) - Utils::scale_value(text_button_size) + penWidth / 2, Utils::scale_value(text_button_top_margin) + penWidth / 2, 
+            p.drawArc(QRect(width() - Utils::scale_value(text_button_right_margin) - Utils::scale_value(text_button_size) + penWidth / 2, Utils::scale_value(text_button_top_margin) + penWidth / 2,
                       Utils::scale_value(text_button_size) - penWidth, Utils::scale_value(text_button_size) - penWidth), -baseAngle, -angle);
         }
         else
@@ -234,7 +238,7 @@ namespace HistoryControl
         if (HaveText_)
         {
             result += "\n";
-            result += PttText_->toPlainText(); 
+            result += PttText_->toPlainText();
         }
 
         return result;
@@ -294,7 +298,7 @@ namespace HistoryControl
 
         return QString();
     }
-    
+
     int PttAudioWidget::maxWidgetWidth() const
     {
         return Utils::scale_value(widget_width);
@@ -407,7 +411,7 @@ namespace HistoryControl
         }
         return MessageContentWidget::mouseReleaseEvent(e);
     }
-    
+
     void PttAudioWidget::resizeEvent(QResizeEvent* e)
     {
         if (HaveText_ && PttText_)
@@ -415,7 +419,7 @@ namespace HistoryControl
             PttText_->setFixedWidth(width() - Utils::scale_value(play_button_left_margin) - Utils::scale_value(text_button_right_margin));
             updateHeight();
         }
-        
+
         return MessageContentWidget::resizeEvent(e);
     }
 
@@ -479,7 +483,7 @@ namespace HistoryControl
                     emit Logic::GetMessagesModel()->pttPlayed(Id_);
                 }
             }
-            
+
             disconnect(Logic::GetMessagesModel(), SIGNAL(pttPlayed(qint64)), this, SLOT(pttPlayed(qint64)));
         }
     }
@@ -617,7 +621,7 @@ namespace HistoryControl
         AudioState_ = ptt_audio_pause;
         update();
     }
-                
+
     void PttAudioWidget::restartTextrecognition()
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
@@ -657,7 +661,7 @@ namespace HistoryControl
 
     bool PttAudioWidget::isMouseOnPlayButton(const QPoint& pos)
     {
-        return pos.x() >= Utils::scale_value(play_button_left_margin) && pos.x() <= Utils::scale_value(play_button_size) + Utils::scale_value(play_button_left_margin) 
+        return pos.x() >= Utils::scale_value(play_button_left_margin) && pos.x() <= Utils::scale_value(play_button_size) + Utils::scale_value(play_button_left_margin)
             && pos.y() >= Utils::scale_value(play_button_top_margin) && pos.y() <= Utils::scale_value(play_button_size) + Utils::scale_value(play_button_top_margin);
     }
 
@@ -792,7 +796,7 @@ namespace HistoryControl
             y -= borderDiameter;
             clipPath.arcTo(x, y, borderDiameter, borderDiameter, 270, 90);
         }
-        
+
         x = rect.width();
         y = borderDiameter;
         clipPath.lineTo(x, y);
@@ -823,7 +827,7 @@ namespace HistoryControl
         QRect r(0, 0, widthPercent, rect.height());
         QPainterPath p;
         p.addRect(r);
-        
+
         clipPath = clipPath.intersected(p);
 
         return clipPath;

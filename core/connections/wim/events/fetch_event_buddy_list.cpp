@@ -19,9 +19,9 @@ fetch_event_buddy_list::~fetch_event_buddy_list()
 
 int32_t fetch_event_buddy_list::parse(const rapidjson::Value& _node_event_data)
 {
-	cl_ = std::make_shared<core::wim::contactlist>();
+    cl_ = std::make_shared<core::wim::contactlist>();
 
-	return cl_->unserialize(_node_event_data);
+    return cl_->unserialize(_node_event_data);
 }
 
 void fetch_event_buddy_list::on_im(std::shared_ptr<core::wim::im> _im, std::shared_ptr<auto_callback> _on_complete)
@@ -31,5 +31,5 @@ void fetch_event_buddy_list::on_im(std::shared_ptr<core::wim::im> _im, std::shar
 
 std::shared_ptr<wim::contactlist> fetch_event_buddy_list::get_contactlist() const
 {
-	return cl_;
+    return cl_;
 }

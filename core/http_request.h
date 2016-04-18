@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "proxy_settings.h"
+
 struct curl_context;
 namespace core
 {
@@ -53,10 +55,11 @@ namespace core
         std::string get_post_param() const;
         void set_post_params(curl_context* ctx);
         bool send_request(bool _post, bool switch_proxy = false);
+        proxy_settings proxy_settings_;
 
     public:
 
-        http_request_simple(std::function<bool()> stop_func = []()->bool {return false;});
+        http_request_simple(proxy_settings _proxy_settings, std::function<bool()> stop_func = []()->bool {return false;});
         virtual ~http_request_simple();
 
         static ithread_callback* create_http_handlers();
@@ -99,6 +102,7 @@ namespace core
         void set_timeout(int32_t _timeout_ms);
 
         static std::vector<std::mutex*> ssl_sync_objects;
+        proxy_settings get_user_proxy() const;
     };
 }
 

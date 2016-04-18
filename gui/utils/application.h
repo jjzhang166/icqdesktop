@@ -4,57 +4,70 @@
 
 namespace Ui
 {
-	class MainWindow;
+    class MainWindow;
+}
+
+namespace launch
+{
+    class CommandLineParser;
 }
 
 namespace Utils
 {
 #ifdef _WIN32
-	class AppGuard
-	{
-	public:
-		AppGuard();
-		~AppGuard();
+    class AppGuard
+    {
+    public:
+        AppGuard();
+        ~AppGuard();
 
-		bool succeeded() const;
+        bool succeeded() const;
 
-	private:
-		HANDLE Mutex_;
-		bool Exist_;
-	};
+    private:
+        HANDLE Mutex_;
+        bool Exist_;
+    };
 #endif //_WIN32
 
-	class Application : QObject
-	{
-		Q_OBJECT
-	public:
-		Application(int argc, char *argv[]);
-		~Application();
+    class Application : public QObject
+    {
+        Q_OBJECT
 
-		int exec();
+    public:
 
-		bool init();
+        Application(int argc, char *argv[]);
+        ~Application();
 
-		bool isMainInstance();
-		void switchInstance();
+        int exec();
+
+        bool init();
+
+        bool isMainInstance();
+        void switchInstance(launch::CommandLineParser& _cmd_parser);
 
         void setUrlHandler();
         void unsetUrlHandler();
-        
+
         bool updating();
-		
-	public Q_SLOTS:
-		void initMainWindow();
-        void open_url(const QUrl& url);
+        void parseUrlCommand(const QString& _urlCommand);
 
-	private:
-		void init_win7_features();
+   public Q_SLOTS:
 
-		std::unique_ptr<Ui::MainWindow> main_window_;
-		std::unique_ptr<LocalPeer> peer_;
-		std::unique_ptr<QApplication> app_;
+            void initMainWindow();
+            void open_url(const QUrl& url);
+            void receiveUrlCommand(QString _urlCommand);
+            void applicationStateChanged(Qt::ApplicationState state);
+
+    private:
+        void init_win7_features();
+        bool parseLocalUrl(const QString& _urlString);
+
+        std::unique_ptr<Ui::MainWindow> main_window_;
+        std::unique_ptr<LocalPeer> peer_;
+        std::unique_ptr<QApplication> app_;
+
 #ifdef _WIN32
-		AppGuard guard_;
+        AppGuard guard_;
 #endif //_WIN32
-	};
+    };
 }

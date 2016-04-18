@@ -24,8 +24,6 @@ namespace Ui
         Q_OBJECT
         
     private Q_SLOTS:
-        void onAvatarLoaded(QString uin);
-
         void menuStateOnline();
         void menuStateDoNotDisturb();
         void menuStateInvisible();

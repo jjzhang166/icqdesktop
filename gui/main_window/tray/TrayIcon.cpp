@@ -232,13 +232,19 @@ namespace Ui
 				ShowedMessages_[state.AimId_] = state.LastMsgId_;
 				if (canShowNotifications())
 					showMessage(state);
-				GetSoundsManager()->playIncomingMessage();
+#ifdef _WIN32
+                if (canShowNotificationsWin())
+#endif //_WIN32
+				    GetSoundsManager()->playIncomingMessage();
 			}
 		}
 		else if (state.Visible_ && ((!ShowedMessages_.contains(state.AimId_) && state.LastMsgId_ == -1) || state.LastMsgId_ == -1))
 		{
 			ShowedMessages_[state.AimId_] = state.LastMsgId_;
-			GetSoundsManager()->playOutgoingMessage();
+#ifdef _WIN32
+            if (canShowNotificationsWin())
+#endif //_WIN32
+			    GetSoundsManager()->playOutgoingMessage();
 		}
 
 		updateIcon();
@@ -270,6 +276,7 @@ namespace Ui
         }
         
         MainWindow_->activateFromEventLoop();
+        emit Utils::InterConnector::instance().closeAnyPopupWindow();
 	    GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::alert_click);
     }
 
@@ -388,32 +395,39 @@ namespace Ui
 		Ui::GetDispatcher()->post_message_to_core("dlg_state/hide", collection.get());
 	}
 
+    bool TrayIcon::canShowNotificationsWin() const
+    {
+#ifdef _WIN32
+        if (QSysInfo().windowsVersion() >= QSysInfo::WV_VISTA)
+        {
+            static QueryUserNotificationState query;
+            if (!query)
+            {
+                HINSTANCE shell32 = LoadLibraryW(L"shell32.dll");
+                if (shell32)
+                {
+                    query = (QueryUserNotificationState)GetProcAddress(shell32, "SHQueryUserNotificationState");
+                }
+            }
+
+            if (query)
+            {
+                QUERY_USER_NOTIFICATION_STATE state;
+                if (query(&state) == S_OK && state != QUNS_ACCEPTS_NOTIFICATIONS)
+                    return false;
+            }
+        }
+#endif //_WIN32
+        return true;
+    }
+
 	bool TrayIcon::canShowNotifications() const
 	{
         // TODO: must be based on the type of notification - is it message, birthday-notify or contact-coming-notify.
         if (!get_gui_settings()->get_value<bool>(settings_notify_new_messages, true))  return false;
 
 #ifdef _WIN32
-		if (QSysInfo().windowsVersion() >= QSysInfo::WV_VISTA)
-		{
-			static QueryUserNotificationState query;
-			if (!query)
-			{
-				HINSTANCE shell32 = LoadLibraryW(L"shell32.dll");
-				if (shell32)
-				{
-					query = (QueryUserNotificationState)GetProcAddress(shell32, "SHQueryUserNotificationState");
-				}
-			}
-
-			if (query)
-			{
-				QUERY_USER_NOTIFICATION_STATE state;
-				if (query(&state) == S_OK && state != QUNS_ACCEPTS_NOTIFICATIONS)
-					return false;
-			}
-		}
-        else if (QSysInfo().windowsVersion() == QSysInfo::WV_XP)
+		if (QSysInfo().windowsVersion() == QSysInfo::WV_XP)
         {
             static QuerySystemParametersInfo query;
             if (!query)
@@ -431,6 +445,11 @@ namespace Ui
                 if (query(SPI_GETSCREENSAVERRUNNING, 0, &result, 0) && result)
                     return false;
             }
+        }
+        else
+        {
+            if (!canShowNotificationsWin())
+                return false;
         }
 
 #endif //_WIN32

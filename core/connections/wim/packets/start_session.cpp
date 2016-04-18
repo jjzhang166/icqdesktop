@@ -12,7 +12,7 @@
 #define WIM_API_START_SESSION_HOST			"https://api.icq.net/aim/startSession"
 #define ICQ_APP_IDTYPE						"ICQ"
 #define WIM_EVENTS							"myInfo,presence,buddylist,typing,sentIM,dataIM,userAddedToBuddyList,service,webrtcMsg,mchat,hist,hiddenChat,diff,permitDeny"
-#define WIM_PRESENCEFIELDS					"aimId,buddyIcon,bigBuddyIcon,displayId,friendly,offlineMsg,state,statusMsg,userType,phoneNumber,cellNumber,smsNumber,workNumber,otherNumber,capabilities,ssl,abPhoneNumber,moodIcon,lastName,abPhones,abContactName,lastseen,mute"
+#define WIM_PRESENCEFIELDS					"aimId,buddyIcon,bigBuddyIcon,displayId,friendly,offlineMsg,state,statusMsg,userType,phoneNumber,cellNumber,smsNumber,workNumber,otherNumber,capabilities,ssl,abPhoneNumber,moodIcon,lastName,abPhones,abContactName,lastseen,mute,official"
 #define WIM_INTERESTCAPS					"8eec67ce70d041009409a7c1602a5c84," WIM_CAP_VOIP_VOICE "," WIM_CAP_VOIP_VIDEO
 #define WIM_ASSERTCAPS						WIM_CAP_VOIP_VOICE "," WIM_CAP_VOIP_VIDEO "," WIM_CAP_UNIQ_REQ_ID "," WIM_CAP_EMOJI
 #define WIM_INVISIBLE						"false"
@@ -135,7 +135,7 @@ int32_t start_session::on_response_error_code()
             need_relogin_ = false;
             return wpie_start_session_request_timeout;
         }
-        
+
     case 607:
         {
             need_relogin_ = false;
@@ -158,7 +158,7 @@ int32_t start_session::execute_request(std::shared_ptr<core::http_request_simple
 
     if (http_code_ != 200)
         return wpie_http_error;
-    
+
     return 0;
 }
 

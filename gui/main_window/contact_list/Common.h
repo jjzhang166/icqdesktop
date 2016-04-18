@@ -53,15 +53,14 @@ namespace ContactList
 			const bool haveLastSeen,
 			const QDateTime &lastSeen,
 			const bool isWithCheckBox,
-            bool isChatMember);
+            bool isChatMember,
+            bool official);
 
 		const QString AimId_;
 
 		const QPixmap &Avatar_;
 
 		const QString State_;
-
-		const QString Status_;
 
 		const QString &ContactName_;
 
@@ -78,7 +77,19 @@ namespace ContactList
 		bool HasLastSeen() const { return HaveLastSeen_; }
 
 		const bool isCheckedBox_;
+
         bool isChatMember_;
+
+        bool isOfficial_;
+
+        const QString& GetStatus() const;
+
+        bool HasStatus() const;
+
+        void SetStatus(const QString& status);
+
+    private:
+        QString Status_;
 	};
 
 	const auto dip = [](const int px) { return DipPixels(px); };

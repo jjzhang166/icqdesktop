@@ -49,15 +49,21 @@ inline QTextStream& operator <<(QTextStream &lhs, const QUrl &uri)
 
 inline QTextStream& operator <<(QTextStream &lhs, const QSize &size)
 {
-    return (lhs << "(" << size.width() << "," << size.height() << ")");
+    return (lhs << size.width() << "," << size.height());
 }
 
 inline QTextStream& operator <<(QTextStream &lhs, const QSizeF &size)
 {
-    return (lhs << "(" << size.width() << "," << size.height() << ")");
+    return (lhs << size.width() << "," << size.height());
 }
 
 inline QTextStream& operator <<(QTextStream &lhs, const QRect &rect)
 {
-    return (lhs << "(" << rect.x() << "," << rect.y() << "," << rect.width() << "," << rect.height() << ")");
+    return (lhs << rect.x() << "," << rect.y() << "," << rect.width() << "," << rect.height());
+}
+
+template<class T>
+inline QTextStream& operator <<(QTextStream &lhs, const std::pair<T, T> &pair)
+{
+    return (lhs << pair.first << "," << pair.second);
 }

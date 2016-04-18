@@ -133,6 +133,37 @@ namespace installer
 
             write_referer(key_product);
 
+            HKEY key_cmd, key_icq = 0, key_icon = 0;
+            DWORD disp = 0;
+
+            CAtlString command_string = CAtlString("\"") + (const wchar_t*) exe_path.utf16() + L"\" -urlcommand \"%1\"";
+            CAtlString url_link_string = "URL:ICQ Link";
+
+            if (ERROR_SUCCESS == ::RegCreateKeyEx(HKEY_CURRENT_USER, L"Software\\Classes\\icq\\shell\\open\\command", 0, L"", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key_cmd, &disp)) 
+            {
+                ::RegSetValueEx(key_cmd, NULL, 0, REG_SZ, (LPBYTE) command_string.GetBuffer(), sizeof(TCHAR)*(command_string.GetLength() + 1));
+                
+                if (ERROR_SUCCESS == ::RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Classes\\icq", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, &key_icq))
+                {
+                    ::RegSetValueEx(key_icq, NULL, 0, REG_SZ, (LPBYTE) url_link_string.GetBuffer(), sizeof(TCHAR)*(url_link_string.GetLength() + 1));
+                    ::RegSetValueEx(key_icq, L"URL Protocol", 0, REG_SZ, (LPBYTE) L"", sizeof(TCHAR));
+
+
+                    if (ERROR_SUCCESS == ::RegCreateKeyEx(key_icq, L"DefaultIcon", 0, L"", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key_icon, &disp))
+                    {
+                        CAtlString icon_path = (const wchar_t*) exe_path.utf16();
+
+                        ::RegSetValueEx(key_icon, NULL, 0, REG_SZ, (LPBYTE) icon_path.GetBuffer(), sizeof(TCHAR)*(icon_path.GetLength() + 1));
+
+                        ::RegCloseKey(key_icon);
+                    }
+
+                    ::RegCloseKey(key_icq);
+                }
+
+                ::RegCloseKey(key_cmd);
+            }
+
             err = write_to_uninstall_key();
             if (!err.is_ok())
                 return err;
@@ -147,6 +178,7 @@ namespace installer
             ::SHDeleteKey(HKEY_CURRENT_USER, key_product);
             ::SHDeleteKey(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\icq.desktop");
             ::SHDeleteValue(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", (const wchar_t*) get_product_name().utf16());
+            ::SHDeleteKey(HKEY_CURRENT_USER, L"Software\\Classes\\icq");
 
             return installer::error();
         }

@@ -162,7 +162,7 @@ namespace Ui
         update();
     }
 
-    void VoipEventItem::mousePressEvent(QMouseEvent *event)
+    void VoipEventItem::mouseReleaseEvent(QMouseEvent *event)
     {
         const auto pos = event->pos();
 

@@ -1,0 +1,68 @@
+QWidget[normal="true"]
+{
+	font-family: %FONT_FAMILY%;
+	font-weight: %FONT_WEIGHT%;
+	font-size: 18dip;
+	color: #282828;
+	background: #ffffff;
+	border-radius: 8dip;
+	border-color: #d7d7d7;
+	border-width: 1dip;
+	border-style: solid;
+	padding-left: 12dip;
+	padding-right: 0dip;
+	padding-top: 10dip;
+	padding-bottom: 10dip;
+}
+
+QWidget[normal="true"]:focus
+{
+	border-color: #579e1c;
+}
+
+QWidget[normal="false"]
+{
+	font-family: %FONT_FAMILY%;
+	font-weight: %FONT_WEIGHT%;
+	font-size: 18dip;
+	color: #e30f04;
+	background: #ffffff;
+	border-radius: 8dip;
+	border-color: #e30f04;
+	border-width: 1dip;
+	border-style: solid;
+	padding-left: 12dip;
+	padding-right: 0dip;
+	padding-top: 10dip;
+	padding-bottom: 10dip;
+}
+
+QWidget[filer="true"]
+{
+	background: #ebebeb;
+	border-radius: 8dip;
+	border-color: #d7d7d7;
+	border-style: none;
+	padding-left: 15dip;
+	padding-right: 15dip;
+	padding-top: 12dip;
+	padding-bottom: 10dip;
+}
+
+QLabel[fileName="true"]
+{
+	font-family: %FONT_FAMILY%;
+	font-weight: %FONT_WEIGHT%;
+	font-size: 16dip;
+	color: #282828;
+	padding: 0;
+}
+
+QLabel[fileSize="true"]
+{
+	font-family: %FONT_FAMILY%;
+	font-weight: %FONT_WEIGHT%;
+	font-size: 16dip;
+	color: #696969;
+	padding: 0;
+}

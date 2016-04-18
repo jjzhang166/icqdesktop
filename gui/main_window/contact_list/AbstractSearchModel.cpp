@@ -16,7 +16,7 @@ namespace Logic
     
     AbstractSearchModel* GetCurrentSearchModel(int _regim)
     {
-        if (!Logic::is_delete_members(_regim))
+        if (!Logic::is_delete_members_regim(_regim))
             return GetSearchModel();
         else
             return GetSearchMemberModel();

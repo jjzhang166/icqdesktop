@@ -27,8 +27,8 @@ namespace HistoryControl
         Q_PROPERTY(int Angle READ getAngle WRITE setAngle)
 
         PttAudioWidget(QWidget *parent, const QString& contact, const bool isOutgoing, const QString& uri, int duration, qint64 id, qint64 prevId);
+        virtual ~PttAudioWidget();
 
-        virtual void initialize();
         virtual int32_t actualContentWidth();
         virtual bool isBlockElement() const;
         virtual bool canUnload() const;
@@ -61,6 +61,8 @@ namespace HistoryControl
         virtual void mousePressEvent(QMouseEvent *);
         virtual void mouseReleaseEvent(QMouseEvent *);
         virtual void resizeEvent(QResizeEvent*);
+
+        virtual void initializeInternal() override;
 
     private:
         QPainterPath getBodyPath(const QRect &rect, const int32_t borderRadius, const bool isOutgoing, const bool skipArc);

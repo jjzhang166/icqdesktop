@@ -11,6 +11,13 @@ namespace Ui
     {
     }
     
+    void WidgetsNavigator::insertWidget(int index, QWidget *widget)
+    {
+        assert(indexes.count(widget) == 0);
+        indexes.insert(std::make_pair(widget, index));
+        QStackedWidget::insertWidget(index, widget);
+    }
+
     void WidgetsNavigator::push(QWidget *widget)
     {
         if (currentWidget() != widget)
@@ -32,13 +39,20 @@ namespace Ui
                 return pop();
         }
         else
-            setCurrentIndex(0);
+            setCurrentIndex(indexes.size() == 0 ? 0 : indexes.begin()->second);
     }
     
     void WidgetsNavigator::poproot()
     {
         while (history_.size()) history_.pop(); // idk, maybe some intermediate stuff will be done in each pop.
-        setCurrentIndex(0);
+        setCurrentIndex(indexes.size() == 0 ? 0 : indexes.begin()->second);
     }
 
+    void WidgetsNavigator::removeWidget(QWidget *widget)
+    {
+        assert(indexes.count(widget) != 0);
+        if (indexes.count(widget) != 0)
+            indexes.erase(widget);
+        QStackedWidget::removeWidget(widget);
+    }
 }

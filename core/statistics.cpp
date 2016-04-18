@@ -322,10 +322,12 @@ void statistics::send_async()
     if (post_data_vector.empty())
         return;
 
-    stats_thread_->run_async_function([post_data_vector]
+    auto user_proxy = g_core->get_user_proxy_settings();
+
+    stats_thread_->run_async_function([post_data_vector, user_proxy]
     {
         for (auto& post_data : post_data_vector)
-            statistics::send(post_data);
+            statistics::send(user_proxy, post_data);
         return 0;
             
     })->on_result_ = [wr_this](int32_t _error)
@@ -434,7 +436,7 @@ std::vector<std::string> statistics::get_post_data() const
     return result;
 }
 
-bool statistics::send(const std::string& post_data)
+bool statistics::send(const proxy_settings& _user_proxy, const std::string& post_data)
 {
     const std::weak_ptr<stop_objects> wr_stop(stop_objects_);
 
@@ -447,7 +449,7 @@ bool statistics::send(const std::string& post_data)
         return ptr_stop->is_stop_.load();
     };
     
-    core::http_request_simple post_request(stop_handler);
+    core::http_request_simple post_request(_user_proxy, stop_handler);
     post_request.set_connect_timeout(1000);
     post_request.set_timeout(1000);
     post_request.set_keep_alive();

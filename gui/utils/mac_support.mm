@@ -63,6 +63,31 @@ static NSString * fromQString(const QString & src)
     return (NSString *)CFBridgingRelease(src.toCFString());
 }
 
+@interface AppDelegate : NSObject
+- (void)handleURLEvent:(NSAppleEventDescriptor*)event
+        withReplyEvent:(NSAppleEventDescriptor*)replyEvent;
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
+@end
+
+@implementation AppDelegate
+- (void)handleURLEvent:(NSAppleEventDescriptor*)event
+        withReplyEvent:(NSAppleEventDescriptor*)replyEvent
+{
+    NSString* url = [[event paramDescriptorForKeyword:keyDirectObject]
+                     stringValue];
+    
+    emit Utils::InterConnector::instance().schemeUrlClicked(QString::fromNSString(url));
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+    QApplication::exit();
+    return NSTerminateCancel;
+}
+@end
+
+
+
 @interface LinkPreviewItem : NSObject <QLPreviewItem>
 @property (readonly) NSURL *previewItemURL;
 @property (readonly) NSString *previewItemTitle;
@@ -225,7 +250,7 @@ MacSupport::MacSupport(Ui::MainWindow * mainWindow)
 {
     sparkleUpdater_ = nil;
     mainWindow_ = mainWindow;
- 
+    registerDelegate();
     setupDockClickHandler();
 }
 
@@ -697,9 +722,14 @@ void MacSupport::setupDockClickHandler()
 
 bool MacSupport::nativeEventFilter(const QByteArray &data, void *message, long *result)
 {
-    //NSEvent *e = (NSEvent *)message;
-    //NSLog(@"------------\n%@\n%@", data.toNSData(), e);
+    NSEvent *e = (NSEvent *)message;
+    // NSLog(@"------------\n%@\n%@", data.toNSData(), e);
 
+    if ([e type] == NSAppKitDefined && [e subtype] == NSApplicationDeactivatedEventType)
+    {
+        emit Utils::InterConnector::instance().closeAnyPopupWindow();
+    }
+    
     return false;
 }
 
@@ -718,6 +748,18 @@ void MacSupport::activateWindow(unsigned long long view/* = 0*/)
         }
     }
     [NSApp activateIgnoringOtherApps:YES];
+}
+
+void MacSupport::registerDelegate()
+{
+    AppDelegate* delegate = [AppDelegate new];
+    [NSApp setDelegate: delegate];
+    
+    [[NSAppleEventManager sharedAppleEventManager]
+     setEventHandler:delegate
+     andSelector:@selector(handleURLEvent:withReplyEvent:)
+     forEventClass:kInternetEventClass
+     andEventID:kAEGetURL];
 }
 
 

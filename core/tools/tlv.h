@@ -58,7 +58,7 @@ namespace core
             std::shared_ptr<tlv> get_next();
 
             uint32_t size() const;
-			bool empty() const;
+            bool empty() const;
         };
 
         struct iserializable_tlv
@@ -85,10 +85,10 @@ namespace core
             template <class T_>
             void set_value(const T_ &_value);
 
-			template <class T_>
+            template <class T_>
             T_ get_value(const T_& _default_value) const;
 
-			template <class T_>
+            template <class T_>
             T_ get_value() const;
 
             uint32_t get_type() const;
@@ -113,7 +113,7 @@ namespace core
         tlv::tlv(
             const uint32_t _type,
             const T_ &_val
-        )
+            )
         {
             static_assert(!is_implementaion_defined_fundamental<T_>::value, "Data Structure requires fixed-width types.");
 
@@ -133,10 +133,10 @@ namespace core
             value_stream_.write(_value);
         }
 
-		template <class T_>
+        template <class T_>
         T_ tlv::get_value(const T_& _default_value) const
         {
-			static_assert(std::is_scalar<T_>::value, "value should be of scalar type");
+            static_assert(std::is_scalar<T_>::value, "value should be of scalar type");
 
             typename std::remove_const<T_>::type val = _default_value;
 
@@ -152,9 +152,9 @@ namespace core
         }
 
         template <class T_>
-		T_ tlv::get_value() const
+        T_ tlv::get_value() const
         {
-			static_assert(std::is_scalar<T_>::value, "value should be of scalar type");
+            static_assert(std::is_scalar<T_>::value, "value should be of scalar type");
 
             typename std::remove_const<T_>::type val;
 

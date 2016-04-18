@@ -7,58 +7,58 @@
 
 namespace core
 {
-	namespace archive
-	{
-		class storage_data_block
-		{
-			core::tools::binary_stream	data_;
-		};
+    namespace archive
+    {
+        class storage_data_block
+        {
+            core::tools::binary_stream	data_;
+        };
 
 
-		union storage_mode
-		{
-			struct
-			{
-				uint32_t	read_		: 1;
-				uint32_t	write_		: 1;
-				uint32_t	append_		: 1;
-				uint32_t	truncate_	: 1;
+        union storage_mode
+        {
+            struct
+            {
+                uint32_t	read_		: 1;
+                uint32_t	write_		: 1;
+                uint32_t	append_		: 1;
+                uint32_t	truncate_	: 1;
 
-			} flags_;
+            } flags_;
 
-			uint32_t	value_;
+            uint32_t	value_;
 
-			storage_mode()
-				:	value_(0)
-			{
-			}
-		};
+            storage_mode()
+                :	value_(0)
+            {
+            }
+        };
 
-		class storage
-		{
-			const std::wstring					file_name_;
-			std::list<storage_data_block>		data_list_;
-			std::unique_ptr<std::fstream>		active_file_stream_;
+        class storage
+        {
+            const std::wstring					file_name_;
+            std::list<storage_data_block>		data_list_;
+            std::unique_ptr<std::fstream>		active_file_stream_;
 
-			archive::error						last_error_;
+            archive::error						last_error_;
 
-		public:
-			
-			void clear();
+        public:
 
-			bool open(storage_mode _mode);
-			void close();
+            void clear();
 
-			bool write_data_block(core::tools::binary_stream& _data, int64_t& _offset);
-			bool read_data_block(int64_t _offset, core::tools::binary_stream& _data);
+            bool open(storage_mode _mode);
+            void close();
 
-			archive::error get_last_error() { return last_error_; }
-			
-			storage(const std::wstring& _file_name);
-			virtual ~storage();
-		};
+            bool write_data_block(core::tools::binary_stream& _data, int64_t& _offset);
+            bool read_data_block(int64_t _offset, core::tools::binary_stream& _data);
 
-	}
+            archive::error get_last_error() { return last_error_; }
+
+            storage(const std::wstring& _file_name);
+            virtual ~storage();
+        };
+
+    }
 }
 
 #endif //__ARCHIVE_STORAGE_H_

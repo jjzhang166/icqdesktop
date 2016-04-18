@@ -12,6 +12,7 @@ namespace Ui
         if (this->objectName().isEmpty())
             this->setObjectName(QStringLiteral("search_widget"));
         active_ = false;
+        setStyleSheet(Utils::LoadStyle(":/main_window/contact_list/contact_list.qss", Utils::get_scale_coefficient(), true));
         parent_search_vertical_layout_ = new QVBoxLayout(this);
         parent_search_vertical_layout_->setContentsMargins(0, 0, 0, 0);
         parent_search_vertical_layout_->setSpacing(0);

@@ -14,6 +14,122 @@ QWidget[ContactPageTopWidget="true"]
 	border-bottom-color: #dadada;
 }
 
+QPushButton[CallButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-left: 12dip;
+	margin-right: 12dip;
+	border-image: url(:/resources/contr_call_100.png);
+}
+
+QPushButton[CallButton="true"]:hover
+{
+	border-image: url(:/resources/contr_call_100_hover.png);
+}
+
+QPushButton[CallButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_call_100_active.png);
+}
+
+QPushButton[FavoriteStar="true"]
+{
+	margin-top: 11dip;
+	min-width: 12dip;
+	max-width: 12dip;
+	min-height: 12dip;
+	max-height: 12dip;
+	margin-left: 8dip;
+	margin-right: 8dip;
+	border-image: url(:/resources/cl_favorites_100.png);
+}
+
+QPushButton[OfficialMark="true"]
+{
+	margin-left: -2dip;
+	min-width: 20dip;
+	max-width: 20dip;
+	min-height: 20dip;
+	max-height: 20dip;
+	border-image: url(:/resources/cl_badges_official_100.png);
+}
+
+QPushButton[VideoCallButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-left: 12dip;
+	margin-right: 12dip;
+	border-image: url(:/resources/contr_videocall_100.png);
+}
+
+QPushButton[AddMemberButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-right: 12dip;
+	border-image: url(:/resources/contr_addpeople_round_100.png);
+}
+QPushButton[AddMemberButton="true"]:hover
+{
+	border-image: url(:/resources/contr_addpeople_round_100_hover.png);
+}
+QPushButton[AddMemberButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_addpeople_round_100_active.png);
+}
+
+QPushButton[VideoCallButton="true"]:hover
+{
+	border-image: url(:/resources/contr_videocall_100_hover.png);
+}
+QPushButton[VideoCallButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_videocall_100_active.png);
+}
+
+QPushButton[OptionButton="true"]
+{
+	margin-top: 12dip;
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+	margin-left: 12dip;
+	margin-right: 24dip;
+	border-image: url(:/resources/contr_options_round_100.png);
+}
+QPushButton[OptionButton="true"]:hover
+{
+	border-image: url(:/resources/contr_options_round_100_hover.png);
+}
+QPushButton[OptionButton="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_options_round_100_active.png);
+}
+
+QTextBrowser[ContactPageName="true"]
+{
+	margin-top: 8dip;
+	margin-left: 19dip;
+	font-size: 18dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	color: #282828;
+	background: transparent;
+	border: none;
+}
+
 QWidget[MessagesWidget=true]
 {
 	background: transparent;
@@ -116,7 +232,6 @@ QWidget[ServiceMessageWidgetOverlay="true"]
 	max-height: 20dip;
 	margin-top: 12dip;
 	margin-bottom: 12dip;
-	
 	border-radius: 10dip;
 }
 
@@ -132,7 +247,6 @@ QLabel[ServiceMessageLabelOverlay="true"]
 
 QWidget[NewMessagesPlateCommonWidget="true"]
 {
-	background: rgba(202, 230, 179, 50%);
 	margin-top: 12dip;
 	margin-bottom: 12dip;
 }
@@ -143,13 +257,11 @@ QWidget[NewMessagesPlateWidget="true"]
 	max-height: 32dip;
 	margin-top: 12dip;
 	margin-bottom: 12dip;
-	/*background: rgba(202, 230, 179, 50%);*/
 }
 
 QLabel[NewMessagesPlateWidgetLabel="true"]
 {
 	font-size: 16dip;
-	/*color: #579eFF;*/
 	margin-left: 12dip;
 	margin-right: 12dip;
 	margin-top: 13dip;

@@ -7,38 +7,38 @@
 
 namespace core
 {
-	namespace tools
-	{
-		class http_request_simple;
-	}
+    namespace tools
+    {
+        class http_request_simple;
+    }
 }
 
 
 namespace core
 {
-	namespace wim
-	{
-		class add_buddy : public wim_packet
-		{
-			virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
-			virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
-				
-			std::string		aimid_;
-			std::string		group_;
-			std::string		auth_message_;
+    namespace wim
+    {
+        class add_buddy : public wim_packet
+        {
+            virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
+            virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
 
-		public:
-			
-			add_buddy(
-				const wim_packet_params& _params,
-				const std::string& _aimid,
-				const std::string& _group,
-				const std::string& _auth_message);
+            std::string		aimid_;
+            std::string		group_;
+            std::string		auth_message_;
 
-			virtual ~add_buddy();
-		};
+        public:
 
-	}
+            add_buddy(
+                const wim_packet_params& _params,
+                const std::string& _aimid,
+                const std::string& _group,
+                const std::string& _auth_message);
+
+            virtual ~add_buddy();
+        };
+
+    }
 
 }
 

@@ -18,10 +18,10 @@ send_feedback::send_feedback(const wim_packet_params& _params, const std::string
 {
     fields_.insert(fields.begin(), fields.end());
     attachments_.assign(attachments.begin(), attachments.end());
-    
+
     if (fields_.find("fb.user_name") == fields_.end() || fields_["fb.user_name"].empty())
         fields_["fb.user_name"] = _params.aimid_;
-    
+
     fields_["fb.question.3003"] = _params.aimid_;
 }
 
@@ -48,7 +48,7 @@ int32_t send_feedback::init_request(std::shared_ptr<core::http_request_simple> _
                 dataCurr.resize(size);
                 ifs.seekg(-((std::fstream::off_type)dataCurr.size()), std::ios::end);
                 ifs.read(&dataCurr[0], dataCurr.size());
-                
+
             }
             ifs.close();
         }
@@ -128,7 +128,7 @@ int32_t send_feedback::execute_request(std::shared_ptr<core::http_request_simple
 {
     if (!request->post())
         return wpie_network_error;
-    
+
     http_code_ = (uint32_t)request->get_response_code();
     if (http_code_ != 200)
         return wpie_http_error;

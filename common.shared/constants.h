@@ -41,3 +41,10 @@
 #define settings_feedback_email "feedback_email"
 
 #define settings_mac_accounts_migrated "mac_accounts_migrated"
+#define settings_skip_intro_yourself "skip_intro_yourself"
+
+#define settings_proxy_type "proxy_settings_type"
+#define settings_proxy_address "proxy_settings_address"
+#define settings_proxy_port "proxy_settings_port"
+#define settings_proxy_username "proxy_settings_username"
+#define settings_proxy_password "proxy_settings_password"

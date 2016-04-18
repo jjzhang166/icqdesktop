@@ -9,6 +9,7 @@
 #include "../../utils/gui_coll_helper.h"
 #include "../../gui_settings.h"
 #include "../../core_dispatcher.h"
+#include "../../controls/GeneralCreator.h"
 
 using namespace Ui;
 
@@ -34,16 +35,16 @@ void GeneralSettingsWidget::Creator::initNotifications(QWidget* parent, std::map
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(scroll_area);
 
-    addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Notifications"));
+    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Notifications"));
     {
-        auto enableSoundsWidgets = addSwitcher(&collector, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Play sounds"), get_gui_settings()->get_value<bool>(settings_sounds_enabled, true), [](bool c) -> QString
+        auto enableSoundsWidgets = GeneralCreator::addSwitcher(&collector, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Play sounds"), get_gui_settings()->get_value<bool>(settings_sounds_enabled, true), [](bool c) -> QString
         {
             GetDispatcher()->getVoipController().setMuteSounds(!c);
             if (get_gui_settings()->get_value<bool>(settings_sounds_enabled, true) != c)
                 get_gui_settings()->set_value<bool>(settings_sounds_enabled, c);
             return (c ? QT_TRANSLATE_NOOP("settings_pages", "On") : QT_TRANSLATE_NOOP("settings_pages", "Off"));
         });
-        auto outgoingSoundWidgets = addSwitcher(0, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Outgoing messages sound"), get_gui_settings()->get_value<bool>(settings_outgoing_message_sound_enabled, false), [](bool c) -> QString
+        auto outgoingSoundWidgets = GeneralCreator::addSwitcher(0, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Outgoing messages sound"), get_gui_settings()->get_value<bool>(settings_outgoing_message_sound_enabled, false), [](bool c) -> QString
         {
             if (get_gui_settings()->get_value(settings_outgoing_message_sound_enabled, false) != c)
                 get_gui_settings()->set_value(settings_outgoing_message_sound_enabled, c);
@@ -66,7 +67,7 @@ void GeneralSettingsWidget::Creator::initNotifications(QWidget* parent, std::map
                 outgoingSoundWidgets.text_->setEnabled(true);
             }
         }));
-        addSwitcher(0, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Show notifications"), get_gui_settings()->get_value<bool>(settings_notify_new_messages, true), [](bool c) -> QString
+        GeneralCreator::addSwitcher(0, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Show notifications"), get_gui_settings()->get_value<bool>(settings_notify_new_messages, true), [](bool c) -> QString
         {
             if (get_gui_settings()->get_value<bool>(settings_notify_new_messages, true) != c)
                 get_gui_settings()->set_value<bool>(settings_notify_new_messages, c);

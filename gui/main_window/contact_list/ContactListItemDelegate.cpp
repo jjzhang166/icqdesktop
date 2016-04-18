@@ -34,7 +34,7 @@ namespace Logic
         bool isGroup = false;
         QString displayName, status, state;
         QString aimId;
-        bool haveLastSeen = false, isChecked = false, isChatMember = false;
+        bool haveLastSeen = false, isChecked = false, isChatMember = false, isOfficial = false;
         QDateTime lastSeen;
         
         bool hasMouseOver = true;
@@ -78,6 +78,7 @@ namespace Logic
             haveLastSeen = contact_in_cl->HaveLastSeen_;
             lastSeen = contact_in_cl->LastSeen_;
             isChecked = contact_in_cl->IsChecked_;
+            isOfficial = contact_in_cl->IsOfficial_;
             
             auto chatMembersModel = Logic::GetChatMembersModel();
             if (!!chatMembersModel)
@@ -104,8 +105,8 @@ namespace Logic
             const auto isFilled = !isMultichat;
             bool isDefault = false;
 
-            const auto &avatar = Logic::GetAvatarStorage()->GetRounded(aimId, QString(), Utils::scale_bitmap(Utils::scale_value(32)) , QString(), isFilled, isDefault);
-            const ContactList::ContactListVisualData visData(aimId, *avatar, state, status, isHovered, isSelected, displayName, haveLastSeen, lastSeen, isChecked, isChatMember);
+            const auto &avatar = Logic::GetAvatarStorage()->GetRounded(aimId, QString(), Utils::scale_bitmap(Utils::scale_value(32)) , isMultichat ? QString() : state, isFilled, isDefault, true);
+            const ContactList::ContactListVisualData visData(aimId, *avatar, state, status, isHovered, isSelected, displayName, haveLastSeen, lastSeen, isChecked, isChatMember, isOfficial);
             ContactList::RenderContactItem(*painter, visData, regim_, membersModel && membersModel->is_short_view_);
         }
 

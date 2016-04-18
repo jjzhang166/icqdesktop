@@ -5,52 +5,52 @@
 
 namespace core
 {
-	struct icollection;
+    struct icollection;
 
-	namespace wim
-	{
-		class active_dialog
-		{
-			std::string		aimid_;
+    namespace wim
+    {
+        class active_dialog
+        {
+            std::string		aimid_;
 
-		public:
-			active_dialog();
-			active_dialog(const std::string& _aimid);
+        public:
+            active_dialog();
+            active_dialog(const std::string& _aimid);
 
-			std::string get_aimid() const { return aimid_; }
-			
-			int32_t unserialize(const rapidjson::Value& _node);
-			void serialize(rapidjson::Value& _node, rapidjson_allocator& _a);
-			void serialize(icollection* _coll);
-		};
+            std::string get_aimid() const { return aimid_; }
 
-		class active_dialogs
-		{
-			bool	changed_;
+            int32_t unserialize(const rapidjson::Value& _node);
+            void serialize(rapidjson::Value& _node, rapidjson_allocator& _a);
+            void serialize(icollection* _coll);
+        };
 
-			std::list<active_dialog>	dialogs_;
+        class active_dialogs
+        {
+            bool	changed_;
 
-		public:
+            std::list<active_dialog>	dialogs_;
 
-			void enumerate(std::function<void(const active_dialog&)> _callback);
+        public:
+
+            void enumerate(std::function<void(const active_dialog&)> _callback);
             size_t size() const;
 
-			bool is_changed() { return changed_; }
-			void set_changed(bool _changed) { changed_ = _changed; }
+            bool is_changed() { return changed_; }
+            void set_changed(bool _changed) { changed_ = _changed; }
 
-			active_dialogs();
-			virtual ~active_dialogs();
+            active_dialogs();
+            virtual ~active_dialogs();
 
-			void update(active_dialog& _dialog);
-			void remove(const std::string& _aimid);
+            void update(active_dialog& _dialog);
+            void remove(const std::string& _aimid);
             bool contains(const std::string& _aimId);
 
-			int32_t unserialize(const rapidjson::Value& _node);
-			void serialize(rapidjson::Value& _node, rapidjson_allocator& _a);
-			void serialize(icollection* _coll);
-		};
+            int32_t unserialize(const rapidjson::Value& _node);
+            void serialize(rapidjson::Value& _node, rapidjson_allocator& _a);
+            void serialize(icollection* _coll);
+        };
 
-	}
+    }
 }
 
 

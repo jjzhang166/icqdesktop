@@ -1,5 +1,7 @@
 #pragma once
 
+#include "proxy_settings.h"
+
 namespace core
 {
     class coll_helper;
@@ -71,7 +73,7 @@ namespace core
             std::string events_to_json(events_ci begin, events_ci end, time_t _start_time) const;
             std::chrono::system_clock::time_point last_sent_time_;
             std::vector<std::string> get_post_data() const;
-            static bool send(const std::string& post_data);
+            static bool send(const proxy_settings& _user_proxy, const std::string& post_data);
 
             void serialize(tools::binary_stream& _bs) const;
             bool unserialize(tools::binary_stream& _bs);

@@ -10,77 +10,87 @@
 
 namespace core
 {
-	namespace archive
-	{
+    namespace archive
+    {
 
-		class storage;
-		typedef std::vector<std::shared_ptr<history_message>>		history_block;
-		typedef std::shared_ptr<history_block>						history_block_sptr;
-		typedef std::list<message_header>							headers_list;
-		typedef std::map<int64_t, message_header>					headers_map;
+        class storage;
 
-		class archive_hole
-		{
-			int64_t		from_;
-			int64_t		to_;
-			int64_t		depth_;
+        typedef std::vector<std::shared_ptr<history_message>>		history_block;
+        typedef std::shared_ptr<history_block>						history_block_sptr;
 
-		public:
+        typedef std::list<message_header>							headers_list;
+        typedef std::shared_ptr<headers_list>                       headers_list_sptr;
 
-			archive_hole() : from_(-1), to_(-1), depth_(0) {}
+        typedef std::map<int64_t, message_header>					headers_map;
 
-			int64_t get_from() const { return from_; }
-			void set_from(int64_t _value) { from_ = _value; }
+        class archive_hole
+        {
+            int64_t		from_;
+            int64_t		to_;
+            int64_t		depth_;
 
-			int64_t get_to() const { return to_; }
-			void set_to(int64_t _value) { to_ = _value; }
+        public:
 
-			void set_depth(int64_t _depth) { depth_ = _depth; }
-			int64_t get_depth() const { return depth_; }
-		};
+            archive_hole() : from_(-1), to_(-1), depth_(0) {}
+
+            int64_t get_from() const { return from_; }
+            void set_from(int64_t _value) { from_ = _value; }
+            bool has_from() const { return (from_ > 0); }
+
+            int64_t get_to() const { return to_; }
+            void set_to(int64_t _value) { to_ = _value; }
+            bool has_to() const { return (to_ > 0); }
+
+            void set_depth(int64_t _depth) { depth_ = _depth; }
+            int64_t get_depth() const { return depth_; }
+        };
 
 
-		//////////////////////////////////////////////////////////////////////////
-		// archive_index class
-		//////////////////////////////////////////////////////////////////////////
-		class archive_index
-		{
-			archive::error							last_error_;
-			headers_map								headers_index_;
-			std::unique_ptr<storage>				storage_;
-							
+        //////////////////////////////////////////////////////////////////////////
+        // archive_index class
+        //////////////////////////////////////////////////////////////////////////
+        class archive_index
+        {
+            archive::error							last_error_;
+            headers_map								headers_index_;
+            std::unique_ptr<storage>				storage_;
 
-			void serialize_block(const headers_list& _headers, core::tools::binary_stream& _data) const;
-			bool unserialize_block(core::tools::binary_stream& _data);
-			bool insert_block(const archive::headers_list& _headers);
-			
-		public:
+            void serialize_block(const headers_list& _headers, core::tools::binary_stream& _data) const;
+            bool unserialize_block(core::tools::binary_stream& _data);
+            void insert_block(const archive::headers_list& _headers);
+            void insert_header(const archive::message_header& header);
 
-			bool get_header(int64_t _msgid, message_header& _header) const;
+        public:
 
-			bool get_next_hole(int64_t _from, archive_hole& _hole, int64_t _depth) const;
-			
-			bool save_all();
-			bool save_block(const archive::headers_list& _block);
+            bool get_header(int64_t _msgid, message_header& _header) const;
 
-			void optimize();
-			bool need_optimize();
+            bool has_header(const int64_t _msgid) const;
 
-			bool load_from_local();
-			
-			void serialize(headers_list& _list) const;
-			bool serialize_from(int64_t _from, int64_t _count, headers_list& _list) const;
-			bool update(const archive::history_block& _data, /*out*/ headers_list& _headers);
+            bool get_next_hole(int64_t _from, archive_hole& _hole, int64_t _depth) const;
 
-			int64_t get_last_msgid();
+            bool save_all();
+            bool save_block(const archive::headers_list& _block);
 
-			archive::error get_last_error() const { return last_error_; }
+            void optimize();
+            bool need_optimize();
 
-			archive_index(const std::wstring& _file_name);
-			virtual ~archive_index();
-		};
+            bool load_from_local();
 
-	}
+            void serialize(headers_list& _list) const;
+            bool serialize_from(int64_t _from, int64_t _count, headers_list& _list) const;
+            bool update(const archive::history_block& _data, /*out*/ headers_list& _headers);
+
+            void delete_up_to(const int64_t _to);
+
+            int64_t get_last_msgid();
+
+            archive::error get_last_error() const { return last_error_; }
+
+            archive_index(const std::wstring& _file_name);
+            virtual ~archive_index();
+        };
+
+    }
 }
 
 

@@ -5,6 +5,7 @@
 
 #include "../../async_task.h"
 #include "../../../corelib/common.h"
+#include "../../proxy_settings.h"
 
 namespace core
 {
@@ -86,6 +87,8 @@ namespace core
 
             wpie_error_attach_busy_phone = 34,
 
+            wpie_error_too_large_file = 35,
+
             wpie_client_http_error = 400,
 
             wpie_error_need_relogin= 1000,
@@ -150,6 +153,7 @@ namespace core
             time_t time_offset_;
             std::string uniq_device_id_;
             std::string aimid_;
+            proxy_settings proxy_;
 
             wim_packet_params(
                 std::function<bool()> _stop_handler,
@@ -159,7 +163,8 @@ namespace core
                 const std::string& _aimsid,
                 const std::string& _uniq_device_id,
                 const std::string& _aimid,
-                time_t _time_offset)
+                time_t _time_offset,
+                const proxy_settings& _proxy)
                 :
             stop_handler_(_stop_handler),
                 a_token_(_a_token),
@@ -168,7 +173,8 @@ namespace core
                 aimsid_(_aimsid),
                 time_offset_(_time_offset),
                 uniq_device_id_(_uniq_device_id),
-                aimid_(_aimid)
+                aimid_(_aimid),
+                proxy_(_proxy)
             {
             }
 

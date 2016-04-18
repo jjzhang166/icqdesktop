@@ -2,6 +2,7 @@
 #ifdef _WIN32
 
 #include "../common.shared/keys.h"
+#include "proxy_settings.h"
 
 namespace core
 {
@@ -20,7 +21,7 @@ namespace core
         private:
             void clear_report_folder();
             bool is_report_existed();
-            bool send_to_hockey_app(const std::string& _login);
+            bool send_to_hockey_app(const std::string& _login, const proxy_settings& _proxy);
             std::unique_ptr<async_executer> send_thread_;
             std::string login_;
         };

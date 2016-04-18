@@ -134,15 +134,18 @@ namespace Ui
 
     bool MessagesScrollArea::isViewportFull() const
     {
-        return (
-            Layout_->getViewportScrollBounds().height() > 0
-        );
+        const auto scrollBounds = Layout_->getViewportScrollBounds();
+
+        const auto scrollRange = (scrollBounds.second - scrollBounds.first);
+        assert(scrollRange >= 0);
+
+        return (scrollRange > 0);
     }
 
     bool MessagesScrollArea::containsWidget(QWidget *widget) const
     {
         assert(widget);
-        
+
         return Layout_->containsWidget(widget);
     }
 
@@ -153,6 +156,22 @@ namespace Ui
         Layout_->removeWidget(widget);
 
         updateScrollbar();
+    }
+
+    void MessagesScrollArea::replaceWidget(const Logic::MessageKey &key, QWidget *widget)
+    {
+        assert(key.hasId());
+        assert(widget);
+
+        auto existingWidget = getItemByKey(key);
+        if (!existingWidget)
+        {
+            return;
+        }
+
+        removeWidget(existingWidget);
+
+        insertWidget(key, widget);
     }
 
     bool MessagesScrollArea::touchScrollInProgress() const
@@ -181,7 +200,7 @@ namespace Ui
     {
         const auto viewportScrollBounds = Layout_->getViewportScrollBounds();
 
-        auto scrollbarMaximum = viewportScrollBounds.height();
+        auto scrollbarMaximum = (viewportScrollBounds.second - viewportScrollBounds.first);
         assert(scrollbarMaximum >= 0);
 
         const auto scrollbarVisible = (scrollbarMaximum > 0);
@@ -195,7 +214,8 @@ namespace Ui
         }
 
         const auto viewportAbsY = Layout_->getViewportAbsY();
-        const auto scrollPos = (viewportAbsY - viewportScrollBounds.top());
+        const auto scrollPos = (viewportAbsY - viewportScrollBounds.first);
+        assert(scrollPos >= 0);
 
         Scrollbar_->setValue(scrollPos);
     }

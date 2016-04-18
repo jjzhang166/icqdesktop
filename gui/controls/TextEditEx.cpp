@@ -12,8 +12,8 @@ namespace Ui
         font_(Utils::appFont(fontFamily, fontSize)),
         prev_pos_(-1),
         input_(input),
-        is_fit_to_text_(_isFitToText),
-        is_catch_enter_(false)
+        isFitToText_(_isFitToText),
+        isCatchEnter_(false)
     {
         init(fontSize);
         setPalette(palette);
@@ -26,11 +26,14 @@ namespace Ui
         color_(color),
         prev_pos_(-1),
         input_(input),
-        is_fit_to_text_(_isFitToText),
-        is_catch_enter_(false)
+        isFitToText_(_isFitToText),
+        isCatchEnter_(false)
     {
         init(fontSize);
-        setTextColor(color_);
+
+        QPalette palette;
+        palette.setColor(QPalette::Text, color_);
+        setPalette(palette);
     }
 
     void TextEditEx::init(int /*fontSize*/)
@@ -43,7 +46,7 @@ namespace Ui
         p.setColor(QPalette::Highlight, Utils::getSelectionColor());
         setPalette(p);
 
-        if (is_fit_to_text_)
+        if (isFitToText_)
         {
             connect(this->document(), SIGNAL(contentsChanged()), this, SLOT(edit_content_changed()), Qt::QueuedConnection);
         }
@@ -238,9 +241,10 @@ namespace Ui
         }
     }
 
-    bool TextEditEx::catch_enter(int /*_modifiers*/)
+    
+    bool TextEditEx::catchEnter(int /*_modifiers*/)
     {
-        return is_catch_enter_;
+        return isCatchEnter_;
     }
 
     void TextEditEx::keyPressEvent(QKeyEvent* _event)
@@ -263,7 +267,7 @@ namespace Ui
         {
             Qt::KeyboardModifiers modifiers = _event->modifiers();
 
-            if (catch_enter(modifiers))
+            if (catchEnter(modifiers))
             {
                 emit enter();
                 return;
@@ -278,17 +282,17 @@ namespace Ui
         return getPlainText(0, -1);
     }
 
-    void TextEditEx::setPlainText(const QString& _text)
+    void TextEditEx::setPlainText(const QString& _text, bool _convertLinks)
     {
         clear();
         resource_index_.clear();
 
-        Logic::Text4Edit(_text, *this);
+        Logic::Text4Edit(_text, *this, Logic::Text2DocHtmlMode::Escape, _convertLinks);
     }
 
-    void TextEditEx::insert_emoji(int _main, int _ext)
+    void TextEditEx::insertEmoji(int _main, int _ext)
     {
-        merge_resources(Logic::InsertEmoji(_main, _ext, *this));
+        mergeResources(Logic::InsertEmoji(_main, _ext, *this));
     }
 
     void TextEditEx::selectByPos(const QPoint& p)
@@ -351,7 +355,7 @@ namespace Ui
         return document()->documentLayout()->documentSize().toSize();
     }
 
-    void TextEditEx::merge_resources(const ResourceMap& _resources)
+    void TextEditEx::mergeResources(const ResourceMap& _resources)
     {
         for (auto iter = _resources.cbegin(); iter != _resources.cend(); iter++)
             resource_index_[iter->first] = iter->second;
@@ -364,9 +368,19 @@ namespace Ui
         return sizeRect;
     }
 
-    void TextEditEx::set_catch_enter(bool _is_catch_enter)
+    void TextEditEx::setCatchEnter(bool _isCatchEnter)
     {
-        is_catch_enter_ = _is_catch_enter;
+        isCatchEnter_ = _isCatchEnter;
+    }
+
+    int TextEditEx::adjustHeight(int _width)
+    {
+        setFixedWidth(_width);
+        document()->setTextWidth(_width);
+        int height = getTextSize().height();
+        setFixedHeight(height);
+
+        return height;
     }
 }
 

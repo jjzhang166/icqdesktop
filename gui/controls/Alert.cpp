@@ -11,7 +11,7 @@ namespace Ui
         const QString _alertLabelStyle = "QLabel { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #282828; font-size: 18dip; margin: 0; padding: 0; }";
         const QString _alertButtonStyle =
             "QPushButton[default=\"false\"] { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #282828; font-size: 16dip; background-color: #c5c5c5; border-style: none; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 32dip; min-height: 32dip; } QPushButton[default=\"false\"]:hover { background-color: #d2d2d2; } QPushButton[default=\"false\"]:pressed { background-color: #bbbbbb; } "
-            "QPushButton[default=\"true\"] { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #ffffff; font-size: 16dip; background-color: #579e1c; border-style: solid; border-width: 2dip; border-color: #427a13; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 28dip; min-height: 28dip; } QPushButton[default=\"true\"]:hover { background-color: #57a813; } QPushButton[default=\"true\"]:pressed { background-color: #50901b; } ";
+            "QPushButton[default=\"true\"] { font-family: \"%FONT_FAMILY%\"; font-weight: %FONT_WEIGHT%; color: #ffffff; font-size: 16dip; background-color: #579e1c; border-style: none; margin: 0; padding-left: 20dip; padding-right: 20dip; min-width: 100dip; max-height: 32dip; min-height: 32dip; } QPushButton[default=\"true\"]:hover { background-color: #57a813; } QPushButton[default=\"true\"]:pressed { background-color: #50901b; } ";
         
         namespace Shadow
         {

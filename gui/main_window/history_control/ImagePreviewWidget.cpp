@@ -80,7 +80,6 @@ namespace HistoryControl
 
         const auto clickedOnPicture = (
             isLeftButtonClick(e) &&
-            PreviewGenuineSize_.isValid() &&
             getPreviewScaledRect().contains(e->pos())
         );
 
@@ -212,9 +211,9 @@ namespace HistoryControl
         }
     }
 
-    void ImagePreviewWidget::initialize()
+    void ImagePreviewWidget::initializeInternal()
     {
-        PreviewContentWidget::initialize();
+        PreviewContentWidget::initializeInternal();
 
         if (!PreviewsEnabled_)
         {
@@ -270,11 +269,6 @@ namespace HistoryControl
 
     bool ImagePreviewWidget::isOverPicture(const QPoint &p) const
     {
-        if (!PreviewGenuineSize_.isValid())
-        {
-            return false;
-        }
-
         return getPreviewScaledRect().contains(p);
     }
 
@@ -282,7 +276,7 @@ namespace HistoryControl
     {
         return (State_ == State::Loaded);
     }
-    
+
     bool ImagePreviewWidget::isImageBubbleVisible() const
     {
         if (!PreviewsEnabled_)

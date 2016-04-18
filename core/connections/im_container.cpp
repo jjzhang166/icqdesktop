@@ -20,8 +20,65 @@ using namespace core;
 
 im_container::im_container(voip_manager::VoipManager& voip_manager)
     :   voip_manager_(voip_manager),
-    logins_(new im_login_list(utils::get_product_data_path() + L"/settings/ims.stg"))
+        logins_(new im_login_list(utils::get_product_data_path() + L"/settings/ims.stg"))
 {
+    REGISTER_IM_MESSAGE("login_by_password", on_login_by_password);
+    REGISTER_IM_MESSAGE("login_get_sms_code", on_login_get_sms_code);
+    REGISTER_IM_MESSAGE("login_by_phone", on_login_by_phone);
+    REGISTER_IM_MESSAGE("logout", on_logout);
+    REGISTER_IM_MESSAGE("connect_after_migration", on_connect_after_migration);
+    REGISTER_IM_MESSAGE("avatars/get", on_get_contact_avatar);
+    REGISTER_IM_MESSAGE("send_message", on_send_message);
+    REGISTER_IM_MESSAGE("message/typing", on_message_typing);
+    REGISTER_IM_MESSAGE("feedback/send", on_feedback);
+    REGISTER_IM_MESSAGE("set_state", on_set_state);
+    REGISTER_IM_MESSAGE("archive/index/get", on_get_archive_index);
+    REGISTER_IM_MESSAGE("archive/buddies/get", on_get_archive_messages_buddies);
+    REGISTER_IM_MESSAGE("archive/messages/get", on_get_archive_messages);
+    REGISTER_IM_MESSAGE("archive/messages/delete", on_delete_archive_messages);
+    REGISTER_IM_MESSAGE("archive/messages/delete_from", on_delete_archive_messages_from);
+    REGISTER_IM_MESSAGE("search", on_search);
+    REGISTER_IM_MESSAGE("dialogs/add", on_add_opened_dialog);
+    REGISTER_IM_MESSAGE("dialogs/remove", on_remove_opened_dialog);
+    REGISTER_IM_MESSAGE("dialogs/set_first_message", on_set_first_message);
+    REGISTER_IM_MESSAGE("dialogs/hide", on_hide_chat);
+    REGISTER_IM_MESSAGE("dialogs/mute", on_mute_chat);
+    REGISTER_IM_MESSAGE("dlg_state/set_last_read", on_set_last_read);
+    REGISTER_IM_MESSAGE("voip_call", on_voip_call_message);
+    REGISTER_IM_MESSAGE("files/upload", on_upload_file_sharing);
+    REGISTER_IM_MESSAGE("files/upload/abort", on_abort_file_sharing_uploading);
+    REGISTER_IM_MESSAGE("files/download", on_download_file);
+    REGISTER_IM_MESSAGE("files/download/abort", on_abort_file_downloading);
+    REGISTER_IM_MESSAGE("preview/download", on_download_preview);
+    REGISTER_IM_MESSAGE("stickers/meta/get", on_get_stickers_meta);
+    REGISTER_IM_MESSAGE("stickers/sticker/get", on_get_sticker);
+    REGISTER_IM_MESSAGE("chats/info/get", on_get_chat_info);
+    REGISTER_IM_MESSAGE("contacts/search", on_search_contacts);
+    REGISTER_IM_MESSAGE("contacts/search2", on_search_contacts2);
+    REGISTER_IM_MESSAGE("contacts/profile/get", on_profile);
+    REGISTER_IM_MESSAGE("contacts/add", on_add_contact);
+    REGISTER_IM_MESSAGE("contacts/remove", on_remove_contact);
+    REGISTER_IM_MESSAGE("contacts/rename", on_rename_contact);
+    REGISTER_IM_MESSAGE("contacts/block", on_spam_contact);
+    REGISTER_IM_MESSAGE("contacts/ignore", on_ignore_contact);
+    REGISTER_IM_MESSAGE("contacts/get_ignore", on_get_ignore_contacts);
+    REGISTER_IM_MESSAGE("dlg_state/hide", on_hide_dlg_state);
+    REGISTER_IM_MESSAGE("remove_members", on_remove_members);
+    REGISTER_IM_MESSAGE("add_members", on_add_members);
+    REGISTER_IM_MESSAGE("add_chat", on_add_chat);
+    REGISTER_IM_MESSAGE("modify_chat", on_modify_chat);
+    REGISTER_IM_MESSAGE("sign_url", on_sign_url);
+    REGISTER_IM_MESSAGE("stats", on_stats);
+    REGISTER_IM_MESSAGE("themes/meta/get", on_get_themes_meta);
+    REGISTER_IM_MESSAGE("themes/theme/get", on_get_theme);
+    REGISTER_IM_MESSAGE("files/set_url_played", on_url_played);
+    REGISTER_IM_MESSAGE("files/speech_to_text", on_speech_to_text);
+    REGISTER_IM_MESSAGE("favorite", on_favorite);
+    REGISTER_IM_MESSAGE("unfavorite", on_unfavorite);
+    REGISTER_IM_MESSAGE("load_flags", on_get_flags);
+    REGISTER_IM_MESSAGE("update_profile", on_update_profile);
+    REGISTER_IM_MESSAGE("set_user_proxy_settings", on_set_user_proxy);
+    REGISTER_IM_MESSAGE("livechat/join", on_join_livechat);
 }
 
 
@@ -46,6 +103,11 @@ void im_container::connect_ims()
 void im_container::update_login(im_login_id& _login)
 {
     logins_->update(_login);
+}
+
+void im_container::replace_uin_in_login(im_login_id& old_login, im_login_id& new_login)
+{
+    logins_->replace_uin(old_login, new_login);
 }
 
 bool core::im_container::create_ims()
@@ -74,110 +136,14 @@ std::string core::im_container::get_first_login() const
 
 void core::im_container::on_message_from_gui(const char * _message, int64_t _seq, coll_helper& _params)
 {
-    std::string message_string = _message;
+    auto iter_handler = messages_map_.find(_message);
+    if (iter_handler == messages_map_.end())
+    {
+        assert(!"unknown message type");
+        return;
+    }
 
-    if (message_string == "login_by_password")
-        on_login_by_password(_seq, _params);
-    else if (message_string == "login_get_sms_code")
-        on_login_get_sms_code(_seq, _params);
-    else if (message_string == "login_by_phone")
-        on_login_by_phone(_seq, _params);
-    else if (message_string == "logout")
-        on_logout();
-    else if (message_string == "connect_after_migration")
-        on_connect_after_migration();
-    else if (message_string == "avatars/get")
-        on_get_contact_avatar(_seq, _params);
-    else if (message_string == "send_message")
-        on_send_message(_seq, _params);
-    else if (message_string == "message/typing")
-        on_message_typing(_seq, _params);
-    else if (message_string == "feedback/send")
-        on_feedback(_seq, _params);
-    else if (message_string == "set_state")
-        on_set_state(_seq, _params);
-    else if (message_string == "archive/index/get")
-        on_get_archive_index(_seq, _params);
-    else if (message_string == "archive/buddies/get")
-        on_get_archive_messages_buddies(_seq, _params);
-    else if (message_string == "archive/messages/get")
-        on_get_archive_messages(_seq, _params);
-    else if (message_string == "search")
-        on_search(_seq, _params);
-    else if (message_string == "dialogs/add")
-        on_add_opened_dialog(_seq, _params);
-    else if (message_string == "dialogs/remove")
-        on_remove_opened_dialog(_seq, _params);
-    else if (message_string == "dialogs/set_first_message")
-        on_set_first_message(_seq, _params);
-    else if (message_string == "dialogs/hide")
-        on_hide_chat(_seq, _params);
-    else if (message_string == "dialogs/mute")
-        on_mute_chat(_seq, _params);
-    else if (message_string == "dlg_state/set_last_read")
-        on_set_last_read(_seq, _params);
-    else if (message_string == "voip_call")
-        on_voip_call_message(_seq, _params);
-    else if (message_string == "files/upload")
-        on_upload_file_sharing(_seq, _params);
-    else if (message_string == "files/upload/abort")
-        on_abort_file_sharing_uploading(_seq, _params);
-    else if (message_string == "files/download")
-        on_download_file(_seq, _params);
-    else if (message_string == "files/download/abort")
-        on_abort_file_downloading(_seq, _params);
-    else if (message_string == "preview/download")
-        on_download_preview(_seq, _params);
-    else if (message_string == "stickers/meta/get")
-        on_get_stickers_meta(_seq, _params);
-    else if (message_string == "stickers/sticker/get")
-        on_get_sticker(_seq, _params);
-    else if (message_string == "chats/info/get")
-        on_get_chat_info(_seq, _params);
-    else if (message_string == "contacts/search")
-        on_search_contacts(_seq, _params);
-    else if (message_string == "contacts/search2")
-        on_search_contacts2(_seq, _params);
-    else if (message_string == "contacts/profile/get")
-        on_profile(_seq, _params);
-    else if (message_string == "contacts/add")
-        on_add_contact(_seq, _params);
-    else if (message_string == "contacts/remove")
-        on_remove_contact(_seq, _params);
-    else if (message_string == "contacts/block")
-        on_spam_contact(_seq, _params);
-    else if (message_string == "contacts/ignore")
-        on_ignore_contact(_seq, _params);
-    else if (message_string == "contacts/get_ignore")
-        on_get_ignore_contacts(_seq, _params);
-    else if (message_string == "dlg_state/hide")
-        on_hide_dlg_state(_seq, _params);
-    else if (message_string == "remove_members")
-        on_remove_members(_seq, _params);
-    else if (message_string == "add_members")
-        on_add_members(_seq, _params);
-    else if (message_string == "add_chat")
-        on_add_chat(_seq, _params);
-    else if (message_string == "modify_chat")
-        on_modify_chat(_seq, _params);
-    else if (message_string == "sign_url")
-        on_sign_url(_seq, _params);
-    else if (message_string == "stats")
-        on_stats(_seq, _params);
-    else if (message_string == "themes/meta/get")
-        on_get_themes_meta(_seq, _params);
-    else if (message_string == "themes/theme/get")
-        on_get_theme(_seq, _params);
-    else if (message_string == "files/set_url_played")
-        on_url_played(_seq, _params);
-    else if (message_string == "files/speech_to_text")
-        on_speech_to_text(_seq, _params);
-    else if (message_string == "favorite")
-        on_favorite(_seq, _params);
-    else if (message_string == "unfavorite")
-        on_unfavorite(_seq, _params);
-    else if (message_string == "load_flags")
-        on_get_flags(_seq, _params);
+    iter_handler->second(_seq, _params);
 }
 
 void core::im_container::fromInternalProxySettings2Voip(const core::proxy_settings& proxySettings, voip_manager::VoipProxySettings& voipProxySettings) {
@@ -208,9 +174,9 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
         return;
     }
 
-	if (type == "voip_call_start") {
-		const std::string call_type = _params.get_value_as_string("call_type");
-		const std::string mode      = _params.get_value_as_string("mode");
+    if (type == "voip_call_start") {
+        const std::string call_type = _params.get_value_as_string("call_type");
+        const std::string mode      = _params.get_value_as_string("mode");
         const std::string contact   = _params.get_value_as_string("contact");
 
         assert(!contact.empty());
@@ -222,8 +188,8 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
             im->on_voip_call_set_proxy(voipProxySettings);
             im->on_voip_call_start(contact, call_type == "video", mode == "attach");
         };
-	} else if (type == "voip_add_window") {
-	    voip_manager::WindowParams windowParams;
+    } else if (type == "voip_add_window") {
+        voip_manager::WindowParams windowParams;
         windowParams.hwnd = (void*)(uintptr_t)_params.get_value_as_int64("handle");
         windowParams.isPrimary = _params.get_value_as_bool("mode");
         windowParams.isSystem  = _params.get_value_as_bool("system_mode");
@@ -279,8 +245,8 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
         on_voip_avatar_msg(im, _params);
     } else if (type == "backgroung_update") {
         on_voip_background_msg(im, _params);
-	} else if (type == "voip_call_accept") {
-		const std::string mode    = _params.get_value_as_string("mode");
+    } else if (type == "voip_call_accept") {
+        const std::string mode    = _params.get_value_as_string("mode");
         const std::string contact = _params.get_value_as_string("contact");
 
         assert(!contact.empty());
@@ -292,14 +258,14 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
             im->on_voip_call_set_proxy(voipProxySettings);
             im->on_voip_call_accept(contact, mode == "video");
         }
-	} else if (type == "device_change") {
-		const std::string dev_type = _params.get_value_as_string("dev_type");
-		const std::string uid = _params.get_value_as_string("uid");
-		im->on_voip_device_changed(dev_type, uid);
-	} else if (type == "request_calls") {
-		im->on_voip_call_request_calls();
-	} else if (type == "update") {
-		im->on_voip_update();
+    } else if (type == "device_change") {
+        const std::string dev_type = _params.get_value_as_string("dev_type");
+        const std::string uid = _params.get_value_as_string("uid");
+        im->on_voip_device_changed(dev_type, uid);
+    } else if (type == "request_calls") {
+        im->on_voip_call_request_calls();
+    } else if (type == "update") {
+        im->on_voip_update();
     } else if (type == "voip_set_window_offsets") {
         void* hwnd = (void*)(uintptr_t)_params.get_value_as_int64("handle");
         int l = _params.get_value_as_int("left");
@@ -653,12 +619,12 @@ void core::im_container::on_login_by_phone(int64_t _seq, coll_helper& _params)
         (*ims_.begin())->start_attach_phone(_seq, info);
 }
 
-void core::im_container::on_connect_after_migration()
+void core::im_container::on_connect_after_migration(int64_t _seq, coll_helper& _params)
 {
     create();
 }
 
-void core::im_container::on_logout()
+void core::im_container::on_logout(int64_t _seq, coll_helper& _params)
 {
     assert(!ims_.empty());
     if (ims_.empty())
@@ -694,7 +660,7 @@ void core::im_container::on_logout()
                 return;
             }
             (*ptr_this->ims_.begin())->logout(__onlogout);;
-        }; 
+        };
 #ifndef STRIP_VOIP
         voip_manager_.get_call_manager()->call_stop_smart(__doLogout);
 #endif //STRIP_VOIP
@@ -726,7 +692,7 @@ void core::im_container::on_stats(int64_t _seq, coll_helper& _params)
     core::stats::event_props_type props;
 
     core::iarray* prop_array = _params.get_value_as_array("props");
-    for (int i = 0; i < prop_array->size(); ++i)
+    for (int i = 0; prop_array && i < prop_array->size(); ++i)
     {
         core::coll_helper value(prop_array->get_at(i)->get_as_collection(), false);
         auto prop_name = value.get_value_as_string("name");
@@ -778,6 +744,60 @@ void core::im_container::on_get_contact_avatar(int64_t _seq, coll_helper& _param
         return;
 
     im->get_contact_avatar(_seq, _params.get_value_as_string("contact"), _params.get_value_as_int("size"));
+}
+
+void core::im_container::on_delete_archive_messages(int64_t _seq, coll_helper& _params)
+{
+    assert(_seq > 0);
+
+    auto im = get_im(_params);
+    if (!im)
+    {
+        return;
+    }
+
+    const auto contact_aimid = _params.get<std::string>("contact_aimid");
+    assert(!contact_aimid.empty());
+
+    const auto messages_ids = _params.get_value_as_array("messages_ids");
+    assert(messages_ids);
+
+    const auto for_all = _params.get<bool>("for_all");
+
+    const auto ids_number = messages_ids->size();
+    assert(ids_number > 0);
+
+    std::vector<int64_t> ids;
+    ids.reserve(ids_number);
+
+    for (auto index = 0; index < ids_number; ++index)
+    {
+        const auto id = messages_ids->get_at(index)->get_as_int64();
+        assert(id > 0);
+
+        ids.push_back(id);
+    }
+
+    im->delete_archive_messages(_seq, contact_aimid, ids, for_all);
+}
+
+void core::im_container::on_delete_archive_messages_from(int64_t _seq, coll_helper& _params)
+{
+    assert(_seq > 0);
+
+    auto im = get_im(_params);
+    if (!im)
+    {
+        return;
+    }
+
+    const auto contact_aimid = _params.get<std::string>("contact_aimid");
+    assert(!contact_aimid.empty());
+
+    const auto from_id = _params.get<int64_t>("from_id");
+    assert(from_id >= 0);
+
+    im->delete_archive_messages_from(_seq, contact_aimid, from_id);
 }
 
 void core::im_container::on_add_opened_dialog(int64_t _seq, coll_helper& _params)
@@ -959,9 +979,22 @@ void im_container::on_get_chat_info(int64_t _seq, coll_helper& _params)
     if (!im)
         return;
 
-    im->get_chat_info(_seq,
-        _params.get<std::string>("aimid"),
-        _params.get<int32_t>("limit"));
+    std::string aimid, stamp;
+
+    if (_params->is_value_exist("stamp"))
+    {
+        stamp = _params.get<std::string>("stamp");
+    }
+    else if (_params->is_value_exist("aimid"))
+    {
+        aimid = _params.get<std::string>("aimid");
+    }
+    else
+    {
+        assert(false);
+    }
+
+    im->get_chat_info(_seq, aimid, stamp, _params.get<int32_t>("limit"));
 }
 
 void im_container::on_search_contacts(int64_t _seq, coll_helper& _params)
@@ -1025,6 +1058,20 @@ void im_container::on_remove_contact(int64_t _seq, coll_helper& _params)
         _seq,
         _params.get_value_as_string("contact"));
 }
+
+void im_container::on_rename_contact(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->rename_contact(
+        _seq,
+        _params.get_value_as_string("contact"),
+        _params.get_value_as_string("friendly")
+        );
+}
+
 
 void im_container::on_spam_contact(int64_t _seq, coll_helper& _params)
 {
@@ -1090,4 +1137,53 @@ void im_container::on_get_flags(int64_t _seq, coll_helper& _params)
         return;
 
     im->load_flags(_seq);
+}
+
+void core::im_container::on_update_profile(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    std::vector<std::pair<std::string, std::string>> fields;
+
+    auto field_array = _params.get_value_as_array("fields");
+    for (int i = 0; field_array && i < field_array->size(); ++i)
+    {
+        core::coll_helper value(field_array->get_at(i)->get_as_collection(), false);
+        auto field_name = value.get_value_as_string("field_name");
+        auto field_value = value.get_value_as_string("field_value");
+        fields.push_back(std::make_pair(field_name, field_value));
+    }
+
+    im->update_profile(_seq, fields);
+}
+
+void core::im_container::on_join_livechat(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    std::string stamp = _params.get_value_as_string("stamp");
+
+    im->join_live_chat(_seq, stamp);
+}
+
+void core::im_container::on_set_user_proxy(int64_t _seq, coll_helper& _params)
+{
+    proxy_settings user_proxy;
+
+    user_proxy.proxy_type_ = (int32_t)_params.get_value_as_enum<proxy_types>("settings_proxy_type");
+
+    assert(user_proxy.proxy_type_ >= 0 || user_proxy.proxy_type_ == -1);
+
+    user_proxy.use_proxy_ = user_proxy.proxy_type_ != -1;
+    user_proxy.proxy_server_ = tools::from_utf8(_params.get_value_as_string("settings_proxy_server"));
+    user_proxy.proxy_port_ = _params.get_value_as_int("settings_proxy_port");
+    user_proxy.login_ =  tools::from_utf8(_params.get_value_as_string("settings_proxy_username"));
+    user_proxy.password_ =  tools::from_utf8(_params.get_value_as_string("settings_proxy_password"));
+    user_proxy.need_auth_ = _params.get_value_as_bool("settings_proxy_need_auth");
+
+    g_core->set_user_proxy_settings(user_proxy);
 }

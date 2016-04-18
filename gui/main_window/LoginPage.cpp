@@ -12,6 +12,7 @@
 #include "../controls/CustomButton.h"
 #include "../controls/PictureWidget.h"
 #include "../controls/BackButton.h"
+#include "../controls/ConnectionSettingsWidget.h"
 
 namespace
 {
@@ -33,6 +34,7 @@ namespace Ui
         , remaining_seconds_(0)
         , timer_(new QTimer(this))
         , is_login_(is_login)
+        , code_length_(4)
     {
         setStyleSheet(Utils::LoadStyle(":/main_window/login_page.qss", Utils::get_scale_coefficient(), true));
         if (objectName().isEmpty())
@@ -46,22 +48,36 @@ namespace Ui
         auto back_button_widget = new QWidget(this);
         auto back_button_layout = new QHBoxLayout(back_button_widget);
         Utils::ApplyStyle(back_button_widget, "background-color: transparent;");
-        back_button_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        back_button_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
         back_button_layout->setSpacing(0);
-        back_button_layout->setContentsMargins(Utils::scale_value(14), Utils::scale_value(14), 0, 0);
-        back_button_layout->setAlignment(Qt::AlignLeft);
+        back_button_layout->setContentsMargins(Utils::scale_value(14), Utils::scale_value(14), Utils::scale_value(14), Utils::scale_value(14));
+
         {
             prev_page_link_ = new BackButton(back_button_widget);
             prev_page_link_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             prev_page_link_->setFlat(true);
             prev_page_link_->setFocusPolicy(Qt::NoFocus);
             prev_page_link_->setCursor(Qt::PointingHandCursor);
-            {
-                const QString s = "QPushButton { width: 20dip; height: 20dip; border: none; background-color: transparent; border-image: url(:/resources/contr_back_100.png); margin: 10dip; } QPushButton:hover { border-image: url(:/resources/contr_back_100_hover.png); } QPushButton#back_button:pressed { border-image: url(:/resources/contr_back_100_active.png); }";
-                Utils::ApplyStyle(prev_page_link_, s);
-            }
             back_button_layout->addWidget(prev_page_link_);
         }
+
+        {
+            auto buttonsSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+            back_button_layout->addItem(buttonsSpacer);
+        }
+
+        {
+            proxy_settings_link_ = new QPushButton(back_button_widget);
+            proxy_settings_link_->setProperty("SettingsButton", QVariant(true));
+     //   settingsTabButton_->setContentsMargins(Utils::scale_value(28), Utils::scale_value(24), Utils::scale_value(28), Utils::scale_value(24));
+
+            proxy_settings_link_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            proxy_settings_link_->setFlat(true);
+            proxy_settings_link_->setFocusPolicy(Qt::NoFocus);
+            proxy_settings_link_->setCursor(Qt::PointingHandCursor);
+            back_button_layout->addWidget(proxy_settings_link_);
+        }
+
         verticalLayout->addWidget(back_button_widget);
 
         if (is_login_)
@@ -225,7 +241,7 @@ namespace Ui
         code_edit_->setAttribute(Qt::WA_MacShowFocusRect, false);
         code_edit_->setAlignment(Qt::AlignCenter);
         Testing::setAccessibleName(code_edit_, "StartWindowSMScodeField");
-
+        
         phone_confirm_layout->addWidget(code_edit_);
 
         QSpacerItem* verticalSpacer_4 = new QSpacerItem(20, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
@@ -252,15 +268,18 @@ namespace Ui
         uin_password_edit_->setObjectName(QStringLiteral("uin_password_edit"));
         uin_password_edit_->setEchoMode(QLineEdit::Password);
         uin_password_edit_->setProperty("Password", QVariant(true));
+
         Testing::setAccessibleName(uin_password_edit_, "StartWindowPasswordField");
 
         uin_login_layout->addWidget(uin_password_edit_);
 
         keep_logged_ = new QCheckBox(uin_login_widget);
         keep_logged_->setObjectName(QStringLiteral("keep_logged"));
+        Utils::ApplyPropertyParameter(keep_logged_, "GreenCheckbox", true);
         keep_logged_->setVisible(is_login_);
-
         uin_login_layout->addWidget(keep_logged_);
+
+        uin_login_layout->addStretch();
 
         login_staked_widget_->addWidget(uin_login_widget);
 
@@ -310,6 +329,7 @@ namespace Ui
         verticalLayout_7->setContentsMargins(0, 0, 0, 0);
         error_label_ = new QLabel(widget);
         error_label_->setObjectName(QStringLiteral("error_label"));
+        error_label_->setWordWrap(true);
 
         if (is_login_)
         {
@@ -328,42 +348,46 @@ namespace Ui
 
         main_layout->addWidget(controls_widget);
 
-        QSpacerItem* horizontalSpacer_7 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        main_layout->addItem(horizontalSpacer_7);
+        if (is_login_)
+        {
+            QSpacerItem* horizontalSpacer_7 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+            main_layout->addItem(horizontalSpacer_7);
+        }
+        else
+        {
+            main_layout->setAlignment(Qt::AlignLeft);
+        }
 
         verticalLayout->addWidget(main_widget);
 
         QSpacerItem* verticalSpacer_2 = new QSpacerItem(0, 3, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
         verticalLayout->addItem(verticalSpacer_2);
+        
+        {
+            QWidget* switch_login_widget = new QWidget(this);
+            switch_login_widget->setObjectName(QStringLiteral("switch_login_widget"));
+            switch_login_widget->setProperty("LoginButtonWidget", QVariant(true));
+            QHBoxLayout* switch_login_layout = new QHBoxLayout(switch_login_widget);
+            switch_login_layout->setSpacing(0);
+            switch_login_layout->setObjectName(QStringLiteral("switch_login_layout"));
+            switch_login_layout->setContentsMargins(0, 0, 0, 0);
+            QSpacerItem* horizontalSpacer = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-        QWidget* switch_login_widget = new QWidget(this);
-        switch_login_widget->setObjectName(QStringLiteral("switch_login_widget"));
-        switch_login_widget->setProperty("LoginButtonWidget", QVariant(true));
-        QHBoxLayout* switch_login_layout = new QHBoxLayout(switch_login_widget);
-        switch_login_layout->setSpacing(0);
-        switch_login_layout->setObjectName(QStringLiteral("switch_login_layout"));
-        switch_login_layout->setContentsMargins(0, 0, 0, 0);
-        QSpacerItem* horizontalSpacer = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+            switch_login_layout->addItem(horizontalSpacer);
 
-        switch_login_layout->addItem(horizontalSpacer);
+            switch_login_link_ = new QPushButton(switch_login_widget);
+            switch_login_link_->setObjectName(QStringLiteral("switch_login_link"));
+            switch_login_link_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+            switch_login_link_->setCursor(QCursor(Qt::PointingHandCursor));
+            switch_login_link_->setProperty("SwitchLoginButton", QVariant(true));
+            switch_login_link_->setVisible(is_login_);
+            Testing::setAccessibleName(switch_login_link_, "StartWindowChangeLoginType");
+            switch_login_layout->addWidget(switch_login_link_);
 
-        switch_login_link_ = new QPushButton(switch_login_widget);
-        switch_login_link_->setObjectName(QStringLiteral("switch_login_link"));
-        switch_login_link_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        switch_login_link_->setCursor(QCursor(Qt::PointingHandCursor));
-        switch_login_link_->setProperty("SwitchLoginButton", QVariant(true));
-        switch_login_link_->setVisible(is_login_);
-        Testing::setAccessibleName(switch_login_link_, "StartWindowChangeLoginType");
-
-        switch_login_layout->addWidget(switch_login_link_);
-
-        QSpacerItem* horizontalSpacer_2 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        switch_login_layout->addItem(horizontalSpacer_2);
-
-        verticalLayout->addWidget(switch_login_widget);
+            QSpacerItem* horizontalSpacer_2 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+            switch_login_layout->addItem(horizontalSpacer_2);
+            verticalLayout->addWidget(switch_login_widget);
+        }
 
         login_staked_widget_->setCurrentIndex(2);
 
@@ -447,6 +471,8 @@ namespace Ui
         connect(resend_button_, SIGNAL(clicked()), this, SLOT(stats_resend_sms()), Qt::QueuedConnection);
         connect(timer_, SIGNAL(timeout()), this, SLOT(updateTimer()), Qt::QueuedConnection);
 
+        connect(proxy_settings_link_, SIGNAL(clicked()), this, SLOT(openProxySettings()), Qt::QueuedConnection);
+
         country_code_->setProperty("CountryCodeEdit", true);
         phone_->setProperty("PhoneNumberEdit", true);
         phone_->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -469,7 +495,7 @@ namespace Ui
         connect(phone_, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
         connect(phone_, SIGNAL(emptyTextBackspace()), this, SLOT(emptyPhoneRemove()), Qt::QueuedConnection);
 
-        QObject::connect(Ui::GetDispatcher(), SIGNAL(getSmsResult(int64_t, int)), this, SLOT(getSmsResult(int64_t, int)), Qt::DirectConnection);
+        QObject::connect(Ui::GetDispatcher(), SIGNAL(getSmsResult(int64_t, int, int)), this, SLOT(getSmsResult(int64_t, int, int)), Qt::DirectConnection);
         QObject::connect(Ui::GetDispatcher(), SIGNAL(loginResult(int64_t, int)), this, SLOT(loginResult(int64_t, int)), Qt::DirectConnection);
         QObject::connect(Ui::GetDispatcher(), SIGNAL(loginResultAttachUin(int64_t, int)), this, SLOT(loginResultAttachUin(int64_t, int)), Qt::DirectConnection);
         QObject::connect(Ui::GetDispatcher(), SIGNAL(loginResultAttachPhone(int64_t, int)), this, SLOT(loginResultAttachPhone(int64_t, int)), Qt::DirectConnection);
@@ -485,10 +511,16 @@ namespace Ui
         initLoginSubPage(SUBPAGE_PHONE_LOGIN_INDEX);
     }
 
+    void LoginPage::updateFocus()
+    {
+        uin_login_edit_->setFocus();
+    }
+
     void LoginPage::initLoginSubPage(int index)
     {
         setFocus();
         prev_page_link_->setVisible(is_login_ && index == SUBPAGE_PHONE_CONF_INDEX);
+        proxy_settings_link_->setVisible(is_login_ && index != SUBPAGE_PHONE_CONF_INDEX);
         next_page_link_->setVisible(index != SUBPAGE_PHONE_CONF_INDEX);
 
         QString next_page_text;
@@ -498,7 +530,7 @@ namespace Ui
         }
         else
         {
-           next_page_text = index == SUBPAGE_PHONE_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Continue") : QT_TRANSLATE_NOOP("attach_page","Continue");
+           next_page_text = index == SUBPAGE_PHONE_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Continue") : QT_TRANSLATE_NOOP("login_page","Continue");
         }
 
         next_page_link_->setText(next_page_text);
@@ -576,6 +608,7 @@ namespace Ui
         prev_country_code_ = code;
         country_code_->setText(code);
         redrawCountryCode();
+
         phone_->setFocus();
     }
 
@@ -672,7 +705,7 @@ namespace Ui
         updateTimer();
     }
 
-    void LoginPage::getSmsResult(int64_t _seq, int result)
+    void LoginPage::getSmsResult(int64_t _seq, int result, int _code_length)
     {
         if (_seq != send_seq_)
             return;
@@ -683,6 +716,8 @@ namespace Ui
         error_label_->setVisible(result);
         if (result == core::le_success)
         {
+            if (_code_length != 0)
+                code_length_ = _code_length;
             clearErrors();
             return initLoginSubPage(SUBPAGE_PHONE_CONF_INDEX);
         }
@@ -806,7 +841,7 @@ namespace Ui
             error_label_->setText("");
             break;
         case core::le_attach_error_busy_phone:
-            error_label_->setText(QT_TRANSLATE_NOOP("login_page","This phone number is already attached to another account. Please edit phone number and try again."));
+            error_label_->setText(QT_TRANSLATE_NOOP("profile_page","This phone number is already attached to another account.\nPlease edit phone number and try again."));
             break;
         default:
             error_label_->setText(QT_TRANSLATE_NOOP("login_page","Error occured, try again later"));
@@ -817,7 +852,7 @@ namespace Ui
 
     void LoginPage::codeEditChanged(QString code)
     {
-        if (code.length() == 4)
+        if (code.length() == code_length_)
         {
             setFocus();
             code_edit_->setEnabled(false);
@@ -853,5 +888,11 @@ namespace Ui
         country_code_->setFocus();
         QString code = country_code_->text();
         country_code_->setText(code.isEmpty() ? code : code.left(code.length() - 1));
+    }
+
+    void LoginPage::openProxySettings()
+    {
+        auto connection_settings_widget_ = new ConnectionSettingsWidget(this);
+        connection_settings_widget_->show();
     }
 }

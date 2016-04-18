@@ -7,7 +7,6 @@ namespace Utils
 
 namespace Ui
 {
-    class Alert;
     
     class SettingsTab : public QWidget
     {
@@ -28,7 +27,6 @@ namespace Ui
     private:
         std::unique_ptr< UI > Ui_;
         Utils::CommonSettingsType CurrentSettingsItem_;
-        std::unique_ptr<Alert> logouter_;
 
     public:
         SettingsTab(QWidget* _parent);

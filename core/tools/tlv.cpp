@@ -42,7 +42,7 @@ uint32_t core::tools::tlvpack::size() const
 
 bool core::tools::tlvpack::empty() const
 {
-	return tlvlist_.empty();
+    return tlvlist_.empty();
 }
 
 bool core::tools::tlvpack::unserialize(const binary_stream& _stream)
@@ -109,7 +109,7 @@ std::shared_ptr<tlv> core::tools::tlvpack::get_next()
 
 
 tlv::tlv()
-:	type_(0)
+    :	type_(0)
 {
 }
 
@@ -190,25 +190,25 @@ template<> std::string tlv::get_value<std::string>(const std::string& _default_v
 
 template<> std::string tlv::get_value<std::string>() const
 {
-	return get_value<std::string>(std::string());
+    return get_value<std::string>(std::string());
 }
 
 namespace core
 {
-namespace tools
-{
+    namespace tools
+    {
 
-template<> const std::string tlv::get_value<const std::string>(const std::string& _default_value) const
-{
-    return get_value<std::string>(_default_value);
-}
+        template<> const std::string tlv::get_value<const std::string>(const std::string& _default_value) const
+        {
+            return get_value<std::string>(_default_value);
+        }
 
-template<> const std::string tlv::get_value<const std::string>() const
-{
-    return get_value<std::string>(std::string());
-}
+        template<> const std::string tlv::get_value<const std::string>() const
+        {
+            return get_value<std::string>(std::string());
+        }
 
-}
+    }
 }
 
 template<> void tlv::set_value<std::string>(const std::string& _value)

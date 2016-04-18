@@ -136,15 +136,32 @@ namespace Logic
                 dlg.GetText() :
                 (isMultichat ? "online" : (Utils::state_equals_online(state) ? state : slastSeen))
         );
+
         bool isTyping = false;
-        if (typers_.find(dlg.AimId_) != typers_.end())
+
+        for (auto iter_typing = typings_.rbegin(); iter_typing != typings_.rend(); ++iter_typing)
         {
-            QString typer = "";
-            if (isMultichat && !typers_.at(dlg.AimId_).empty())
-                typer = Logic::GetContactListModel()->getDisplayName(*(typers_.at(dlg.AimId_).rbegin()));
-            status = (typer + (typer.length() ? " " : "") +  QT_TRANSLATE_NOOP("contact_list", "is typing..."));
-            isTyping = true;
+            if (iter_typing->aimId_ == dlg.AimId_)
+            {
+                isTyping = true;
+
+                status.clear();
+
+                QString chatterName = iter_typing->getChatterName();
+
+                if (isMultichat)
+                {
+                    status += iter_typing->getChatterName() + " ";
+                }
+
+                status += QT_TRANSLATE_NOOP("contact_list", "is typing...");
+
+                break;
+            }
         }
+
+
+        bool isOfficial = dlg.Official_ || Logic::GetContactListModel()->isOfficial(dlg.AimId_);
 
 		ContactList::RecentItemVisualData visData(
 			dlg.AimId_,
@@ -159,7 +176,8 @@ namespace Logic
 			true,
 			QDateTime::fromTime_t(dlg.Time_),
 			(int)dlg.UnreadCount_, Logic::GetContactListModel()->isMuted(dlg.AimId_),
-            dlg.senderNick_);
+            dlg.senderNick_,
+            isOfficial);
 
 		painter->save();
 		painter->setRenderHint(QPainter::Antialiasing);
@@ -186,12 +204,12 @@ namespace Logic
         if (Logic::GetRecentsModel()->isServiceItem(i))
             return QSize(Utils::scale_value(333), Utils::scale_value(25));
 
-		return QSize(Utils::scale_value(333), Utils::scale_value(60));
+		return QSize(Utils::scale_value(333), Utils::scale_value(68));
 	}
 
 	QSize RecentItemDelegate::sizeHintForAlert() const
 	{
-		return QSize(Utils::scale_value(320), Utils::scale_value(60));
+		return QSize(Utils::scale_value(320), Utils::scale_value(68));
 	}
 
 	int RecentItemDelegate::itemSize() const
@@ -204,18 +222,22 @@ namespace Logic
 		StateBlocked_= value;
 	}
     
-    void RecentItemDelegate::addChatter(QString aimId, QString chatter)
+    void RecentItemDelegate::addTyping(const TypingFires& _typing)
     {
-        typers_[aimId].insert(chatter);
+        auto iter = std::find(typings_.begin(), typings_.end(), _typing);
+        if (iter == typings_.end())
+        {
+            typings_.push_back(_typing);
+        }
     }
-    
-    void RecentItemDelegate::removeChatter(QString aimId, QString chatter)
+
+    void RecentItemDelegate::removeTyping(const TypingFires& _typing)
     {
-        if (typers_.find(aimId) == typers_.end())
-            return;
-        typers_[aimId].erase(chatter);
-        if (typers_[aimId].empty())
-            typers_.erase(aimId);
+        auto iter = std::find(typings_.begin(), typings_.end(), _typing);
+        if (iter != typings_.end())
+        {
+            typings_.erase(iter);
+        }
     }
 
     void RecentItemDelegate::setDragIndex(const QModelIndex& index)

@@ -1,3 +1,8 @@
+QWidget[Invisible="true"]
+{
+	background-color: transparent;
+}
+
 QWidget[TitleWidget="true"]
 {
 	background-color: #ebebeb;

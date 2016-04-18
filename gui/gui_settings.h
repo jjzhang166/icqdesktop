@@ -84,7 +84,7 @@ Q_SIGNALS:
         template <class t_>
         void set_value(const QString& _name, const t_& _value)
         {
-            assert(false);
+            assert(false); 
         }
 
         template <class t_>
@@ -124,4 +124,6 @@ Q_SIGNALS:
     template<> QRect qt_gui_settings::get_value<QRect>(const QString& _name, const QRect& _default_value) const;
     
     qt_gui_settings* get_gui_settings();
+
+    const std::string get_account_setting_name(const std::string& setting_name);
 }

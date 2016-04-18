@@ -121,6 +121,8 @@ namespace Logic
             if (Dialogs_.empty())
                 emit Utils::InterConnector::instance().showNoRecentsYet();
 
+            emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_IntroduceYourself);
+
             emit updated();
 		}
 	}
@@ -151,12 +153,12 @@ namespace Logic
 
 			existingDlgState = dlgState;
 
-            const auto mustRecoverText = !existingDlgState.HasText();
+            const auto mustRecoverText = (!existingDlgState.HasText() && existingDlgState.HasLastMsgId());
             if (mustRecoverText)
             {
                 existingDlgState.SetText(existingText);
             }
-            
+
             if (syncSort)
             {
                 sortDialogs();
@@ -194,10 +196,10 @@ namespace Logic
 
 	void RecentsModel::sortDialogs()
 	{
-		std::sort(Dialogs_.begin(), Dialogs_.end(), [this](Data::DlgState first, Data::DlgState second) 
-        { 
+		std::sort(Dialogs_.begin(), Dialogs_.end(), [this](Data::DlgState first, Data::DlgState second)
+        {
             if (first.FavoriteTime_ == -1 && second.FavoriteTime_ == -1)
-                return first.Time_ > second.Time_; 
+                return first.Time_ > second.Time_;
 
             if (first.FavoriteTime_ == -1)
                 return false;
@@ -352,7 +354,7 @@ namespace Logic
 		}
 		return QModelIndex();
 	}
-    
+
     QString RecentsModel::firstContact()
     {
         if (!Dialogs_.empty())
@@ -372,7 +374,7 @@ namespace Logic
 		}
 		return result;
 	}
-    
+
     QString RecentsModel::nextUnreadAimId()
     {
         for (auto iter : Dialogs_)
@@ -383,10 +385,10 @@ namespace Logic
                 return iter.AimId_;
             }
         }
-        
+
         return "";
     }
-    
+
     QString RecentsModel::nextAimId(QString aimId)
     {
         for (int i = 0; i < (int) Dialogs_.size(); i++)
@@ -398,10 +400,10 @@ namespace Logic
                 return Dialogs_.at(i + 1).AimId_;
             }
         }
-        
+
         return "";
     }
-    
+
     QString RecentsModel::prevAimId(QString aimId)
     {
         for (int i = 0; i < (int) Dialogs_.size(); i++)
@@ -413,7 +415,7 @@ namespace Logic
                 return Dialogs_.at(i - 1).AimId_;
             }
         }
-        
+
         return "";
     }
 

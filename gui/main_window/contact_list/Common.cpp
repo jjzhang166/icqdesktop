@@ -21,7 +21,8 @@ namespace ContactList
 		const bool haveLastSeen,
 		const QDateTime &lastSeen,
 		bool isWithCheckBox,
-        bool isChatMember)
+        bool isChatMember,
+        bool isOfficial)
 		: AimId_(aimId)
 		, Avatar_(avatar)
 		, State_(state)
@@ -33,10 +34,26 @@ namespace ContactList
 		, LastSeen_(lastSeen)
 		, isCheckedBox_(isWithCheckBox)
         , isChatMember_(isChatMember)
+        , isOfficial_(isOfficial)
 	{
 		assert(!AimId_.isEmpty());
 		assert(!ContactName_.isEmpty());
 	}
+
+    const QString& VisualDataBase::GetStatus() const
+    {
+        return Status_;
+    }
+
+    bool VisualDataBase::HasStatus() const
+    {
+        return !Status_.isEmpty();
+    }
+
+    void VisualDataBase::SetStatus(const QString& status)
+    {
+        Status_ = status;
+    }
 
 	int DipPixels::px() const
 	{
@@ -110,13 +127,13 @@ namespace ContactList
 
 		return ctrl;
 	}
-	
-	DipPixels ItemWidth(bool fromAlert, bool _isWithCheckBox, bool _isShortVIew)
+
+	DipPixels ItemWidth(bool fromAlert, bool _isWithCheckBox, bool _isShortView)
 	{
 		if (fromAlert)
 			return DipPixels(320);
 
-        if (_isShortVIew)
+        if (_isShortView)
             return DipPixels(280);
 
 		// TODO : use L::checkboxWidth

@@ -56,14 +56,17 @@ namespace Logic
         void update_info(std::shared_ptr<Data::ChatInfo> &_info, bool _is_all_chat_info);
         static qint64  load_all_members(QString _aimid, int _limit, QObject* _recv);
         static bool receive_members(qint64 _send_seq, qint64 _seq, QObject* _recv);
-        unsigned int get_visible_rows_count() const;
+        unsigned get_visible_rows_count() const;
+
+        bool is_admin() const;
 
     private:
         mutable std::vector<Data::ChatMemberInfo>   members_;
         int                                         members_count_;
         std::shared_ptr<Data::ChatInfo>             info_;
         QString                                     AimId_;
-        qint64									    ChatInfoSequence_;
+        qint64                                      ChatInfoSequence_;
+        QString                                     YourRole_;
 
         friend class SearchMembersModel;
     };

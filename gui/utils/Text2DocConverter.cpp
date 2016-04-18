@@ -129,7 +129,7 @@ namespace Logic
 		converter.make_uniq_resources(true);
         QTextCursor cursor = _edit.textCursor();
 		converter.Convert(_text, cursor, _htmlMode, _convertLinks, _breakDocument, _uriCallback, _emojiSize);
-		_edit.merge_resources(converter.get_resources());
+		_edit.mergeResources(converter.get_resources());
         _edit.document()->blockSignals(false);
         emit (_edit.document()->contentsChanged());
 	}
@@ -204,12 +204,12 @@ namespace
 				continue;
 			}
 
-#ifndef __APPLE__
+//#ifndef __APPLE__
 			if (ConvertEmoji(_emojiSize))
 			{
 				continue;
 			}
-#endif
+//#endif
 
 			ConvertPlainCharacter(breakDocument);
 		}
@@ -619,7 +619,23 @@ namespace
         Writer_.setCharFormat(charFormat);
 
 #else
-        Writer_.insertText(ch.ToQString());//, format);
+        QTextCharFormat prevFormat = Writer_.charFormat();
+        
+        QFont f = QFont(QStringLiteral("AppleColorEmoji"));
+        QTextCharFormat format;
+        format.setFont(f);
+        format.setVerticalAlignment(QTextCharFormat::AlignBaseline);
+        format.setFontPointSize(prevFormat.font().pointSize());
+        
+        Writer_.beginEditBlock();
+        FlushLastWord();
+        
+//        Writer_.insertText(QChar(QChar::), prevFormat);
+        Writer_.insertText(ch.ToQString(), format);
+        Writer_.insertText(QChar(QChar::SoftHyphen), prevFormat);
+        
+        Writer_.endEditBlock();
+//        Writer_.insertText(ch.ToQString());//, format);
 #endif
 	}
 

@@ -149,7 +149,7 @@ struct WindowSettings {
 
     WindowThemeType theme;
     
-    struct {
+    struct AvatarMain {
         // picture size
         unsigned width;
         unsigned height;
@@ -407,6 +407,8 @@ public:
     virtual void VideoStreamChanged (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, bool havePicture) = 0;
 
     virtual void InterruptByGsmCall(bool gsmCallStarted) = 0;
+
+    virtual void MinimalBandwidthMode_StateChanged(bool mbmEnabledLocal, bool mbmEnabledRemote) = 0;
 };
 
 enum {
@@ -489,6 +491,7 @@ public:
     virtual void WindowSetControlsStatus    (hwnd_t wnd, bool visible, unsigned off_left, unsigned off_top, unsigned off_right, unsigned off_bottom, unsigned period_ms, bool enableOverlap) = 0;
     virtual void WindowAddButton            (ButtonType type, ButtonPosition position) = 0;
     virtual void WindowSetAvatarPosition    (hwnd_t wnd, unsigned position) = 0; // position - combination of values from Position enum, if (hwnd == NULL) sets position for all windows
+    virtual void WindowUpdateAvatarSettings (hwnd_t wnd, voip2::WindowThemeType theme, const voip2::WindowSettings::AvatarMain& avatarMain) = 0;
     virtual void WindowSetTheme             (hwnd_t wnd, voip2::WindowThemeType theme) = 0;
 
 #if (__PLATFORM_WINPHONE || WINDOWS_PHONE) && defined(__cplusplus_winrt)

@@ -44,7 +44,7 @@ namespace Logic
     {
         return (int)get_visible_rows_count();
     }
-    
+
     QVariant ChatMembersModel::data(const QModelIndex & ind, int role) const
     {
         int current_count = get_visible_rows_count();
@@ -74,7 +74,7 @@ namespace Logic
 
         return nullptr;
     }
-    
+
     int ChatMembersModel::get_members_count() const
     {
         return members_count_;
@@ -83,11 +83,11 @@ namespace Logic
     void ChatMembersModel::chatInfo(qint64 _seq, std::shared_ptr<Data::ChatInfo> _info)
     {
         if (receive_members(ChatInfoSequence_, _seq, this))
-        {           
+        {
             update_info(_info, true);
             is_full_list_loaded_ = true;
             emit dataChanged(index(0), index((int)members_.size()));
-        }    
+        }
     }
 
     void ChatMembersModel::avatarLoaded(QString aimid)
@@ -132,6 +132,7 @@ namespace Logic
     void ChatMembersModel::update_info(std::shared_ptr<Data::ChatInfo>& _info, bool _is_all_chat_info)
     {
         AimId_ = _info->AimId_;
+        YourRole_ = _info->YourRole_;
         members_count_ = _info->MembersCount_;
         members_.clear();
         for (auto item : _info->Members_)
@@ -144,14 +145,14 @@ namespace Logic
         if (_is_all_chat_info)
             is_full_list_loaded_ = _is_all_chat_info;
     }
-    
+
     static ChatMembersModel* ChatMembersModel_ = NULL;
 
     ChatMembersModel* GetChatMembersModel()
     {
         return ChatMembersModel_;
     }
-    
+
     void SetChatMembersModel(ChatMembersModel* _model)
     {
         ChatMembersModel_ = _model;
@@ -172,6 +173,10 @@ namespace Logic
         return AimId_;
     }
 
+    bool ChatMembersModel::is_admin() const
+    {
+        return (YourRole_ == "admin");
+    }
 
     void UpdateIgnoredModel(const QVector<QString>& _ignored_list)
     {
@@ -188,7 +193,7 @@ namespace Logic
         }
 
         GetIgnoreModel()->update_info(info, true);
-        
+
     }
 
     ChatMembersModel* GetIgnoreModel()

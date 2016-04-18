@@ -4,6 +4,7 @@
 #include "GeneralSettingsWidget.h"
 #include "../../controls/TextEmojiWidget.h"
 #include "../../../common.shared/version_info_constants.h"
+#include "../../controls/GeneralCreator.h"
 
 using namespace Ui;
 
@@ -29,7 +30,7 @@ void GeneralSettingsWidget::Creator::initAbout(QWidget* _parent, std::map<std::s
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(scrollArea);
 
-    addHeader(scrollArea, scrollAreaLayout, QT_TRANSLATE_NOOP("settings_pages", "About ICQ"));
+    GeneralCreator::addHeader(scrollArea, scrollAreaLayout, QT_TRANSLATE_NOOP("about_us", "About ICQ"));
     {
         auto mainWidget = new QWidget(scrollArea);
         Utils::grabTouchWidget(mainWidget);
@@ -62,8 +63,7 @@ void GeneralSettingsWidget::Creator::initAbout(QWidget* _parent, std::map<std::s
             aboutLayout->setSpacing(0);
             aboutLayout->setAlignment(Qt::AlignTop);
             {
-                //auto t = QString("%1 (%2 %3)").arg(QT_TRANSLATE_NOOP("settings_pages","ICQ")).arg(QT_TRANSLATE_NOOP("settings_pages","build")).arg(VERSION_INFO_STR);
-                auto versionLabel = QString("%1 (%2)").arg(QT_TRANSLATE_NOOP("settings_pages", "ICQ")).arg(VERSION_INFO_STR);
+                auto versionLabel = QString("%1 (%2)").arg(QT_TRANSLATE_NOOP("about_us", "ICQ")).arg(VERSION_INFO_STR);
                 auto versionText = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), -1);
                 Utils::grabTouchWidget(versionText);
                 versionText->setText(versionLabel);
@@ -73,7 +73,7 @@ void GeneralSettingsWidget::Creator::initAbout(QWidget* _parent, std::map<std::s
                 auto opensslLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
                 Utils::grabTouchWidget(opensslLabel);
                 opensslLabel->set_multiline(true);
-                opensslLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit"));
+                opensslLabel->setText(QT_TRANSLATE_NOOP("about_us", "This product includes software developed by the OpenSSL project for use in the OpenSSL Toolkit"));
                 aboutLayout->addWidget(opensslLabel);
             }
             {
@@ -89,7 +89,7 @@ void GeneralSettingsWidget::Creator::initAbout(QWidget* _parent, std::map<std::s
                 {
                     auto opensslLink = new TextEmojiWidget(opensslButton, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(28));
                     Utils::grabTouchWidget(opensslLink);
-                    opensslLink->setText(QT_TRANSLATE_NOOP("settings_pages", "http://openssl.org"));
+                    opensslLink->setText(QT_TRANSLATE_NOOP("about_us", "http://openssl.org"));
                     connect(opensslButton, &QPushButton::pressed, [opensslLink]()
                     {
                         QDesktopServices::openUrl(opensslLink->text());
@@ -103,21 +103,26 @@ void GeneralSettingsWidget::Creator::initAbout(QWidget* _parent, std::map<std::s
                 auto voipCopyrightLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
                 Utils::grabTouchWidget(voipCopyrightLabel);
                 voipCopyrightLabel->set_multiline(true);
-                voipCopyrightLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "Copyright © 2012, the WebRTC project authors. All rights reserved."));
+                voipCopyrightLabel->setText(QT_TRANSLATE_NOOP("about_us", "Copyright © 2012, the WebRTC project authors. All rights reserved."));
                 aboutLayout->addWidget(voipCopyrightLabel);
             }
             {
                 auto emojiLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(28));
                 Utils::grabTouchWidget(emojiLabel);
                 emojiLabel->set_multiline(true);
-                emojiLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "Emoji provided free by Emoji One"));
+                emojiLabel->setText(QT_TRANSLATE_NOOP("about_us", "Emoji provided free by Emoji One"));
                 aboutLayout->addWidget(emojiLabel);
             }
             {
                 auto copyrightLabel = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
                 Utils::grabTouchWidget(copyrightLabel);
-                copyrightLabel->setText(QT_TRANSLATE_NOOP("settings_pages", "© ICQ LLC") + ", " + QDate::currentDate().toString("yyyy"));
+                copyrightLabel->setText(QT_TRANSLATE_NOOP("about_us", "© ICQ LLC") + ", " + QDate::currentDate().toString("yyyy"));
                 aboutLayout->addWidget(copyrightLabel);
+
+                auto presentedMailru = new TextEmojiWidget(aboutWidget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(32));
+                Utils::grabTouchWidget(presentedMailru);
+                presentedMailru->setText(QT_TRANSLATE_NOOP("about_us", "Presented by Mail.Ru"));
+                aboutLayout->addWidget(presentedMailru);
             }
             mainLayout->addWidget(aboutWidget);
         }

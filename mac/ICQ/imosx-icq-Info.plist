@@ -22,6 +22,21 @@
 	<string>3.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLIconFile</key>
+			<string>icons-bundle-icq</string>
+			<key>CFBundleURLName</key>
+			<string>icq</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>icq</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>1234</string>
 	<key>LSApplicationCategoryType</key>

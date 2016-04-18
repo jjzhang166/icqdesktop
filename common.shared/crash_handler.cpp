@@ -120,6 +120,7 @@ namespace core
         {
             if (!need_write_dump())
                 return;
+
             // Install top-level SEH handler
             SetUnhandledExceptionFilter(seh_handler);    
 
@@ -156,7 +157,7 @@ namespace core
 
         void crash_handler::set_thread_exception_handlers()
         {
-            if (!is_crash_handle_enabled())
+            if (!need_write_dump())
                 return;
 
             // Catch terminate() calls. 

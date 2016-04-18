@@ -10,7 +10,7 @@ namespace Ui
 {
     ThemesWidget::ThemesWidget(QWidget* _parent, int _spacing) : QWidget(_parent), themesModel_(new ThemesModel(this)), flowLayout_(new FlowLayout(_spacing, _spacing, _spacing)), themes_list_(themes::themes_list()), loaded_themes_(QMap<int, bool>()), firstThemeAdded__(false)
     {
-        flowLayout_->setContentsMargins(Utils::scale_value(47), 0, 0, 0);
+        flowLayout_->setContentsMargins(Utils::scale_value(48), 0, 0, Utils::scale_value(48));
         QVBoxLayout *root_layout = new QVBoxLayout();
         QScrollArea* area = new QScrollArea(this);
         QWidget* scroll_area = new QWidget(area);

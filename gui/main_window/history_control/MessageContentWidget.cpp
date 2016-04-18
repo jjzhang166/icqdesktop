@@ -30,6 +30,11 @@ namespace HistoryControl
         return QPoint();
     }
 
+    bool MessageContentWidget::canReplace() const
+    {
+        return true;
+    }
+
     bool MessageContentWidget::hasTextBubble() const
     {
         return false;
@@ -69,7 +74,7 @@ namespace HistoryControl
     {
         return toString();
     }
-    
+
     int MessageContentWidget::maxWidgetWidth() const
     {
         return -1;
@@ -141,6 +146,19 @@ namespace HistoryControl
 
     void MessageContentWidget::initialize()
     {
+        if (Initialized_)
+        {
+            return;
+        }
+
+        initializeInternal();
+
+        Initialized_ = true;
+    }
+
+    void MessageContentWidget::initializeInternal()
+    {
+
     }
 
 	void MessageContentWidget::disconnectCoreSignal(const char *coreSignal, const char *ourSlot)
@@ -177,17 +195,5 @@ namespace HistoryControl
 
 		render(p);
 	}
-
-    void MessageContentWidget::showEvent(QShowEvent *e)
-    {
-        if (!Initialized_)
-        {
-            initialize();
-
-            Initialized_ = true;
-        }
-
-        QWidget::showEvent(e);
-    }
 
 }

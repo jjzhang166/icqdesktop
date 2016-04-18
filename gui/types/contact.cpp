@@ -42,6 +42,7 @@ namespace Data
 				contact->Is_chat_ = value.get_value_as_bool("is_chat");
 				contact->GroupId_ = group->Id_;
 				contact->Muted_ = value.get_value_as_bool("mute");
+                contact->IsOfficial_ = value.get_value_as_bool("official");
                 
 				cl.insert(contact, group);
 			}
@@ -82,6 +83,7 @@ namespace Data
 		result->LastSeen_ = lastSeen > 0 ? QDateTime::fromTime_t((uint)lastSeen) : QDateTime();
 		result->Is_chat_ = helper->get_value_as_bool("is_chat");
 		result->Muted_ = helper->get_value_as_bool("mute");
+        result->IsOfficial_ = helper->get_value_as_bool("official");
 
 		return result;
 	}

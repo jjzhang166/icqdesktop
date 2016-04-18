@@ -40,8 +40,7 @@ namespace Ui
 
         virtual QString getContact() const { return aimId_; }
 
-        themes::themePtr theme() const;
-
+        virtual themes::themePtr theme() const;
 
     private:
         bool HasTopMargin_;
@@ -52,6 +51,7 @@ namespace Ui
         QString aimId_;
 
         bool Selected_;
+
 	};
 
 }

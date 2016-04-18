@@ -9,6 +9,11 @@
 #include "profiling/auto_stop_watch.h"
 #include "InterConnector.h"
 #include "../main_window/MainWindow.h"
+#include "gui_coll_helper.h"
+#include "../controls/TextEditEx.h"
+#include "../controls/GeneralDialog.h"
+#include "../main_window/contact_list/Common.h"
+#include "../controls/CustomButton.h"
 
 #include "utils.h"
 
@@ -26,6 +31,10 @@ namespace
 {
     const int mobile_rect_width = 8;
     const int mobile_rect_height = 12;
+
+    const int mobile_rect_width_mini = 5;
+    const int mobile_rect_height_mini = 8;
+
 	const QColor ColorTable[] = {
 		"#FF0000",
 		"#FF7373",
@@ -503,7 +512,13 @@ namespace Utils
 		auto scaledBigResult = bigResult.scaled(QSize(sizePx, sizePx), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 		const auto trimmedDisplayName = displayName.trimmed();
+        if (trimmedDisplayName.isEmpty())
+        {
+            return QPixmap::fromImage(scaledBigResult);
+        }
+
 		const auto firstChar = Utils::PeekNextSuperChar(trimmedDisplayName);
+
 		if (firstChar.IsSimple())
 		{
 			QPainter letterPainter(&scaledBigResult);
@@ -554,9 +569,9 @@ namespace Utils
 		{
 			QPainter emojiPainter(&scaledBigResult);
 
-			const auto nearestSizeAvailable = Emoji::GetNearestSizeAvailable(sizePx / 2);
+            const auto nearestSizeAvailable = Emoji::GetNearestSizeAvailable(sizePx / 2 + (platform::is_apple()?8:0));
 
-			const auto &emoji =  Emoji::GetEmoji(firstChar.Main(), firstChar.Ext(), nearestSizeAvailable);
+            const auto &emoji =  Emoji::GetEmoji(firstChar.Main(), firstChar.Ext(), nearestSizeAvailable);
 
 			auto x = (sizePx / 2);
 			x -= (emoji.width() / 2);
@@ -606,7 +621,7 @@ namespace Utils
 		return result;
 	}
 
-	QPixmap RoundImage(const QPixmap &img, const QString& state)
+	QPixmap RoundImage(const QPixmap &img, const QString& state, bool mini_icons)
 	{
 		int scale = std::min(img.height(), img.width());
 		QImage imageOut(QSize(scale, scale), QImage::Format_ARGB32);
@@ -626,7 +641,10 @@ namespace Utils
         if (state == "mobile")
         {
             QPainterPath stPath(QPointF(0,0));
-            stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height))), 50, 36);
+            if (mini_icons)
+                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini))), 50, 36);
+            else
+                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height))), 50, 36);
             path -= stPath;
         }
 
@@ -638,7 +656,7 @@ namespace Utils
             QPainterPath stPath(QPointF(0,0));
             stPath.addRect(0, 0, scale, scale);
             painter.setClipPath(stPath);
-            QPixmap p(Utils::parse_image_name(":/resources/cl_status_online_100.png"));
+            QPixmap p(Utils::parse_image_name(mini_icons ? ":/resources/cl_status_online_mini_100.png" : ":/resources/cl_status_online_100.png"));
             int x = (scale - p.width());
             int y = (scale - p.height());
             painter.drawPixmap(x, y, p);
@@ -648,7 +666,7 @@ namespace Utils
             QPainterPath stPath(QPointF(0,0));
             stPath.addRect(0, 0, scale, scale);
             painter.setClipPath(stPath);
-            QPixmap p(Utils::parse_image_name(":/resources/cl_status_mobile_100.png"));
+            QPixmap p(Utils::parse_image_name(mini_icons ? ":/resources/cl_status_mobile_mini_100.png" : ":/resources/cl_status_mobile_100.png"));
             int x = (scale - p.width());
             int y = (scale - p.height());
             painter.drawPixmap(x, y, p);
@@ -1014,7 +1032,7 @@ namespace Utils
 		static std::map<FontsFamily, QString> font_family_map;
 		if (font_family_map.empty())
 		{
-#ifndef __APPLE__
+#if defined (_WIN32)
 			if (QSysInfo().windowsVersion() >= QSysInfo::WV_VISTA)
 			{
 				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Segoe UI")));
@@ -1029,7 +1047,7 @@ namespace Utils
 				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Arial")));
 				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Arial")));
 			}
-#else
+#elif defined (__APPLE__)
 			if (QSysInfo().macVersion() >= QSysInfo().MV_10_11)
 			{
 //                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString(".SF NS Display")));
@@ -1052,6 +1070,11 @@ namespace Utils
                 font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Helvetica Neue Medium")));
                 font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Helvetica Neue Light")));
 			}
+#else //linux
+            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Arial")));
+            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Arial")));
+            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Arial")));
+            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Arial")));
 #endif
 		}
 
@@ -1296,7 +1319,7 @@ namespace Utils
     bool saveAs(const QString& inputFilename, QString& filename, QString& directory)
     {
         static auto last_directory = QDir::toNativeSeparators(Ui::get_gui_settings()->get_value(settings_download_directory, Utils::DefaultDownloadsPath()));
-        
+
         filename.clear();
         directory.clear();
 
@@ -1339,8 +1362,12 @@ namespace Utils
     {
         core::stats::event_props_type props;
         props.emplace_back("size", std::to_string(qApp->desktop()->screenGeometry().width()) + "x" + std::to_string(qApp->desktop()->screenGeometry().height()));
-        QString processorInfo = QString("Architecture:%1 \nNumber of Processors:%2 \nProcessor Identifier:%3").arg(getenv("PROCESSOR_ARCHITECTURE")).arg(getenv("NUMBER_OF_PROCESSORS")).arg(getenv("PROCESSOR_IDENTIFIER"));
-        props.emplace_back("Sys_CPU", processorInfo.toStdString()); // QSysInfo::currentCpuArchitecture().toStdString());
+
+        auto env = QProcessEnvironment::systemEnvironment();
+        QString processorInfo = QString("Architecture:%1 \nNumber of Processors:%2 \nProcessor Identifier:%3")
+            .arg(env.value("PROCESSOR_ARCHITECTURE", "")).arg(env.value("NUMBER_OF_PROCESSORS", "")).arg(env.value("PROCESSOR_IDENTIFIER", ""));
+        props.emplace_back("Sys_CPU", processorInfo.toStdString());
+        props.emplace_back("Sys_CPU_Qt", QSysInfo::currentCpuArchitecture().toStdString());
 
         props.emplace_back(std::make_pair("Settings_Startup", std::to_string(Utils::is_start_on_startup())));
         props.emplace_back(std::make_pair("Settings_Taskbar", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_in_taskbar, true))));
@@ -1350,7 +1377,7 @@ namespace Utils
         props.emplace_back(std::make_pair("Settings_Download_Folder", std::to_string(current_download_dir == Utils::DefaultDownloadsPath())));
 
         int key_index_to_send = Utils::get_key_send_by_index();
-        props.emplace_back(std::make_pair("Settings_Send_By", Utils::get_keys_send_by_names()[key_index_to_send].toStdString()));
+        props.emplace_back(std::make_pair("Settings_Send_By", Utils::get_item_safe(Utils::get_keys_send_by_names(), key_index_to_send, " ").toStdString()));
         props.emplace_back(std::make_pair("Settings_Show_Last_Message", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true))));
         props.emplace_back(std::make_pair("Settings_Previews", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true))));
         props.emplace_back(std::make_pair("Settings_Scale", std::to_string(Utils::get_scale_coefficient())));
@@ -1379,5 +1406,252 @@ namespace Utils
         }
         assert("Couldn't get rect: Common.cpp (ItemLength)");
         return main_rect;
+    }
+
+    QPoint GetMainWindowCenter()
+    {
+        auto main_rect = Utils::GetMainRect();
+        auto main_width = main_rect.width();
+        auto main_height = main_rect.height();
+
+        auto x = main_rect.x() + main_width / 2;
+        auto y = main_rect.y() + main_height / 2;
+        return QPoint(x, y);
+    }
+
+    void UpdateProfile(const std::vector<std::pair<std::string, QString>>& _fields)
+    {
+        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+
+        core::ifptr<core::iarray> field_array(collection->create_array());
+        field_array->reserve((int)_fields.size());
+        for (unsigned int i = 0; i < _fields.size(); ++i)
+        {
+            Ui::gui_coll_helper coll(Ui::GetDispatcher()->create_collection(), true);
+            coll.set_value_as_string("field_name", _fields[i].first);
+            auto value = _fields[i].second;
+            coll.set_value_as_string("field_value", value.toUtf8().data(), value.toUtf8().size());
+
+           core::ifptr<core::ivalue> val_field(coll->create_value());
+           val_field->set_as_collection(coll.get());
+           field_array->push_back(val_field.get());
+        }
+
+        collection.set_value_as_array("fields", field_array.get());
+        Ui::GetDispatcher()->post_message_to_core("update_profile", collection.get());
+    }
+
+    QString get_item_safe(const std::vector<QString>& _values, size_t _selected, QString _default)
+    {
+        return _selected < _values.size() ? _values[_selected] : _default;
+    }
+
+    bool NameEditor(
+        QWidget* _parent,
+        const QString& _chat_name,
+        const QString& _button_text,
+        const QString& _header_text,
+        Out QString& _result_chat_name)
+    {
+        QPalette palette;
+        palette.setColor(QPalette::Highlight, "#579e1c");
+        palette.setColor(QPalette::HighlightedText, Qt::white);
+        palette.setColor(QPalette::Text, "#282828");
+
+        auto main_widget = new QWidget(_parent);
+        main_widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+
+        auto layout = new QVBoxLayout(main_widget);
+        layout->setSpacing(0);
+        layout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(15), Utils::scale_value(24), 0);
+
+        auto text_edit_ = new Ui::TextEditEx(main_widget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), palette, true, true);
+        text_edit_->setObjectName("input_edit_control");
+        text_edit_->setPlaceholderText(_chat_name);
+        text_edit_->setPlainText(_chat_name);
+        text_edit_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+        text_edit_->setAutoFillBackground(false);
+        text_edit_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        text_edit_->setTextInteractionFlags(Qt::TextEditable | Qt::TextEditorInteraction);
+        text_edit_->setCatchEnter(true);
+        text_edit_->setMinimumWidth(Utils::scale_value(300));
+        Utils::ApplyStyle(text_edit_, "padding: 0; margin: 0;");
+        layout->addWidget(text_edit_);
+
+        auto horizontalLineWidget = new QWidget(_parent);
+        horizontalLineWidget->setFixedHeight(Utils::scale_value(1));
+        horizontalLineWidget->setStyleSheet("background-color: #579e1c;");
+        layout->addWidget(horizontalLineWidget);
+
+        main_widget->setStyleSheet("background-color: white;");
+        std::unique_ptr<Ui::GeneralDialog> general_dialog(new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow()));
+        general_dialog->addHead();
+        general_dialog->addLabel(_header_text);
+        general_dialog->addAcceptButton(_button_text, 24);
+
+        QObject::connect(text_edit_, SIGNAL(enter()), general_dialog.get(), SLOT(accept()));
+
+        QTextCursor cursor = text_edit_->textCursor();
+        cursor.select(QTextCursor::Document);
+        text_edit_->setTextCursor(cursor);
+        text_edit_->setFrameStyle(QFrame::NoFrame);
+
+        Utils::setWidgetPopup(general_dialog.get(), true);//platform::is_apple() ? false : true);
+        text_edit_->setFocus();
+
+        auto result = general_dialog->showInPosition(-1, -1);
+        _result_chat_name = text_edit_->getPlainText();
+
+        return result;
+    }
+
+    bool GetConfirmationWithTwoButtons(const QString& _button_left, const QString& _button_right,
+        const QString& _message_text, const QString& _label_text, QWidget* _parent)
+    {
+        QString label_style = "font-family: " + Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI) + "; \
+            font-size: 15dip; \
+            color: rgba(105, 105, 105, 100%); \
+            padding: 0 0 0 0dip; \
+            padding-left: 24dip; \
+            padding-right: 24dip; ";
+
+        auto main_widget = new QWidget(_parent);
+        main_widget->setStyleSheet("background-color: white;");
+
+        auto layout = new QVBoxLayout(main_widget);
+        layout->setSpacing(0);
+        layout->setMargin(0);
+        layout->setContentsMargins(0, 0, 0, 0);
+        main_widget->setLayout(layout);
+
+        {
+            QSpacerItem* upper_spacer = new QSpacerItem(0, Utils::scale_value(20), QSizePolicy::Minimum);
+            layout->addSpacerItem(upper_spacer);
+        }
+        {
+            auto label = new Ui::TextEditEx(main_widget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15), QColor(0x28, 0x28, 0x28), true, true);
+            label->setContentsMargins(0, 0, 0, 0);
+            label->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
+            label->setPlaceholderText("");
+            label->setAutoFillBackground(false);
+            label->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            label->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            {
+                QString ls = "QWidget { background: #ffffff; border: none; padding-left: 24dip; padding-right: 24dip; padding-top: 0dip; padding-bottom: 0dip; }";
+                Utils::ApplyStyle(label, ls);
+            }
+            label->setText(_message_text);
+            layout->addWidget(label);
+        }
+
+        auto cancel_button = new QPushButton(main_widget);
+        auto remove_button = new QPushButton(main_widget);
+        {
+            auto bottom_layout = new QHBoxLayout();
+            bottom_layout->setAlignment(Qt::AlignTop);
+            QSpacerItem* horizontal_spacer_buttom1 = new QSpacerItem(Utils::scale_value(40), Utils::scale_value(20), QSizePolicy::Expanding, QSizePolicy::Minimum);
+            QSpacerItem* horizontal_spacer_buttom2 = new QSpacerItem(Utils::scale_value(12), Utils::scale_value(20), QSizePolicy::Fixed, QSizePolicy::Minimum);
+            QSpacerItem* horizontal_spacer_buttom3 = new QSpacerItem(Utils::scale_value(40), Utils::scale_value(20), QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+            cancel_button->setCursor(QCursor(Qt::PointingHandCursor));
+            cancel_button->setText(_button_left);
+            Utils::ApplyStyle(cancel_button, Ui::grey_button_style);
+            Testing::setAccessibleName(cancel_button, "left_button");
+
+            remove_button->setCursor(QCursor(Qt::PointingHandCursor));
+            remove_button->setText(_button_right);
+            Utils::ApplyStyle(remove_button, Ui::main_button_style);
+            Testing::setAccessibleName(remove_button, "right_button");
+
+            bottom_layout->addItem(horizontal_spacer_buttom1);
+            bottom_layout->addWidget(cancel_button);
+            bottom_layout->addItem(horizontal_spacer_buttom2);
+            bottom_layout->addWidget(remove_button);
+            bottom_layout->addItem(horizontal_spacer_buttom3);
+
+            QSpacerItem* middle_spacer = new QSpacerItem(0, Utils::scale_value(24), QSizePolicy::Minimum);
+            layout->addSpacerItem(middle_spacer);
+            layout->addLayout(bottom_layout);
+        }
+        {
+            QSpacerItem* buttom_spacer = new QSpacerItem(0, Utils::scale_value(24), QSizePolicy::Minimum);
+            layout->addSpacerItem(buttom_spacer);
+        }
+
+        auto general_dialog = new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow());
+        general_dialog->addHead();
+        general_dialog->addLabel(_label_text);
+        Utils::setWidgetPopup(general_dialog, true);//platform::is_apple() ? false : true);
+
+        QObject::connect(cancel_button, &QPushButton::clicked, general_dialog, &Ui::GeneralDialog::reject, Qt::QueuedConnection);
+        QObject::connect(remove_button, &QPushButton::clicked, general_dialog, &Ui::GeneralDialog::accept, Qt::QueuedConnection);
+
+        auto result = general_dialog->showInPosition(-1, -1);
+        delete general_dialog;
+        return result;
+    }
+
+    ProxySettings::ProxySettings(core::proxy_types _type, QString _username, QString _password,
+        QString _proxy_server, int _port, bool _need_auth)
+        : type(_type)
+        , username(_username)
+        , password(_password)
+        , proxy_server(_proxy_server)
+        , port(_port)
+        , need_auth(_need_auth)
+    {}
+
+    ProxySettings::ProxySettings()
+        : type(core::proxy_types::auto_proxy)
+        , username("")
+        , password("")
+        , proxy_server("")
+        , port(invalid_port)
+        , need_auth(false)
+    {}
+
+    void ProxySettings::post_to_core()
+    {
+        Ui::gui_coll_helper coll(Ui::GetDispatcher()->create_collection(), true);
+
+        coll.set_value_as_enum("settings_proxy_type", type);
+        coll.set_value_as_string("settings_proxy_server", QStringToString(proxy_server));
+        coll.set_value_as_int("settings_proxy_port", port);
+        coll.set_value_as_string("settings_proxy_username", QStringToString(username));
+        coll.set_value_as_string("settings_proxy_password", QStringToString(password));
+        coll.set_value_as_bool("settings_proxy_need_auth", need_auth);
+
+        Ui::GetDispatcher()->post_message_to_core("set_user_proxy_settings", coll.get());
+    }
+
+    ProxySettings* get_proxy_settings()
+    {
+        static std::shared_ptr<ProxySettings> proxy_setting(new ProxySettings());
+        return proxy_setting.get();
+    }
+
+    bool loadPixmap(const QString &path, Out QPixmap &pixmap)
+    {
+        assert(!path.isEmpty());
+
+        if (!QFile::exists(path))
+        {
+            assert(!"file does not exist");
+            return false;
+        }
+
+        static const char *availableFormats[] = { nullptr, "jpg", "png", "gif", "bmp" };
+
+        for (auto fmt : availableFormats)
+        {
+            pixmap.load(path, fmt);
+
+            if (!pixmap.isNull())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -19,20 +19,20 @@ namespace
 
 	namespace L
 	{
-		const auto itemHeight = dip(60);
+		const auto itemHeight = dip(68);
         const auto serviceItemHeight = dip(25);
 		const auto itemHorPadding = dip(16);
         const auto favoritesStatusPadding = dip(4);
 
 		const auto avatarX = dip(16);
 		const auto avatarY = dip(6);
-		const auto avatarW = dip(48);
-		const auto avatarH = dip(48);
+		const auto avatarW = dip(56);
+		const auto avatarH = dip(56);
 
 		const auto nameFontSize = dip(17);
 		const auto nameHeight = dip(22);
 		const auto nameX = avatarX + avatarW + dip(13);
-		const auto nameY = dip(8);
+		const auto nameY = dip(12);
 		const auto nameRightPadding = dip(12);
         const auto getNameStylesheet = []{
             return QString("font: %1 %2px \"%3\"; color: #282828; background-color: transparent")
@@ -43,7 +43,7 @@ namespace
 		const auto messageFontSize = dip(14);
 		const auto messageHeight = dip(24);
 		const auto messageX = nameX;
-		const auto messageY = dip(30);
+		const auto messageY = dip(34);
 		const auto getMessageStylesheet = []{
             return QString("font: %1 %2px \"%3\"; color: #696969; background-color: transparent")
                 .arg(Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI))
@@ -52,7 +52,7 @@ namespace
         };
 
 		const auto timeFontSize = dip(12);
-		const auto timeY = avatarY + dip(20);
+		const auto timeY = avatarY + dip(24);
 		const auto timeFont = dif(Utils::FontsFamily::SEGOE_UI, timeFontSize.px());
 		const QColor timeFontColor(0x69, 0x69, 0x69);
 
@@ -62,12 +62,15 @@ namespace
 		const auto unreadsFont = dif(Utils::FontsFamily::SEGOE_UI_SEMIBOLD, 13);
 		const auto unreadsPadding = dip(6);
 		const auto unreadsMinimumExtent = dip(20);
-		const auto unreadsY = dip(34);
+		const auto unreadsY = dip(38);
 		const auto unreadsLeftPadding = dip(12);
         const auto dragOverlayPadding = dip(8);
         const auto dragOverlayBorderWidth = dip(2);
         const auto dragOverlayBorderRadius = dip(8);
         const auto dragOverlayVerPadding = dip(1);
+
+        const auto official_hor_padding = dip(6);
+        const auto official_ver_padding = dip(1);
 	}
 
 	void RenderAvatar(QPainter &painter, const RecentItemVisualData &visData);
@@ -102,8 +105,9 @@ namespace ContactList
 		const QDateTime &lastSeen,
 		const int unreadsCounter,
 		const bool muted,
-        const QString &senderNick)
-		: VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, false, false)
+        const QString &senderNick,
+        const bool isOfficial)
+		: VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, false, false, isOfficial)
 		, DeliveryState_(deliveryState)
 		, UnreadsCounter_(unreadsCounter)
 		, Muted_(muted)
@@ -221,7 +225,7 @@ namespace
 
 	void RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx)
 	{
-		if (visData.Status_.isEmpty())
+		if (!visData.HasStatus())
 		{
 			return;
 		}
@@ -271,7 +275,7 @@ namespace
             messageTextMaxWidth -= doc.idealWidth();
         }
 
-        const auto text = visData.Status_.trimmed().replace("\n", " ").remove("\r");
+        const auto text = visData.GetStatus().trimmed().replace("\n", " ").remove("\r");
 
         QFontMetrics m(font);
 		const auto elidedText = m.elidedText(text, Qt::ElideRight, messageTextMaxWidth);
@@ -299,7 +303,17 @@ namespace
 
         static auto textControl = CreateTextBrowser("name", L::getNameStylesheet(), L::nameHeight.px() + (platform::is_apple()?1:0) );
 
-		const auto maxWidth = (rightBorderPx - L::nameX.px() - L::nameRightPadding.px());
+        QPixmap official_mark;
+        if (visData.isOfficial_)
+        {
+            official_mark = QPixmap(Utils::parse_image_name(":/resources/cl_badges_official_100.png"));
+            Utils::check_pixel_ratio(official_mark);
+        }
+
+		int maxWidth = (rightBorderPx - L::nameX.px() - L::nameRightPadding.px());
+        if (!official_mark.isNull())
+            maxWidth -= official_mark.width();
+
 		textControl->setFixedWidth(maxWidth);
 
 		QFontMetrics m(textControl->font());
@@ -311,20 +325,21 @@ namespace
 		Logic::Text2Doc(elidedString, cursor, Logic::Text2DocHtmlMode::Pass, false);
 		Logic::FormatDocument(doc, L::nameHeight.px());
 
+        qreal correction = 0;
         if (platform::is_apple())
         {
             qreal realHeight = doc.documentLayout()->documentSize().toSize().height();
-            qreal correction = (realHeight > 21)?-2:2;
-
-//                                    qDebug() << "text " << elidedString << " height " << realHeight << " d " << correction;
-
-
+            correction = (realHeight > 21)?-2:2;
             textControl->render(&painter, QPoint(L::nameX.px(), L::nameY.px() + correction));
         }
         else
         {
             textControl->render(&painter, QPoint(L::nameX.px(), L::nameY.px()));
         }
+
+        int x = L::nameX.px() + m.width(elidedString) + L::official_hor_padding.px();
+        int y = L::nameY.px() + L::official_ver_padding.px();
+        painter.drawPixmap(x, y, official_mark);
 	}
 
 	int RenderDeliveryState(QPainter &painter, const DeliveryState state, const int rightBorderPx)

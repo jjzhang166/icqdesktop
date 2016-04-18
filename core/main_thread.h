@@ -7,15 +7,16 @@
 
 namespace core
 {
-	class main_thread : protected core::tools::threadpool
-	{
-	public:
+    class main_thread : protected core::tools::threadpool
+    {
+    public:
 
-		main_thread();
-		virtual ~main_thread();
+        main_thread();
+        virtual ~main_thread();
 
-		void excute_core_context(std::function<void()> task);
-	};
+        void excute_core_context(std::function<void()> task);
+        std::thread::id get_core_thread_id() const;
+    };
 }
 
 

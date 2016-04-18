@@ -60,6 +60,8 @@ namespace Ui
 
         void removeWidget(QWidget *widget);
 
+        void replaceWidget(const Logic::MessageKey &key, QWidget *widget);
+
         bool touchScrollInProgress() const;
 
         void scrollToBottom();

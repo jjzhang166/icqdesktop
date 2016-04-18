@@ -137,7 +137,16 @@ SOURCES += \
     ../../core/themes/theme_settings.cpp \
     ../../core/connections/wim/packets/get_themes_index.cpp \
     ../../core/connections/wim/favorites.cpp \
-    ../../core/proxy_settings.cpp
+    ../../core/proxy_settings.cpp \
+    ../../core/connections/wim/packets/attach_phone.cpp \
+    ../../core/connections/wim/packets/attach_uin.cpp \
+    ../../core/connections/wim/packets/get_flags.cpp \
+    ../../core/connections/wim/packets/del_history.cpp \
+    ../../core/connections/wim/packets/del_message.cpp \
+    ../../core/connections/wim/packets/join_chat_alpha.cpp \
+    ../../core/connections/wim/packets/update_profile.cpp \
+    ../../core/connections/wim/packets/set_buddy_attribute.cpp \
+    ../../core/archive/history_patch.cpp
 
 HEADERS += \
     ../collection.h \
@@ -294,7 +303,16 @@ HEADERS += \
     ../../common.shared/version_info_constants.h \
     ../../common.shared/version_info.h \
     ../../core/connections/wim/favorites.h \
-    ../../core/proxy_settings.h
+    ../../core/proxy_settings.h \
+    ../../core/connections/wim/packets/attach_phone.h \
+    ../../core/connections/wim/packets/attach_uin.h \
+    ../../core/connections/wim/packets/get_flags.h \
+    ../../core/connections/wim/packets/del_history.h \
+    ../../core/connections/wim/packets/del_message.h \
+    ../../core/connections/wim/packets/join_chat_alpha.h \
+    ../../core/connections/wim/packets/update_profile.h \
+    ../../core/connections/wim/packets/set_buddy_attribute.h \
+    ../../core/archive/history_patch.h
 
 DEFINES += STRIP_VOIP
 

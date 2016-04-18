@@ -14,21 +14,23 @@ class LocalPeer : public QObject
 public:
     LocalPeer(QObject *parent = 0, bool other = false);
 
-	void set_main_window(Ui::MainWindow* _wnd);
+    void set_main_window(Ui::MainWindow* _wnd);
 
     unsigned int get_hwnd_and_activate();
+    void send_url_command(const QString& _url_command);
 
     void listen();
-	void wait();
-    
+    void wait();
+
 protected Q_SLOTS:
 
-    void receiveConnection();
+        void receiveConnection();
 
 protected:
 
     QString socket_name_;
     QLocalServer* server_;
     Ui::MainWindow* wnd_;
-	bool other_;
+    bool other_;
+
 };

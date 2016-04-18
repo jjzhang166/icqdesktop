@@ -23,7 +23,7 @@ namespace Logic
 
 		const QPixmapSCptr& Get(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled, bool& isDefault);
 
-		const QPixmapSCptr& GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault);
+		const QPixmapSCptr& GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool from_cl = false);
 
 		QString GetLocal(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled);
 
@@ -36,7 +36,7 @@ namespace Logic
 
 		void CleanupSecondaryCaches(const QString &aimId);
 
-		const QPixmapSCptr& GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state);
+		const QPixmapSCptr& GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl);
 
 		CacheMap AvatarsByAimIdAndSize_;
 

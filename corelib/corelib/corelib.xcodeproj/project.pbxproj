@@ -20,6 +20,7 @@
 		5D2AEF1F1C103F9D00CC7BF8 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF191C103F9D00CC7BF8 /* Security.framework */; };
 		5D2AEF201C103F9D00CC7BF8 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF1A1C103F9D00CC7BF8 /* SystemConfiguration.framework */; };
 		5D2AEF221C103FB600CC7BF8 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF211C103FB600CC7BF8 /* CoreVideo.framework */; };
+		5DE38BAF1CB6A2BC0060A43A /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DE38BAE1CB6A2BC0060A43A /* VideoToolbox.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		860A30A61BDF7CE7000F0DF2 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 860A30A51BDF7CE7000F0DF2 /* common.h */; };
 		861162D91BD8F0A70092F60E /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 861162D61BD8F0A60092F60E /* libcrypto.a */; };
 		861162DA1BD8F0A70092F60E /* libcurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 861162D71BD8F0A60092F60E /* libcurl.a */; };
@@ -74,6 +75,7 @@
 		5D2AEF191C103F9D00CC7BF8 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		5D2AEF1A1C103F9D00CC7BF8 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		5D2AEF211C103FB600CC7BF8 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		5DE38BAE1CB6A2BC0060A43A /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
 		860A30A51BDF7CE7000F0DF2 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = common.h; path = ../common.h; sourceTree = "<group>"; };
 		861162D61BD8F0A60092F60E /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = ../../external/mac/libcrypto.a; sourceTree = "<group>"; };
 		861162D71BD8F0A60092F60E /* libcurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcurl.a; path = ../../external/mac/libcurl.a; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5DE38BAF1CB6A2BC0060A43A /* VideoToolbox.framework in Frameworks */,
 				5D2AEF221C103FB600CC7BF8 /* CoreVideo.framework in Frameworks */,
 				5D2AEF1B1C103F9D00CC7BF8 /* AppKit.framework in Frameworks */,
 				5D2AEF1C1C103F9D00CC7BF8 /* AudioToolbox.framework in Frameworks */,
@@ -138,6 +141,7 @@
 		D5E14CCC1BC683F9007F8671 = {
 			isa = PBXGroup;
 			children = (
+				5DE38BAE1CB6A2BC0060A43A /* VideoToolbox.framework */,
 				5D2AEF211C103FB600CC7BF8 /* CoreVideo.framework */,
 				5D2AEF151C103F9C00CC7BF8 /* AppKit.framework */,
 				5D2AEF161C103F9C00CC7BF8 /* AudioToolbox.framework */,

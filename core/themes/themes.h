@@ -19,14 +19,14 @@ namespace core
             std::string image_name_;
             std::string thumb_name_;
             bool tile_;
-            int position_;
+            int32_t position_;
             std::string tint_color_;
             
             std::string typing_color_;
             std::string spinner_color_;
             std::string edges_color_;
             std::wstring folder_path_;
-            int theme_id_;
+            int32_t theme_id_;
         public:
             theme(std::wstring folder_path);
             bool is_tile() const { return tile_; }
@@ -36,8 +36,8 @@ namespace core
             std::wstring get_theme_folder() const;
             static std::wstring get_theme_folder(int _theme_id);
             std::string get_tint_color() const { return tint_color_; }
-            int get_theme_id() const { return theme_id_; }
-            int get_position() { return position_; }
+            int32_t get_theme_id() const { return theme_id_; }
+            int32_t get_position() { return position_; }
             void set_position(int _position) { position_ = _position; }
             bool unserialize(const rapidjson::Value& _node, const ThemesScale _themes_scale);
             std::wstring get_image_path() const;

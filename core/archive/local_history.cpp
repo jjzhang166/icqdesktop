@@ -30,16 +30,22 @@ std::shared_ptr<contact_archive> local_history::get_contact_archive(const std::s
 
     std::wstring contact_folder = core::tools::from_utf8(_contact);
     std::replace(contact_folder.begin(), contact_folder.end(), L'|', L'_');
-    auto contact_arch = std::make_shared<contact_archive>(archive_path_ + L"/" + contact_folder);
+    auto contact_arch = std::make_shared<contact_archive>(archive_path_ + L"/" + contact_folder, _contact);
 
     archives_.insert(std::make_pair(_contact, contact_arch));
 
     return contact_arch;
 }
 
-void local_history::update_history(const std::string& _contact, std::shared_ptr<archive::history_block> _data, /*out*/ headers_list& _inserted_messages)
+void local_history::update_history(
+    const std::string& _contact,
+    archive::history_block_sptr _data,
+    Out headers_list& _inserted_messages,
+    Out dlg_state& _state,
+    Out dlg_state_changes& _state_changes
+    )
 {
-    get_contact_archive(_contact)->insert_history_block(_data, _inserted_messages);
+    get_contact_archive(_contact)->insert_history_block(_data, Out _inserted_messages, Out _state, Out _state_changes);
 }
 
 void local_history::get_messages_index(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ headers_list& _headers)
@@ -82,11 +88,11 @@ void local_history::get_dlg_state(const std::string& _contact, /*out*/ dlg_state
     _state = get_contact_archive(_contact)->get_dlg_state();
 }
 
-bool local_history::set_dlg_state(const std::string& _contact, const dlg_state& _state)
+void local_history::set_dlg_state(const std::string& _contact, const dlg_state& _state, Out dlg_state& _result, Out dlg_state_changes& _changes)
 {
-    get_contact_archive(_contact)->set_dlg_state(_state);
+    get_contact_archive(_contact)->set_dlg_state(_state, Out _changes);
 
-    return true;
+    Out _result = get_contact_archive(_contact)->get_dlg_state();
 }
 
 
@@ -185,6 +191,22 @@ void local_history::get_pending_file_sharing(std::list<not_sent_message_sptr>& _
     return get_pending_messages().get_pending_file_sharing_messages(_messages);
 }
 
+void local_history::delete_messages_up_to(const std::string& _contact, const int64_t _id)
+{
+    assert(!_contact.empty());
+    assert(_id > -1);
+
+    __INFO(
+        "delete_history",
+        "deleting history\n"
+        "    contact=<%1%>\n"
+        "    up-to=<%2%>",
+        _contact % _id
+    );
+
+    return get_contact_archive(_contact)->delete_messages_up_to(_id);
+}
+
 int32_t local_history::remove_messages_from_not_sent(const std::string& _contact, archive::history_block_sptr _data)
 {
     get_pending_messages().remove(_contact, _data);
@@ -206,39 +228,43 @@ void local_history::optimize_contact_archive(const std::string& _contact)
     get_contact_archive(_contact)->optimize();
 }
 
-
-
-
-
-
-
-
-
 face::face(const std::wstring& _archive_path)
-    :	thread_(new core::async_executer()),
-    history_cache_(new local_history(_archive_path))
+    : thread_(new core::async_executer())
+    , history_cache_(new local_history(_archive_path))
 {
-
 }
 
 std::shared_ptr<update_history_handler> face::update_history(const std::string& _contact, std::shared_ptr<archive::history_block> _data)
 {
+    assert(!_contact.empty());
+
     __LOG(core::log::info("archive", boost::format("update_history, contact=%1%") % _contact);)
 
-        auto handler = std::make_shared<update_history_handler>();
+    auto handler = std::make_shared<update_history_handler>();
+
     auto history_cache = history_cache_;
     auto ids = std::make_shared<headers_list>();
+    auto state = std::make_shared<dlg_state>();
+    auto state_changes = std::make_shared<dlg_state_changes>();
 
-    thread_->run_async_function([history_cache, _data, _contact, ids]()->int32_t
-    {
-        history_cache->update_history(_contact, _data, *ids);
-        return 0;
-
-    })->on_result_ = [handler, ids](int32_t _error)
-    {
-        if (handler->on_result)
-            handler->on_result(ids);
-    };
+    thread_->run_async_function(
+        [history_cache, _data, _contact, ids, state, state_changes]
+        {
+            history_cache->update_history(_contact, _data, Out *ids, Out *state, Out *state_changes);
+            return 0;
+        }
+    )->on_result_ =
+        [handler, ids, state, state_changes](int32_t _error)
+        {
+            if (handler->on_result)
+            {
+                handler->on_result(
+                    ids,
+                    *state,
+                    *state_changes
+                );
+            }
+        };
 
     return handler;
 }
@@ -247,7 +273,7 @@ std::shared_ptr<request_headers_handler> face::get_messages_index(const std::str
 {
     __LOG(core::log::info("archive", boost::format("get_history, contact=%1%") % _contact);)
 
-        auto history_cache = history_cache_;
+    auto history_cache = history_cache_;
     auto handler = std::make_shared<request_headers_handler>();
     auto headers = std::make_shared<headers_list>();
     std::weak_ptr<face> wr_this = shared_from_this();
@@ -299,6 +325,8 @@ std::shared_ptr<request_buddies_handler> face::get_messages_buddies(const std::s
 
 std::shared_ptr<request_buddies_handler> face::get_messages(const std::string& _contact, int64_t _from, int64_t _count)
 {
+    assert(!_contact.empty());
+
     auto history_cache = history_cache_;
     auto handler = std::make_shared<request_buddies_handler>();
     auto out_messages = std::make_shared<history_block>();
@@ -352,16 +380,23 @@ std::shared_ptr<set_dlg_state_handler> face::set_dlg_state(const std::string& _c
 {
     auto handler = std::make_shared<set_dlg_state_handler>();
     auto history_cache = history_cache_;
+    auto result_state = std::make_shared<dlg_state>();
+    auto state_changes = std::make_shared<dlg_state_changes>();
 
-    thread_->run_async_function([history_cache, _state, _contact]()->int32_t
-    {
-        return (history_cache->set_dlg_state(_contact, _state) ? 0 : -1);
+    thread_->run_async_function(
+        [history_cache, _state, _contact, result_state, state_changes]
+        {
+            history_cache->set_dlg_state(_contact, _state, Out *result_state, Out *state_changes);
 
-    })->on_result_ = [handler](int32_t _error)
-    {
-        if (handler->on_result)
-            handler->on_result();
-    };
+            return 0;
+        })
+    ->on_result_ =
+        [handler, result_state, state_changes]
+        (int32_t _error)
+        {
+            if (handler->on_result)
+                handler->on_result(*result_state, *state_changes);
+        };
 
     return handler;
 }
@@ -435,6 +470,29 @@ std::shared_ptr<not_sent_messages_handler> face::get_pending_message()
             handler->on_result(succeed ? *message : nullptr);
         }
     };
+
+    return handler;
+}
+
+std::shared_ptr<async_task_handlers> face::delete_messages_up_to(const std::string& _contact, const int64_t _id)
+{
+    assert(!_contact.empty());
+    assert(_id > -1);
+
+    auto handler = std::make_shared<async_task_handlers>();
+    auto history_cache = history_cache_;
+
+    thread_->run_async_function(
+        [history_cache, _contact, _id]
+        {
+            history_cache->delete_messages_up_to(_contact, _id);
+            return 0;
+        }
+    )->on_result_ =
+        [handler](int32_t _error)
+        {
+            handler->on_result_(_error);
+        };
 
     return handler;
 }

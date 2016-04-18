@@ -10,7 +10,6 @@
 #include "../utils/utils.h"
 #include "../utils/InterConnector.h"
 #include "../previewer/Previewer.h"
-#include "../controls/Alert.h"
 #include "../controls/BackgroundWidget.h"
 #include "../cache/stickers/stickers.h"
 #include "sounds/SoundsManager.h"
@@ -20,6 +19,8 @@
 #include "history_control/HistoryControlPage.h"
 #include "../../common.shared/crash_handler.h"
 #include "history_control/MessagesScrollArea.h"
+#include "livechats/LiveChatProfile.h"
+#include "../utils/utils.h"
 
 #include "ContactDialog.h"
 
@@ -191,6 +192,7 @@ namespace Ui
         , Shadow_(0)
         , SkipRead_(false)
         , TaskBarIconHidden_(false)
+        , liveChats_(new LiveChats(this))
 	{
         Utils::InterConnector::instance().setMainWindow(this);
 
@@ -274,10 +276,10 @@ namespace Ui
         vertical_layout_->addWidget(title_widget_);
         stacked_widget_ = new BackgroundWidget(main_widget_, "");
         stacked_widget_->setObjectName(QStringLiteral("stacked_widget"));
-        
+
         QPixmap p(":/resources/main_window/pat_100.png");
         setBackgroundPixmap(p, true);
-        
+
         //Utils::InterConnector::instance().setMainWindow(this);
         get_qt_theme_settings()->setOrLoadDefaultTheme();
         vertical_layout_->addWidget(stacked_widget_);
@@ -367,7 +369,6 @@ namespace Ui
         mac_support_->enableMacPreview(this->winId());
 #endif
 
-        Alert::setMainWindow(this);
 	}
 
 	MainWindow::~MainWindow()
@@ -427,14 +428,14 @@ namespace Ui
         assert(main_page_);
         return main_page_->getContactDialog()->currentAimId();
     }
-    
+
     MainPage* MainWindow::getMainPage() const
     {
         assert(main_page_);
         return main_page_;
     }
 
-	bool MainWindow::nativeEventFilter(const QByteArray &data, void *message, long *result)
+	bool MainWindow::nativeEventFilter(const QByteArray& data, void *message, long *result)
 	{
 #ifdef _WIN32
 		MSG* msg = (MSG*)(message);
@@ -487,7 +488,7 @@ namespace Ui
 			}
 			return true;
 		}
-		else if ((msg->message == WM_SYSCOMMAND && msg->wParam == SC_RESTORE) || (msg->message == WM_SHOWWINDOW && msg->hwnd == (HWND)winId() && msg->wParam == TRUE))
+		else if ((msg->message == WM_SYSCOMMAND && msg->wParam == SC_RESTORE && msg->hwnd == (HWND)winId()) || (msg->message == WM_SHOWWINDOW && msg->hwnd == (HWND)winId() && msg->wParam == TRUE))
 		{
 			setVisible(true);
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
@@ -556,17 +557,17 @@ namespace Ui
             GetSoundsManager()->reinit();
         }
 #else
-        
+
 #ifdef __APPLE__
         return MacSupport::nativeEventFilter(data, message, result);
 #endif
-        
+
 #endif //_WIN32
 		return false;
 	}
 
 	void MainWindow::resizeEvent(QResizeEvent* event)
-	{        
+	{
         if (isMaximized())
         {
             get_gui_settings()->set_value(settings_window_maximized, true);
@@ -582,7 +583,7 @@ namespace Ui
         }
         // TODO : limit call this stats
         // GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::main_window_resize);
-        
+
 #ifdef __APPLE__
         mac_support_->updateMainMenu();
 #endif
@@ -620,7 +621,7 @@ namespace Ui
                     Logic::GetRecentsModel()->sendLastRead();
                 SkipRead_ = false;
             }
-            
+
             if (Shadow_)
             {
                 Shadow_->setActive(isActiveWindow());
@@ -663,7 +664,7 @@ namespace Ui
         if (w && qobject_cast<MainPage*>(w) && event->key() == Qt::Key_Escape)
             minimize();
 #endif
-        
+
 #ifdef __linux__
         if (w && qobject_cast<MainPage*>(w) && event->modifiers() | Qt::ControlModifier && event->key() == Qt::Key_Q)
             exit();
@@ -671,12 +672,12 @@ namespace Ui
 
         QMainWindow::keyPressEvent(event);
     }
-    
+
     //void MainWindow::paintEvent(QPaintEvent *_e)
     //{
     //  QWidget::paintEvent(_e);
     //}
-    
+
     void MainWindow::setBackgroundPixmap(QPixmap& _pixmap, const bool _tiling)
     {
         Utils::check_pixel_ratio(_pixmap);
@@ -687,7 +688,7 @@ namespace Ui
 
         stacked_widget_->setImage(_pixmap, _tiling);
     }
-    
+
 	void MainWindow::initSettings()
 	{
         auto main_rect = Ui::get_gui_settings()->get_value<QRect>(
@@ -803,12 +804,12 @@ namespace Ui
 
         tray_icon_->forceUpdateIcon();
     }
-    
+
     void MainWindow::showMigrateAccountPage(QString accountId)
     {
 #ifdef __APPLE__
         MacMigrationManager * manager = new MacMigrationManager(accountId);
-        
+
         if (manager->getProfiles().size() == 1)
         {
             manager->migrateProfile(manager->getProfiles()[0]);
@@ -820,15 +821,15 @@ namespace Ui
             {
                 accounts_page_ = new AccountsPage(this, manager);
                 stacked_widget_->addWidget(accounts_page_);
-                
+
                 connect(accounts_page_, SIGNAL(account_selected()), this, SLOT(showMainPage()), Qt::QueuedConnection);
             }
-            
+
             stacked_widget_->setCurrentWidget(accounts_page_);
-            
+
             clear_global_objects();
         }
-        
+
         delete manager;
 #endif
     }
@@ -837,13 +838,13 @@ namespace Ui
 	{
 #ifdef __APPLE__
         mac_support_->createMenuBar(true);
-        
+
         mac_support_->forceEnglishInputSource();
-        
+
         if (!get_gui_settings()->get_value<bool>(settings_mac_accounts_migrated, false))
         {
             QString accountId = MacMigrationManager::canMigrateAccount();
-            
+
             if (accountId.length() > 0)
             {
                 // Move it out of ifdef-block if it's needed for other platforms
@@ -863,7 +864,7 @@ namespace Ui
 
 			connect(login_page_, SIGNAL(loggedIn()), this, SLOT(showMainPage()), Qt::QueuedConnection);
         }
-        
+
 		stacked_widget_->setCurrentWidget(login_page_);
         GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::reg_page_phone);
 
@@ -910,7 +911,7 @@ namespace Ui
         if( focused != 0 )
         {
             bool handled = false;
-            
+
             if (platform::is_apple())
             {
                 Ui::MessagesScrollArea * area = dynamic_cast<Ui::MessagesScrollArea*>(focused);
@@ -921,11 +922,11 @@ namespace Ui
 #ifdef __APPLE__
                     MacSupport::replacePasteboard(text);
 #endif
-                    
+
                     handled = true;
                 }
             }
-            
+
             if (!handled)
             {
                 QApplication::postEvent( focused,
@@ -939,15 +940,15 @@ namespace Ui
             }
         }
     }
-    
+
     void MainWindow::quote()
     {
         QClipboard * clip = QApplication::clipboard();
-        
+
         QString text = clip->text();
-        
+
         if (text.isEmpty()) return;
-        
+
         QStringList lines = text.split('\n');
         text.clear();
         for (auto line : lines)
@@ -957,12 +958,12 @@ namespace Ui
             text += line;
             text += "\n";
         }
-        
+
         const QString & aimId = activeAimId();
         HistoryControlPage * page = main_page_->getHistoryPage(aimId);
         page->quote(text);
     }
-    
+
     void MainWindow::cut()
     {
         QWidget* focused = QApplication::focusWidget();
@@ -978,7 +979,7 @@ namespace Ui
                                                   Qt::ControlModifier ));
         }
     }
-    
+
     void MainWindow::paste()
     {
         QWidget* focused = QApplication::focusWidget();
@@ -994,8 +995,8 @@ namespace Ui
                                                   Qt::ControlModifier ));
         }
     }
-    
-    
+
+
     void MainWindow::undo()
     {
         QWidget* focused = QApplication::focusWidget();
@@ -1011,8 +1012,8 @@ namespace Ui
                                                   Qt::ControlModifier ));
         }
     }
-    
-    
+
+
     void MainWindow::redo()
     {
         QWidget* focused = QApplication::focusWidget();
@@ -1028,19 +1029,19 @@ namespace Ui
                                                   Qt::ControlModifier|Qt::ShiftModifier ));
         }
     }
-    
+
     void MainWindow::activateSettings()
     {
         activate();
         main_page_->settingsTabActivate();
     }
-    
+
     void MainWindow::activateNextUnread()
     {
         activate();
         main_page_->recentsTabActivate(true);
     }
-    
+
     void MainWindow::activateNextChat()
     {
         activate();
@@ -1048,7 +1049,7 @@ namespace Ui
         const QString & aimId = activeAimId();
         main_page_->selectRecentChat(Logic::GetRecentsModel()->nextAimId(aimId));
     }
-    
+
     void MainWindow::activatePrevChat()
     {
         activate();
@@ -1056,55 +1057,56 @@ namespace Ui
         const QString & aimId = activeAimId();
         main_page_->selectRecentChat(Logic::GetRecentsModel()->prevAimId(aimId));
     }
-    
+
     void MainWindow::activateContactSearch()
     {
         activate();
         main_page_->contactListActivate(true);
     }
-    
+
     void MainWindow::activateAbout()
     {
         activate();
         main_page_->settingsTabActivate(Utils::CommonSettingsType::CommonSettingsType_About);
     }
-    
+
     void MainWindow::activateProfile()
     {
         activate();
         main_page_->settingsTabActivate(Utils::CommonSettingsType::CommonSettingsType_Profile);
     }
-    
+
     void MainWindow::closeCurrent()
     {
         activate();
         const QString & aimId = activeAimId();
         Logic::GetRecentsModel()->hideChat(aimId);
     }
-    
+
     void MainWindow::toggleFullScreen()
     {
 #ifdef __APPLE__
-        MacSupport::toggleFullScreen(this->winId());
+        if (!Utils::InterConnector::instance().isDragOverlay())
+            MacSupport::toggleFullScreen(this->winId());
 #endif
     }
-    
+
     void MainWindow::updateMainMenu()
     {
 #ifdef __APPLE__
         mac_support_->updateMainMenu();
 #endif
     }
-    
+
     void MainWindow::exit() {
 #ifdef STRIP_VOIP
         QApplication::exit();
 #else
-        
+
 #ifdef _WIN32
         SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 #endif
-        
+
         Ui::GetDispatcher()->getVoipController().voipReset();
 #endif //STRIP_VOIP
     }
@@ -1122,7 +1124,7 @@ namespace Ui
         SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 #endif //_WIN32
     }
-    
+
     void MainWindow::pasteEmoji()
     {
         getMainPage()->getContactDialog()->onSmilesMenu();

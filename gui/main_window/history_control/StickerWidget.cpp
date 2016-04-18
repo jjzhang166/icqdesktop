@@ -63,7 +63,7 @@ namespace HistoryControl
 		return true;
 	}
 
-	void StickerWidget::initialize()
+	void StickerWidget::initializeInternal()
 	{
 		connectStickerSignal(true);
 

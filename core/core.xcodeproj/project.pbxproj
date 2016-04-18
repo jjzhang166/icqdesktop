@@ -37,8 +37,21 @@
 		32E66AE71C789A1400E002BB /* speech_to_text.h in Headers */ = {isa = PBXBuildFile; fileRef = 32E66AE51C789A1400E002BB /* speech_to_text.h */; };
 		32EE0B4C1C1F01EB004F85AC /* mute_buddy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EE0B4A1C1F01EB004F85AC /* mute_buddy.cpp */; };
 		32EE0B4D1C1F01EB004F85AC /* mute_buddy.h in Headers */ = {isa = PBXBuildFile; fileRef = 32EE0B4B1C1F01EB004F85AC /* mute_buddy.h */; };
+		466090581CAED04400FB4A39 /* update_profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466090561CAED04400FB4A39 /* update_profile.cpp */; };
+		466090591CAED04400FB4A39 /* update_profile.h in Headers */ = {isa = PBXBuildFile; fileRef = 466090571CAED04400FB4A39 /* update_profile.h */; };
+		466090601CAED11E00FB4A39 /* del_history.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4660905A1CAED11E00FB4A39 /* del_history.cpp */; };
+		466090611CAED11E00FB4A39 /* del_history.h in Headers */ = {isa = PBXBuildFile; fileRef = 4660905B1CAED11E00FB4A39 /* del_history.h */; };
+		466090621CAED11E00FB4A39 /* del_message.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4660905C1CAED11E00FB4A39 /* del_message.cpp */; };
+		466090631CAED11E00FB4A39 /* del_message.h in Headers */ = {isa = PBXBuildFile; fileRef = 4660905D1CAED11E00FB4A39 /* del_message.h */; };
+		466090641CAED11E00FB4A39 /* join_chat_alpha.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4660905E1CAED11E00FB4A39 /* join_chat_alpha.cpp */; };
+		466090651CAED11E00FB4A39 /* join_chat_alpha.h in Headers */ = {isa = PBXBuildFile; fileRef = 4660905F1CAED11E00FB4A39 /* join_chat_alpha.h */; };
+		466090681CAED14D00FB4A39 /* history_patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466090661CAED14D00FB4A39 /* history_patch.cpp */; };
+		466090691CAED14D00FB4A39 /* history_patch.h in Headers */ = {isa = PBXBuildFile; fileRef = 466090671CAED14D00FB4A39 /* history_patch.h */; };
+		4660906E1CAED6F100FB4A39 /* set_buddy_attribute.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4660906C1CAED6F100FB4A39 /* set_buddy_attribute.cpp */; };
+		4660906F1CAED6F100FB4A39 /* set_buddy_attribute.h in Headers */ = {isa = PBXBuildFile; fileRef = 4660906D1CAED6F100FB4A39 /* set_buddy_attribute.h */; };
 		5D2AEF291C10403100CC7BF8 /* libippcore_l.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF281C10403100CC7BF8 /* libippcore_l.a */; };
 		5D2AEF2D1C10407A00CC7BF8 /* libippvc_l.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D2AEF2B1C10407A00CC7BF8 /* libippvc_l.a */; };
+		5D4798F61CB7B4510080BAF2 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D4798F51CB7B4510080BAF2 /* VideoToolbox.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		5D9753111C0F18B3007A59FA /* libvoip_x64.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D9753101C0F18B3007A59FA /* libvoip_x64.a */; };
 		865AE8B71BE271710071193F /* search_contacts_params.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 865AE8B51BE271710071193F /* search_contacts_params.cpp */; };
 		865AE8B81BE271710071193F /* search_contacts_params.h in Headers */ = {isa = PBXBuildFile; fileRef = 865AE8B61BE271710071193F /* search_contacts_params.h */; };
@@ -299,8 +312,21 @@
 		32E66AE51C789A1400E002BB /* speech_to_text.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = speech_to_text.h; path = connections/wim/packets/speech_to_text.h; sourceTree = "<group>"; };
 		32EE0B4A1C1F01EB004F85AC /* mute_buddy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mute_buddy.cpp; sourceTree = "<group>"; };
 		32EE0B4B1C1F01EB004F85AC /* mute_buddy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mute_buddy.h; sourceTree = "<group>"; };
+		466090561CAED04400FB4A39 /* update_profile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = update_profile.cpp; sourceTree = "<group>"; };
+		466090571CAED04400FB4A39 /* update_profile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = update_profile.h; sourceTree = "<group>"; };
+		4660905A1CAED11E00FB4A39 /* del_history.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = del_history.cpp; sourceTree = "<group>"; };
+		4660905B1CAED11E00FB4A39 /* del_history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = del_history.h; sourceTree = "<group>"; };
+		4660905C1CAED11E00FB4A39 /* del_message.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = del_message.cpp; sourceTree = "<group>"; };
+		4660905D1CAED11E00FB4A39 /* del_message.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = del_message.h; sourceTree = "<group>"; };
+		4660905E1CAED11E00FB4A39 /* join_chat_alpha.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = join_chat_alpha.cpp; sourceTree = "<group>"; };
+		4660905F1CAED11E00FB4A39 /* join_chat_alpha.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = join_chat_alpha.h; sourceTree = "<group>"; };
+		466090661CAED14D00FB4A39 /* history_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = history_patch.cpp; sourceTree = "<group>"; };
+		466090671CAED14D00FB4A39 /* history_patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = history_patch.h; sourceTree = "<group>"; };
+		4660906C1CAED6F100FB4A39 /* set_buddy_attribute.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = set_buddy_attribute.cpp; sourceTree = "<group>"; };
+		4660906D1CAED6F100FB4A39 /* set_buddy_attribute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = set_buddy_attribute.h; sourceTree = "<group>"; };
 		5D2AEF281C10403100CC7BF8 /* libippcore_l.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libippcore_l.a; path = Voip/libvoip/lib.mac/libippcore_l.a; sourceTree = "<group>"; };
 		5D2AEF2B1C10407A00CC7BF8 /* libippvc_l.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libippvc_l.a; path = Voip/libvoip/lib.mac/libippvc_l.a; sourceTree = "<group>"; };
+		5D4798F51CB7B4510080BAF2 /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
 		5D9753101C0F18B3007A59FA /* libvoip_x64.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvoip_x64.a; path = Voip/libvoip/lib.mac/libvoip_x64.a; sourceTree = "<group>"; };
 		865AE8B51BE271710071193F /* search_contacts_params.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = search_contacts_params.cpp; sourceTree = "<group>"; };
 		865AE8B61BE271710071193F /* search_contacts_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = search_contacts_params.h; sourceTree = "<group>"; };
@@ -537,6 +563,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5D4798F61CB7B4510080BAF2 /* VideoToolbox.framework in Frameworks */,
 				5D9753111C0F18B3007A59FA /* libvoip_x64.a in Frameworks */,
 				186E3D6E1CA0491000AB8721 /* boost.a in Frameworks */,
 				5D2AEF2D1C10407A00CC7BF8 /* libippvc_l.a in Frameworks */,
@@ -599,6 +626,7 @@
 		D5DFA0FB1BC4097300A656D2 = {
 			isa = PBXGroup;
 			children = (
+				5D4798F51CB7B4510080BAF2 /* VideoToolbox.framework */,
 				186E3D6D1CA0491000AB8721 /* boost.a */,
 				5D2AEF2B1C10407A00CC7BF8 /* libippvc_l.a */,
 				5D2AEF281C10403100CC7BF8 /* libippcore_l.a */,
@@ -661,6 +689,8 @@
 		D5DFA25E1BC40D2700A656D2 /* archive */ = {
 			isa = PBXGroup;
 			children = (
+				466090661CAED14D00FB4A39 /* history_patch.cpp */,
+				466090671CAED14D00FB4A39 /* history_patch.h */,
 				D55389CE1BC813520088FBA6 /* opened_dialog.cpp */,
 				D55389CF1BC813520088FBA6 /* opened_dialog.h */,
 				D5DFA25F1BC40D2700A656D2 /* archive_index.cpp */,
@@ -795,6 +825,16 @@
 		D5DFA29C1BC40D2800A656D2 /* packets */ = {
 			isa = PBXGroup;
 			children = (
+				4660906C1CAED6F100FB4A39 /* set_buddy_attribute.cpp */,
+				4660906D1CAED6F100FB4A39 /* set_buddy_attribute.h */,
+				4660905A1CAED11E00FB4A39 /* del_history.cpp */,
+				4660905B1CAED11E00FB4A39 /* del_history.h */,
+				4660905C1CAED11E00FB4A39 /* del_message.cpp */,
+				4660905D1CAED11E00FB4A39 /* del_message.h */,
+				4660905E1CAED11E00FB4A39 /* join_chat_alpha.cpp */,
+				4660905F1CAED11E00FB4A39 /* join_chat_alpha.h */,
+				466090561CAED04400FB4A39 /* update_profile.cpp */,
+				466090571CAED04400FB4A39 /* update_profile.h */,
 				188871441CA941DC004059BF /* get_flags.cpp */,
 				188871451CA941DC004059BF /* get_flags.h */,
 				1888713C1CA9413E004059BF /* attach_phone.cpp */,
@@ -991,10 +1031,12 @@
 				D5DFA39E1BC40D2800A656D2 /* coretime.h in Headers */,
 				D5DFA3441BC40D2800A656D2 /* upload_task.h in Headers */,
 				D5DFA3621BC40D2800A656D2 /* send_file.h in Headers */,
+				466090691CAED14D00FB4A39 /* history_patch.h in Headers */,
 				86E44F7F1C0DA37800BA970A /* add_chat.h in Headers */,
 				D5DFA3821BC40D2800A656D2 /* scheduler.h in Headers */,
 				959ACA9B1BE75A89005361D5 /* contact_profile.h in Headers */,
 				D5DFA3911BC40D2800A656D2 /* md5.h in Headers */,
+				4660906F1CAED6F100FB4A39 /* set_buddy_attribute.h in Headers */,
 				86740DEC1BDA792900907500 /* VoipManager.h in Headers */,
 				D5DFA37C1BC40D2800A656D2 /* log.h in Headers */,
 				95E220C21C48F62000B5840E /* search_contacts2.h in Headers */,
@@ -1011,6 +1053,7 @@
 				D5DFA34C1BC40D2800A656D2 /* gen_robusto_token.h in Headers */,
 				D5DFA3331BC40D2800A656D2 /* fetch_event_dlg_state.h in Headers */,
 				D5DFA3661BC40D2800A656D2 /* set_dlg_state.h in Headers */,
+				466090591CAED04400FB4A39 /* update_profile.h in Headers */,
 				18D6D5351C688CFE004C9B49 /* http_request.h in Headers */,
 				D5096EA31BF666A500B7345F /* fetch_event_diff.h in Headers */,
 				D5DFA3601BC40D2800A656D2 /* robusto_add_client.h in Headers */,
@@ -1029,6 +1072,7 @@
 				86740DEB1BDA792900907500 /* VoipManagerDefines.h in Headers */,
 				86740DBD1BD929F300907500 /* chat_info.h in Headers */,
 				95E221001C60F48100B5840E /* VoipProtocol.h in Headers */,
+				466090651CAED11E00FB4A39 /* join_chat_alpha.h in Headers */,
 				86740DB91BD9297800907500 /* get_chat_info.h in Headers */,
 				95E220CF1C4CD2E600B5840E /* dialog_holes.h in Headers */,
 				D5DFA3A21BC40D2800A656D2 /* utils.h in Headers */,
@@ -1051,6 +1095,7 @@
 				D5DFA3141BC40D2800A656D2 /* errors.h in Headers */,
 				D5DFA3641BC40D2800A656D2 /* send_message.h in Headers */,
 				D5DFA3241BC40D2800A656D2 /* base_im.h in Headers */,
+				466090631CAED11E00FB4A39 /* del_message.h in Headers */,
 				D5DFA3201BC40D2800A656D2 /* storage.h in Headers */,
 				D5DFA3191BC40D2800A656D2 /* message_flags.h in Headers */,
 				9566A26B1C05D24A00A5CBA4 /* binary_stream_reader.h in Headers */,
@@ -1067,6 +1112,7 @@
 				D5DFA3221BC40D2800A656D2 /* async_task.h in Headers */,
 				9566A2DC1C17079E00A5CBA4 /* fetch_event_user_added_to_buddy_list.h in Headers */,
 				D5DFA39C1BC40D2800A656D2 /* threadpool.h in Headers */,
+				466090611CAED11E00FB4A39 /* del_history.h in Headers */,
 				D5DFA35E1BC40D2800A656D2 /* request_avatar.h in Headers */,
 				D5DFA3351BC40D2800A656D2 /* fetch_event_hidden_chat.h in Headers */,
 				D5DFA3841BC40D2800A656D2 /* stdafx.h in Headers */,
@@ -1133,6 +1179,7 @@
 				D5096EA21BF666A500B7345F /* fetch_event_diff.cpp in Sources */,
 				86CE8C4D1C0DA25F00A5E3F9 /* system.mm in Sources */,
 				D5DFA3211BC40D2800A656D2 /* async_task.cpp in Sources */,
+				466090681CAED14D00FB4A39 /* history_patch.cpp in Sources */,
 				D5DFA31C1BC40D2800A656D2 /* not_sent_messages.cpp in Sources */,
 				D5DFA3931BC40D2800A656D2 /* semaphore.cpp in Sources */,
 				D5DFA3951BC40D2800A656D2 /* settings.cpp in Sources */,
@@ -1153,6 +1200,7 @@
 				184401841C7E047700A6C3E8 /* get_permit_deny.cpp in Sources */,
 				D5DFA33F1BC40D2800A656D2 /* loader_handlers.cpp in Sources */,
 				959ACA9A1BE75A89005361D5 /* contact_profile.cpp in Sources */,
+				466090641CAED11E00FB4A39 /* join_chat_alpha.cpp in Sources */,
 				86CE9E421C57A1AC00589B30 /* theme_settings.cpp in Sources */,
 				9566A2DB1C17079E00A5CBA4 /* fetch_event_user_added_to_buddy_list.cpp in Sources */,
 				865AE8BB1BE272CE0071193F /* search_contacts.cpp in Sources */,
@@ -1197,6 +1245,7 @@
 				D5DFA3791BC40D2800A656D2 /* gui_settings.cpp in Sources */,
 				D5DFA3751BC40D2800A656D2 /* core_settings.cpp in Sources */,
 				867C0B8F1C492DE5006D1161 /* get_themes_index.cpp in Sources */,
+				466090621CAED11E00FB4A39 /* del_message.cpp in Sources */,
 				86E44F821C0DA37800BA970A /* modify_chat.cpp in Sources */,
 				D5DFA3971BC40D2800A656D2 /* strings.cpp in Sources */,
 				D5DFA3551BC40D2800A656D2 /* hide_chat.cpp in Sources */,
@@ -1216,6 +1265,7 @@
 				32960F651C849EFC00E5CB9E /* system_common.cpp in Sources */,
 				D5DFA36F1BC40D2800A656D2 /* wim_history.cpp in Sources */,
 				9566A26A1C05D24A00A5CBA4 /* binary_stream_reader.cpp in Sources */,
+				466090581CAED04400FB4A39 /* update_profile.cpp in Sources */,
 				D5DFA3A11BC40D2800A656D2 /* utils.cpp in Sources */,
 				D5DFA37D1BC40D2800A656D2 /* main_thread.cpp in Sources */,
 				1844017C1C7E041D00A6C3E8 /* permit_info.cpp in Sources */,
@@ -1233,6 +1283,7 @@
 				18AA23411C107AC100A4A5CC /* send_imstat.cpp in Sources */,
 				D5DFA3291BC40D2800A656D2 /* active_dialogs.cpp in Sources */,
 				D5DFA36B1BC40D2800A656D2 /* robusto_packet.cpp in Sources */,
+				4660906E1CAED6F100FB4A39 /* set_buddy_attribute.cpp in Sources */,
 				D5DFA3491BC40D2800A656D2 /* fetch.cpp in Sources */,
 				D5DFA3531BC40D2800A656D2 /* get_sms_code.cpp in Sources */,
 				D5DFA35F1BC40D2800A656D2 /* robusto_add_client.cpp in Sources */,
@@ -1243,6 +1294,7 @@
 				D5DFA35B1BC40D2800A656D2 /* normalize_phone.cpp in Sources */,
 				D5DFA3321BC40D2800A656D2 /* fetch_event_dlg_state.cpp in Sources */,
 				95D944801C9315C90044CA53 /* proxy_settings.cpp in Sources */,
+				466090601CAED11E00FB4A39 /* del_history.cpp in Sources */,
 				86E44F7E1C0DA37800BA970A /* add_chat.cpp in Sources */,
 				957821EA1C44FFC700177667 /* im_login.cpp in Sources */,
 				D5DFA32D1BC40D2800A656D2 /* avatar_loader.cpp in Sources */,

@@ -55,8 +55,11 @@
 		18D6D51D1C5A3EFC004C9B49 /* BackgroundWidget.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18D6D51B1C5A3EFB004C9B49 /* BackgroundWidget.cpp */; };
 		18FD9B8D1C088693004D835D /* NotificationCenterManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 18FD9B8C1C088693004D835D /* NotificationCenterManager.mm */; };
 		18FD9B8F1C0889A4004D835D /* moc_NotificationCenterManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18FD9B8E1C0889A4004D835D /* moc_NotificationCenterManager.cpp */; };
+		320108DE1CBFC4C7007E0559 /* typing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 320108DC1CBFC4C7007E0559 /* typing.cpp */; };
 		326519391BFB493B00C14D88 /* translator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 326519371BFB493B00C14D88 /* translator.cpp */; };
 		32C02A361BFC8CD6001137CC /* application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32C02A321BFC8CD6001137CC /* application.cpp */; };
+		32C3D9C51CB4FDFE00CE1901 /* LiveChatProfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32C3D9C31CB4FDFE00CE1901 /* LiveChatProfile.cpp */; };
+		32C3D9C71CB4FE1400CE1901 /* moc_LiveChatProfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32C3D9C61CB4FE1400CE1901 /* moc_LiveChatProfile.cpp */; };
 		32E66AEF1C789D8800E002BB /* PttAudioWidget.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32E66AED1C789D8800E002BB /* PttAudioWidget.cpp */; };
 		32E66AF11C789DA900E002BB /* moc_PttAudioWidget.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32E66AF01C789DA900E002BB /* moc_PttAudioWidget.cpp */; };
 		32E66AF41C789DBA00E002BB /* MpegLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32E66AF21C789DBA00E002BB /* MpegLoader.cpp */; };
@@ -66,6 +69,15 @@
 		32E66AFC1C78BB8900E002BB /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32E66AFB1C78BB8800E002BB /* CoreMedia.framework */; };
 		32E66AFE1C78BE0D00E002BB /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32E66AFD1C78BE0D00E002BB /* Security.framework */; };
 		32EE0B511C1F02B3004F85AC /* ContextMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EE0B4E1C1F02B3004F85AC /* ContextMenu.cpp */; };
+		461045361CB6A87A00300D91 /* LiveChatMembersControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 461045321CB6A87A00300D91 /* LiveChatMembersControl.cpp */; };
+		461045371CB6A87A00300D91 /* LiveChats.qss in Resources */ = {isa = PBXBuildFile; fileRef = 461045341CB6A87A00300D91 /* LiveChats.qss */; };
+		461045381CB6A87A00300D91 /* moc_LiveChatMembersControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 461045351CB6A87A00300D91 /* moc_LiveChatMembersControl.cpp */; };
+		46374F5D1CBBA7ED005044B7 /* GroupChatOperations.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46374F5B1CBBA7ED005044B7 /* GroupChatOperations.cpp */; };
+		466090551CAED01900FB4A39 /* IntroduceYourself.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466090531CAED01900FB4A39 /* IntroduceYourself.cpp */; };
+		4660906B1CAED45B00FB4A39 /* moc_IntroduceYourself.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4660906A1CAED45B00FB4A39 /* moc_IntroduceYourself.cpp */; };
+		466090751CB2B65C00FB4A39 /* ConnectionSettingsWidget.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466090701CB2B65C00FB4A39 /* ConnectionSettingsWidget.cpp */; };
+		466090761CB2B65C00FB4A39 /* GeneralCreator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466090721CB2B65C00FB4A39 /* GeneralCreator.cpp */; };
+		466090771CB2B65C00FB4A39 /* moc_ConnectionSettingsWidget.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466090741CB2B65C00FB4A39 /* moc_ConnectionSettingsWidget.cpp */; };
 		5D01A9FE1C15AD34002D1B98 /* libippcore_l.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D01A9FB1C15AD34002D1B98 /* libippcore_l.a */; };
 		5D01A9FF1C15AD34002D1B98 /* libippvc_l.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D01A9FC1C15AD34002D1B98 /* libippvc_l.a */; };
 		5D01AA001C15AD34002D1B98 /* libvoip_x64.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D01A9FD1C15AD34002D1B98 /* libvoip_x64.a */; };
@@ -73,6 +85,8 @@
 		5DF16B931C11D0B100D47F53 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DF16B921C11D0B100D47F53 /* AppKit.framework */; };
 		5DF16B961C11D30A00D47F53 /* VideoFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5DF16B951C11D30A00D47F53 /* VideoFrame.cpp */; };
 		5DF16B9A1C11E13200D47F53 /* VideoFrameMacos.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5DF16B991C11E13200D47F53 /* VideoFrameMacos.mm */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		7125EFC11CC0E9A2007E66E9 /* IntValidator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7125EFC01CC0E9A2007E66E9 /* IntValidator.cpp */; };
+		7125EFC31CC0EA00007E66E9 /* moc_IntValidator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7125EFC21CC0EA00007E66E9 /* moc_IntValidator.cpp */; };
 		860A31451BDF889F000F0DF2 /* moc_AvatarStorage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 860A30D61BDF889E000F0DF2 /* moc_AvatarStorage.cpp */; };
 		860A314A1BDF889F000F0DF2 /* moc_CallMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 860A30DB1BDF889E000F0DF2 /* moc_CallMenu.cpp */; };
 		860A314B1BDF889F000F0DF2 /* moc_CallPanelMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 860A30DC1BDF889E000F0DF2 /* moc_CallPanelMain.cpp */; };
@@ -476,10 +490,15 @@
 		18FD9B8B1C088693004D835D /* NotificationCenterManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NotificationCenterManager.h; sourceTree = "<group>"; };
 		18FD9B8C1C088693004D835D /* NotificationCenterManager.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = NotificationCenterManager.mm; sourceTree = "<group>"; };
 		18FD9B8E1C0889A4004D835D /* moc_NotificationCenterManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moc_NotificationCenterManager.cpp; sourceTree = "<group>"; };
+		320108DC1CBFC4C7007E0559 /* typing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = typing.cpp; sourceTree = "<group>"; };
+		320108DD1CBFC4C7007E0559 /* typing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = typing.h; sourceTree = "<group>"; };
 		326519371BFB493B00C14D88 /* translator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = translator.cpp; sourceTree = "<group>"; };
 		326519381BFB493B00C14D88 /* translator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = translator.h; sourceTree = "<group>"; };
 		32C02A321BFC8CD6001137CC /* application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = application.cpp; sourceTree = "<group>"; };
 		32C02A331BFC8CD6001137CC /* application.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = application.h; sourceTree = "<group>"; };
+		32C3D9C31CB4FDFE00CE1901 /* LiveChatProfile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LiveChatProfile.cpp; path = livechats/LiveChatProfile.cpp; sourceTree = "<group>"; };
+		32C3D9C41CB4FDFE00CE1901 /* LiveChatProfile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LiveChatProfile.h; path = livechats/LiveChatProfile.h; sourceTree = "<group>"; };
+		32C3D9C61CB4FE1400CE1901 /* moc_LiveChatProfile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_LiveChatProfile.cpp; path = ../../../gui/main_window/livechats/moc_LiveChatProfile.cpp; sourceTree = "<group>"; };
 		32E66AED1C789D8800E002BB /* PttAudioWidget.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PttAudioWidget.cpp; sourceTree = "<group>"; };
 		32E66AEE1C789D8800E002BB /* PttAudioWidget.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PttAudioWidget.h; sourceTree = "<group>"; };
 		32E66AF01C789DA900E002BB /* moc_PttAudioWidget.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_PttAudioWidget.cpp; path = ../../../gui/main_window/history_control/moc_PttAudioWidget.cpp; sourceTree = "<group>"; };
@@ -492,6 +511,20 @@
 		32E66AFD1C78BE0D00E002BB /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		32EE0B4E1C1F02B3004F85AC /* ContextMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContextMenu.cpp; sourceTree = "<group>"; };
 		32EE0B4F1C1F02B3004F85AC /* ContextMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContextMenu.h; sourceTree = "<group>"; };
+		461045321CB6A87A00300D91 /* LiveChatMembersControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LiveChatMembersControl.cpp; path = livechats/LiveChatMembersControl.cpp; sourceTree = "<group>"; };
+		461045331CB6A87A00300D91 /* LiveChatMembersControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LiveChatMembersControl.h; path = livechats/LiveChatMembersControl.h; sourceTree = "<group>"; };
+		461045341CB6A87A00300D91 /* LiveChats.qss */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LiveChats.qss; path = livechats/LiveChats.qss; sourceTree = "<group>"; };
+		461045351CB6A87A00300D91 /* moc_LiveChatMembersControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_LiveChatMembersControl.cpp; path = livechats/moc_LiveChatMembersControl.cpp; sourceTree = "<group>"; };
+		46374F5B1CBBA7ED005044B7 /* GroupChatOperations.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GroupChatOperations.cpp; sourceTree = "<group>"; };
+		46374F5C1CBBA7ED005044B7 /* GroupChatOperations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GroupChatOperations.h; sourceTree = "<group>"; };
+		466090531CAED01900FB4A39 /* IntroduceYourself.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntroduceYourself.cpp; sourceTree = "<group>"; };
+		466090541CAED01900FB4A39 /* IntroduceYourself.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntroduceYourself.h; sourceTree = "<group>"; };
+		4660906A1CAED45B00FB4A39 /* moc_IntroduceYourself.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_IntroduceYourself.cpp; path = ../../../gui/main_window/moc_IntroduceYourself.cpp; sourceTree = "<group>"; };
+		466090701CB2B65C00FB4A39 /* ConnectionSettingsWidget.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConnectionSettingsWidget.cpp; sourceTree = "<group>"; };
+		466090711CB2B65C00FB4A39 /* ConnectionSettingsWidget.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConnectionSettingsWidget.h; sourceTree = "<group>"; };
+		466090721CB2B65C00FB4A39 /* GeneralCreator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GeneralCreator.cpp; sourceTree = "<group>"; };
+		466090731CB2B65C00FB4A39 /* GeneralCreator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GeneralCreator.h; sourceTree = "<group>"; };
+		466090741CB2B65C00FB4A39 /* moc_ConnectionSettingsWidget.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = moc_ConnectionSettingsWidget.cpp; sourceTree = "<group>"; };
 		5D01A9FB1C15AD34002D1B98 /* libippcore_l.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libippcore_l.a; path = ../../../core/Voip/libvoip/lib.mac/libippcore_l.a; sourceTree = "<group>"; };
 		5D01A9FC1C15AD34002D1B98 /* libippvc_l.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libippvc_l.a; path = ../../../core/Voip/libvoip/lib.mac/libippvc_l.a; sourceTree = "<group>"; };
 		5D01A9FD1C15AD34002D1B98 /* libvoip_x64.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvoip_x64.a; path = ../../../core/Voip/libvoip/lib.mac/libvoip_x64.a; sourceTree = "<group>"; };
@@ -501,6 +534,9 @@
 		5DF16B951C11D30A00D47F53 /* VideoFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VideoFrame.cpp; sourceTree = "<group>"; };
 		5DF16B981C11E11D00D47F53 /* VideoFrameMacos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VideoFrameMacos.h; path = macos/VideoFrameMacos.h; sourceTree = "<group>"; };
 		5DF16B991C11E13200D47F53 /* VideoFrameMacos.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = VideoFrameMacos.mm; path = macos/VideoFrameMacos.mm; sourceTree = "<group>"; };
+		7125EFBF1CC0E999007E66E9 /* IntValidator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntValidator.h; sourceTree = "<group>"; };
+		7125EFC01CC0E9A2007E66E9 /* IntValidator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntValidator.cpp; sourceTree = "<group>"; };
+		7125EFC21CC0EA00007E66E9 /* moc_IntValidator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_IntValidator.cpp; path = ../../../gui/utils/moc_IntValidator.cpp; sourceTree = "<group>"; };
 		860A30D61BDF889E000F0DF2 /* moc_AvatarStorage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_AvatarStorage.cpp; path = ../../../gui/cache/avatars/moc_AvatarStorage.cpp; sourceTree = "<group>"; };
 		860A30DB1BDF889E000F0DF2 /* moc_CallMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_CallMenu.cpp; path = ../../../gui/voip/moc_CallMenu.cpp; sourceTree = "<group>"; };
 		860A30DC1BDF889E000F0DF2 /* moc_CallPanelMain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_CallPanelMain.cpp; path = ../../../gui/voip/moc_CallPanelMain.cpp; sourceTree = "<group>"; };
@@ -708,7 +744,6 @@
 		95DAD6B81C214C25009B2655 /* HistoryControlPageItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HistoryControlPageItem.h; sourceTree = "<group>"; };
 		95DAD6BC1C22E17C009B2655 /* DpiAwareImage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DpiAwareImage.cpp; sourceTree = "<group>"; };
 		95DAD6BD1C22E17C009B2655 /* DpiAwareImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DpiAwareImage.h; sourceTree = "<group>"; };
-		95DAD6CE1C23FCD1009B2655 /* collection_helper_ext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = collection_helper_ext.h; path = ../../../gui/collection_helper_ext.h; sourceTree = "<group>"; };
 		95E220E11C57A63200B5840E /* common_defs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = common_defs.cpp; sourceTree = "<group>"; };
 		95E220E21C57A63200B5840E /* common_defs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common_defs.h; sourceTree = "<group>"; };
 		95E220E31C57A63200B5840E /* crash_handler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crash_handler.cpp; sourceTree = "<group>"; };
@@ -1040,6 +1075,9 @@
 		8667A6D61BDF75D300E4B603 /* mocs */ = {
 			isa = PBXGroup;
 			children = (
+				7125EFC21CC0EA00007E66E9 /* moc_IntValidator.cpp */,
+				32C3D9C61CB4FE1400CE1901 /* moc_LiveChatProfile.cpp */,
+				4660906A1CAED45B00FB4A39 /* moc_IntroduceYourself.cpp */,
 				862748A11C9AD694004C7495 /* moc_HistoryControlPageThemePanel.cpp */,
 				95D9448E1C9BEC760044CA53 /* moc_CustomAbstractListModel.cpp */,
 				184402011C8858DC00A6C3E8 /* moc_AccountsPage.cpp */,
@@ -1330,6 +1368,8 @@
 		D5D9C6C61BE795B400477BD1 /* types */ = {
 			isa = PBXGroup;
 			children = (
+				320108DC1CBFC4C7007E0559 /* typing.cpp */,
+				320108DD1CBFC4C7007E0559 /* typing.h */,
 				D5D9C6C71BE795B400477BD1 /* chat.cpp */,
 				D5D9C6C81BE795B400477BD1 /* chat.h */,
 				D5D9C6C91BE795B400477BD1 /* contact.cpp */,
@@ -1344,6 +1384,11 @@
 		D5D9C6DA1BE795FB00477BD1 /* controls */ = {
 			isa = PBXGroup;
 			children = (
+				466090701CB2B65C00FB4A39 /* ConnectionSettingsWidget.cpp */,
+				466090711CB2B65C00FB4A39 /* ConnectionSettingsWidget.h */,
+				466090721CB2B65C00FB4A39 /* GeneralCreator.cpp */,
+				466090731CB2B65C00FB4A39 /* GeneralCreator.h */,
+				466090741CB2B65C00FB4A39 /* moc_ConnectionSettingsWidget.cpp */,
 				18D6D51B1C5A3EFB004C9B49 /* BackgroundWidget.cpp */,
 				18D6D51C1C5A3EFB004C9B49 /* BackgroundWidget.h */,
 				95DAD6BC1C22E17C009B2655 /* DpiAwareImage.cpp */,
@@ -1388,6 +1433,16 @@
 		D5D9C6E31BE795FB00477BD1 /* main_window */ = {
 			isa = PBXGroup;
 			children = (
+				46374F5B1CBBA7ED005044B7 /* GroupChatOperations.cpp */,
+				46374F5C1CBBA7ED005044B7 /* GroupChatOperations.h */,
+				461045321CB6A87A00300D91 /* LiveChatMembersControl.cpp */,
+				461045331CB6A87A00300D91 /* LiveChatMembersControl.h */,
+				461045341CB6A87A00300D91 /* LiveChats.qss */,
+				461045351CB6A87A00300D91 /* moc_LiveChatMembersControl.cpp */,
+				32C3D9C31CB4FDFE00CE1901 /* LiveChatProfile.cpp */,
+				32C3D9C41CB4FDFE00CE1901 /* LiveChatProfile.h */,
+				466090531CAED01900FB4A39 /* IntroduceYourself.cpp */,
+				466090541CAED01900FB4A39 /* IntroduceYourself.h */,
 				D5F7F6F01BF0B1A700653258 /* sounds */,
 				D5D9C7EF1BE7A4A500477BD1 /* tray */,
 				D5D9C7001BE795FB00477BD1 /* history_control */,
@@ -1630,7 +1685,6 @@
 			children = (
 				182429B51C1F0E9A00E788D8 /* collection_helper.cpp */,
 				182429B61C1F0E9A00E788D8 /* collection_helper.h */,
-				95DAD6CE1C23FCD1009B2655 /* collection_helper_ext.h */,
 				182429B71C1F0E9A00E788D8 /* core_face.h */,
 				D5E14D381BC6CF8A007F8671 /* qresource */,
 				86FAD9661C27F3FC0016200F /* ICQ-Prefix.pch */,
@@ -1731,6 +1785,8 @@
 		D5E1494A1BC54EBE007F8671 /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				7125EFC01CC0E9A2007E66E9 /* IntValidator.cpp */,
+				7125EFBF1CC0E999007E66E9 /* IntValidator.h */,
 				184402051C88591C00A6C3E8 /* mac_migration.h */,
 				184402061C88591C00A6C3E8 /* mac_migration.mm */,
 				95A9C1D51C75F4A0006F3E0F /* Text.cpp */,
@@ -1864,6 +1920,7 @@
 				18AA233C1C1073F400A4A5CC /* dsa_pub.pem in Resources */,
 				959ACA631BE366F3005361D5 /* icons-bundle-icq.icns in Resources */,
 				D5E146491BC54E39007F8671 /* Assets.xcassets in Resources */,
+				461045371CB6A87A00300D91 /* LiveChats.qss in Resources */,
 				D5D9C69F1BE7855000477BD1 /* ICQ.entitlements in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1973,8 +2030,10 @@
 				D5E14C391BC54EBE007F8671 /* stdafx.cpp in Sources */,
 				D5D9C7EB1BE7A2AD00477BD1 /* VideoSettings.cpp in Sources */,
 				863B6B0E1C5BC9F7006E7DB9 /* moc_theme_settings.cpp in Sources */,
+				466090751CB2B65C00FB4A39 /* ConnectionSettingsWidget.cpp in Sources */,
 				95CDDF921C27E4F400240739 /* moc_SearchMembersModel.cpp in Sources */,
 				868781301C786ABF00D35507 /* ThemesSettingsWidget.cpp in Sources */,
+				32C3D9C51CB4FDFE00CE1901 /* LiveChatProfile.cpp in Sources */,
 				D5D9C76A1BE795FB00477BD1 /* search_params.cpp in Sources */,
 				D5D9C76B1BE795FB00477BD1 /* SearchContactsWidget.cpp in Sources */,
 				860A319C1BDF889F000F0DF2 /* moc_toolbar.cpp in Sources */,
@@ -1995,6 +2054,7 @@
 				860A31A71BDF889F000F0DF2 /* moc_VideoPanel.cpp in Sources */,
 				D5D9C7531BE795FB00477BD1 /* FileSharingWidget.cpp in Sources */,
 				860A31AF1BDF889F000F0DF2 /* moc_VoipProxy.cpp in Sources */,
+				7125EFC31CC0EA00007E66E9 /* moc_IntValidator.cpp in Sources */,
 				9566A2651C045AD600A5CBA4 /* moc_AvatarContainerWidget.cpp in Sources */,
 				18FD9B8D1C088693004D835D /* NotificationCenterManager.mm in Sources */,
 				D5F7F6F51BF0B1A700653258 /* SoundsManager.cpp in Sources */,
@@ -2019,11 +2079,13 @@
 				9566A3071C180A5200A5CBA4 /* ChatEventInfo.cpp in Sources */,
 				18AA23331C0F595000A4A5CC /* moc_GeneralDialog.cpp in Sources */,
 				D5F0807F1BE8D17C00004520 /* moc_MessageAlertWidget.cpp in Sources */,
+				461045361CB6A87A00300D91 /* LiveChatMembersControl.cpp in Sources */,
 				D5D9C6D31BE795B400477BD1 /* IcqStyle.cpp in Sources */,
 				862604581BFC91990083DBF7 /* moc_local_peer.cpp in Sources */,
 				D5D9C7401BE795FB00477BD1 /* CountrySearchCombobox.cpp in Sources */,
 				9566A26E1C05D2FD00A5CBA4 /* NameAndStatusWidget.cpp in Sources */,
 				860A31921BDF889F000F0DF2 /* moc_SmilesMenu.cpp in Sources */,
+				32C3D9C71CB4FE1400CE1901 /* moc_LiveChatProfile.cpp in Sources */,
 				5DF16B9A1C11E13200D47F53 /* VideoFrameMacos.mm in Sources */,
 				95CDDFC01C2BD05700240739 /* Alert.cpp in Sources */,
 				95CDDF901C27E4BD00240739 /* SearchMembersModel.cpp in Sources */,
@@ -2043,6 +2105,7 @@
 				951CE8761C196C4200A3B250 /* WidgetsNavigator.cpp in Sources */,
 				D5D9C6D81BE795B400477BD1 /* contact.cpp in Sources */,
 				951CE8731C186FE300A3B250 /* moc_ChatEventItem.cpp in Sources */,
+				466090551CAED01900FB4A39 /* IntroduceYourself.cpp in Sources */,
 				D5D9C74B1BE795FB00477BD1 /* RecentsItemRenderer.cpp in Sources */,
 				D5D9C6CD1BE795B400477BD1 /* AvatarStorage.cpp in Sources */,
 				8687812E1C786ABF00D35507 /* ThemesWidget.cpp in Sources */,
@@ -2073,16 +2136,19 @@
 				95A7CB611BF0ED9700E5C519 /* moc_ContactAvatarWidget.cpp in Sources */,
 				951CE86C1C186F6900A3B250 /* ChatMembersModel.cpp in Sources */,
 				860A315F1BDF889F000F0DF2 /* moc_CountrySearchCombobox.cpp in Sources */,
+				7125EFC11CC0E9A2007E66E9 /* IntValidator.cpp in Sources */,
 				D5D9C7EE1BE7A2AD00477BD1 /* VoipSysPanelHeader.cpp in Sources */,
 				95E221231C64E27B00B5840E /* moc_HistoryControlPageItem.cpp in Sources */,
 				D5D9C7671BE795FB00477BD1 /* ComboButton.cpp in Sources */,
 				95E221211C64E24700B5840E /* moc_PreviewContentWidget.cpp in Sources */,
 				9566A2831C08859100A5CBA4 /* SelectionContactsForGroupChat.cpp in Sources */,
 				184401FB1C88589600A6C3E8 /* qmpreferences.cpp in Sources */,
+				466090771CB2B65C00FB4A39 /* moc_ConnectionSettingsWidget.cpp in Sources */,
 				D5D9C7541BE795FB00477BD1 /* FileSizeFormatter.cpp in Sources */,
 				866F11871BF36879007020D1 /* contact_profile.cpp in Sources */,
 				184402021C8858DC00A6C3E8 /* moc_AccountsPage.cpp in Sources */,
 				18AA234A1C108BFE00A4A5CC /* StickerWidget.cpp in Sources */,
+				320108DE1CBFC4C7007E0559 /* typing.cpp in Sources */,
 				182429BB1C1F0ED700E788D8 /* moc_ContextMenu.cpp in Sources */,
 				860A31AA1BDF889F000F0DF2 /* moc_VideoWindow.cpp in Sources */,
 				860A31861BDF889F000F0DF2 /* moc_RecentsModel.cpp in Sources */,
@@ -2096,6 +2162,7 @@
 				32EE0B511C1F02B3004F85AC /* ContextMenu.cpp in Sources */,
 				182429B91C1F0E9A00E788D8 /* collection_helper.cpp in Sources */,
 				862748A21C9AD694004C7495 /* moc_HistoryControlPageThemePanel.cpp in Sources */,
+				461045381CB6A87A00300D91 /* moc_LiveChatMembersControl.cpp in Sources */,
 				860A314A1BDF889F000F0DF2 /* moc_CallMenu.cpp in Sources */,
 				D5D9C7571BE795FB00477BD1 /* KnownFileTypes.cpp in Sources */,
 				95A7CB691BF0EDC100E5C519 /* moc_AuthWidget.cpp in Sources */,
@@ -2107,6 +2174,7 @@
 				860A31B01BDF889F000F0DF2 /* moc_VoipSysPanelHeader.cpp in Sources */,
 				D5D9C7F41BE7A60500477BD1 /* moc_TrayIcon.cpp in Sources */,
 				D5D9C6D01BE795B400477BD1 /* EmojiDb.cpp in Sources */,
+				466090761CB2B65C00FB4A39 /* GeneralCreator.cpp in Sources */,
 				D5D9C6CF1BE795B400477BD1 /* Emoji.cpp in Sources */,
 				95E2210E1C64DBC400B5840E /* ResizePixmapTask.cpp in Sources */,
 				863B368A1BE2573700735D43 /* gui_coll_helper.cpp in Sources */,
@@ -2123,6 +2191,7 @@
 				9566A2BE1C10881400A5CBA4 /* FlatMenu.cpp in Sources */,
 				95D9448F1C9BEC760044CA53 /* moc_CustomAbstractListModel.cpp in Sources */,
 				D5D9C7631BE795FB00477BD1 /* InputWidget.cpp in Sources */,
+				46374F5D1CBBA7ED005044B7 /* GroupChatOperations.cpp in Sources */,
 				95DAD6B91C214C25009B2655 /* HistoryControlPageItem.cpp in Sources */,
 				D5D9C76C1BE795FB00477BD1 /* SearchFilters.cpp in Sources */,
 				95E221111C64DC0400B5840E /* LoadPixmapFromDataTask.cpp in Sources */,
@@ -2136,6 +2205,7 @@
 				D5D9C7651BE795FB00477BD1 /* MainPage.cpp in Sources */,
 				8687813B1C78880600D35507 /* ThemesModel.cpp in Sources */,
 				9566A2351BF5CB3000A5CBA4 /* moc_gui_settings.cpp in Sources */,
+				4660906B1CAED45B00FB4A39 /* moc_IntroduceYourself.cpp in Sources */,
 				D50504751BEB9EF7006B4028 /* ContactWidget.cpp in Sources */,
 				959ACB031BF07402005361D5 /* TextEmojiWidget.cpp in Sources */,
 				D5F080801BE8D17C00004520 /* moc_RecentMessagesAlert.cpp in Sources */,

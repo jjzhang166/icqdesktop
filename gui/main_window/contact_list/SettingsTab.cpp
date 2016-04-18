@@ -7,7 +7,6 @@
 #include "../../utils/InterConnector.h"
 #include "../../utils/gui_coll_helper.h"
 #include "../../controls/CustomButton.h"
-#include "../../controls/Alert.h"
 #include "../../controls/GeneralDialog.h"
 #include "../../utils/log/log.h"
 
@@ -192,8 +191,7 @@ namespace Ui
     SettingsTab::SettingsTab(QWidget* _parent):
         QWidget(_parent),
         Ui_(new UI()),
-        CurrentSettingsItem_(Utils::CommonSettingsType::CommonSettingsType_None),
-        logouter_(Alert::create())
+        CurrentSettingsItem_(Utils::CommonSettingsType::CommonSettingsType_None)
     {
         setStyleSheet(Utils::LoadStyle(":/main_window/contact_list/SettingsTab.qss", Utils::get_scale_coefficient(), true));
         setObjectName(QStringLiteral("settings_main"));
@@ -223,25 +221,6 @@ namespace Ui
         layout->addWidget(scroll_area);
         
         Ui_->init(scroll_area_content, scroll_area_content_layout);
-        
-        logouter_->setText(QT_TRANSLATE_NOOP("popup_window","Are you sure you want to sign out?"));
-		logouter_->addButton(QT_TRANSLATE_NOOP("popup_window", "Cancel"), "Cancel", false, [this](QPushButton *)
-		{
-			logouter_->hide();
-			updateSettingsState();
-		});
-		logouter_->addButton(QT_TRANSLATE_NOOP("popup_window", "Yes"), "Yes", true, [this](QPushButton *)
-        {
-            logouter_->hide();
-            if (CurrentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
-                emit Utils::InterConnector::instance().profileSettingsBack();
-            else
-                emit Utils::InterConnector::instance().generalSettingsBack();
-            CurrentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_None;
-            updateSettingsState();
-            get_gui_settings()->set_value(settings_feedback_email, QString(""));
-            GetDispatcher()->post_message_to_core("logout", nullptr);
-        });
                 
         connect(Ui_->settings_my_profile_button, SIGNAL(toggled(bool)), this, SLOT(settingsProfileClicked()), Qt::QueuedConnection);
         connect(Ui_->settings_general_button, SIGNAL(toggled(bool)), this, SLOT(settingsGeneralClicked()), Qt::QueuedConnection);
@@ -351,8 +330,29 @@ namespace Ui
 
     void SettingsTab::settingsSignoutClicked()
     {
-        updateSettingsState();
-        logouter_->show();
+        QString text = QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to sign out?");
+        auto confirm = Utils::GetConfirmationWithTwoButtons(
+            QT_TRANSLATE_NOOP("popup_window", "Cancel"),
+            QT_TRANSLATE_NOOP("popup_window", "Yes"),
+            text,
+            QT_TRANSLATE_NOOP("popup_window", "Sign out"),
+            NULL);
+
+        if (confirm)
+        {
+            if (CurrentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
+                emit Utils::InterConnector::instance().profileSettingsBack();
+            else
+                emit Utils::InterConnector::instance().generalSettingsBack();
+            CurrentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_None;
+            updateSettingsState();
+            get_gui_settings()->set_value(settings_feedback_email, QString(""));
+            GetDispatcher()->post_message_to_core("logout", nullptr);
+        }
+        else
+        {
+            updateSettingsState();
+        }
     }
     
     void SettingsTab::updateSettingsState()

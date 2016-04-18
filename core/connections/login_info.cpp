@@ -19,32 +19,32 @@ login_info::~login_info()
 
 void core::login_info::set_password(const std::string& _password)
 {
-	password_ = _password;
+    password_ = _password;
 }
 
 std::string core::login_info::get_password() const
 {
-	return password_;
+    return password_;
 }
 
 void core::login_info::set_login(const std::string& _login)
 {
-	login_ = _login;
+    login_ = _login;
 }
 
 std::string core::login_info::get_login() const
 {
-	return login_;
+    return login_;
 }
 
 void core::login_info::set_login_type(login_type _type)
 {
-	login_type_ = _type;
+    login_type_ = _type;
 }
 
 core::login_type core::login_info::get_login_type() const
 {
-	return login_type_;
+    return login_type_;
 }
 
 void core::login_info::set_save_auth_data(bool save)
@@ -64,12 +64,12 @@ bool core::login_info::get_save_auth_data() const
 //////////////////////////////////////////////////////////////////////////
 void phone_info::set_phone(const std::string& _phone)
 {
-	phone_ = _phone;
+    phone_ = _phone;
 }
 
 const std::string phone_info::get_phone() const
 {
-	return phone_;
+    return phone_;
 }
 
 void phone_info::set_locale(const std::string& _locale)
@@ -84,30 +84,30 @@ const std::string phone_info::get_locale() const
 
 void phone_info::set_existing(bool _existing)
 {
-	existing_ = _existing;
+    existing_ = _existing;
 }
 
 bool phone_info::get_existing() const
 {
-	return existing_;
+    return existing_;
 }
 
 void phone_info::set_trans_id(const std::string& _trans_id)
 {
-	trans_id_ = _trans_id;
+    trans_id_ = _trans_id;
 }
 
 const std::string phone_info::get_trans_id() const
 {
-	return trans_id_;
+    return trans_id_;
 }
 
 void phone_info::set_sms_code(const std::string& _sms_code)
 {
-	sms_code_ = _sms_code;
+    sms_code_ = _sms_code;
 }
 
 const std::string phone_info::get_sms_code() const
 {
-	return sms_code_;
+    return sms_code_;
 }

@@ -215,9 +215,9 @@ namespace core
 
     enum class group_chat_info_errors
     {
-        min = 0,
-        not_in_chat = 1,
-
+        min = 1,
+        network_error = 2,
+        not_in_chat = 3,
         max,
     };
 
@@ -592,5 +592,37 @@ namespace core
         }
     }
 
+    enum class proxy_types
+    {
+        min = -100,
+        auto_proxy = -1,
+
+        // positive values are reserved for curl_proxytype
+        http_proxy = 0,
+        socks4 = 4,
+        socks5 = 5,
+
+        max
+    };
+
+    inline std::wostream& operator<<(std::wostream &oss, const proxy_types arg)
+    {
+        assert(arg > proxy_types::min);
+        assert(arg < proxy_types::max);
+
+        switch(arg)
+        {
+            case proxy_types::auto_proxy: oss << L"Auto"; break;
+            case proxy_types::http_proxy: oss << L"HTTP Proxy"; break;
+            case proxy_types::socks4: oss << L"SOCKS4"; break;
+            case proxy_types::socks5: oss << L"SOCKS5"; break;
+
+        default:
+            assert(!"unknown core::proxy_types value");
+            break;
+        }
+
+        return oss;
+    }
 
 }

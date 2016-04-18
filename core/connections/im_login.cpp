@@ -154,4 +154,17 @@ namespace core
 
         return true;
     }
+
+    void im_login_list::replace_uin(im_login_id& _old_login, im_login_id& _new_login)
+    {
+        assert(logins_.begin()->get_login() == _old_login.get_login());
+
+        if (logins_.begin()->get_login() == _old_login.get_login())
+        {
+            _new_login.set_id(_old_login.get_id());
+            logins_.pop_front();
+            logins_.push_front(_new_login);
+            save();
+        }
+    }
 }

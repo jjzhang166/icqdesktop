@@ -57,7 +57,7 @@ namespace Logic
 		if (p.isEmpty())
 		{
 			unsigned size = (unsigned)Match_.size();
-			Match_ = GetContactListModel()->GetSearchedContacts();
+			Match_ = GetContactListModel()->getSearchedContacts();
 			emit dataChanged(index(0), index(size));
 			return;
 		}
@@ -88,7 +88,7 @@ namespace Logic
 	void SearchModel::searchResult(QStringList result)
 	{
 		unsigned size = (unsigned)Match_.size();
-		Match_ = GetContactListModel()->GetSearchedContacts(result.toStdList());
+		Match_ = GetContactListModel()->getSearchedContacts(result.toStdList());
 		emit dataChanged(index(0), index(size));
 		if (!result.isEmpty())
 			emit results();

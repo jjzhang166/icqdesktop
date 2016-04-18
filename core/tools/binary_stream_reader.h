@@ -2,24 +2,24 @@
 
 namespace core
 {
-	namespace tools
-	{
+    namespace tools
+    {
 
-		class binary_stream;
+        class binary_stream;
 
-		class binary_stream_reader final : boost::noncopyable
-		{
-		public:
-			binary_stream_reader(binary_stream &_bs);
+        class binary_stream_reader final : boost::noncopyable
+        {
+        public:
+            binary_stream_reader(binary_stream &_bs);
 
-			std::string readline();
+            std::string readline();
 
-			bool eof() const;
+            bool eof() const;
 
-		private:
-			binary_stream &bs_;
+        private:
+            binary_stream &bs_;
 
-		};
+        };
 
-	}
+    }
 }

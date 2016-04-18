@@ -14,15 +14,16 @@ namespace core
         class message_header;
         class history_message;
         class dlg_state;
+        struct dlg_state_changes;
         class archive_hole;
         class not_sent_message;
         class not_sent_messages;
 
         typedef std::shared_ptr<not_sent_message> not_sent_message_sptr;
         typedef std::shared_ptr<history_message> history_message_sptr;
-
         typedef std::unordered_map<std::string, std::shared_ptr<contact_archive>> archives_map;
         typedef std::vector<history_message_sptr> history_block;
+        typedef std::shared_ptr<history_block> history_block_sptr;
         typedef std::list<message_header> headers_list;
         typedef std::list<int64_t> msgids_list;
 
@@ -58,11 +59,11 @@ namespace core
 
         struct set_dlg_state_handler
         {
-            std::function<void()>	on_result;
+            std::function<void(const dlg_state& _state, const dlg_state_changes& _changes)> on_result;
 
             set_dlg_state_handler()
             {
-                on_result = [](){};
+                on_result = [](const dlg_state&, const dlg_state_changes&){};
             }
         };
 
@@ -78,11 +79,11 @@ namespace core
 
         struct update_history_handler
         {
-            std::function<void(std::shared_ptr<headers_list> _new_ids)>	on_result;
+            std::function<void(std::shared_ptr<headers_list> _new_ids, const dlg_state &_state, const archive::dlg_state_changes&)> on_result;
 
             update_history_handler()
             {
-                on_result = [](std::shared_ptr<headers_list> _new_ids){};
+                on_result = [](std::shared_ptr<headers_list>, const dlg_state&, const archive::dlg_state_changes&){};
             }
         };
 
@@ -137,10 +138,16 @@ namespace core
             void get_messages_buddies(const std::string& _contact, std::shared_ptr<archive::msgids_list> _ids, /*out*/ std::shared_ptr<history_block> _messages);
             bool get_messages(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ std::shared_ptr<history_block> _messages);
             void get_dlg_state(const std::string& _contact, /*out*/dlg_state& _state);
-            bool set_dlg_state(const std::string& _contact, const dlg_state& _state);
+            void set_dlg_state(const std::string& _contact, const dlg_state& _state, Out dlg_state& _result, Out dlg_state_changes& _changes);
             bool clear_dlg_state(const std::string& _contact);
             std::shared_ptr<archive_hole> get_next_hole(const std::string& _contact, int64_t _from, int64_t _depth = -1);
-            void update_history(const std::string& _contact, std::shared_ptr<archive::history_block> _data, /*out*/ headers_list& _inserted_messages);
+            void update_history(
+                const std::string& _contact, 
+                history_block_sptr _data, 
+                Out headers_list& _inserted_messages,
+                Out dlg_state& _state,
+                Out dlg_state_changes& _state_changes
+                );
 
             not_sent_message_sptr get_first_message_to_send();
             not_sent_message_sptr get_not_sent_message_by_iid(const std::string& _iid);
@@ -151,6 +158,8 @@ namespace core
             bool has_not_sent_messages(const std::string& _contact);
             void get_not_sent_messages(const std::string& _contact, /*out*/ std::shared_ptr<history_block> _messages);
             void get_pending_file_sharing(std::list<not_sent_message_sptr>& _messages);
+
+            void delete_messages_up_to(const std::string& _contact, const int64_t _id);
 
             static void serialize(std::shared_ptr<headers_list> _headers, coll_helper& _coll);
             static void serialize_headers(std::shared_ptr<archive::history_block> _data, coll_helper& _coll);
@@ -184,6 +193,8 @@ namespace core
             std::shared_ptr<has_not_sent_handler> has_not_sent_messages(const std::string& _contact);
             std::shared_ptr<request_buddies_handler> get_not_sent_messages(const std::string& _contact);
             std::shared_ptr<pending_messages_handler> get_pending_file_sharing();
+
+            std::shared_ptr<async_task_handlers> delete_messages_up_to(const std::string& _contact, const int64_t _id);
 
             static void serialize(std::shared_ptr<headers_list> _headers, coll_helper& _coll);
             static void serialize_headers(std::shared_ptr<archive::history_block> _data, coll_helper& _coll);

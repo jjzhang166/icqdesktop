@@ -30,6 +30,8 @@
 #include <cassert>
 #include <unordered_map>
 #include <set>
+#include <mutex>
+#include <thread>
 
 #include "common.h"
 

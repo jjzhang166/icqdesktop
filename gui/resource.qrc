@@ -34,18 +34,25 @@
     <file>resources/contr_signout_125.png</file>
     <file>resources/contr_signout_150.png</file>
     <file>resources/contr_signout_200.png</file>
+	<file>resources/cl_badges_official_100.png</file>
+	<file>resources/cl_badges_official_125.png</file>
+	<file>resources/cl_badges_official_150.png</file>
+	<file>resources/cl_badges_official_200.png</file>
     <file>resources/qss/styles.qss</file>
     <file>resources/qss/common.qss</file>
     <file>main_window/accounts_page.qss</file>
     <file>main_window/login_page.qss</file>
     <file>main_window/main_window.qss</file>
     <file>main_window/input_widget/input_widget.qss</file>
+    <file>main_window/livechats/LiveChats.qss</file>
     <file>main_window/smiles_menu/smiles_menu.qss</file>
     <file>main_window/search_contacts/search_contacts.qss</file>
     <file>main_window/history_control/auth_widget/auth_widget.qss</file>
     <file>main_window/history_control/history_control.qss</file>
+    <file>main_window/settings/contact_us.qss</file>
     <file>main_window/settings/profile_settings.qss</file>
     <file>main_window/settings/general_settings.qss</file>
+    <file>main_window/contact_list/contact_list.qss</file>
     <file>main_window/contact_list/SettingsTab.qss</file>
     <file>controls/back_button.qss</file>
     <file>resources/video.background.png</file>
@@ -93,18 +100,18 @@
     <file>resources/contr_videocall_big_100_hover.png</file>
     <file>resources/contr_videocall_big_100_active.png</file>
     <file>resources/contr_videocall_bigdisable_100.png</file>
-    <file>resources/contr_options_100.png</file>
-    <file>resources/contr_options_100_hover.png</file>
-    <file>resources/contr_options_100_active.png</file>
-    <file>resources/contr_options_125.png</file>
-    <file>resources/contr_options_125_hover.png</file>
-    <file>resources/contr_options_125_active.png</file>
-    <file>resources/contr_options_150.png</file>
-    <file>resources/contr_options_150_hover.png</file>
-    <file>resources/contr_options_150_active.png</file>
-    <file>resources/contr_options_200.png</file>
-    <file>resources/contr_options_200_hover.png</file>
-    <file>resources/contr_options_200_active.png</file>
+    <file>resources/contr_options_round_100.png</file>
+    <file>resources/contr_options_round_100_hover.png</file>
+    <file>resources/contr_options_round_100_active.png</file>
+    <file>resources/contr_options_round_125.png</file>
+    <file>resources/contr_options_round_125_hover.png</file>
+    <file>resources/contr_options_round_125_active.png</file>
+    <file>resources/contr_options_round_150.png</file>
+    <file>resources/contr_options_round_150_hover.png</file>
+    <file>resources/contr_options_round_150_active.png</file>
+    <file>resources/contr_options_round_200.png</file>
+    <file>resources/contr_options_round_200_hover.png</file>
+    <file>resources/contr_options_round_200_active.png</file>
 
     <file>resources/contr_back_100.png</file>
     <file>resources/contr_back_100_hover.png</file>
@@ -118,6 +125,11 @@
     <file>resources/contr_back_200.png</file>
     <file>resources/contr_back_200_hover.png</file>
     <file>resources/contr_back_200_active.png</file>
+
+    <file>resources/livechats/content_illustration_emptylivechat_100.png</file>
+    <file>resources/livechats/content_illustration_emptylivechat_125.png</file>
+    <file>resources/livechats/content_illustration_emptylivechat_150.png</file>
+    <file>resources/livechats/content_illustration_emptylivechat_200.png</file>
 
     <file>resources/tabs_contacts_125.png</file>
     <file>resources/tabs_contacts_125_active.png</file>
@@ -200,7 +212,6 @@
     <file>resources/main_window/content_logo_125.png</file>
     <file>resources/main_window/content_logo_150.png</file>
     <file>resources/main_window/content_logo_200.png</file>
-
 
     <file>resources/content_status_online_100.png</file>
     <file>resources/content_status_online_125.png</file>
@@ -512,18 +523,18 @@
     <file>resources/contr_wallpaper_select_150.png</file>
     <file>resources/contr_wallpaper_select_200.png</file>
 
-    <file>resources/contr_addpeople_100.png</file>
-    <file>resources/contr_addpeople_100_hover.png</file>
-    <file>resources/contr_addpeople_100_active.png</file>
-    <file>resources/contr_addpeople_125.png</file>
-    <file>resources/contr_addpeople_125_hover.png</file>
-    <file>resources/contr_addpeople_125_active.png</file>
-    <file>resources/contr_addpeople_150.png</file>
-    <file>resources/contr_addpeople_150_hover.png</file>
-    <file>resources/contr_addpeople_150_active.png</file>
-    <file>resources/contr_addpeople_200.png</file>
-    <file>resources/contr_addpeople_200_hover.png</file>
-    <file>resources/contr_addpeople_200_active.png</file>
+    <file>resources/contr_addpeople_round_100.png</file>
+    <file>resources/contr_addpeople_round_100_hover.png</file>
+    <file>resources/contr_addpeople_round_100_active.png</file>
+    <file>resources/contr_addpeople_round_125.png</file>
+    <file>resources/contr_addpeople_round_125_hover.png</file>
+    <file>resources/contr_addpeople_round_125_active.png</file>
+    <file>resources/contr_addpeople_round_150.png</file>
+    <file>resources/contr_addpeople_round_150_hover.png</file>
+    <file>resources/contr_addpeople_round_150_active.png</file>
+    <file>resources/contr_addpeople_round_200.png</file>
+    <file>resources/contr_addpeople_round_200_hover.png</file>
+    <file>resources/contr_addpeople_round_200_active.png</file>
     <file>resources/contr_addpeople_big_100.png</file>
     <file>resources/contr_addpeople_big_100_hover.png</file>
     <file>resources/contr_addpeople_big_100_active.png</file>
@@ -1005,6 +1016,15 @@
 	<file>resources/cl_status_online_150.png</file>
 	<file>resources/cl_status_online_200.png</file>
 
+    <file>resources/cl_status_mobile_mini_100.png</file>
+    <file>resources/cl_status_mobile_mini_125.png</file>
+    <file>resources/cl_status_mobile_mini_150.png</file>
+    <file>resources/cl_status_mobile_mini_200.png</file>
+    <file>resources/cl_status_online_mini_100.png</file>
+    <file>resources/cl_status_online_mini_125.png</file>
+    <file>resources/cl_status_online_mini_150.png</file>
+    <file>resources/cl_status_online_mini_200.png</file>
+
     <file>resources/main_window/mac_tray/icq_osxlogo_dnd_black_100.png</file>
     <file>resources/main_window/mac_tray/icq_osxlogo_dnd_black_unread_100.png</file>
     <file>resources/main_window/mac_tray/icq_osxlogo_dnd_black_200.png</file>
@@ -1185,21 +1205,25 @@
   <qresource prefix="/themes/standard/100/file_sharing">
     <file alias="download.png">resources/file_sharing/content_download_100.png</file>
     <file alias="plain_cancel.png">resources/file_sharing/content_cancel_100.png</file>
+    <file alias="media_cancel.png">resources/file_sharing/content_cancelmedia_100.png</file>
     <file alias="file_type_unknown.png">resources/file_sharing/content_filetype_undef_100.png</file>
   </qresource>
   <qresource prefix="/themes/standard/125/file_sharing">
     <file alias="download.png">resources/file_sharing/content_download_125.png</file>
     <file alias="plain_cancel.png">resources/file_sharing/content_cancel_125.png</file>
+    <file alias="media_cancel.png">resources/file_sharing/content_cancelmedia_125.png</file>
     <file alias="file_type_unknown.png">resources/file_sharing/content_filetype_undef_125.png</file>
   </qresource>
   <qresource prefix="/themes/standard/150/file_sharing">
     <file alias="download.png">resources/file_sharing/content_download_150.png</file>
     <file alias="plain_cancel.png">resources/file_sharing/content_cancel_150.png</file>
+    <file alias="media_cancel.png">resources/file_sharing/content_cancelmedia_150.png</file>
     <file alias="file_type_unknown.png">resources/file_sharing/content_filetype_undef_150.png</file>
   </qresource>
   <qresource prefix="/themes/standard/200/file_sharing">
     <file alias="download.png">resources/file_sharing/content_download_200.png</file>
     <file alias="plain_cancel.png">resources/file_sharing/content_cancel_200.png</file>
+    <file alias="media_cancel.png">resources/file_sharing/content_cancelmedia_200.png</file>
     <file alias="file_type_unknown.png">resources/file_sharing/content_filetype_undef_200.png</file>
   </qresource>
 

@@ -24,11 +24,11 @@ namespace Ui
         void setTime(const int32_t timestamp);
 
         virtual QSize sizeHint() const override;
-        
+
         void setContact(const QString _aimId) { aimId_ = _aimId; }
-        
+
         QColor getTimeColor() const;
-        
+
         void setMessageBubbleVisible(const bool _visible);
 
     protected:
@@ -40,11 +40,11 @@ namespace Ui
         bool IsDeliveredToServer_;
 
         bool IsDeliveredToClient_;
-        
+
         bool IsMessageBubbleVisible_;
 
         Themes::PixmapResourceId StatusIcon_;
-        
+
         QString aimId_;
 
         QString TimeText_;

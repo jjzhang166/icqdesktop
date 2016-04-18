@@ -21,7 +21,6 @@
 #include "../../controls/TextEmojiWidget.h"
 #include "../../controls/BackButton.h"
 #include "../../controls/FlatMenu.h"
-#include "../../controls/Alert.h"
 
 #include "../../gui_settings.h"
 
@@ -426,8 +425,6 @@ namespace Ui
         
         connect(Ui_->backButton_, &QPushButton::clicked, [this]() { emit Utils::InterConnector::instance().profileSettingsBack(); });
 
-        connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(onAvatarLoaded(QString)), Qt::QueuedConnection);
-        
         Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TRANSLATE_NOOP("profile_page", "Online"), this, SLOT(menuStateOnline()));
         Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TRANSLATE_NOOP("profile_page", "Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
         Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TRANSLATE_NOOP("profile_page", "Invisible"), this, SLOT(menuStateInvisible()));
@@ -456,8 +453,8 @@ namespace Ui
             Logic::GetSearchMemberModel()->SetChatMembersModel(Logic::GetIgnoreModel());
 
             SelectContactsWidget select_members_dialog_(Logic::GetIgnoreModel(), Logic::MembersWidgetRegim::IGNORE_LIST,
-                "", QT_TRANSLATE_NOOP("groupchat_pages", "Done"), Ui::get_gui_settings(), this);
-            auto connectId = connect(GetDispatcher(), SIGNAL(recv_permit_deny(bool)), &select_members_dialog_, SLOT(UpdateView(bool)), Qt::QueuedConnection);
+                "", QT_TRANSLATE_NOOP("groupchat_pages", "Done"), this);
+            auto connectId = connect(GetDispatcher(), SIGNAL(recv_permit_deny(bool)), &select_members_dialog_, SLOT(UpdateViewForIgnoreList(bool)), Qt::QueuedConnection);
 
             Logic::ContactListModel::get_ignore_list();
             select_members_dialog_.setView(false);
@@ -819,7 +816,7 @@ namespace Ui
         auto dname = Ui_->fullName_->text();
         if (!avatar_)
         {
-            avatar_ = new ContactAvatarWidget(Ui_->avatar_, uin, dname, Utils::scale_value(180));
+            avatar_ = new ContactAvatarWidget(Ui_->avatar_, uin, dname, Utils::scale_value(180), true);
             Ui_->avatarLayout_->addWidget(avatar_);
         }
         else
@@ -828,12 +825,6 @@ namespace Ui
         }
     }
     
-    void ProfileSettingsWidget::onAvatarLoaded(QString _uin)
-    {
-        if (avatar_)
-            avatar_->update();
-    }
-
     void ProfileSettingsWidget::menuStateOnline()
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);

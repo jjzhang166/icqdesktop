@@ -23,8 +23,6 @@ namespace HistoryControl
 
         virtual bool hasTextBubble() const override;
 
-        virtual void initialize() override;
-
         virtual void render(QPainter &p) override final;
 
         virtual void select(const bool value) override;
@@ -34,7 +32,7 @@ namespace HistoryControl
         virtual QSize sizeHint() const override;
 
         virtual bool haveContentMenu(QPoint) const override;
-        
+
         bool isTextPresented();
 
     protected:

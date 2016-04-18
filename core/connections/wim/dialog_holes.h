@@ -17,7 +17,7 @@ namespace core
                 std::string contact_;
 
             public:
-                                
+
                 request(
                     const std::string& _contact,
                     int64_t _from,
@@ -46,7 +46,6 @@ namespace core
                 std::map<std::string, holes::request> requests_;
 
             public:
-
                 void add(const holes::request& _request)
                 {
                     auto iter = requests_.find(_request.get_contact());
@@ -71,7 +70,7 @@ namespace core
                         req.reset(new holes::request(requests_.begin()->second));
                         requests_.erase(requests_.begin());
                     }
-                    
+
                     return req;
                 }
 

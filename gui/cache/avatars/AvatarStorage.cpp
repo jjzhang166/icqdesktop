@@ -30,7 +30,7 @@ namespace Logic
 	{
 	}
 
-	const QPixmapSCptr& AvatarStorage::Get(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled, bool& isDefault)
+	const QPixmapSCptr& AvatarStorage::Get(const QString& aimId, const QString& displayName, const int sizePx, const bool isFilled, bool& isDefault)
 	{
 		assert(!aimId.isEmpty());
 		assert(sizePx > 0);
@@ -49,11 +49,13 @@ namespace Logic
 		auto iterByAimId = AvatarsByAimId_.find(aimId);
 		if (iterByAimId == AvatarsByAimId_.end())
 		{
-			QString draw_display_name = display_name;
-			if (draw_display_name.isEmpty())
-				draw_display_name = GetContactListModel()->getDisplayName(aimId).trimmed();
+			auto drawDisplayName = displayName.trimmed();
+			if (drawDisplayName.isEmpty())
+            {
+				drawDisplayName = GetContactListModel()->getDisplayName(aimId).trimmed();
+            }
 
-			auto defaultAvatar = Utils::GetDefaultAvatar(aimId, draw_display_name, sizePx, isFilled);
+			auto defaultAvatar = Utils::GetDefaultAvatar(aimId, drawDisplayName, sizePx, isFilled);
 			assert(defaultAvatar);
 
 			const auto result = AvatarsByAimId_.emplace(aimId, std::make_shared<QPixmap>(std::move(defaultAvatar)));
@@ -63,12 +65,14 @@ namespace Logic
 		}
 
 		const auto &avatarByAimId = *iterByAimId->second;
+        assert(!avatarByAimId.isNull());
+
 		const auto regenerateAvatar = ((avatarByAimId.width() < sizePx) && isDefault);
 		if (regenerateAvatar)
 		{
 			AvatarsByAimId_.erase(iterByAimId);
 			CleanupSecondaryCaches(aimId);
-			return Get(aimId, display_name, sizePx, isFilled, isDefault);
+			return Get(aimId, displayName, sizePx, isFilled, isDefault);
 		}
 
 		auto scaledImage = avatarByAimId.scaled(sizePx, sizePx, Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -90,7 +94,7 @@ namespace Logic
 		return result.first->second;
 	}
 
-	const QPixmapSCptr& AvatarStorage::GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault)
+	const QPixmapSCptr& AvatarStorage::GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool from_cl)
 	{
 		assert(!aimId.isEmpty());
 		assert(sizePx > 0);
@@ -101,7 +105,8 @@ namespace Logic
             assert(!"avatar is null");
             return avatar;
         }
-		return GetRounded(*avatar, aimId, state);
+
+		return GetRounded(*avatar, aimId, state, from_cl);
 	}
 
 	QString AvatarStorage::GetLocal(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled)
@@ -185,7 +190,7 @@ namespace Logic
     // TODO : use two-step hash here
 	void AvatarStorage::CleanupSecondaryCaches(const QString &aimId)
 	{
-		const auto cleanupSecondaryCache = [&aimId](CacheMap &cache) 
+		const auto cleanupSecondaryCache = [&aimId](CacheMap &cache)
 		{
 			for (auto i = cache.begin(); i != cache.end(); ++i)
 			{
@@ -219,7 +224,7 @@ namespace Logic
 		cleanupSecondaryCache(AvatarsByAimIdAndSize_);
 	}
 
-	const QPixmapSCptr& AvatarStorage::GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state)
+	const QPixmapSCptr& AvatarStorage::GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl)
 	{
 		assert(!avatar.isNull());
 		assert(!aimId.isEmpty());
@@ -235,7 +240,7 @@ namespace Logic
 		auto i = RoundedAvatarsByAimIdAndSize_.find(key);
 		if (i == RoundedAvatarsByAimIdAndSize_.end())
 		{
-			const auto roundedAvatar = Utils::RoundImage(avatar, state);
+			const auto roundedAvatar = Utils::RoundImage(avatar, state, from_cl);
 			i = RoundedAvatarsByAimIdAndSize_
 				.emplace(
 					key,

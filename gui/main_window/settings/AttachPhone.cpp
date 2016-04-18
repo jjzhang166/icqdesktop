@@ -13,14 +13,13 @@
 #include "../../gui_settings.h"
 #include "../contact_list/contact_profile.h"
 #include "../../controls/CustomButton.h"
+#include "../../controls/GeneralCreator.h"
 #include "../LoginPage.h"
 
 using namespace Ui;
 
 void GeneralSettingsWidget::Creator::initAttachPhone(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/)
 {
-    static std::map<QString, QString> filesToSend;
-
     auto scroll_area = new QScrollArea(parent);
     scroll_area->setWidgetResizable(true);
     Utils::grabTouchWidget(scroll_area->viewport(), true);
@@ -41,33 +40,21 @@ void GeneralSettingsWidget::Creator::initAttachPhone(QWidget* parent, std::map<s
     layout->setContentsMargins(0, 0, 0, 0);
     
     LoginPage* page = new LoginPage(scroll_area, false /* is_login */);
-    addBackButton(scroll_area, layout, [page]()
+    GeneralCreator::addBackButton(scroll_area, layout, [page]()
     {
         page->prevPage();
         emit Utils::InterConnector::instance().attachPhoneBack(); 
     });
     layout->addWidget(scroll_area);
 
-    addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("profile_page", "Attach phone number"));
-
-    QWidget* uin_login_widget = new QWidget(scroll_area);
-    uin_login_widget->setObjectName(QStringLiteral("uin_login_widget"));
-
-    QVBoxLayout * uin_login_layout = new QVBoxLayout(uin_login_widget);
-    uin_login_layout->setSpacing(0);
-    uin_login_layout->setObjectName(QStringLiteral("uin_login_layout"));
-    uin_login_layout->setContentsMargins(0, 0, 0, 0);
-
+    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("profile_page", "Attach phone number"));
     scroll_area->setStyleSheet(Utils::LoadStyle(":/main_window/login_page.qss", Utils::get_scale_coefficient(), true));
-
     scroll_area_content_layout->addWidget(page);
 
     connect(page, &LoginPage::attached, [page]() 
     {
         if (!page->isVisible())
             return;
-        page->prevPage();
-        page->switchLoginType();
         emit Utils::InterConnector::instance().attachPhoneBack();
         emit Utils::InterConnector::instance().profileSettingsUpdateInterface();
     });

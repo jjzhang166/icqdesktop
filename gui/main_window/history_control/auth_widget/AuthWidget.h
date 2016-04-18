@@ -50,7 +50,6 @@ namespace Ui
 
     private Q_SLOTS:
 
-        void on_avatar_loaded(QString _aimid);
         void avatar_clicked();
 
     Q_SIGNALS:
