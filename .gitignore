@@ -79,18 +79,7 @@ ipch/
 gui/*/ui/*.h
 gui/*/*/ui/*.h
 
-!external/
-!external/openssl
-!external/openssl/libeay32.lib
-!external/openssl/ssleay32.lib
-!external/openssl/debug
-!external/openssl/debug/libeay32.lib
-!external/openssl/debug/ssleay32.lib
-!external/zlib/lib/zlib.lib
-!external/zlib/lib/zlibd.lib
-!external/curl
-!external/curl/lib/libcurl.lib
-!external/curl/lib/libcurld.lib
+!external/**
 !core/Voip/libvoip/lib/[Dd]ebug/*
 !core/Voip/libvoip/lib/[Rr]elease/*
 core/build/core.build/Debug/core.build/*
