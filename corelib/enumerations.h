@@ -10,9 +10,33 @@ namespace core
         online,
         dnd,
         invisible,
+        away,
+        offline,
 
         max,
     };
+
+    // don't change texts in this func - it uses for sending to server
+    inline std::ostream& operator<<(std::ostream &oss, const profile_state arg)
+    {
+        assert(arg > profile_state::min);
+        assert(arg < profile_state::max);
+
+        switch(arg)
+        {
+            case profile_state::online:    oss << "online"; break;
+            case profile_state::dnd:       oss << "dnd"; break;
+            case profile_state::invisible: oss << "invisible"; break;
+            case profile_state::away:      oss << "away"; break;
+
+        default:
+            assert(!"unknown core::profile_state value");
+            break;
+        }
+
+        return oss;
+    }
+
 
 	enum class message_type
 	{
@@ -44,7 +68,8 @@ namespace core
 		min,
 
 		download_file,
-		download_meta,
+		download_file_metainfo,
+        download_preview_metainfo,
 		check_local_copy_exists,
 
 		max
@@ -63,6 +88,8 @@ namespace core
 
 	enum class chat_event_type
 	{
+        // the codes are stored in a db thus do not reorder the items below
+
 		invalid,
 
 		min,
@@ -87,6 +114,8 @@ namespace core
         generic,
 
         chat_description_modified,
+
+        message_deleted,
 
 		max
 	};
@@ -147,9 +176,13 @@ namespace core
 				oss << "download_file";
 				break;
 
-			case file_sharing_function::download_meta:
-				oss << "download_meta";
+			case file_sharing_function::download_file_metainfo:
+				oss << "download_file_metainfo";
 				break;
+
+            case file_sharing_function::download_preview_metainfo:
+                oss << "download_preview_metainfo";
+                break;
 
 			default:
 				assert(!"unknown core::file_sharing_function value");
@@ -225,7 +258,7 @@ namespace core
     {
         // NOTE : when adding new event, don't change old numbers!!!
         // AND UPDATE this max number!
-        // current max used number is 153
+        // current max used number is 164
         enum class stats_event_names
         {
             min = 0,
@@ -250,7 +283,7 @@ namespace core
             main_window_resize = 16,
 
             groupchat_from_create_button = 17,
-            groupchat_from_dialog = 18,
+            groupchat_from_sidebar = 18,
             groupchat_created = 19,
             groupchat_create_rename = 20,
             groupchat_create_members_count = 21,
@@ -258,6 +291,11 @@ namespace core
             groupchat_leave = 23,
             livechat_leave = 24,
             groupchat_rename = 25,
+            groupchat_avatar_changed = 182,
+            groupchat_add_member_sidebar = 183,
+            groupchat_add_member_dialog = 184,
+            groupchat_viewall = 185,
+
 
             filesharing_sent_count = 26,
             filesharing_sent = 27,
@@ -285,20 +323,20 @@ namespace core
 
             spam_cl_menu = 51,
             spam_auth_widget = 52,
-            spam_dialog_menu = 53,
+            spam_sidebar = 53,
             spam_profile_page = 54,
 
             recents_close = 55,
             recents_read = 56,
             recents_readall = 57,
             mute_recents_menu = 58,
-            mute_dialog_menu = 59,
+            mute_sidebar = 59,
             unmute = 60,
 
             ignore_recents_menu = 61,
             ignore_cl_menu = 62,
             ignore_auth_widget = 63,
-            ignore_dialog_menu = 64,
+            ignore_sidebar = 64,
             ignore_profile_page = 65,
             ignorelist_open = 66,
             ignorelist_remove = 67,
@@ -315,9 +353,9 @@ namespace core
             myprofile_online = 76,
             myprofile_invisible = 77,
             myprofile_dnd = 78,
+            myprofile_away = 161,
 
             profile_cl = 79,
-            profile_dialog_menu = 80,
             profile_auth_widget = 81,
             profile_avatar = 82,
             profile_search_results = 83,
@@ -328,9 +366,12 @@ namespace core
             add_user_profile_page = 87,
             add_user_auth_widget = 89,
             add_user_dialog = 90,
+            add_user_sidebar = 164,
             delete_auth_widget = 91,
-            delete_dialog_menu = 92,
+            delete_sidebar = 92,
             delete_cl_menu = 93,
+            delete_profile_page = 163,
+            rename_contact = 154,
 
             search_open_page = 94,
             search_no_results = 99,
@@ -345,15 +386,15 @@ namespace core
             open_chat_cl = 106,
             open_chat_search_cl = 107,
 
-            message_sent = 108,
-            message_sent_read = 109,
-            message_sent_groupchat = 110,
-            message_sent_livechat = 111,
-            message_sent_preview = 112,
             message_pending = 113,
+            message_delete_my = 155,
+            message_delete_all = 156,
 
             history_new_messages_botton = 117,
             history_preload = 118,
+            history_delete = 157,
+
+            open_popup_livechat = 158,
 
             gui_load = 119,
 
@@ -395,6 +436,33 @@ namespace core
             settings_about_show = 152,
             client_settings = 153,
 
+            proxy_open = 159,
+            proxy_set = 160,
+
+            strange_event = 162,
+            
+            promo_skip  = 170,
+            promo_next  = 171,
+            promo_switch  = 172,
+
+            favorites_set = 173,
+            favorites_unset = 174,
+            favorites_load = 175,
+
+
+            livechats_page_open = 176,
+            livechat_profile_open = 177,
+            livechat_join_fromprofile = 178,
+            livechat_join_frompopup = 179,
+            livechat_admins = 180,
+            livechat_blocked = 181,
+
+            profile_avatar_changed = 186,
+            introduce_name_set = 187,
+            introduce_avatar_changed = 188,
+            introduce_avatar_fail = 189,
+            introduce_skip = 190,
+
             max,
         };
 
@@ -428,13 +496,17 @@ namespace core
 
             // group chat
             case stats_event_names::groupchat_from_create_button : oss << "Groupchat_FromCreateButton"; break;
-            case stats_event_names::groupchat_from_dialog : oss << "Groupchat_FromDialog"; break;
+            case stats_event_names::groupchat_from_sidebar : oss << "Groupchat_FromSidebar"; break;
             case stats_event_names::groupchat_created : oss << "Groupchat_Created"; break;
             case stats_event_names::groupchat_create_rename : oss << "Groupchat_Create_Rename"; break;
             case stats_event_names::groupchat_members_count : oss << "Groupchat_MembersCount"; break;
             case stats_event_names::groupchat_leave : oss << "Groupchat_Leave"; break;
             case stats_event_names::livechat_leave : oss << "Livechat_Leave"; break;
-            case stats_event_names::groupchat_rename : oss << "Group_Chat_Rename"; break;
+            case stats_event_names::groupchat_rename : oss << "Groupchat_Rename"; break;
+            case stats_event_names::groupchat_avatar_changed : oss << "Groupchat_Avatar_Changed"; break;
+            case stats_event_names::groupchat_add_member_sidebar : oss << "Groupchat_Add_member_Sidebar"; break;
+            case stats_event_names::groupchat_add_member_dialog : oss << "Groupchat_Add_member_Dialog"; break;
+            case stats_event_names::groupchat_viewall : oss << "Groupchat_Viewall"; break;
 
             // filesharing
             case stats_event_names::filesharing_sent : oss << "Filesharing_Sent"; break;
@@ -466,7 +538,7 @@ namespace core
             // spam
             case stats_event_names::spam_cl_menu : oss << "Spam_CL_Menu"; break;
             case stats_event_names::spam_auth_widget : oss << "Spam_Auth_Widget"; break;
-            case stats_event_names::spam_dialog_menu : oss << "Spam_Dialog_Menu"; break;
+            case stats_event_names::spam_sidebar : oss << "Spam_Sidebar"; break;
             case stats_event_names::spam_profile_page : oss << "Spam_Profile_Page"; break;
 
             // cl
@@ -475,13 +547,13 @@ namespace core
             case stats_event_names::recents_readall : oss << "Recents_Readall"; break;
 
             case stats_event_names::mute_recents_menu : oss << "Mute_Recents_Menu"; break;
-            case stats_event_names::mute_dialog_menu : oss << "Mute_Dialog_Menu"; break;
+            case stats_event_names::mute_sidebar: oss << "Mute_Sidebar"; break;
             case stats_event_names::unmute : oss << "Unmute"; break;
 
             case stats_event_names::ignore_recents_menu : oss << "Ignore_Recents_Menu"; break;
             case stats_event_names::ignore_cl_menu : oss << "Ignore_CL_Menu"; break;
             case stats_event_names::ignore_auth_widget : oss << "Ignore_Auth_Widget"; break;
-            case stats_event_names::ignore_dialog_menu : oss << "Ignore_Dialog_Menu"; break;
+            case stats_event_names::ignore_sidebar: oss << "Ignore_Sidebar"; break;
             case stats_event_names::ignore_profile_page : oss << "Ignore_Profile_Page"; break;
             case stats_event_names::ignorelist_open : oss << "Ignorelist_Open"; break;
             case stats_event_names::ignorelist_remove : oss << "Ignorelist_Remove"; break;
@@ -492,16 +564,21 @@ namespace core
             case stats_event_names::cl_empty_ios : oss << "CL_Empty_IOS"; break;
             case stats_event_names::cl_empty_find_friends : oss << "CL_Empty_Find_Friends"; break;
 
+            case stats_event_names::rename_contact : oss << "rename_contact"; break;
+
             case stats_event_names::cl_search : oss << "CL_Search"; break;
             case stats_event_names::cl_load : oss << "CL_Load"; break;
 
             // profile
             case stats_event_names::myprofile_open : oss << "Myprofile_Open"; break;
+
+            // statuses
 			case stats_event_names::myprofile_online: oss << "Myprofile_Online"; break;
             case stats_event_names::myprofile_invisible : oss << "Myprofile_Invisible"; break;
             case stats_event_names::myprofile_dnd : oss << "Myprofile_DND"; break;
+            case stats_event_names::myprofile_away : oss << "Myprofile_Away"; break;
+
             case stats_event_names::profile_cl : oss << "Profile_CL"; break;
-            case stats_event_names::profile_dialog_menu : oss << "Profile_Dialog_Menu"; break;
             case stats_event_names::profile_auth_widget : oss << "Profile_Auth_Widget"; break;
             case stats_event_names::profile_avatar : oss << "Profile_Avatar"; break;
             case stats_event_names::profile_search_results : oss << "Profile_Search_Results"; break;
@@ -515,9 +592,11 @@ namespace core
             // search, adding and auth
             case stats_event_names::add_user_auth_widget : oss << "Add_User_Auth_Widget"; break;
             case stats_event_names::add_user_dialog : oss << "Add_User_Dialog"; break;
+            case stats_event_names::add_user_sidebar: oss << "Add_User_Sidebar"; break;
             case stats_event_names::delete_auth_widget : oss << "Delete_Auth_Widget"; break;
-            case stats_event_names::delete_dialog_menu : oss << "Delete_Dialog_Menu"; break;
+            case stats_event_names::delete_sidebar: oss << "Delete_Sidebar"; break;
             case stats_event_names::delete_cl_menu : oss << "Delete_CL_Menu"; break;
+            case stats_event_names::delete_profile_page: oss << "Delete_Profile_Page"; break;
 
             case stats_event_names::search_open_page : oss << "Search_Open_Page"; break;
             case stats_event_names::search_no_results : oss << "Search_No_Results"; break;
@@ -533,15 +612,15 @@ namespace core
             case stats_event_names::open_chat_cl : oss << "Open_Chat_CL"; break;
             case stats_event_names::open_chat_search_cl : oss << "Open_Chat_Search_CL"; break;
 
-            case stats_event_names::message_sent : oss << "Message_Sent"; break;
-            case stats_event_names::message_sent_read : oss << "Message_Sent_Read"; break;
-            case stats_event_names::message_sent_groupchat : oss << "Message_Sent_Groupchat"; break;
-            case stats_event_names::message_sent_livechat : oss << "Message_Sent_Livechat"; break;
-            case stats_event_names::message_sent_preview : oss << "Message_Sent_Preview"; break;
             case stats_event_names::message_pending : oss << "Message_Pending"; break;
+            case stats_event_names::message_delete_my : oss << "message_delete_my"; break;
+            case stats_event_names::message_delete_all : oss << "message_delete_all"; break;
+            case stats_event_names::open_popup_livechat : oss << "open_popup_livechat"; break;
+
 
             case stats_event_names::history_new_messages_botton : oss << "History_New_Messages_Botton"; break;
             case stats_event_names::history_preload : oss << "History_Preload"; break;
+            case stats_event_names::history_delete : oss << "history_delete"; break;
 
             case stats_event_names::feedback_show : oss << "Feedback_Show"; break;
             case stats_event_names::feedback_sent : oss << "Feedback_Sent"; break;
@@ -583,12 +662,57 @@ namespace core
             case stats_event_names::settings_about_show : oss << "Settings_About_Show"; break;
             case stats_event_names::client_settings : oss << "Client_Settings"; break;
 
+            case stats_event_names::proxy_open : oss << "proxy_open"; break;
+            case stats_event_names::proxy_set : oss << "proxy_set"; break;
+                    
+            case stats_event_names::promo_skip : oss << "Promo_Skip"; break;
+            case stats_event_names::promo_next : oss << "Promo_Next"; break;
+            case stats_event_names::promo_switch : oss << "Promo_Switch"; break;
+
+            case stats_event_names::favorites_set : oss << "favorites_set"; break;
+            case stats_event_names::favorites_unset : oss << "favorites_unset"; break;
+            case stats_event_names::favorites_load : oss << "favorites_load"; break;
+
+            case stats_event_names::livechats_page_open : oss << "Livechats_Page_Open"; break;
+            case stats_event_names::livechat_profile_open : oss << "Livechat_Profile_Open"; break;
+            case stats_event_names::livechat_join_fromprofile : oss << "Livechat_Join_FromProfile"; break;
+            case stats_event_names::livechat_join_frompopup : oss << "Livechat_Join_FromPopup"; break;
+            case stats_event_names::livechat_admins : oss << "Livechat_Admins"; break;
+            case stats_event_names::livechat_blocked : oss << "Livechat_Blocked"; break;
+
+
+            case stats_event_names::profile_avatar_changed : oss << "Profile_Avatar_Changed"; break;
+            case stats_event_names::introduce_name_set : oss << "Introduce_Name_Set"; break;
+            case stats_event_names::introduce_avatar_changed : oss << "Introduce_Avatar_Changed"; break;
+            case stats_event_names::introduce_avatar_fail : oss << "Introduce_Avatar_Fail"; break;
+            case stats_event_names::introduce_skip : oss << "Introduce_Skip"; break;
+
+
             default:
                 assert(!"unknown core::stats_event_names ");
                 oss << "Unknown event " << (int)arg; break;
             }
 
             return oss;
+        }
+    }
+
+    inline stats::stats_event_names stateToStatisticsEvent(const profile_state _state)
+    {
+        assert(_state > profile_state::min);
+        assert(_state < profile_state::max);
+        
+        switch (_state)
+        {
+            case profile_state::online:    return stats::stats_event_names::myprofile_online;
+            case profile_state::dnd:       return stats::stats_event_names::myprofile_dnd;
+            case profile_state::invisible: return stats::stats_event_names::myprofile_invisible;
+            case profile_state::away:      return stats::stats_event_names::myprofile_away;
+
+            default:
+                assert(!"unknown core::proxy_types value");
+                return stats::stats_event_names::strange_event;
+            break;
         }
     }
 
@@ -605,17 +729,17 @@ namespace core
         max
     };
 
-    inline std::wostream& operator<<(std::wostream &oss, const proxy_types arg)
+    inline std::ostream& operator<<(std::ostream &oss, const proxy_types arg)
     {
         assert(arg > proxy_types::min);
         assert(arg < proxy_types::max);
 
         switch(arg)
         {
-            case proxy_types::auto_proxy: oss << L"Auto"; break;
-            case proxy_types::http_proxy: oss << L"HTTP Proxy"; break;
-            case proxy_types::socks4: oss << L"SOCKS4"; break;
-            case proxy_types::socks5: oss << L"SOCKS5"; break;
+            case proxy_types::auto_proxy: oss << "Auto"; break;
+            case proxy_types::http_proxy: oss << "HTTP Proxy"; break;
+            case proxy_types::socks4: oss << "SOCKS4"; break;
+            case proxy_types::socks5: oss << "SOCKS5"; break;
 
         default:
             assert(!"unknown core::proxy_types value");

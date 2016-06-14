@@ -17,23 +17,40 @@
 
 namespace
 {
-    const auto MOMENT_UNINITIALIZED = std::numeric_limits<int64_t>::min();
-    const int idle_user_activity_time = build::is_debug() ? 1000 : 10000;
+    double getMaximumScrollDistance();
 
-    double getMinimumVelocity();
+    double getMinimumSpeed();
 
-    double getMaximumVelocity();
+    double getMaximumSpeed();
 
     template<class T>
     T sign(const T value)
     {
         static_assert(
             std::is_arithmetic<T>::value,
-            "std::is_arithmetic<T>::value"
-        );
+            "std::is_arithmetic<T>::value");
 
-        return (value >= 0) ? 1 : -1;
+        static_assert(
+            std::numeric_limits<T>::is_signed,
+            "std::numeric_limits<T>::is_signed");
+
+        if (value == 0)
+        {
+            return 0;
+        }
+
+        return ((value > 0) ? 1 : -1);
     }
+
+    double cubicOut(const double scrollDistance, const double maxScrollDistance, const double minSpeed, const double maxSpeed);
+
+    double expoOut(const double scrollDistance, const double maxScrollDistance, const double minSpeed, const double maxSpeed);
+
+    const auto MOMENT_UNINITIALIZED = std::numeric_limits<int64_t>::min();
+
+    const auto IDLE_USER_ACTIVITY_TIMEOUT_MS = (build::is_debug() ? 1000 : 10000);
+
+    const auto scrollEasing = expoOut;
 }
 
 namespace Ui
@@ -85,6 +102,15 @@ namespace Ui
         );
         assert(success);
 
+        WheelEventsBufferResetTimer_.setInterval(300);
+        WheelEventsBufferResetTimer_.setTimerType(Qt::PreciseTimer);
+
+        success = QObject::connect(
+            &WheelEventsBufferResetTimer_, &QTimer::timeout,
+            this, &MessagesScrollArea::onWheelEventResetTimer,
+            Qt::QueuedConnection
+        );
+
         success = QObject::connect(
             Scrollbar_, &QScrollBar::sliderPressed,
             this, &MessagesScrollArea::onSliderPressed
@@ -103,8 +129,11 @@ namespace Ui
         );
         assert(success);
 
-        UserActivityTimer_.setInterval(idle_user_activity_time);
-        connect(&UserActivityTimer_, SIGNAL(timeout()), this, SLOT(onIdleUserActivityTimeout()), Qt::QueuedConnection);
+        UserActivityTimer_.setInterval(IDLE_USER_ACTIVITY_TIMEOUT_MS);
+
+        connect(&UserActivityTimer_, &QTimer::timeout,
+                this, &MessagesScrollArea::onIdleUserActivityTimeout,
+                Qt::QueuedConnection);
 
         Utils::grabTouchWidget(this);
     }
@@ -225,6 +254,11 @@ namespace Ui
         IsSelecting_ = false;
     }
 
+    void MessagesScrollArea::cancelWheelBufferReset()
+    {
+        WheelEventsBufferResetTimer_.stop();
+    }
+
     void MessagesScrollArea::enumerateMessagesItems(const MessageItemVisitor visitor, const bool reversed) const
     {
         assert(visitor);
@@ -287,6 +321,32 @@ namespace Ui
             result = result.left(result.length() - 1);
 
         return result;
+    }
+
+    QList<Logic::MessageKey> MessagesScrollArea::getKeysToUnload() const
+    {
+        if (!Layout_->isViewportAtBottom())
+        {
+            return QList<Logic::MessageKey>();
+        }
+
+        const auto itemsHeight = Layout_->getItemsHeight();
+
+        const auto triggerThresholdK = 2.5;
+        const auto triggerThreshold = (int32_t)(Layout_->getViewportHeight() * triggerThresholdK);
+        assert(triggerThreshold > 0);
+
+        const auto triggerThreasholdNotReached = (itemsHeight < triggerThreshold);
+        if (triggerThreasholdNotReached)
+        {
+            return QList<Logic::MessageKey>();
+        }
+
+        const auto unloadThresholdK = 2.8;
+        const auto unloadThreshold = (int32_t)(Layout_->getViewportHeight() * unloadThresholdK);
+        assert(unloadThreshold > 0);
+
+        return Layout_->getWidgetsOverBottomOffset(unloadThreshold);
     }
 
     void MessagesScrollArea::mouseMoveEvent(QMouseEvent *e)
@@ -355,7 +415,19 @@ namespace Ui
             return;
         }
 
-        clearSelection();
+        if (!(e->modifiers() & Qt::ShiftModifier))
+        {
+            clearSelection();
+            LastMouseGlobalPos_ = e->globalPos();
+            applySelection(true);
+        }
+        else
+        {
+            auto old = LastMouseGlobalPos_;
+            LastMouseGlobalPos_ = e->globalPos();
+            applySelection();
+            LastMouseGlobalPos_ = old;
+        }
 
         IsSelecting_ = true;
     }
@@ -376,6 +448,8 @@ namespace Ui
 
     void MessagesScrollArea::wheelEvent(QWheelEvent *e)
     {
+        e->accept();
+
         resetUserActivityTimer();
 
         if (!Scrollbar_->isVisible())
@@ -384,13 +458,45 @@ namespace Ui
             return;
         }
 
+        cancelWheelBufferReset();
+
         startScrollAnimation(ScrollingMode::Plain);
 
-        const auto wheelMultiplier = -1;
-        const auto delta = (e->delta() * wheelMultiplier);
-        assert(delta != 0);
+        const auto pxDelta = e->pixelDelta();
+        const auto isHorMove = (
+            !pxDelta.isNull() &&
+            (std::abs(pxDelta.x()) >= std::abs(pxDelta.y())));
+
+        if (isHorMove)
+        {
+            return;
+        }
+
+        auto delta = e->delta();
+        delta /= Utils::scale_value(1);
+        delta = -delta;
+
+        if (platform::is_apple())
+        {
+            delta /= Utils::scale_value(2);
+        }
+
+        if (delta == 0)
+        {
+            return;
+        }
+
+        const auto directionChanged = enqueWheelEvent(delta);
+        if (directionChanged)
+        {
+            ScrollDistance_ = 0;
+            WheelEventsBuffer_.clear();
+        }
 
         ScrollDistance_ += delta;
+
+        ScrollDistance_ = std::max(ScrollDistance_, -getMaximumScrollDistance());
+        ScrollDistance_ = std::min(ScrollDistance_, getMaximumScrollDistance());
     }
 
     bool MessagesScrollArea::event(QEvent *e)
@@ -533,14 +639,14 @@ namespace Ui
             emit scrollMovedToBottom();
     }
 
-    void MessagesScrollArea::applySelection()
+    void MessagesScrollArea::applySelection(bool forShift)
     {
         assert(!LastMouseGlobalPos_.isNull());
 
         enumerateMessagesItems(
-            [this](Ui::MessageItem *messageItem, const bool)
+            [this, forShift](Ui::MessageItem *messageItem, const bool)
             {
-                messageItem->selectByPos(LastMouseGlobalPos_);
+                messageItem->selectByPos(LastMouseGlobalPos_, forShift);
 
                 return true;
             },
@@ -550,23 +656,55 @@ namespace Ui
 
     void MessagesScrollArea::clearSelection()
     {
-        enumerateMessagesItems(
-            [](Ui::MessageItem *item, const bool)
-            {
-                item->clearSelection();
-                return true;
-            },
-            false
-        );
+        Layout_->enumerateWidgets(
+            [this](QWidget *widget, const bool /*flag*/)
+                {
+                    if (auto item = qobject_cast<Ui::HistoryControlPageItem*>(widget))
+                    {
+                        item->clearSelection();
+                        return true;
+                    }
+                    return true;
+                }, false);
     }
 
-    double MessagesScrollArea::evaluateScrollingSpeed() const
+    bool MessagesScrollArea::enqueWheelEvent(const int32_t delta)
+    {
+        const auto WHEEL_HISTORY_LIMIT = 3;
+
+        const auto directionBefore = evaluateWheelHistorySign();
+
+        WheelEventsBuffer_.emplace_back(delta);
+
+        const auto isHistoryOverwhelmed = (WheelEventsBuffer_.size() > WHEEL_HISTORY_LIMIT);
+        if (isHistoryOverwhelmed)
+        {
+            WheelEventsBuffer_.pop_front();
+        }
+
+        const auto directionAfter = evaluateWheelHistorySign();
+
+        assert(WheelEventsBuffer_.size() <= WHEEL_HISTORY_LIMIT);
+        const auto isHistoryFilled = (WheelEventsBuffer_.size() == WHEEL_HISTORY_LIMIT);
+
+        const auto isSignChanged = (
+            (directionAfter != 0) &&
+            (directionBefore != 0) &&
+            (directionAfter != directionBefore));
+
+        return (isHistoryFilled && isSignChanged);
+    }
+
+    double MessagesScrollArea::evaluateScrollingVelocity() const
     {
         assert(ScrollDistance_ != 0);
+        assert(std::abs(ScrollDistance_) <= getMaximumScrollDistance());
 
-        auto speed = getMinimumVelocity();
-        speed += ((ScrollDistance_ * ScrollDistance_) * 0.01);
-        speed = std::min(speed, getMaximumVelocity());
+        auto speed = scrollEasing(
+            std::abs(ScrollDistance_),
+            getMaximumScrollDistance(),
+            getMinimumSpeed(),
+            getMaximumSpeed());
 
         speed *= sign(ScrollDistance_);
 
@@ -579,23 +717,38 @@ namespace Ui
 
         const auto timeDiff = (now - LastAnimationMoment_);
 
-        const auto scrollingSpeed = evaluateScrollingSpeed();
+        const auto velocity = evaluateScrollingVelocity();
 
-        auto step = scrollingSpeed;
+        auto step = velocity;
         step *= timeDiff;
-        step /= 1000.0;
+        step /= 1000;
 
         if (step == 0)
         {
-            step = sign(scrollingSpeed);
+            step = sign(velocity);
         }
 
         return step;
     }
 
+    int32_t MessagesScrollArea::evaluateWheelHistorySign() const
+    {
+        const auto sum = std::accumulate(
+            WheelEventsBuffer_.cbegin(),
+            WheelEventsBuffer_.cend(),
+            0);
+
+        return sign(sum);
+    }
+
     bool MessagesScrollArea::isScrolling() const
     {
         return ScrollAnimationTimer_.isActive();
+    }
+
+    void MessagesScrollArea::scheduleWheelBufferReset()
+    {
+        WheelEventsBufferResetTimer_.start();
     }
 
     void MessagesScrollArea::startScrollAnimation(const ScrollingMode mode)
@@ -618,20 +771,17 @@ namespace Ui
 
     void MessagesScrollArea::stopScrollAnimation()
     {
+        LastAnimationMoment_ = MOMENT_UNINITIALIZED;
+        ScrollDistance_ = 0;
+
+        scheduleWheelBufferReset();
+
         if (!isScrolling())
         {
             return;
         }
 
         ScrollAnimationTimer_.stop();
-
-        LastAnimationMoment_ = MOMENT_UNINITIALIZED;
-        ScrollDistance_ = 0;
-    }
-
-    void MessagesScrollArea::unloadWidgets()
-    {
-        emit needCleanup();
     }
 
     void MessagesScrollArea::resetUserActivityTimer()
@@ -643,8 +793,20 @@ namespace Ui
     {
         UserActivityTimer_.stop();
 
-        if (Layout_->isViewportAtBottom())
-            unloadWidgets();
+        auto keysToUnload = getKeysToUnload();
+        if (keysToUnload.empty())
+        {
+            return;
+        }
+
+        emit needCleanup(keysToUnload);
+    }
+
+    void MessagesScrollArea::onWheelEventResetTimer()
+    {
+        WheelEventsBuffer_.clear();
+
+        WheelEventsBufferResetTimer_.stop();
     }
 
     bool MessagesScrollArea::isScrollAtBottom() const
@@ -655,13 +817,58 @@ namespace Ui
 
 namespace
 {
-    double getMinimumVelocity()
+    double getMaximumScrollDistance()
     {
-        return Utils::scale_value(600);
+        return Utils::scale_value(3000);
     }
 
-    double getMaximumVelocity()
+    double getMinimumSpeed()
     {
-        return Utils::scale_value(6000);
+        return Utils::scale_value(100);
+    }
+
+    double getMaximumSpeed()
+    {
+        return Utils::scale_value(3000);
+    }
+
+    double cubicOut(const double scrollDistance, const double maxScrollDistance, const double minSpeed, const double maxSpeed)
+    {
+        assert(maxScrollDistance > 0);
+        assert(std::abs(scrollDistance) <= maxScrollDistance);
+        assert(minSpeed >= 0);
+        assert(maxSpeed > 0);
+        assert(maxSpeed > minSpeed);
+
+        // see http://gizma.com/easing/#cub2
+
+        auto t = scrollDistance;
+        const auto b = minSpeed;
+        const auto c = (maxSpeed - minSpeed);
+        const auto d = maxScrollDistance;
+
+        t /= d;
+
+        t--;
+
+        return (c * (std::pow(t, 3.0) + 1) + b);
+    }
+
+    double expoOut(const double scrollDistance, const double maxScrollDistance, const double minSpeed, const double maxSpeed)
+    {
+        assert(maxScrollDistance > 0);
+        assert(std::abs(scrollDistance) <= maxScrollDistance);
+        assert(minSpeed >= 0);
+        assert(maxSpeed > 0);
+        assert(maxSpeed > minSpeed);
+
+        // see http://gizma.com/easing/#expo2
+
+        auto t = scrollDistance;
+        const auto b = minSpeed;
+        const auto c = (maxSpeed - minSpeed);
+        const auto d = maxScrollDistance;
+
+        return (c * (-std::pow(2.0, -10 * t/d) + 1) + b);
     }
 }

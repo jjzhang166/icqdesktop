@@ -16,12 +16,21 @@
 #include "../../my_info.h"
 #include "ContactListModel.h"
 #include "../../types/chat.h"
+#include "../../my_info.h"
 
 namespace Logic
 {
+    ChatMembersModel::ChatMembersModel(QObject *parent)
+        : is_short_view_(true)
+        , selectEnabled_(true)
+    {
+        connect(GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatarLoaded(QString)), Qt::QueuedConnection);
+    }
+
     ChatMembersModel::ChatMembersModel(std::shared_ptr<Data::ChatInfo>& _info, QObject *_parent)
         : CustomAbstractListModel(_parent)
         , is_short_view_(true)
+        , selectEnabled_(true)
     {
         update_info(_info, false);
         connect(GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatarLoaded(QString)), Qt::QueuedConnection);
@@ -54,21 +63,30 @@ namespace Logic
         Data::ChatMemberInfo* ptr = &(members_[ind.row()]);
 
         if (Testing::isAccessibleRole(role))
-            return ptr->AimdId_;
+            return ptr->AimId_;
 
         return QVariant::fromValue<Data::ChatMemberInfo*>(ptr);
     }
 
     Qt::ItemFlags ChatMembersModel::flags(const QModelIndex &) const
     {
-        return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
+        Qt::ItemFlags flags = Qt::ItemIsEnabled;
+        if (selectEnabled_)
+            return flags |= Qt::ItemIsSelectable;
+        
+        return flags;
+    }
+
+    void ChatMembersModel::setSelectEnabled(bool value)
+    {
+        selectEnabled_ = value;
     }
 
     const Data::ChatMemberInfo* ChatMembersModel::getMemberItem(const QString& _aimId) const
     {
         for (auto& item : members_)
         {
-            if (item.AimdId_ == _aimId)
+            if (item.AimId_ == _aimId)
                 return &item;
         }
 
@@ -87,6 +105,7 @@ namespace Logic
             update_info(_info, true);
             is_full_list_loaded_ = true;
             emit dataChanged(index(0), index((int)members_.size()));
+            emit results();
         }
     }
 
@@ -95,13 +114,63 @@ namespace Logic
         int i = 0;
         for (auto iter : members_)
         {
-            if (iter.AimdId_ == aimid)
+            if (iter.AimId_ == aimid)
             {
                 emit dataChanged(index(i), index(i));
                 break;
             }
             ++i;
         }
+    }
+
+    void ChatMembersModel::chatBlocked(QList<Data::ChatMemberInfo> blocked)
+    {
+        members_.clear();
+        for (auto iter : blocked)
+            members_.push_back(iter);
+
+        emit dataChanged(index(0), index(members_.size()));
+    }
+
+    void ChatMembersModel::load_all_members(const QString& aimId, int count)
+    {
+        ChatInfoSequence_ = load_all_members(aimId, count, this);
+    }
+
+    void ChatMembersModel::admins_only()
+    {
+        for (auto iter = members_.begin(); iter != members_.end();)
+        {
+            if (iter->Role_ != "admin" && iter->Role_ != "moder")
+                iter = members_.erase(iter);
+            else
+                ++iter;
+        }
+
+        emit dataChanged(index(0), index(members_.size()));
+    }
+
+    void ChatMembersModel::load_blocked()
+    {
+        members_.clear();
+        emit dataChanged(index(0), index(0));
+        connect(Ui::GetDispatcher(), SIGNAL(chatBlocked(QList<Data::ChatMemberInfo>)), this, SLOT(chatBlocked(QList<Data::ChatMemberInfo>)), Qt::UniqueConnection);
+        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+        collection.set_value_as_qstring("aimid", AimId_);
+        Ui::GetDispatcher()->post_message_to_core("chats/blocked/get", collection.get());
+    }
+
+    void ChatMembersModel::init_for_single(const QString& aimId)
+    {
+        members_.clear();
+        Data::ChatMemberInfo info;
+        info.AimId_ = aimId;
+        info.NickName_ = Logic::GetContactListModel()->getDisplayName(aimId);
+        members_.push_back(info);
+        info.AimId_ = Ui::MyInfo()->aimId();
+        info.NickName_ = Ui::MyInfo()->friendlyName();
+        members_.push_back(info);
+        emit dataChanged(index(0), index(1));
     }
 
     void ChatMembersModel::load_all_members()
@@ -140,6 +209,8 @@ namespace Logic
             members_.emplace_back(item);
         }
 
+        emit dataChanged(index(0), index(members_.size()));
+
         is_full_list_loaded_ = members_count_ <= InitMembersLimit;
 
         if (_is_all_chat_info)
@@ -163,7 +234,7 @@ namespace Logic
     {
         // TODO : use hash-table here
         for (auto& member : members_)
-            if (member.AimdId_ == _aimdId)
+            if (member.AimId_ == _aimdId)
                 return true;
         return false;
     }
@@ -178,6 +249,11 @@ namespace Logic
         return (YourRole_ == "admin");
     }
 
+    bool ChatMembersModel::is_moder() const
+    {
+        return (YourRole_ == "moder");
+    }
+
     void UpdateIgnoredModel(const QVector<QString>& _ignored_list)
     {
         auto il = _ignored_list;
@@ -188,12 +264,12 @@ namespace Logic
         for (auto aimid : il)
         {
             Data::ChatMemberInfo member;
-            member.AimdId_ = aimid;
+            member.AimId_ = aimid;
             info->Members_.append(member);
         }
 
         GetIgnoreModel()->update_info(info, true);
-
+        emit GetIgnoreModel()->results();
     }
 
     ChatMembersModel* GetIgnoreModel()

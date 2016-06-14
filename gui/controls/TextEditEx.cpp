@@ -274,7 +274,15 @@ namespace Ui
             }
         }
 
+        auto oldPos = textCursor().position();
         QTextBrowser::keyPressEvent(_event);
+        auto newPos = textCursor().position();
+        if (_event->modifiers() & Qt::ShiftModifier && _event->key() == Qt::Key_Up && oldPos == newPos)
+        {
+            auto cur = textCursor();
+            cur.movePosition(QTextCursor::Start, QTextCursor::KeepAnchor);
+            setTextCursor(cur);
+        }
     }
 
     QString TextEditEx::getPlainText() const
@@ -282,12 +290,12 @@ namespace Ui
         return getPlainText(0, -1);
     }
 
-    void TextEditEx::setPlainText(const QString& _text, bool _convertLinks)
+    void TextEditEx::setPlainText(const QString& _text, bool _convertLinks, const QTextCharFormat::VerticalAlignment _aligment)
     {
         clear();
         resource_index_.clear();
 
-        Logic::Text4Edit(_text, *this, Logic::Text2DocHtmlMode::Escape, _convertLinks);
+        Logic::Text4Edit(_text, *this, Logic::Text2DocHtmlMode::Escape, _convertLinks, false, nullptr, Emoji::EmojiSizePx::Auto, _aligment);
     }
 
     void TextEditEx::insertEmoji(int _main, int _ext)
@@ -304,7 +312,7 @@ namespace Ui
         if (!cur.hasSelection() && prev_pos_ == -1)
         {
             cur.setPosition(pos);
-            cur.setPosition(pos > prev_pos_ ? pos + 1  : pos -1, QTextCursor::KeepAnchor);
+            cur.setPosition(pos > prev_pos_ ? pos : pos -1, QTextCursor::KeepAnchor);
         }
         else
         {

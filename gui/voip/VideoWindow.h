@@ -6,8 +6,10 @@
 #include "DetachedVideoWnd.h"
 #include "VoipSysPanelHeader.h"
 #include "VideoFrame.h"
+#include "secureCallWnd.h"
 
 namespace voip_manager{
+    struct CipherState;
     struct FrameSize;
 }
 
@@ -54,10 +56,13 @@ namespace Ui {
 
 	private:
         quintptr getContentWinId() override;
-        void updatePanels_();
+        void updatePanels_() const;
         void _switchFullscreen();
         void _checkPanelsVisibility(bool forceHide = false);
         inline void updateWindowTitle_();
+
+		// @return true, if we was able to load size from settings.
+		bool getWindowSizeFromSettings(int& nWidth, int& nHeight);
 
     private Q_SLOTS:
         void _check_overlap();
@@ -69,6 +74,8 @@ namespace Ui {
         void onVoipMediaRemoteVideo(bool enabled);
         void onVoipWindowRemoveComplete(quintptr win_id);
         void onVoipWindowAddComplete(quintptr win_id);
+        void onVoipCallOutAccepted(const voip_manager::ContactEx& contact_ex);
+        void onVoipCallCreated(const voip_manager::ContactEx& contact_ex);
         void _escPressed();
 
         void onPanelClickedClose();
@@ -78,6 +85,11 @@ namespace Ui {
 		void onPanelMouseEnter();
 		void onPanelMouseLeave();
 		void onPanelFullscreenClicked();
+
+        void onVoipUpdateCipherState(const voip_manager::CipherState& state);
+        void onSecureCallClicked(const QRect&);
+        void onSecureCallWndOpened();
+        void onSecureCallWndClosed();
 
     public:
         VideoWindow();
@@ -89,24 +101,56 @@ namespace Ui {
     private:
         FrameControl_t* _rootWidget;
 
+        template<typename __Type> class VideoPanelUnit
+        {
+            std::unique_ptr<__Type> panel_;
+            UIEffects*              effect_;
+
+        public:
+            VideoPanelUnit();
+            ~VideoPanelUnit();
+
+            bool init(const std::function<__Type*()>& creator);
+
+            void fadeIn(unsigned int ms);
+            void fadeOut(unsigned int ms);
+
+            void show();
+            void hide();
+
+            WId getId();
+            operator __Type*();
+            operator __Type*() const;
+            bool operator!() const;
+            __Type* operator->();
+            const __Type* operator->() const;
+        };
+
+        VideoPanelUnit<VideoPanelHeader>   topPanelSimple_;
+        VideoPanelUnit<VoipSysPanelHeader> topPanelOutgoing_;
+
         std::unique_ptr<VideoPanel>          video_panel_;
-        std::unique_ptr<VideoPanelHeader>    video_panel_header_;
-        std::unique_ptr<VoipSysPanelHeader>  video_panel_header_with_avatars_;
+        //std::unique_ptr<VideoPanelHeader>    video_panel_header_;
+        //std::unique_ptr<VoipSysPanelHeader>  video_panel_header_with_avatars_;
 
         std::unique_ptr<DetachedVideoWindow> detached_wnd_;
         video_window::ResizeEventFilter*     event_filter_;
 
         QTimer check_overlapped_timer_;
 		QTimer show_panel_timer_;
+
         bool have_remote_video_;
+        bool _outgoingNotAccepted;
 
 		UIEffects* video_panel_effect_;
-		UIEffects* video_panel_header_effect_;
-        UIEffects* video_panel_header_effect_with_avatars_;
+		//UIEffects* video_panel_header_effect_;
+        //UIEffects* video_panel_header_effect_with_avatars_;
 
         QVBoxLayout *vertical_layout_;
         QVBoxLayout *vertical_layout_2_;
         QWidget *widget_;
+
+        SecureCallWnd* secureCallWnd_;
 
         struct {
             std::string name;

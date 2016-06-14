@@ -34,6 +34,7 @@ namespace Data
 			, Unreads_(0)
 			, NotAuth_(false)
 			, IsChecked_(false)
+            , IsLiveChat_(false)
             , IsOfficial_(false)
 		{
 		}
@@ -58,7 +59,11 @@ namespace Data
 		bool		NotAuth_;
 		bool		Muted_;
 		bool		IsChecked_;
+        bool        IsLiveChat_;
         bool        IsOfficial_;
+        QString		iconId_;
+        QString		bigIconId_;
+        QString		largeIconId_;
 	};
 
 	class Contact : public Buddy

@@ -3,6 +3,7 @@
 #include "../../cache/avatars/AvatarStorage.h"
 #include "ContactListModel.h"
 #include "RecentsModel.h"
+#include "../history_control/MessagesModel.h"
 
 #include "../../types/contact.h"
 #include "../../utils/utils.h"
@@ -96,7 +97,7 @@ namespace Logic
 		const auto isFilled = !isMultichat;
 		bool isDefault = false;
 
-		const auto avatar = GetAvatarStorage()->GetRounded(dlg.AimId_, QString(), Utils::scale_bitmap(Utils::scale_value(48)), state, isFilled, isDefault);
+		const auto avatar = GetAvatarStorage()->GetRounded(dlg.AimId_, QString(), Utils::scale_bitmap(Utils::scale_value(56)), state, isFilled, isDefault, false);
 
         const bool hasMouseOver = (platform::is_apple() ? Logic::GetRecentsModel()->customFlagIsSet(Logic::CustomAbstractListModelFlags::HasMouseOver) : true);
 		const bool isSelected = (option.state & QStyle::State_Selected) && !StateBlocked_;
@@ -154,7 +155,7 @@ namespace Logic
                     status += iter_typing->getChatterName() + " ";
                 }
 
-                status += QT_TRANSLATE_NOOP("contact_list", "is typing...");
+                status += QT_TRANSLATE_NOOP("contact_list", "typing...");
 
                 break;
             }
@@ -162,6 +163,19 @@ namespace Logic
 
 
         bool isOfficial = dlg.Official_ || Logic::GetContactListModel()->isOfficial(dlg.AimId_);
+
+        bool isDrawLastRead = false;
+
+        QPixmap lastReadAvatar;
+
+        bool isOutgoing = dlg.Outgoing_;
+        bool isLastRead = (dlg.LastMsgId_ >= 0 && dlg.TheirsLastRead_ > 0 && dlg.LastMsgId_ <= dlg.TheirsLastRead_);
+
+        if (!isMultichat && isOutgoing && isLastRead && !Logic::GetMessagesModel()->isHasPending(dlg.AimId_))
+        {
+            lastReadAvatar = *GetAvatarStorage()->GetRounded(dlg.AimId_, QString(), Utils::scale_bitmap(Utils::scale_value(16)), QString(), isFilled, isDefault, false);
+            isDrawLastRead = true;
+        }
 
 		ContactList::RecentItemVisualData visData(
 			dlg.AimId_,
@@ -175,9 +189,12 @@ namespace Logic
 			deliveryState,
 			true,
 			QDateTime::fromTime_t(dlg.Time_),
-			(int)dlg.UnreadCount_, Logic::GetContactListModel()->isMuted(dlg.AimId_),
+			(int)dlg.UnreadCount_, 
+            Logic::GetContactListModel()->isMuted(dlg.AimId_),
             dlg.senderNick_,
-            isOfficial);
+            isOfficial,
+            isDrawLastRead,
+            lastReadAvatar);
 
 		painter->save();
 		painter->setRenderHint(QPainter::Antialiasing);

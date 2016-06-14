@@ -4,6 +4,7 @@
 #include "../core.h"
 #include "../async_task.h"
 #include "../http_request.h"
+#include "../utils.h"
 #include "../../common.shared/version_info.h"
 #include "../../external/openssl/openssl/md5.h"
 
@@ -16,13 +17,7 @@ namespace core
         struct update_params
         {
             std::string login_;
-            std::function<bool()> is_stoped_;
-
-            update_params()
-                :	is_stoped_([]()->bool{ return false; })
-            {
-
-            }
+            std::function<bool()> must_stop_;
         };
 
         std::string get_update_server()
@@ -77,7 +72,7 @@ namespace core
             g_core->stop_timer(timer_id_);
         }
 
-        bool updater::is_stoped()
+        bool updater::must_stop()
         {
             return stop_;
         }
@@ -97,14 +92,15 @@ namespace core
             {
                 update_params params;
                 params.login_ = g_core->get_root_login();
-                params.is_stoped_ = [this]() { return is_stoped(); };
+                params.must_stop_ = std::bind(&updater::must_stop, this);
 
                 auto proxy = g_core->get_user_proxy_settings();
 
-                thread_->run_async_function([params, proxy]()->int32_t
-                {
-                    return run(params, proxy);
-                });
+                thread_->run_async_function(
+                    [params, proxy]
+                    {
+                        return run(params, proxy);
+                    });
 
                 last_check_time_ = std::chrono::system_clock::now();
             }
@@ -114,7 +110,7 @@ namespace core
 
         int32_t run(const update_params& _params, const proxy_settings& _proxy)
         {
-            http_request_simple request(_proxy, _params.is_stoped_);
+            http_request_simple request(_proxy, utils::get_user_agent(), _params.must_stop_);
             request.set_url(get_update_version_url(_params));
 
             if (!request.get())
@@ -178,7 +174,7 @@ namespace core
 
         int32_t do_update(const std::string& _file, const std::string& _md5, const update_params& _params, const proxy_settings& _proxy)
         {
-            http_request_simple request(_proxy, _params.is_stoped_);
+            http_request_simple request(_proxy, utils::get_user_agent(), _params.must_stop_);
             request.set_url(get_update_server() + _file);
             request.set_need_log(false);
             if (!request.get())
@@ -294,7 +290,6 @@ namespace core
                     return;
 
                 boost::filesystem::directory_iterator end_iter;
-
                 for (boost::filesystem::directory_iterator dir_iter(parent_path); dir_iter != end_iter ; ++dir_iter)
                 {
                     if (!boost::filesystem::is_directory(dir_iter->status()))
@@ -314,7 +309,8 @@ namespace core
                     if (current_num < num)
                         continue;
 
-                    boost::filesystem::remove_all(dir_iter->path());
+                    boost::system::error_code error;
+                    boost::filesystem::remove_all(dir_iter->path(), error);
                 }
             }
 

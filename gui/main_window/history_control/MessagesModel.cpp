@@ -7,21 +7,23 @@
 #include "../../utils/Text2DocConverter.h"
 
 #include "MessageItem.h"
+#include "MessageStyle.h"
 #include "ServiceMessageItem.h"
 #include "ChatEventItem.h"
+#include "DeletedMessageItem.h"
 
 #include "../../core_dispatcher.h"
 #include "../../../corelib/core_face.h"
 #include "../../../corelib/enumerations.h"
 
 #include "../history_control/ChatEventInfo.h"
-#include "../history_control/FileSharingWidget.h"
+#include "ContentWidgets/FileSharingWidget.h"
 #include "../history_control/FileSharingInfo.h"
-#include "../history_control/ImagePreviewWidget.h"
-#include "../history_control/StickerWidget.h"
+#include "ContentWidgets/ImagePreviewWidget.h"
+#include "ContentWidgets/StickerWidget.h"
 #include "../history_control/VoipEventInfo.h"
 #include "../history_control/VoipEventItem.h"
-#include "../history_control/PttAudioWidget.h"
+#include "ContentWidgets/PttAudioWidget.h"
 
 #include "../../utils/log/log.h"
 #include "../../utils/profiling/auto_stop_watch.h"
@@ -157,6 +159,13 @@ namespace Logic
         IsDeleted_ = isDeleted;
     }
 
+    void MessageKey::setId(const int64_t id)
+    {
+        assert(id >= -1);
+
+        Id_ = id;
+    }
+
     void MessageKey::setOutgoing(const bool isOutgoing)
     {
         Outgoing_ = isOutgoing;
@@ -253,6 +262,37 @@ namespace Logic
         return (control_type_ < rhs.control_type_);
     }
 
+    bool InternalIndex::ContainsId(const int64_t id) const
+    {
+        assert(id >= -1);
+
+        if (Key_.Id_ == id)
+        {
+            return true;
+        }
+
+        return std::any_of(
+            MsgKeys_.cbegin(),
+            MsgKeys_.cend(),
+            [id](const Logic::MessageKey &key)
+            {
+                return (key.Id_ == id);
+            });
+    }
+
+    bool InternalIndex::ContainsKey(const MessageKey &needle) const
+    {
+        assert(!needle.isEmpty());
+
+        return std::any_of(
+            MsgKeys_.cbegin(),
+            MsgKeys_.cend(),
+            [&needle](const Logic::MessageKey &key)
+            {
+                return ((key.Id_ == needle.Id_) && (key.control_type_ == needle.control_type_));
+            });
+    }
+
     bool InternalIndex::IsBase() const
     {
         assert(Key_.Type_ > core::message_type::min);
@@ -300,7 +340,8 @@ namespace Logic
 
     bool InternalIndex::IsStandalone() const
     {
-        return (IsFileSharing() || IsSticker() || IsChatEvent() || IsVoipEvent() || IsPreview() || IsDeleted());
+        return true;
+        //return (IsFileSharing() || IsSticker() || IsChatEvent() || IsVoipEvent() || IsPreview() || IsDeleted() || IsPending());
     }
 
     bool InternalIndex::IsSticker() const
@@ -351,6 +392,19 @@ namespace Logic
 
         const auto &firstKey = *MsgKeys_.cbegin();
         return firstKey;
+    }
+
+    MessageKey InternalIndex::GetKeyById(const int64_t id) const
+    {
+        for (const auto &key : MsgKeys_)
+        {
+            if (key.Id_ == id)
+            {
+                return key;
+            }
+        }
+
+        return MessageKey();
     }
 
     const MessageKey& InternalIndex::GetLastMessageKey() const
@@ -422,14 +476,12 @@ namespace Logic
     {
         assert(
             !std::any_of(
-            MsgKeys_.begin(),
-            MsgKeys_.end(),
-            [](const MessageKey& key)
-        {
-            return (key.isFileSharing() || key.isSticker() || key.isChatEvent());
-        }
-        )
-            );
+                MsgKeys_.begin(),
+                MsgKeys_.end(),
+                [](const MessageKey& key)
+                {
+                    return (key.isFileSharing() || key.isSticker() || key.isChatEvent());
+                }));
 
         assert(MsgKeys_.empty() || (!key.isFileSharing() && !key.isSticker() && !key.isChatEvent()));
 
@@ -453,7 +505,7 @@ namespace Logic
 
     void InternalIndex::ApplyModification(const Data::MessageBuddy &modification)
     {
-        assert(Key_.Id_ == modification.Id_);
+        assert(ContainsId(modification.Id_));
 
         EraseEventData();
 
@@ -466,13 +518,7 @@ namespace Logic
 
         if (modification.IsChatEvent())
         {
-            Key_.Type_ = core::message_type::chat_event;
-
-            SetChatEvent(
-                std::make_shared<HistoryControl::ChatEventInfo>(
-                *modification.GetChatEvent()
-                )
-                );
+            Key_.Type_ = core::message_type::base;
 
             return;
         }
@@ -498,48 +544,42 @@ namespace Logic
             &Ui::core_dispatcher::messageBuddies,
             this,
             &MessagesModel::messageBuddies,
-            Qt::QueuedConnection
-            );
+            Qt::QueuedConnection);
 
         connect(
             Ui::GetDispatcher(),
             &Ui::core_dispatcher::messagesDeleted,
             this,
             &MessagesModel::messagesDeleted,
-            Qt::QueuedConnection
-            );
+            Qt::QueuedConnection);
 
         connect(
             Ui::GetDispatcher(),
             &Ui::core_dispatcher::messagesDeletedUpTo,
             this,
             &MessagesModel::messagesDeletedUpTo,
-            Qt::QueuedConnection
-            );
+            Qt::QueuedConnection);
 
         connect(
             Ui::GetDispatcher(),
             &Ui::core_dispatcher::messagesModified,
             this,
             &MessagesModel::messagesModified,
-            Qt::QueuedConnection
-            );
+            Qt::QueuedConnection);
 
         connect(
             Ui::GetDispatcher(),
             &Ui::core_dispatcher::dlgState,
             this,
             &MessagesModel::dlgState,
-            Qt::QueuedConnection
-            );
+            Qt::QueuedConnection);
 
         connect(
             Ui::GetDispatcher(),
             &Ui::core_dispatcher::fileSharingUploadingResult,
             this,
             &MessagesModel::fileSharingUploadingResult,
-            Qt::DirectConnection
-            );
+            Qt::DirectConnection);
     }
 
     int MessagesModel::generatedDomUid()
@@ -549,42 +589,7 @@ namespace Logic
 
     void MessagesModel::dlgState(Data::DlgState state)
     {
-        if (state.LastMsgId_ == -1)
-        {
-            return;
-        }
-
-        auto &indexes = Indexes_[state.AimId_];
-
-        for (auto &ind : indexes)
-        {
-            if (!ind.Key_.isOutgoing())
-            {
-                // incoming messages should not be marked as delivered
-                continue;
-            }
-
-            auto msgs = ind.GetMessageKeys();
-            if (msgs.empty())
-                continue;
-
-            MessageInternal msg(*msgs.rbegin());
-            const auto idRead = (msg.Key_.Id_ <= state.TheirsLastDelivered_);
-            auto iter = Messages_[state.AimId_].find(msg);
-            if (iter == Messages_[state.AimId_].end())
-                continue;
-
-            const auto markAsRead = (idRead && !iter->Buddy_->IsDeliveredToClient());
-            if (markAsRead)
-            {
-                iter->Buddy_->MarkAsDeliveredToClient();
-
-                if (ind.Key_.InternalId_.isEmpty())
-                    emit deliveredToClient(ind.Key_.Id_);
-                else
-                    emit deliveredToClient(ind.Key_.InternalId_);
-            }
-        }
+        emit readByClient(state.AimId_, state.TheirsLastRead_);
     }
 
     void MessagesModel::fileSharingUploadingResult(QString id, bool, QString, bool too_large_files)
@@ -599,7 +604,7 @@ namespace Logic
         assert(option < Ui::MessagesBuddiesOpt::Max);
         assert(msgs);
 
-        const auto isDlgState = (option == Ui::MessagesBuddiesOpt::DlgState);
+        const auto isDlgState = (option == Ui::MessagesBuddiesOpt::DlgState || option == Ui::MessagesBuddiesOpt::Init || option == Ui::MessagesBuddiesOpt::MessageStatus);
         const auto isPending = (option == Ui::MessagesBuddiesOpt::Pending);
 
         if (build::is_debug())
@@ -614,7 +619,7 @@ namespace Logic
                 __TRACE(
                     "fs",
                     "incoming file sharing message in model\n" <<
-                    "	seq=<" << seq << ">\n" <<
+                    "    seq=<" << seq << ">\n" <<
                     buddy->GetFileSharing()->ToLogString());
             }
         }
@@ -806,7 +811,7 @@ namespace Logic
                         && index.Key_.isOutgoing() == msg->IsOutgoing()
                         && index.GetChatSender() == msg->GetChatSender()
                         && !index.IsDate() && !index.IsStandalone()
-                        && (index.contains(msg->Id_) || index.contains(msg->Prev_)))
+                        && (index.ContainsId(msg->Id_) || index.ContainsId(msg->Prev_)))
                     {
                         index.InsertMessageKey(key);
                         index.MaxTime_ = std::max(msg->GetTime(), index.MaxTime_);
@@ -885,8 +890,8 @@ namespace Logic
                         && ind->GetChatSender() == iter.GetChatSender()
                         && !ind->IsDate() && !ind->IsStandalone())
                     {
-                        if (((iter.contains(ind->Key_.Prev_) || iter.contains(ind->Key_.Id_)) && ind->MinTime_ - iter.MaxTime_ <= 120)
-                            || ((ind->contains(iter.Key_.Prev_) || ind->contains(iter.Key_.Id_)) && iter.MinTime_ - ind->MaxTime_ <= 120))
+                        if (((iter.ContainsId(ind->Key_.Prev_) || iter.ContainsId(ind->Key_.Id_)) && ind->MinTime_ - iter.MaxTime_ <= 120)
+                            || ((ind->ContainsId(iter.Key_.Prev_) || ind->ContainsId(iter.Key_.Id_)) && iter.MinTime_ - ind->MaxTime_ <= 120))
                         {
                             ind->MaxTime_ = std::max(iter.MaxTime_, ind->MaxTime_);
                             ind->MinTime_ = std::min(iter.MinTime_, ind->MinTime_);
@@ -935,7 +940,8 @@ namespace Logic
 
         const auto isFromServer = (option == Ui::MessagesBuddiesOpt::FromServer);
         const auto isRequested = (option == Ui::MessagesBuddiesOpt::Requested);
-        if (isFromServer || isRequested)
+        const auto isInit = (option == Ui::MessagesBuddiesOpt::Init);
+        if (isFromServer || isRequested || isInit)
         {
             if ((int32_t)indexesByAimId.size() >= preloadCount())
             {
@@ -1064,7 +1070,8 @@ namespace Logic
 
         for (const auto &modification : *modifications)
         {
-            if (!modification->HasText() && !modification->IsChatEvent())
+            if (!modification->HasText() &&
+                !modification->IsChatEvent())
             {
                 assert(!"unexpected modification");
                 continue;
@@ -1081,8 +1088,7 @@ namespace Logic
             __INFO(
                 "delete_history",
                 "sending update request to the history page\n"
-                "    message-id=<" << key.Id_ << ">"
-                );
+                "    message-id=<" << key.Id_ << ">");
         }
 
         emitUpdated(messageKeys, aimId, MODIFIED);
@@ -1405,7 +1411,7 @@ namespace Logic
                     "	type=<client>\n" <<
                     "	dst=<" << msg->InternalId_ << ">");
 
-                emit deliveredToClient(msg->InternalId_);
+            //    emit deliveredToClient(msg->InternalId_);
                 continue;
             }
 
@@ -1424,6 +1430,19 @@ namespace Logic
 
     void MessagesModel::emitUpdated(const QList<Logic::MessageKey>& list, const QString& aimId, unsigned mode)
     {
+        bool containsChatEvent = false;
+        for (auto iter : list)
+        {
+            if (iter.isChatEvent())
+            {
+                containsChatEvent = true;
+                break;
+            }
+        }
+
+        if (containsChatEvent)
+            emit chatEvent(aimId);
+
         if (list.size() <= moreCount())
         {
             emit updated(list, aimId, mode);
@@ -1469,24 +1488,21 @@ namespace Logic
 
             item.reset(
                 new HistoryControl::FileSharingWidget(
-                parent,
-                messageBuddy.IsOutgoing(),
-                messageBuddy.AimId_,
-                messageBuddy.GetFileSharing(),
-                previewsEnabled
-                )
-                );
+                    parent,
+                    messageBuddy.IsOutgoing(),
+                    messageBuddy.AimId_,
+                    messageBuddy.GetFileSharing(),
+                    previewsEnabled));
 
             connect(
                 item.get(),
                 &HistoryControl::MessageContentWidget::removeMe,
                 [messageBuddy]
-            {
-                QList<MessageKey> keys;
-                keys << messageBuddy.ToKey();
-                emit GetMessagesModel()->deleted(keys, messageBuddy.AimId_);
-            }
-            );
+                {
+                    QList<MessageKey> keys;
+                    keys << messageBuddy.ToKey();
+                    emit GetMessagesModel()->deleted(keys, messageBuddy.AimId_);
+                });
         }
 
         messageItem.setContentWidget(item.release());
@@ -1520,14 +1536,12 @@ namespace Logic
         const auto &messages = Messages_[aimId];
         auto &index = Indexes_[aimId];
 
-        const auto key = modification.ToKey();
+        auto key = modification.ToKey();
         assert(key.hasId());
 
         // find index
 
-        InternalIndex indexToFind;
-        indexToFind.Key_ = key;
-        const auto existingIndexIter = index.find(indexToFind);
+        const auto existingIndexIter = findIndexRecord(index, key);
         const auto isIndexMissing = (existingIndexIter == index.end());
         if (isIndexMissing)
         {
@@ -1544,6 +1558,9 @@ namespace Logic
 
         const auto &existingIndex = *existingIndexIter;
         assert(!existingIndex.IsDeleted());
+
+        key = existingIndex.GetKeyById(key.Id_);
+        assert(!key.isEmpty());
 
         auto modifiedIndex = existingIndex;
         modifiedIndex.ApplyModification(modification);
@@ -1804,6 +1821,36 @@ namespace Logic
         dateItems.erase(dateItemIter);
     }
 
+    InternalIndexSetIter MessagesModel::findIndexRecord(InternalIndexSet &indexRecords, const Logic::MessageKey &key) const
+    {
+        assert(!key.isEmpty());
+
+        return std::find_if(
+            indexRecords.begin(),
+            indexRecords.end(),
+            [&key](const InternalIndex &index)
+            {
+                return index.ContainsKey(key);
+            });
+    }
+
+    Logic::MessageKey MessagesModel::findFirstKeyAfter(const QString &aimId, const Logic::MessageKey &key) const
+    {
+        assert(!aimId.isEmpty());
+        assert(!key.isEmpty());
+
+        const auto &messages = Messages_[aimId];
+
+        auto messageIter = messages.upper_bound(internal(key));
+        if ((messageIter == messages.begin()) ||
+            (messageIter == messages.end()))
+        {
+            return Logic::MessageKey();
+        }
+
+        return messageIter->Key_;
+    }
+
     void MessagesModel::requestMessages(const QString& aimId)
     {
         assert(!aimId.isEmpty());
@@ -1832,6 +1879,17 @@ namespace Logic
     {
         if (msg.IsEmpty())
             return 0;
+
+        auto dlgState = Logic::GetRecentsModel()->getDlgState(msg.AimId_);
+
+        qint64 lastReadId = dlgState.TheirsLastRead_;
+
+        if (!dlgState.Outgoing_)
+        {
+            lastReadId = dlgState.LastMsgId_;
+        }
+        
+        bool isLastRead = (!msg.Chat_ && msg.Id_ != -1 && msg.Id_ == lastReadId);
 
         const auto isServiceMessage = (!msg.IsBase() && !msg.IsFileSharing() && !msg.IsSticker() && !msg.IsChatEvent() && !msg.IsVoipEvent());
         if (isServiceMessage)
@@ -1863,32 +1921,32 @@ namespace Logic
             item->setTopMargin(msg.GetIndentBefore());
             item->setFixedWidth(ItemWidth_);
             item->setHasAvatar(voipEvent->isIncomingCall());
+            item->setId(msg.Id_);
+            item->setLastRead(isLastRead);
             return item.release();
+        }
+
+        if (msg.IsDeleted())
+        {
+            std::unique_ptr<Ui::DeletedMessageItem> deletedItem(new Ui::DeletedMessageItem(parent));
+            return deletedItem.release();
         }
 
         std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem(parent));
         messageItem->setContact(msg.AimId_);
         messageItem->setId(msg.Id_, msg.AimId_);
-
-        if (msg.IsDeleted())
-        {
-            return messageItem.release();
-        }
-
         messageItem->setNotificationKeys(msg.GetNotificationKeys());
 
-        const auto senderNick = GetChatFriendly(msg.GetChatSender(), msg.ChatFriendly_);
+        const auto sender =
+            (msg.Chat_ && msg.HasChatSender()) ?
+            NormalizeAimId(msg.GetChatSender()) :
+            msg.AimId_;
+
+        messageItem->setSender(sender);
+
         if (msg.HasAvatar())
         {
-            const auto sender =
-                (msg.Chat_ && msg.HasChatSender()) ?
-                NormalizeAimId(msg.GetChatSender()) :
-                msg.AimId_;
-
-            messageItem->loadAvatar(
-                sender,
-                senderNick,
-                Utils::scale_bitmap(Utils::scale_value(32)));
+            messageItem->loadAvatar(Utils::scale_bitmap(Ui::MessageStyle::getAvatarSize()));
         }
         else
         {
@@ -1896,9 +1954,10 @@ namespace Logic
         }
 
         messageItem->setTopMargin(msg.GetIndentBefore());
-        messageItem->setOutgoing(msg.IsOutgoing(), msg.IsPending(), msg.IsDeliveredToServer(), msg.IsDeliveredToClient(), msg.Chat_);
+        messageItem->setOutgoing(msg.IsOutgoing(), msg.IsDeliveredToServer(), msg.Chat_, true);
+        messageItem->setLastRead(isLastRead);
+        messageItem->setMchatSender(GetChatFriendly(msg.GetChatSender(), msg.ChatFriendly_));
         messageItem->setMchatSenderAimId(msg.HasChatSender() ? msg.GetChatSender(): msg.AimId_);
-        messageItem->setMchatSender(senderNick);
         messageItem->setTime(msg.GetTime());
         messageItem->setDate(msg.GetDate());
 
@@ -1943,6 +2002,17 @@ namespace Logic
             if (msg == Messages_[index.AimId_].end())
                 continue;
 
+            auto dlgState = Logic::GetRecentsModel()->getDlgState(buddy->AimId_);
+
+            qint64 lastReadId = dlgState.TheirsLastRead_;
+
+            if (!dlgState.Outgoing_)
+            {
+                lastReadId = dlgState.LastMsgId_;
+            }
+
+            bool isLastRead = (!buddy->Chat_ && buddy->Id_ != -1 && buddy->Id_ == lastReadId);
+
             if (first)
             {
                 buddy->SetType(index.Key_.Type_);
@@ -1980,6 +2050,8 @@ namespace Logic
                 item->setMaximumWidth(ItemWidth_);
                 item->setHasAvatar(buddy->HasAvatar());
                 item->setTopMargin(buddy->GetIndentBefore());
+                item->setId(buddy->Id_);
+                item->setLastRead(isLastRead);
                 result->layout()->addWidget(item.release());
             }
             else
@@ -1987,25 +2059,21 @@ namespace Logic
                 std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem(result.get()));
                 messageItem->setId(buddy->Id_, buddy->AimId_);
                 messageItem->setNotificationKeys(buddy->GetNotificationKeys());
+                messageItem->setSender(buddy->Chat_ ? NormalizeAimId(buddy->GetChatSender()) : buddy->AimId_);
 
                 if (buddy->HasAvatar())
                 {
-                    messageItem->loadAvatar(
-                        buddy->Chat_ ?
-                        NormalizeAimId(buddy->GetChatSender()) :
-                        buddy->AimId_, QString(),
-                        Utils::scale_bitmap(Utils::scale_value(32))
-                        );
+                    messageItem->loadAvatar(Utils::scale_bitmap(Ui::MessageStyle::getAvatarSize()));
                 }
                 else
                 {
                     messageItem->setAvatarVisible(false);
                 }
-
-                messageItem->setTopMargin(buddy->GetIndentBefore());
-                messageItem->setOutgoing(buddy->IsOutgoing(), buddy->IsPending(), buddy->IsDeliveredToServer(), buddy->IsDeliveredToClient(), buddy->Chat_);
-                messageItem->setContact(buddy->AimId_);
                 messageItem->setMchatSender(GetChatFriendly(buddy->GetChatSender(), buddy->ChatFriendly_));
+                messageItem->setTopMargin(buddy->GetIndentBefore());
+                messageItem->setOutgoing(buddy->IsOutgoing(), buddy->IsDeliveredToServer(), buddy->Chat_);
+                messageItem->setLastRead(isLastRead);
+                messageItem->setContact(buddy->AimId_);
                 messageItem->setTime(buddy->GetTime());
                 messageItem->setDate(buddy->GetDate());
 
@@ -2048,15 +2116,9 @@ namespace Logic
             std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem(result.get()));
             messageItem->setId(buddy->Id_, buddy->AimId_);
             messageItem->setNotificationKeys(buddy->GetNotificationKeys());
-            messageItem->loadAvatar(
-                buddy->Chat_ ?
-                NormalizeAimId(buddy->GetChatSender()) :
-                buddy->AimId_,
-                QString(),
-                Utils::scale_bitmap(Utils::scale_value(32))
-                );
+            messageItem->loadAvatar(Utils::scale_bitmap(Ui::MessageStyle::getAvatarSize()));
             messageItem->setTopMargin(false);
-            messageItem->setOutgoing(buddy->IsOutgoing(), buddy->IsPending(), buddy->IsDeliveredToServer(), buddy->IsDeliveredToClient(), buddy->Chat_);
+            messageItem->setOutgoing(buddy->IsOutgoing(), buddy->IsDeliveredToServer(), buddy->Chat_);
             messageItem->setMchatSender(GetChatFriendly(buddy->GetChatSender(), buddy->ChatFriendly_));
             messageItem->setTime(buddy->GetTime());
             messageItem->setDate(buddy->GetDate());
@@ -2122,7 +2184,7 @@ namespace Logic
 
         if (newId != -1)
         {
-            const auto releaseVoodoo = ((current != indexes.rbegin() && current->contains(newId)) || current->containsNotLast(newId));
+            const auto releaseVoodoo = ((current != indexes.rbegin() && current->ContainsId(newId)) || current->containsNotLast(newId));
             const auto createNew = (
                 haveIncoming && !current->IsPending() &&
                 (current->IsBase() || current->IsFileSharing() || current->IsSticker() || current->IsChatEvent() || current->IsVoipEvent())
@@ -2234,7 +2296,7 @@ namespace Logic
                     haveImcoming &&
                     !iter->IsPending() &&
                     (iter->IsBase() || iter->IsFileSharing() || iter->IsSticker() || iter->IsChatEvent() || iter->IsVoipEvent()) &&
-                    ((iter != indexesByAimid.rbegin() && iter->contains(newId)) || iter->containsNotLast(newId)))
+                    ((iter != indexesByAimid.rbegin() && iter->ContainsId(newId)) || iter->containsNotLast(newId)))
                 {
                     result.insert(key, fillNew(*iter, parent, newId));
                 }
@@ -2255,7 +2317,7 @@ namespace Logic
 
         LastKey_[aimId] = key;
 
-        if (LastKey_[aimId].isEmpty() || LastKey_[aimId].isPending() || (LastKey_[aimId].Prev_ != -1 && Indexes_[aimId].begin()->contains(LastKey_[aimId].Id_)))
+        if (LastKey_[aimId].isEmpty() || LastKey_[aimId].isPending() || (LastKey_[aimId].Prev_ != -1 && Indexes_[aimId].begin()->ContainsId(LastKey_[aimId].Id_)))
             requestMessages(aimId);
 
         if (result.isEmpty())
@@ -2317,7 +2379,7 @@ namespace Logic
 
                 if (newId != -1 && haveIncoming && !iter->IsPending() &&
                     (iter->IsBase() || iter->IsFileSharing() || iter->IsSticker() || iter->IsChatEvent() || iter->IsVoipEvent()) &&
-                    ((iter != Indexes_[aimId].rbegin() && iter->contains(newId)) || iter->containsNotLast(newId)))
+                    ((iter != Indexes_[aimId].rbegin() && iter->ContainsId(newId)) || iter->containsNotLast(newId)))
                 {
                     result.insert(key, fillNew(*iter, parent, newId));
                 }
@@ -2338,14 +2400,26 @@ namespace Logic
 
         LastKey_[aimId] = key;
 
-        if (LastKey_[aimId].isEmpty() || LastKey_[aimId].isPending() || (LastKey_[aimId].Prev_ != -1 &&
-            Indexes_[aimId].begin()->contains(LastKey_[aimId].Id_)))
+        if (
+            LastKey_[aimId].isEmpty() ||
+            LastKey_[aimId].isPending() ||
+            (
+                (LastKey_[aimId].Prev_ != -1) &&
+                Indexes_[aimId].begin()->ContainsId(LastKey_[aimId].Id_)
+            )
+        )
+        {
             requestMessages(aimId);
+        }
 
         if (!result.isEmpty())
+        {
             Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::history_preload);
+        }
         else
+        {
             Subscribed_ << aimId;
+        }
 
         return result;
     }
@@ -2428,7 +2502,7 @@ namespace Logic
         std::set<InternalIndex>::const_reverse_iterator iter = Indexes_[aimId].rbegin();
         while (iter != Indexes_[aimId].rend())
         {
-            if (iter->contains(newId))
+            if (iter->ContainsId(newId))
             {
                 QList<MessageKey> updatedValues;
                 updatedValues << iter->Key_;
@@ -2591,6 +2665,17 @@ namespace Logic
         }
 
         return newId == -1 ? id : newId;
+    }
+
+    bool MessagesModel::isHasPending(const QString &aimId) const
+    {
+        auto iter = PendingMessages_.find(aimId);
+        if (iter == PendingMessages_.end())
+        {
+            return false;
+        }
+
+        return !iter.value().empty();
     }
 
     MessagesModel* GetMessagesModel()

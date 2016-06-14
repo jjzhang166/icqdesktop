@@ -10,6 +10,8 @@ namespace Utils
 		virtual void init() override;
 		QString getCurrentPhoneCode();
         QString getCurrentLang();
+
+        void updateLocale();
 		
 	private:
 

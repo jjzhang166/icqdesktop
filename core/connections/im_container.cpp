@@ -16,6 +16,8 @@
 #include "../themes/themes.h"
 #include "../proxy_settings.h"
 
+#include "../configuration/app_config.h"
+
 using namespace core;
 
 im_container::im_container(voip_manager::VoipManager& voip_manager)
@@ -23,11 +25,13 @@ im_container::im_container(voip_manager::VoipManager& voip_manager)
         logins_(new im_login_list(utils::get_product_data_path() + L"/settings/ims.stg"))
 {
     REGISTER_IM_MESSAGE("login_by_password", on_login_by_password);
+    REGISTER_IM_MESSAGE("login_by_password_for_attach_uin", on_login_by_password_for_attach_uin);
     REGISTER_IM_MESSAGE("login_get_sms_code", on_login_get_sms_code);
     REGISTER_IM_MESSAGE("login_by_phone", on_login_by_phone);
     REGISTER_IM_MESSAGE("logout", on_logout);
     REGISTER_IM_MESSAGE("connect_after_migration", on_connect_after_migration);
     REGISTER_IM_MESSAGE("avatars/get", on_get_contact_avatar);
+    REGISTER_IM_MESSAGE("avatars/show", on_show_contact_avatar);
     REGISTER_IM_MESSAGE("send_message", on_send_message);
     REGISTER_IM_MESSAGE("message/typing", on_message_typing);
     REGISTER_IM_MESSAGE("feedback/send", on_feedback);
@@ -49,10 +53,12 @@ im_container::im_container(voip_manager::VoipManager& voip_manager)
     REGISTER_IM_MESSAGE("files/upload/abort", on_abort_file_sharing_uploading);
     REGISTER_IM_MESSAGE("files/download", on_download_file);
     REGISTER_IM_MESSAGE("files/download/abort", on_abort_file_downloading);
-    REGISTER_IM_MESSAGE("preview/download", on_download_preview);
+    REGISTER_IM_MESSAGE("image/download", on_download_image);
     REGISTER_IM_MESSAGE("stickers/meta/get", on_get_stickers_meta);
     REGISTER_IM_MESSAGE("stickers/sticker/get", on_get_sticker);
     REGISTER_IM_MESSAGE("chats/info/get", on_get_chat_info);
+    REGISTER_IM_MESSAGE("chats/blocked/get", on_get_chat_blocked);
+    REGISTER_IM_MESSAGE("chats/home/get", on_get_chat_home);
     REGISTER_IM_MESSAGE("contacts/search", on_search_contacts);
     REGISTER_IM_MESSAGE("contacts/search2", on_search_contacts2);
     REGISTER_IM_MESSAGE("contacts/profile/get", on_profile);
@@ -79,6 +85,15 @@ im_container::im_container(voip_manager::VoipManager& voip_manager)
     REGISTER_IM_MESSAGE("update_profile", on_update_profile);
     REGISTER_IM_MESSAGE("set_user_proxy_settings", on_set_user_proxy);
     REGISTER_IM_MESSAGE("livechat/join", on_join_livechat);
+    REGISTER_IM_MESSAGE("set_locale", on_set_locale);
+    REGISTER_IM_MESSAGE("set_avatar", on_set_avatar);
+    REGISTER_IM_MESSAGE("chats/mod/name", on_mod_chat_name);
+    REGISTER_IM_MESSAGE("chats/mod/about", on_mod_chat_about);
+    REGISTER_IM_MESSAGE("chats/mod/public", on_mod_chat_public);
+    REGISTER_IM_MESSAGE("chats/block", on_block_chat_member);
+    REGISTER_IM_MESSAGE("chats/role/set", on_set_chat_member_role);
+    REGISTER_IM_MESSAGE("close_promo", on_close_promo);
+    REGISTER_IM_MESSAGE("phoneinfo", on_phoneinfo);
 }
 
 
@@ -100,9 +115,9 @@ void im_container::connect_ims()
         (*iter)->connect();
 }
 
-void im_container::update_login(im_login_id& _login)
+bool im_container::update_login(im_login_id& _login)
 {
-    logins_->update(_login);
+    return logins_->update(_login);
 }
 
 void im_container::replace_uin_in_login(im_login_id& old_login, im_login_id& new_login)
@@ -200,6 +215,30 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
         windowParams.watermark.bitmap.w    = 0;
         windowParams.watermark.bitmap.h    = 0;
 
+        windowParams.cameraStatus.bitmap.data = NULL;
+        windowParams.cameraStatus.bitmap.size = 0;
+        windowParams.cameraStatus.bitmap.w    = 0;
+        windowParams.cameraStatus.bitmap.h    = 0;
+
+        core::istream* statusStream = NULL;
+        if (_params.is_value_exist("camera_status")) {
+            statusStream = _params.get_value_as_stream("camera_status");
+            const auto h = _params.get_value_as_int   ("camera_status_height");
+            const auto w = _params.get_value_as_int   ("camera_status_width");
+            assert(statusStream);
+            if (statusStream) {
+                const auto stream_size = statusStream->size();
+                assert(stream_size);
+                if (stream_size > 0 && h > 0 && w > 0) {
+                    windowParams.cameraStatus.hwnd = windowParams.hwnd;
+                    windowParams.cameraStatus.bitmap.data = (void*)statusStream->read(statusStream->size());
+                    windowParams.cameraStatus.bitmap.size = stream_size;
+                    windowParams.cameraStatus.bitmap.w = w;
+                    windowParams.cameraStatus.bitmap.h = h;
+                }
+            }
+        }
+
         core::istream* stream = NULL;
         if (_params.is_value_exist("watermark")) {
             stream = _params.get_value_as_stream("watermark");
@@ -222,6 +261,10 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
         if (stream) {
             stream->reset();
         }
+        if (statusStream) {
+            statusStream->reset();
+        }
+
     } else if (type == "voip_remove_window") {
         void* hwnd = (void*)(uintptr_t)_params.get_value_as_int64("handle");
         im->on_voip_remove_window(hwnd);
@@ -282,7 +325,13 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
         } else {
             im->on_voip_reset();
         }
-    } else {
+    } 
+	else if ("audio_playback_mute")
+	{
+		const std::string mode    = _params.get_value_as_string("mute");
+		im->on_voip_set_mute(mode == "on");
+	}
+	else {
         assert(false);
     }
 }
@@ -442,6 +491,11 @@ void core::im_container::on_send_message(int64_t _seq, coll_helper& _params)
         message,
         type,
         "");
+
+    if (core::configuration::get_app_config().is_crash_enabled_ && message == "!crash")
+    {
+        throw new std::exception();
+    }
 }
 
 void core::im_container::on_feedback(int64_t _seq, coll_helper& _params)
@@ -480,6 +534,18 @@ void core::im_container::on_feedback(int64_t _seq, coll_helper& _params)
     im->send_feedback(_seq, url, fields, files);
 }
 
+void core::im_container::on_phoneinfo(int64_t seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+    
+    std::string phone = _params.get_value_as_string("phone");
+    std::string gui_locale = _params.get_value_as_string("gui_locale");
+    
+    im->phoneinfo(seq, phone, gui_locale);
+}
+
 void core::im_container::on_set_state(int64_t _seq, coll_helper& _params)
 {
     auto im = get_im(_params);
@@ -490,8 +556,12 @@ void core::im_container::on_set_state(int64_t _seq, coll_helper& _params)
     std::string sstate = _params.get_value_as_string("state");
     if (sstate == "dnd")
         state = profile_state::dnd;
+    else if (sstate == "away")
+        state = profile_state::away;
     else if (sstate == "invisible")
         state = profile_state::invisible;
+    else if (sstate == "offline")
+        state = profile_state::offline;
 
     im->set_state(_seq, state);
 }
@@ -559,21 +629,23 @@ void core::im_container::on_login_by_password(int64_t _seq, coll_helper& _params
     info.set_password(_params.get_value_as_string("password"));
     info.set_save_auth_data(_params.get_value_as_bool("save_auth_data"));
 
-    auto is_login = _params.get_value_as_bool("is_login");
+    std::shared_ptr<base_im> im = std::make_shared<wim::im>(im_login_id(""), voip_manager_);
+    ims_.clear();
+    im->login(_seq, info);
+    ims_.push_back(im);
+}
 
+void core::im_container::on_login_by_password_for_attach_uin(int64_t _seq, coll_helper& _params)
+{
+    login_info info;
+    info.set_login_type(login_type::lt_login_password);
+    info.set_login(_params.get_value_as_string("login"));
+    info.set_password(_params.get_value_as_string("password"));
+    info.set_save_auth_data(_params.get_value_as_bool("save_auth_data"));
 
-    if (is_login)
-    {
-        std::shared_ptr<base_im> im = std::make_shared<wim::im>(im_login_id(""), voip_manager_);
-        ims_.clear();
-        im->login(_seq, info);
-        ims_.push_back(im);
-    }
-    else
-    {
-        auto from_im = get_im(_params);
+    auto from_im = get_im(_params);
+    if (from_im)
         from_im->start_attach_uin(_seq, info, from_im->make_wim_params());
-    }
 }
 
 void core::im_container::on_login_get_sms_code(int64_t _seq, coll_helper& _params)
@@ -746,6 +818,15 @@ void core::im_container::on_get_contact_avatar(int64_t _seq, coll_helper& _param
     im->get_contact_avatar(_seq, _params.get_value_as_string("contact"), _params.get_value_as_int("size"));
 }
 
+void core::im_container::on_show_contact_avatar(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->show_contact_avatar(_seq, _params.get_value_as_string("contact"), _params.get_value_as_int("size"));
+}
+
 void core::im_container::on_delete_archive_messages(int64_t _seq, coll_helper& _params)
 {
     assert(_seq > 0);
@@ -910,17 +991,18 @@ void im_container::on_download_file(int64_t _seq, coll_helper& _params)
         _params.get<file_sharing_function>("function"));
 }
 
-void im_container::on_download_preview(int64_t _seq, coll_helper& _params)
+void im_container::on_download_image(int64_t _seq, coll_helper& _params)
 {
     auto im = get_im(_params);
     if (!im)
         return;
 
-    im->download_preview(
+    im->download_image(
         _seq,
         _params.get<std::string>("uri"),
         _params.get<std::string>("destination", ""),
-        _params.get<bool>("sign_url", false));
+        _params.get<bool>("is_preview"),
+        _params.get<int32_t>("preview_height"));
 }
 
 void im_container::on_abort_file_downloading(int64_t _seq, coll_helper& _params)
@@ -995,6 +1077,28 @@ void im_container::on_get_chat_info(int64_t _seq, coll_helper& _params)
     }
 
     im->get_chat_info(_seq, aimid, stamp, _params.get<int32_t>("limit"));
+}
+
+void im_container::on_get_chat_blocked(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->get_chat_blocked(_seq, _params.get<std::string>("aimid"));
+}
+
+void im_container::on_get_chat_home(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+
+    std::string tag;
+    if (_params.is_value_exist("tag"))
+        tag = _params.get<std::string>("tag");
+    im->get_chat_home(_seq, tag);
 }
 
 void im_container::on_search_contacts(int64_t _seq, coll_helper& _params)
@@ -1170,6 +1274,17 @@ void core::im_container::on_join_livechat(int64_t _seq, coll_helper& _params)
     im->join_live_chat(_seq, stamp);
 }
 
+void core::im_container::on_set_locale(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    std::string locale = _params.get_value_as_string("locale");
+
+    g_core->set_locale(locale);
+}
+
 void core::im_container::on_set_user_proxy(int64_t _seq, coll_helper& _params)
 {
     proxy_settings user_proxy;
@@ -1186,4 +1301,77 @@ void core::im_container::on_set_user_proxy(int64_t _seq, coll_helper& _params)
     user_proxy.need_auth_ = _params.get_value_as_bool("settings_proxy_need_auth");
 
     g_core->set_user_proxy_settings(user_proxy);
+}
+
+void core::im_container::on_set_avatar(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    tools::binary_stream bs_data;
+
+    core::istream* stream = _params.get_value_as_stream("avatar");
+    uint32_t size = stream->size();
+    if (stream && size)
+    {
+        bs_data.write((const char*) stream->read(size), size);
+        stream->reset();
+    }
+
+    im->set_avatar(_seq, bs_data, _params.is_value_exist("aimid") ? _params.get_value_as_string("aimid") : std::string());
+}
+
+void core::im_container::on_mod_chat_name(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->mod_chat_name(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_string("name"));
+}
+
+void core::im_container::on_mod_chat_about(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->mod_chat_about(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_string("about"));
+}
+
+void core::im_container::on_mod_chat_public(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->mod_chat_public(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_bool("public"));
+}
+
+void core::im_container::on_block_chat_member(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->block_chat_member(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_string("contact"), _params.get_value_as_bool("block"));
+}
+
+void core::im_container::on_set_chat_member_role(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->set_chat_member_role(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_string("contact"), _params.get_value_as_string("role"));
+}
+
+void core::im_container::on_close_promo(int64_t _seq, coll_helper& _params)
+{
+    for (const auto& im : ims_)
+    {
+        im->set_show_promo_in_auth(false);
+        im->save_auth_to_export([im](){ im->start_after_close_promo(); });
+    }
 }

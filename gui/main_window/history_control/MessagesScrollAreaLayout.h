@@ -64,6 +64,8 @@ namespace Ui
 
         int32_t getViewportHeight() const;
 
+        QList<Logic::MessageKey> getWidgetsOverBottomOffset(const int32_t offset) const;
+
         void insertWidgets(const WidgetsList& _widgets);
 
         void removeWidget(QWidget *widget);
@@ -147,6 +149,10 @@ namespace Ui
         void updateItemsGeometry();
 
         void moveViewportToBottom();
+
+        int getWidthForItem() const;
+
+        int getXForItem() const;
     };
 
 }

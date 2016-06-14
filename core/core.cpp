@@ -167,7 +167,6 @@ void core::core_dispatcher::start()
     updater_.reset(new update::updater());
 
 #ifdef _WIN32
-    core::dump::set_product_data_path(core::utils::get_product_data_path());
     core::dump::set_os_version(core::tools::system::get_os_version_string());
     report_sender_.reset(new dump::report_sender(g_core->get_login_after_start()));
     report_sender_->send_report();
@@ -215,10 +214,10 @@ void core::core_dispatcher::post_message_to_gui(const char * _message, int64_t _
     bs.write<std::string>("CORE->GUI: message=");
     bs.write<std::string>(_message);
     bs.write<std::string>("\r\n");
-    if (_message_data)
-    {
-        bs.write<std::string>(_message_data->log());
-    }
+//     if (_message_data)
+//     {
+//         bs.write<std::string>(_message_data->log());
+//     }
     get_network_log().write_data(bs);
 
     //__LOG(core::log::info("core", boost::format("post message to gui, message=%1%\nparameters: %2%") % _message % (_message_data ? _message_data->log() : ""));)
@@ -402,6 +401,17 @@ void core::core_dispatcher::on_message_set_default_theme_id(int64_t _seq, coll_h
     theme_settings_->save_if_needed();
 }
 
+void core::core_dispatcher::save_themes_etag(const std::string &etag)
+{
+    settings_->set_value(core_settings_values::themes_settings_etag, etag);
+    settings_->save();
+}
+
+std::string core::core_dispatcher::load_themes_etag()
+{
+    return settings_->get_value(core_settings_values::themes_settings_etag, std::string(""));
+}
+
 void core::core_dispatcher::on_message_log(coll_helper _params) const
 {
     const auto type = _params.get_value_as_string("type");
@@ -477,10 +487,10 @@ void core::core_dispatcher::receive_message_from_gui(const char * _message, int6
             bs.write<std::string>("GUI->CORE: message=");
             bs.write<std::string>(message_string);
             bs.write<std::string>("\r\n");
-            if (_message_data)
+        /*    if (_message_data)
             {
                 bs.write<std::string>(_message_data->log());
-            }
+            }*/
             get_network_log().write_data(bs);
         }
         
@@ -570,7 +580,12 @@ unsigned core::core_dispatcher::end_search()
 
 void core::core_dispatcher::update_login(im_login_id& _login)
 {
-    im_container_->update_login(_login);
+    // if created new login
+    if (!im_container_->update_login(_login))
+    {
+        g_core->post_message_to_gui("login_new_user", 0, nullptr);
+    }
+
     start_session_stats();
 }
 
@@ -625,9 +640,20 @@ network_log& core::core_dispatcher::get_network_log()
     return (*network_log_);
 }
 
-proxy_settings core_dispatcher::get_proxy_settings()
+proxy_settings core_dispatcher::get_auto_proxy_settings()
 {
     return proxy_settings_manager_->get();
+}
+
+proxy_settings core_dispatcher::get_proxy_settings()
+{
+    auto user_proxy_settings = get_user_proxy_settings();
+    auto is_user_proxy = user_proxy_settings.proxy_type_ != (int)core::proxy_types::auto_proxy;
+
+    auto current_proxy = g_core->get_auto_proxy_settings();
+    if (is_user_proxy)
+        current_proxy = user_proxy_settings;
+    return current_proxy;
 }
 
 proxy_settings core_dispatcher::get_registry_proxy_settings()
@@ -653,6 +679,16 @@ void core_dispatcher::set_user_proxy_settings(const proxy_settings& _user_proxy_
     g_core->post_user_proxy_to_gui();
 }
 
+void core_dispatcher::set_locale(const std::string& _locale)
+{
+    settings_->set_locale(_locale);
+}
+
+std::string core_dispatcher::get_locale() const
+{
+    return settings_->get_locale();
+}
+
 void core_dispatcher::post_user_proxy_to_gui()
 {
     auto user_proxy = g_core->get_user_proxy_settings();
@@ -664,4 +700,14 @@ void core_dispatcher::post_user_proxy_to_gui()
 std::thread::id core_dispatcher::get_core_thread_id() const
 {
    return core_thread_->get_core_thread_id();
+}
+
+void core_dispatcher::set_voip_mute_fix_flag(bool bValue)
+{
+	settings_->set_voip_mute_fix_flag(bValue);
+}
+
+bool core_dispatcher::get_voip_mute_fix_flag()
+{
+	return settings_->get_voip_mute_fix_flag();
 }

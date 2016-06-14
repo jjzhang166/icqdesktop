@@ -35,7 +35,7 @@ namespace Utils
         PlaceholdersType_HideFindFriend,
 
         PlaceholdersType_IntroduceYourself,
-        PlaceholdersType_HideIntroduceYourself,
+        // PlaceholdersType_HideIntroduceYourself,
         PlaceholdersType_SetExistanseOnIntroduceYourself,
         PlaceholdersType_SetExistanseOffIntroduceYourself,
 
@@ -85,9 +85,11 @@ Q_SIGNALS:
 
         void forceRefreshList(QAbstractItemModel *, bool);
         void updateFocus();
+        void liveChatsShow();
         
         void schemeUrlClicked(QString);
-        
+        void setAvatar(int error);
+
     public:
         static InterConnector& instance();
         ~InterConnector();
@@ -97,8 +99,24 @@ Q_SIGNALS:
         Ui::HistoryControlPage* getHistoryPage(const QString& aimId) const;
         Ui::ContactDialog* getContactDialog() const;
 
+        void insertTopWidget(const QString& aimId, QWidget* widget);
+        void removeTopWidget(const QString& aimId);
+
+        void showSidebar(const QString& aimId, int page);
+        void setSidebarVisible(bool show);
+        bool isSidebarVisible() const;
+
         void setDragOverlay(bool enable);
         bool isDragOverlay() const;
+
+        void setUrlHandler();
+        void unsetUrlHandler();
+
+    public Q_SLOTS:
+        void open_url(const QUrl& url);
+
+    private:
+        bool parseLocalUrl(const QString& _urlString);
 
     private:
         InterConnector();

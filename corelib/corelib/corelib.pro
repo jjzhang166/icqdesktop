@@ -146,7 +146,16 @@ SOURCES += \
     ../../core/connections/wim/packets/join_chat_alpha.cpp \
     ../../core/connections/wim/packets/update_profile.cpp \
     ../../core/connections/wim/packets/set_buddy_attribute.cpp \
-    ../../core/archive/history_patch.cpp
+    ../../core/archive/history_patch.cpp \
+    ../../core/tools/file_sharing.cpp \
+    ../../core/connections/wim/packets/block_chat_member.cpp \
+    ../../core/connections/wim/packets/get_chat_blocked.cpp \
+    ../../core/connections/wim/packets/get_chat_home.cpp \
+    ../../core/connections/wim/packets/mod_chat_alpha.cpp \
+    ../../core/connections/wim/packets/mod_chat_member_alpha.cpp \
+    ../../core/connections/wim/packets/set_avatar.cpp \
+    ../../core/connections/wim/packets/set_timezone.cpp \
+    ../../core/connections/wim/loader/preview_proxy.cpp
 
 HEADERS += \
     ../collection.h \
@@ -312,7 +321,16 @@ HEADERS += \
     ../../core/connections/wim/packets/join_chat_alpha.h \
     ../../core/connections/wim/packets/update_profile.h \
     ../../core/connections/wim/packets/set_buddy_attribute.h \
-    ../../core/archive/history_patch.h
+    ../../core/archive/history_patch.h \
+    ../../core/tools/file_sharing.h \
+    ../../core/connections/wim/packets/block_chat_member.h \
+    ../../core/connections/wim/packets/get_chat_blocked.h \
+    ../../core/connections/wim/packets/get_chat_home.h \
+    ../../core/connections/wim/packets/mod_chat_alpha.h \
+    ../../core/connections/wim/packets/mod_chat_member_alpha.h \
+    ../../core/connections/wim/packets/set_avatar.h \
+    ../../core/connections/wim/packets/set_timezone.h \
+    ../../core/connections/wim/loader/preview_proxy.h
 
 DEFINES += STRIP_VOIP
 

@@ -18,7 +18,7 @@
 static MAKFC_CString gigabaseByteArrayToString(const gigabase::dbArray<gigabase::byte>& param)
 {
     wchar_t tmp[1024];
-    ::memset(tmp, 0, sizeof(tmp));
+    ::memset(tmp, 0, sizeof(tmp));  
     ::memcpy(tmp, param.get(), param.length());
     MAKFC_CString result(tmp);
     return result;
@@ -72,10 +72,10 @@ bool LoadExported(
 
     time_offset = 0;
     gigabase::dbArray<gigabase::byte> time_data;
-    if (_db.ReadRawData( (LPCTSTR) sKey, L"", ICQ_HTTP_TIME_OFFSET, time_data ) )
+    if (_db.ReadRawData((LPCTSTR) sKey, L"", ICQ_HTTP_TIME_OFFSET, time_data))
     {
-        if ( time_data.length() != sizeof( __int64 ) )
-            memcpy( &time_offset, time_data.get(), sizeof( __int64 ) );
+        if (time_data.length() == sizeof(__int64))
+            memcpy(&time_offset, time_data.get(), sizeof(__int64));
     }
 
     return true;
@@ -164,7 +164,7 @@ MAKFC_CString GenerateKeyName(const MAKFC_CLoginData::TLoginType loginType, cons
 {
     MAKFC_CString sResult;
 
-    sResult = GenerateKeyName( MAKFC_CLoginData::GetLoginTypeName(loginType) + L"_" + sLogin );
+    sResult = GenerateKeyName( MAKFC_CLoginData::GetLoginTypeName(loginType) + L"_" + sLogin/*.Trim("+")*/ );
 
     return sResult;
 }
@@ -181,29 +181,17 @@ std::shared_ptr<wim_auth_parameters> load_auth_params_from_db(IN MRABase& _db, c
 
     auto auth_params = std::make_shared<wim_auth_parameters>();
 
-    auth_params->m_dev_id = WIM_DEV_ID;
-
-    time_t currentTime = ::time(0);
-    const time_t nDefaultExpiresTime = currentTime + 24 * 60 * 60;
-    auth_params->m_exipired_in = nDefaultExpiresTime;
-
-    bool readSessionOk = LoadExported( 
-        _db,
-        _database_key, 
-        auth_params->m_dev_id, 
-        auth_params->m_a_token, 
-        auth_params->m_session_key, 
-        auth_params->m_exipired_in,
-        auth_params->m_time_offset );
-
-    if ( !readSessionOk )
+    try
     {
-        MAKFC_CString key_old = _database_key;
-        key_old.Replace( L"phone_", L"" );
+        auth_params->m_dev_id = WIM_DEV_ID;
 
-        readSessionOk = LoadExported(
+        time_t currentTime = ::time(0);
+        const time_t nDefaultExpiresTime = currentTime + 24 * 60 * 60;
+        auth_params->m_exipired_in = nDefaultExpiresTime;
+
+        bool readSessionOk = LoadExported( 
             _db,
-            key_old, 
+            _database_key, 
             auth_params->m_dev_id, 
             auth_params->m_a_token, 
             auth_params->m_session_key, 
@@ -212,19 +200,45 @@ std::shared_ptr<wim_auth_parameters> load_auth_params_from_db(IN MRABase& _db, c
 
         if ( !readSessionOk )
         {
-            readSessionOk = LoadExported( 
+            MAKFC_CString key_old = _database_key;
+            key_old.Replace( L"phone_", L"" );
+
+            readSessionOk = LoadExported(
                 _db,
-                uin, 
+                key_old, 
                 auth_params->m_dev_id, 
                 auth_params->m_a_token, 
                 auth_params->m_session_key, 
                 auth_params->m_exipired_in,
                 auth_params->m_time_offset );
+
+            if ( !readSessionOk )
+            {
+                readSessionOk = LoadExported( 
+                    _db,
+                    uin, 
+                    auth_params->m_dev_id, 
+                    auth_params->m_a_token, 
+                    auth_params->m_session_key, 
+                    auth_params->m_exipired_in,
+                    auth_params->m_time_offset );
+            }
+        }
+
+        if (!readSessionOk)
+        {
+            auth_params.reset();
+        }
+        else
+        {
+            auth_params->m_database_key = _database_key;
         }
     }
-
-    if (!readSessionOk)
+    catch (...)
+    {
         auth_params.reset();
+    }
+
 
     return auth_params;
 }
@@ -239,6 +253,7 @@ std::shared_ptr<wim_auth_parameters> load_auth_params_from_db(IN MRABase& _db, c
         database_key.Replace(L"+", L"");
 
     auto result = load_auth_params_from_db(_db, _ld, database_key);
+    
     if (!result && _ld.GetLoginType() == MAKFC_CLoginData::TLoginType::LT_Phone)
         result = load_auth_params_from_db(_db, _ld, database_key2);
     

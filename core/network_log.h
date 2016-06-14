@@ -33,7 +33,7 @@ namespace core
         
         std::shared_ptr<log_file_context> file_context_;
         
-        std::pair<std::wstring, std::wstring> file_names_history_; // previous and current
+        std::stack<std::wstring> file_names_history_;
 
     public:
 
@@ -42,7 +42,7 @@ namespace core
 
         void write_data(const tools::binary_stream& _data);
         
-        const std::pair<std::wstring, std::wstring> &file_names_history() const { return file_names_history_; }
+        std::stack<std::wstring> file_names_history_copy() const { return file_names_history_; }
     };
     
 }

@@ -56,7 +56,7 @@ bool archive_index::serialize_from(int64_t _from, int64_t _count, headers_list& 
     }
     else
     {
-        iter_header = headers_index_.find(_from);
+        iter_header = headers_index_.lower_bound(_from);
         if (iter_header == headers_index_.end())
         {
             assert(!"invalid index number");
@@ -287,18 +287,50 @@ void archive_index::delete_up_to(const int64_t _to)
 {
     assert(_to > -1);
 
-    const auto iter_to = headers_index_.upper_bound(_to);
+    auto iter = headers_index_.lower_bound(_to);
 
-    headers_index_.erase(headers_index_.begin(), iter_to);
-
-    if (iter_to != headers_index_.end())
+    const auto delete_all = (iter == headers_index_.end());
+    if (delete_all)
     {
-        auto &header = iter_to->second;
+        headers_index_.clear();
 
-        header.set_prev_msgid(-1);
+        save_all();
+
+        return;
     }
 
-    save_all();
+    auto &header = iter->second;
+
+    const auto is_del_up_to_found = (header.get_id() == _to);
+
+    if (is_del_up_to_found)
+    {
+        auto iter_after_deleted = iter;
+        ++iter_after_deleted;
+
+        headers_index_.erase(headers_index_.begin(), iter_after_deleted);
+
+        if (iter_after_deleted != headers_index_.end())
+        {
+            auto &header_after_deleted = iter_after_deleted->second;
+            if (header_after_deleted.get_prev_msgid() == _to)
+            {
+                header_after_deleted.set_prev_msgid(-1);
+            }
+        }
+
+        save_all();
+    }
+    else
+    {
+        if (headers_index_.begin() != iter)
+        {
+            headers_index_.erase(headers_index_.begin(), iter);
+
+            save_all();
+        }
+    }
+
 }
 
 int64_t archive_index::get_last_msgid()

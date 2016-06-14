@@ -46,7 +46,8 @@ namespace voip_manager {
         kNotificationType_FrameSizeChanged,
         kNotificationType_VoipResetComplete,
         kNotificationType_VoipWindowRemoveComplete,
-        kNotificationType_VoipWindowAddComplete
+        kNotificationType_VoipWindowAddComplete,
+        kNotificationType_CipherStateChanged,
     };
 
     struct VoipProxySettings {
@@ -75,6 +76,18 @@ namespace voip_manager {
     struct DeviceMute {
         voip2::DeviceType type;
         bool              mute;
+    };
+
+    struct CipherState
+    {
+        enum State
+        {
+            kCipherStateUnknown,
+            kCipherStateEnabled,
+            kCipherStateFailed,
+            kCipherStateNotSupportedByPeer
+        } state;
+        std::string secureCode;
     };
 
     struct DeviceVol {
@@ -150,7 +163,7 @@ namespace voip_manager {
     };
 
     enum { kAvatarRequestId          = 0xb00b1e               };
-    enum { kAvatarDefaultSize        = 160                    };
+    enum { kAvatarDefaultSize        = 140                    };
 	enum { kAvatarRequestSize        = 650                    };
     enum { kNickTextW                = kAvatarDefaultSize * 2 };
     enum { kNickTextH                = 25                     };
@@ -188,6 +201,7 @@ namespace voip_manager {
     struct WindowParams {
         void* hwnd;
         WindowBitmap watermark;
+        WindowBitmap cameraStatus;
         bool  isPrimary;
         bool  isSystem;
         float scale;

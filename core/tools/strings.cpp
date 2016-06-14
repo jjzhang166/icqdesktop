@@ -154,6 +154,48 @@ namespace core
             return from_utf16(short_path_for(_wstr));
 #endif //__linux__
         }
+        
+        std::string to_lower_case(const std::string &s)
+        {
+            std::string r;
+            r.resize(s.length());
+            std::transform(s.begin(), s.end(), r.begin(), ::tolower);
+            return r;
+        }
+        
+        std::string to_upper_case(const std::string &s)
+        {
+            std::string r;
+            r.resize(s.length());
+            std::transform(s.begin(), s.end(), r.begin(), ::toupper);
+            return r;
+        }
+        
+        std::vector<std::string> to_array(const std::string &text, const std::string &separator)
+        {
+            std::vector<std::string> r;
+            if (!separator.empty() && text.length() > separator.length())
+            {
+                size_t pos_begin = 0;
+                while (true)
+                {
+                    auto pos_end = text.find(separator, pos_begin);
+                    if (pos_end < text.length())
+                    {
+                        if ((pos_end - pos_begin) > 0)
+                            r.push_back(std::string(text.begin() + pos_begin, text.begin() + pos_end));
+                    }
+                    else
+                    {
+                        if ((text.length() - pos_begin) > 0)
+                            r.push_back(std::string(text.begin() + pos_begin, text.end()));
+                        break;
+                    }
+                    pos_begin = (pos_end + separator.length());
+                }
+            }
+            return r;
+        }
 
         std::string adler32(const std::string& _input)
         {
@@ -162,7 +204,7 @@ namespace core
             int e = 0;
             int c = 0;
             int j = 0;
-            for (j = _input.size(); 0 <= j ? e < j : e > j; c = 0 <= j ? ++e : --e)
+            for (j = (int)_input.size(); 0 <= j ? e < j : e > j; c = 0 <= j ? ++e : --e)
                 c = _input[c], d += c, b += d;
             d %= 65521;
             b %= 65521;

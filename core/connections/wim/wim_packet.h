@@ -154,6 +154,7 @@ namespace core
             std::string uniq_device_id_;
             std::string aimid_;
             proxy_settings proxy_;
+            bool full_log_;
 
             wim_packet_params(
                 std::function<bool()> _stop_handler,
@@ -163,8 +164,9 @@ namespace core
                 const std::string& _aimsid,
                 const std::string& _uniq_device_id,
                 const std::string& _aimid,
-                time_t _time_offset,
-                const proxy_settings& _proxy)
+                const time_t _time_offset,
+                const proxy_settings& _proxy,
+                const bool _full_log)
                 :
             stop_handler_(_stop_handler),
                 a_token_(_a_token),
@@ -174,7 +176,8 @@ namespace core
                 time_offset_(_time_offset),
                 uniq_device_id_(_uniq_device_id),
                 aimid_(_aimid),
-                proxy_(_proxy)
+                proxy_(_proxy),
+                full_log_(_full_log)
             {
             }
 
@@ -188,12 +191,14 @@ namespace core
         class wim_packet : public async_task
         {
             std::string response_str_;
+            std::string header_str_;
 
         protected:
 
             void load_response_str(const char* buf, unsigned size);
-            const std::string& response_str();
-
+            const std::string& response_str() const;
+            const std::string& header_str() const;
+            
             uint32_t status_code_;
             uint32_t status_detail_code_;
             std::string status_text_;
@@ -205,17 +210,13 @@ namespace core
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> request);
             virtual int32_t execute_request(std::shared_ptr<core::http_request_simple> request);
             virtual int32_t parse_response(std::shared_ptr<core::tools::binary_stream> response);
-            virtual int32_t parse_response_data(const rapidjson::Value& _node_results);
+            virtual int32_t parse_response_data(const rapidjson::Value& _data);
+            virtual void parse_response_data_on_error(const rapidjson::Value& _data);
 
             virtual int32_t on_empty_data();
             virtual int32_t on_response_error_code();
 
             virtual int32_t on_http_client_error();
-
-            /*
-            static std::string detect_digest(const std::string& hashed_data, const std::string& session_key);
-            static std::string create_query_from_map(const Str2StrMap& params);
-            */
 
             const std::string get_rand_float() const;
             const wim_packet_params& get_params() const;
@@ -226,9 +227,10 @@ namespace core
             static std::string escape_symbols(const std::string& data);
             static std::string escape_symbols_data(const char* _data, uint32_t _len);
             static std::string get_url_sign(const std::string& host, const Str2StrMap& params, const wim_packet_params& _wim_params, bool post_method, bool make_escape_symbols = true);
-            static std::string params_map_2_string(const Str2StrMap& _params);
+            static std::string format_get_params(const Str2StrMap& _params);
             static std::string detect_digest(const std::string& hashed_data, const std::string& session_key);
             static std::string create_query_from_map(const Str2StrMap& params);
+            static void replace_log_messages(tools::binary_stream& _bs);
 
             virtual std::shared_ptr<core::tools::binary_stream> getRawData() { return NULL; }
             uint32_t get_status_code() const { return status_code_; }

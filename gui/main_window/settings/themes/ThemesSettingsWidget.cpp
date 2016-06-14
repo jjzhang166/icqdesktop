@@ -8,9 +8,19 @@
 
 namespace Ui
 {
+    namespace { bool initialized_ = false; }
+
+    ThemesSettingsWidget *ThemesSettingsWidget::initWhenNeeded(ThemesSettingsWidget *w)
+    {
+        if (w)
+            w->init(w);
+        return w;
+    }
+
     ThemesSettingsWidget::ThemesSettingsWidget(QWidget* /*_parent*/)
     {
-        init(this);
+        initialized_ = false;
+        init(this); // comment this line when lazy initialization is needed
     }
     
     void ThemesSettingsWidget::setBackButton(bool _do_set)
@@ -25,8 +35,18 @@ namespace Ui
         themes_widget_->set_target_contact(_aimId);
     }
     
+    void ThemesSettingsWidget::showEvent(QShowEvent *e)
+    {
+        init(this);
+        QWidget::showEvent(e);
+    }
+    
     void ThemesSettingsWidget::init(QWidget *parent)
     {
+        if (initialized_)
+            return;
+        initialized_ = true;
+        
         setStyleSheet("border: none; background-color: white;");
         
         main_layout_ = new QVBoxLayout(parent);
@@ -36,9 +56,9 @@ namespace Ui
         
         themes_widget_ = new ThemesWidget(this, Utils::scale_value(8));
         
-        auto themesCaption = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(24));
-        themesCaption->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpapers"));
-        
+        auto themesCaption = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(48));
+        themesCaption->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpaper"));
+        themesCaption->setFixedHeight(Utils::scale_value(80));
         
         back_button_ = new BackButton(this);
         back_button_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -47,7 +67,7 @@ namespace Ui
         back_button_->setCursor(Qt::PointingHandCursor);
         
         theme_caption_layout_ = new QHBoxLayout(this);
-        theme_caption_layout_->setContentsMargins(Utils::scale_value(24), 0, 0, 0);
+        theme_caption_layout_->setContentsMargins(Utils::scale_value(24), Utils::scale_value(0), 0, 0);
         theme_caption_layout_->setSpacing(0);
         
         caption_without_back_button_spacer_ = new QWidget(this);
@@ -73,7 +93,7 @@ namespace Ui
         horizontal_layout->addWidget(themes_widget_);
 
         themes_widget_->addCaptionLayout(theme_caption_layout_);
-        
+
         main_layout_->addLayout(horizontal_layout);
         
         connect(back_button_, SIGNAL(clicked()), this, SLOT(backPressed()));

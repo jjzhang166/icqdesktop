@@ -8,7 +8,7 @@ namespace Ui
     {
         Q_OBJECT
     public:
-        IntroduceYourself(QWidget* parent);
+        IntroduceYourself(const QString& _aimid, const QString& _display_name, QWidget* parent);
         ~IntroduceYourself();
 
         private Q_SLOTS:
@@ -16,6 +16,7 @@ namespace Ui
             void Skipped();
             void UpdateProfile();
             void RecvResponse(int _error);
+            void avatarChanged();
 
     private:
         LineEditEx*     name_edit_;

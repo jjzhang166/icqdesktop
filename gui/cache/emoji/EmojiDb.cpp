@@ -70,13 +70,11 @@ namespace Emoji
 		assert(codepoint > 0);
 		assert(!EmojiIndexByCodepoint_.empty());
 
-		static const EmojiRecordSptr empty;
-
 		const auto complexCodepoint = MakeComplexCodepoint(codepoint, extendedCodepoint);
 		const auto iter = EmojiIndexByCodepoint_.find(complexCodepoint);
 		if (iter == EmojiIndexByCodepoint_.end())
 		{
-			return empty;
+			return EmptyEmoji;
 		}
 
 		return iter->second;

@@ -55,7 +55,7 @@ namespace core
             void set_unread_count(uint32_t _unread_count) { unread_count_ = _unread_count; }
             uint32_t get_unread_count() const { return unread_count_; }
 
-            void set_last_msgid(int64_t _last_msgid) { last_msgid_ = _last_msgid; }
+            void set_last_msgid(const int64_t _value);
             int64_t get_last_msgid() const { return last_msgid_; }
             bool has_last_msgid() const { return (last_msgid_ > 0); }
             void clear_last_msgid() { last_msgid_ = -1; }
@@ -133,7 +133,7 @@ namespace core
             archive_state(const std::wstring& _file_name, const std::string& _contact_id);
             ~archive_state();
 
-            void merge_state(const dlg_state& _state, Out dlg_state_changes& _changes);
+            void merge_state(const dlg_state& _new_state, Out dlg_state_changes& _changes);
 
             bool save();
 

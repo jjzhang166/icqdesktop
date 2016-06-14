@@ -23,14 +23,14 @@
 namespace Ui
 {
     const double heightPartOfMainWindowForShortView = 0.4;
-    const double heightPartOfMainWindowForFullView = 0.8;
+    const double heightPartOfMainWindowForFullView = 0.6;
 
     void SelectContactsWidget::itemClicked(const QString& _current)
     {
         if (Logic::is_delete_members_regim(regim_))
         {
             auto global_cursor_pos = main_dialog_->mapFromGlobal(QCursor::pos());
-            auto minXofDeleteImage = ::ContactList::GetXOfRemoveImg(false, true);
+            auto minXofDeleteImage = ::ContactList::GetXOfRemoveImg(false, true, -1);
             if (global_cursor_pos.x() > minXofDeleteImage)
             {
                 deleteMemberDialog(chatMembersModel_, _current, regim_, this);
@@ -85,7 +85,7 @@ namespace Ui
         global_layout->setSpacing(0);
         main_widget_->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
 
-        searchWidget_ = new SearchWidget(16, true);
+        searchWidget_ = new SearchWidget(true, 0, Utils::scale_value(8));
         Testing::setAccessibleName(searchWidget_, "CreateGroupChat");
         global_layout->addWidget(searchWidget_);
 
@@ -148,7 +148,7 @@ namespace Ui
         }
 
         if (is_show_button)
-            main_dialog_->addAcceptButton(_button_text, 16);
+            main_dialog_->addAcceptButton(_button_text, Utils::scale_value(16));
 
         Testing::setAccessibleName(main_dialog_.get(), "SelectContactsWidget");
 
@@ -195,7 +195,7 @@ namespace Ui
         contactList_->setSearchMode(true);
     }
 
-    QRect* SelectContactsWidget::CalcSizes() const
+    QRect SelectContactsWidget::CalcSizes() const
     {
         int new_width = -1;
         if (Logic::is_delete_members_regim(regim_))
@@ -236,7 +236,7 @@ namespace Ui
         }
         new_height = extra_height + cl_height;
         
-        return new QRect(0, 0, new_width, new_height);
+        return QRect(0, 0, new_width, new_height);
     }
 
     bool SelectContactsWidget::show(int _x, int _y)
@@ -256,8 +256,8 @@ namespace Ui
         main_dialog_->setButtonActive(false);
 
         auto new_rect = CalcSizes();
-        main_widget_->setFixedWidth(new_rect->width());
-        main_widget_->setFixedHeight(new_rect->height());
+        main_widget_->setFixedWidth(new_rect.width());
+        main_widget_->setFixedHeight(new_rect.height());
 
         auto result = main_dialog_->showInPosition(x_, y_);
         if (result == QDialog::Accepted)
@@ -300,8 +300,8 @@ namespace Ui
     void SelectContactsWidget::UpdateView()
     {
         auto new_rect = CalcSizes();
-        main_widget_->setFixedWidth(new_rect->width());
-        main_widget_->setFixedHeight(new_rect->height());
+        main_widget_->setFixedWidth(new_rect.width());
+        main_widget_->setFixedHeight(new_rect.height());
     }
 
     void SelectContactsWidget::UpdateViewForIgnoreList(bool _is_empty_ignore_list)

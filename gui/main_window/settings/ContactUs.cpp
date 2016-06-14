@@ -42,7 +42,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(scroll_area);
 
-    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("contactus_page", "Contact us"));
+    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("contactus_page", "Contact Us"));
     {
         static quint64 filesSizeLimiter = 0;
         TextEditEx *suggestioner = nullptr;
@@ -77,7 +77,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
             suggestioner->setFixedWidth(Utils::scale_value(440));
             suggestioner->setMinimumHeight(Utils::scale_value(88));
             suggestioner->setMaximumHeight(Utils::scale_value(252));
-            suggestioner->setPlaceholderText(QT_TRANSLATE_NOOP("contactus_page","Your comments or suggestions"));
+            suggestioner->setPlaceholderText(QT_TRANSLATE_NOOP("contactus_page","Your comments or suggestions..."));
             suggestioner->setAutoFillBackground(false);
             suggestioner->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             suggestioner->setTextInteractionFlags(Qt::TextEditable | Qt::TextEditorInteraction);
@@ -224,7 +224,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                         QFileDialog d(parentForDialog);
                         d.setDirectory(dd);
                         d.setFileMode(QFileDialog::ExistingFiles);
-                        d.setNameFilter(QT_TRANSLATE_NOOP("contactus_page", "Images (*.jpg *.jpeg *.png *.bmp *.gif)"));
+                        d.setNameFilter(QT_TRANSLATE_NOOP("contactus_page", "Images (*.jpg *.jpeg *.png *.bmp)"));
                         QStringList fileNames;
                         if (d.exec())
                         {
@@ -291,7 +291,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
 
                     auto w = new TextEmojiWidget(sc, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(16));
                     Utils::grabTouchWidget(w);
-                    w->setText(QT_TRANSLATE_NOOP("contactus_page", "Add screenshot"));
+                    w->setText(QT_TRANSLATE_NOOP("contactus_page", "Attach screenshot"));
                     GetDisconnector()->add("attach/text", scroll_area->connect(w, &TextEmojiWidget::clicked, attachFilesRoutine));
                     scl->addWidget(w);
                 }
@@ -357,7 +357,6 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 sendButton->setMinimumWidth(Utils::scale_value(100));
                 sendButton->setFixedHeight(Utils::scale_value(40));
                 Testing::setAccessibleName(sendButton, "send_feedback");
-
                 {
                     Utils::ApplyStyle(sendButton, (suggestioner->getPlainText().length() && emailer->text().length()) ? main_button_style : disable_button_style);
                 }

@@ -18,7 +18,7 @@ namespace core
 
         public:
 
-            bool is_stoped();
+            bool must_stop();
 
             updater();
             virtual ~updater();

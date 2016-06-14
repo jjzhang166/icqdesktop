@@ -75,21 +75,16 @@ SOURCES += \
     main_window/history_control/ChatEventInfo.cpp \
     main_window/history_control/ChatEventItem.cpp \
     main_window/history_control/FileSharingInfo.cpp \
-    main_window/history_control/FileSharingWidget.cpp \
     main_window/history_control/FileSizeFormatter.cpp \
     main_window/history_control/HistoryControl.cpp \
     main_window/history_control/HistoryControlPage.cpp \
     main_window/history_control/HistoryControlPageItem.cpp \
-    main_window/history_control/ImagePreviewWidget.cpp \
     main_window/history_control/KnownFileTypes.cpp \
-    main_window/history_control/MessageContentWidget.cpp \
     main_window/history_control/MessageItem.cpp \
     main_window/history_control/MessagesModel.cpp \
     main_window/history_control/NewMessagesPlate.cpp \
-    main_window/history_control/PreviewContentWidget.cpp \
     main_window/history_control/ServiceMessageItem.cpp \
     main_window/history_control/StickerInfo.cpp \
-    main_window/history_control/StickerWidget.cpp \
     main_window/history_control/VoipEventInfo.cpp \
     main_window/history_control/VoipEventItem.cpp \
     main_window/history_control/auth_widget/AuthWidget.cpp \
@@ -130,7 +125,6 @@ SOURCES += \
     utils/uid.cpp \
     utils/utils.cpp \
     voip/AvatarContainerWidget.cpp \
-    voip/CallMenu.cpp \
     voip/CallPanelMain.cpp \
     voip/DetachedVideoWnd.cpp \
     voip/IncomingCallWindow.cpp \
@@ -150,11 +144,9 @@ SOURCES += \
     main_window/history_control/MessagesScrollArea.cpp \
     main_window/history_control/MessagesScrollAreaLayout.cpp \
     main_window/history_control/MessagesScrollbar.cpp \
-    main_window/history_control/PttAudioWidget.cpp \
     main_window/history_control/ResizePixmapTask.cpp \
     main_window/sounds/MpegLoader.cpp \
     utils/Text.cpp \
-    LoadPixmapFromDataTask.cpp \
     main_window/history_control/MessageStatusWidget.cpp \
     main_window/history_control/MessageStyle.cpp \
     theme_settings.cpp \
@@ -176,7 +168,30 @@ SOURCES += \
     main_window/livechats/LiveChatProfile.cpp \
     types/typing.cpp \
     controls/GeneralCreator.cpp \
-    main_window/GroupChatOperations.cpp
+    main_window/GroupChatOperations.cpp \
+    utils/LoadPixmapFromDataTask.cpp \
+    utils/LoadPixmapFromFile.cpp \
+    main_window/history_control/ContentWidgets/FileSharingWidget.cpp \
+    main_window/history_control/ContentWidgets/ImagePreviewWidget.cpp \
+    main_window/history_control/ContentWidgets/MessageContentWidget.cpp \
+    main_window/history_control/ContentWidgets/PreviewContentWidget.cpp \
+    main_window/history_control/ContentWidgets/PttAudioWidget.cpp \
+    main_window/history_control/ContentWidgets/StickerWidget.cpp \
+    controls/ImageCropper.cpp \
+    main_window/livechats/LiveChatItemDelegate.cpp \
+    main_window/livechats/LiveChatsHome.cpp \
+    main_window/livechats/LiveChatsModel.cpp \
+    main_window/sidebar/MenuPage.cpp \
+    main_window/sidebar/ProfilePage.cpp \
+    main_window/sidebar/Sidebar.cpp \
+    main_window/sidebar/SidebarUtils.cpp \
+    ../common.shared/TestingTools.cpp \
+    controls/AvatarPreview.cpp \
+    main_window/PromoPage.cpp \
+    main_window/history_control/MessageItemBase.cpp \
+    main_window/history_control/DeletedMessageItem.cpp \
+    voip/PushButton_t.cpp \
+    voip/secureCallWnd.cpp
 
 HEADERS  += \
     app_config.h \
@@ -238,16 +253,12 @@ HEADERS  += \
     main_window/history_control/HistoryControl.h \
     main_window/history_control/HistoryControlPage.h \
     main_window/history_control/HistoryControlPageItem.h \
-    main_window/history_control/ImagePreviewWidget.h \
     main_window/history_control/KnownFileTypes.h \
-    main_window/history_control/MessageContentWidget.h \
     main_window/history_control/MessageItem.h \
     main_window/history_control/MessagesModel.h \
     main_window/history_control/NewMessagesPlate.h \
-    main_window/history_control/PreviewContentWidget.h \
     main_window/history_control/ServiceMessageItem.h \
     main_window/history_control/StickerInfo.h \
-    main_window/history_control/StickerWidget.h \
     main_window/history_control/TextWidget.h \
     main_window/history_control/VoipEventInfo.h \
     main_window/history_control/VoipEventItem.h \
@@ -291,7 +302,6 @@ HEADERS  += \
     utils/uid.h \
     utils/utils.h \
     voip/AvatarContainerWidget.h \
-    voip/CallMenu.h \
     voip/CallPanelMain.h \
     voip/DetachedVideoWnd.h \
     voip/IncomingCallWindow.h \
@@ -314,7 +324,6 @@ HEADERS  += \
     main_window/history_control/MessagesScrollArea.h \
     main_window/history_control/MessagesScrollAreaLayout.h \
     main_window/history_control/MessagesScrollbar.h \
-    main_window/history_control/PttAudioWidget.h \
     main_window/history_control/ResizePixmapTask.h \
     main_window/sounds/MpegLoader.h \
     utils/Text.h \
@@ -336,11 +345,34 @@ HEADERS  += \
     main_window/livechats/LiveChatProfile.h \
     types/typing.h \
     controls/GeneralCreator.h \
-    main_window/GroupChatOperations.h
+    main_window/GroupChatOperations.h \
+    utils/LoadPixmapFromDataTask.h \
+    utils/LoadPixmapFromFileTask.h \
+    main_window/history_control/ContentWidgets/FileSharingWidget.h \
+    main_window/history_control/ContentWidgets/ImagePreviewWidget.h \
+    main_window/history_control/ContentWidgets/MessageContentWidget.h \
+    main_window/history_control/ContentWidgets/PreviewContentWidget.h \
+    main_window/history_control/ContentWidgets/PttAudioWidget.h \
+    main_window/history_control/ContentWidgets/StickerWidget.h \
+    controls/ImageCropper.h \
+    main_window/livechats/LiveChatItemDelegate.h \
+    main_window/livechats/LiveChatsHome.h \
+    main_window/livechats/LiveChatsModel.h \
+    main_window/sidebar/MenuPage.h \
+    main_window/sidebar/ProfilePage.h \
+    main_window/sidebar/Sidebar.h \
+    main_window/sidebar/SidebarUtils.h \
+    ../common.shared/TestingTools.h \
+    controls/AvatarPreview.h \
+    main_window/PromoPage.h \
+    main_window/history_control/MessageItemBase.h \
+    main_window/history_control/DeletedMessageItem.h \
+    voip/PushButton_t.h \
+    voip/secureCallWnd.h
 
 DEFINES += STRIP_VOIP
 QMAKE_CXXFLAGS += -std=c++0x
-QMAKE_LIBS += -lopenal -lavformat -lavcodec -lswresample -lavfilter -lavutil -lcorelib -lboost_system -lcurl_static -lssl_static -lcrypto_static -lboost_filesystem -lidn -lrtmp -lgcrypt -lgnutls -lgpg-error -ltasn1 -lz -lstdc++ -lrt -lxcb-util
+QMAKE_LIBS += -lopenal -lavformat -lavcodec -lswresample -lavfilter -lavutil -lcorelib -lminizip -lboost_system -lboost_locale -lcurl_static -lssl_static -lcrypto_static -lboost_filesystem -lidn -lrtmp -lgcrypt -lgnutls -lgpg-error -ltasn1 -lz -lstdc++ -lrt -lxcb-util
 CONFIG(32, 64|32) {
     QMAKE_LIBS += -lp11-kit
 }

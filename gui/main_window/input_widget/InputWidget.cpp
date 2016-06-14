@@ -2,6 +2,7 @@
 #include "InputWidget.h"
 
 #include "../../main_window/MainWindow.h"
+#include "../../main_window/sounds/SoundsManager.h"
 #include "../../core_dispatcher.h"
 #include "../../main_window/history_control/MessagesModel.h"
 #include "../../utils/utils.h"
@@ -51,7 +52,6 @@ namespace Ui
         , anim_height_(0)
         , is_initializing_(false)
     {
-
         setVisible(false);
         setStyleSheet(Utils::LoadStyle(":/main_window/input_widget/input_widget.qss", Utils::get_scale_coefficient(), true));
 
@@ -67,7 +67,7 @@ namespace Ui
         horizontalLayout->addWidget(smiles_button_);
 
         text_edit_->setObjectName("input_edit_control");
-        text_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("input_widget","Message..."));
+        text_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("input_widget","Message"));
         text_edit_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
         text_edit_->setAutoFillBackground(false);
         text_edit_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -121,7 +121,6 @@ namespace Ui
     {
 
     }
-
 
     void InputWidget::paintEvent(QPaintEvent* _e)
     {
@@ -286,6 +285,8 @@ namespace Ui
 
         text_edit_->clear();
 
+        GetSoundsManager()->playOutgoingMessage();
+
         emit sendMessage(contact_);
     }
     
@@ -360,6 +361,8 @@ namespace Ui
     void InputWidget::typed()
     {
         if (is_initializing_)
+            return;
+        if (!isVisible())
             return;
 
         static uint prevTypedTime = 0;

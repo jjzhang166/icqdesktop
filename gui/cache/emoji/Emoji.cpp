@@ -94,7 +94,7 @@ namespace Emoji
 		}
 
 		const auto sizeToSearch = ((size == EmojiSizePx::Auto) ? GetEmojiSizeForCurrentUiScale() : (int32_t)size);
-        
+
 		const auto info = GetEmojiInfoByCodepoint(main, ext);
 		if (!info)
 		{
@@ -114,25 +114,15 @@ namespace Emoji
 
         if (platform::is_apple())
         {
-            QImage imageOut(QSize(sizeToSearch, sizeToSearch), QImage::Format_ARGB32);
+            auto pixelRatio = qApp->primaryScreen()->devicePixelRatio();
+            
+            QImage imageOut(QSize(sizeToSearch * pixelRatio, sizeToSearch * pixelRatio), QImage::Format_ARGB32);
             imageOut.fill(Qt::transparent);
+            imageOut.setDevicePixelRatio(pixelRatio);
             
             QPainter painter(&imageOut);
-            
-            painter.setRenderHint(QPainter::Antialiasing);
-            painter.setRenderHint(QPainter::TextAntialiasing);
-            painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-            painter.setPen(Qt::SolidLine);
-            painter.setPen(QColor::fromRgb(0, 0, 0));
-            
-            QRect r(0, Utils::is_mac_retina()?-4:-2, sizeToSearch, sizeToSearch+20);
-            
-            Utils::SChar ch(main, ext);
-            QFont f = QFont(QStringLiteral("AppleColorEmoji"), sizeToSearch - 8);
-            painter.setFont(f);
-            painter.drawText(r, Qt::AlignHCenter, ch.ToQString());
-            
+            painter.setFont(QFont(QStringLiteral("AppleColorEmoji"), sizeToSearch));
+            painter.drawText(QRect(0, -2, sizeToSearch, sizeToSearch + 2), Qt::AlignHCenter, Utils::SChar(main, ext).ToQString());
             painter.end();
             
             image = imageOut;
@@ -140,19 +130,25 @@ namespace Emoji
         else
         {
             const auto &meta = GetMetaBySize(sizeToSearch);
-            
-            auto emojiSetIter = LoadEmojiSetForSizeIfNeeded(meta);
-            
+
+            const auto emojiSetIter = LoadEmojiSetForSizeIfNeeded(meta);
+
+            const auto isSetMissing = (emojiSetIter == EmojiSetBySize_.end());
+            if (isSetMissing)
+            {
+                return empty;
+            }
+
             QRect r(0, 0, meta.SizePx_, meta.SizePx_);
             const auto offsetX = (info->Index_ * meta.SizePx_);
             r.translate(offsetX, 0);
-            
+
             image = emojiSetIter->second.copy(r);
         }
-        
+
         const auto result = EmojiCache_.emplace(key, std::move(image));
         assert(result.second);
-        
+
 		return result.first->second;
 	}
 

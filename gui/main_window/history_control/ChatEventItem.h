@@ -23,6 +23,8 @@ namespace Ui
 
         ~ChatEventItem();
 
+        virtual void clearSelection() override;
+
 		virtual QString formatRecentsText() const override;
 
 	private:

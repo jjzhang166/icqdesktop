@@ -2,13 +2,71 @@
 #include "CallPanelMain.h"
 #include "../core_dispatcher.h"
 #include "../../core/Voip/VoipManagerDefines.h"
-#include "../cache/avatars/AvatarStorage.h"
 #include "../utils/utils.h"
-#include "../main_window/sounds/SoundsManager.h"
 #include "VideoPanelHeader.h"
+#include "VideoPanel.h"
 #include "VoipTools.h"
 #include "../main_window/contact_list/ContactListModel.h"
-#include "VoipTools.h"
+#include "PushButton_t.h"
+
+extern const QString widgetWithBg      ;
+extern const QString widgetWithoutBg   ;
+extern const QString widgetWithoutBgEx ;
+const QString widgetWithoutColor = "QWidget { color: transparent; background-color : rgba(0,0,0,0%); background: rgba(253,220,111,1%); }";
+
+const QString closeButtonStyle    = "QPushButton { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_close_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; padding-top: 2dip; padding-bottom: 2dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
+                                    "QPushButton:hover  { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_close_100_hover.png); background-color: #e81123; }"
+                                    "QPushButton:hover:pressed { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_close_100_active.png); background-color: #d00516; }";
+
+const QString minButtonStyle      = "QPushButton { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_minimize_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; padding-top: 2dip; padding-bottom: 2dip; padding-left: 11dip; padding-right: 11dip; border: none; }"
+                                    "QPushButton:hover { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_minimize_100_hover.png); background-color: #d3d3d3; }"
+                                    "QPushButton:hover:pressed { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_minimize_100_active.png); background-color: #c8c8c8; }";
+
+const QString maxButtonStyle      = "QPushButton { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_bigwindow_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; padding-top: 2dip; padding-bottom: 2dip; padding-left: 11dip; padding-right: 11dip; border: none; }"
+                                    "QPushButton:hover { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_bigwindow_100_hover.png); background-color: #d3d3d3; }"
+                                    "QPushButton:hover:pressed { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_bigwindow_100_active.png); background-color: #c8c8c8; }";
+
+const QString maxButtonStyle2     = "QPushButton { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_smallwindow_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; padding-top: 2dip; padding-bottom: 2dip; padding-left: 11dip; padding-right: 11dip; border: none; }"
+                                    "QPushButton:hover { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_smallwindow_100.png); background-color: #d3d3d3; }"
+                                    "QPushButton:hover:pressed { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_smallwindow_100_active.png); background-color: #c8c8c8; }";
+
+const QString buttonStyleEnabled  = "QPushButton { background-color: transparent; background-repeat: no-repeat; background-position: center; }"; 
+
+const QString buttonStyleDisabled = "QPushButton { background-color: transparent; background-repeat: no-repeat; background-position: center; }";
+
+const QString buttonGoChat        = "QPushButton { min-width: 40dip; max-width: 40dip; min-height: 40dip; max-height: 40dip; border-image: url(:/resources/video_panel/videoctrl_chat_mini_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_chat_mini_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/video_panel/videoctrl_chat_mini_100_active.png); }";
+
+const QString buttonCameraEnable  = "QPushButton { min-width: 40dip; max-width: 40dip; min-height: 40dip; max-height: 40dip; border-image: url(:/resources/video_panel/videoctrl_camera_mini_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_camera_mini_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/video_panel/videoctrl_camera_mini_100_active.png); }";
+
+const QString buttonCameraDisable = "QPushButton { min-width: 40dip; max-width: 40dip; min-height: 40dip; max-height: 40dip; border-image: url(:/resources/video_panel/videoctrl_camera_off_mini_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_camera_off_mini_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/video_panel/videoctrl_camera_off_mini_100_active.png); }";
+
+const QString buttonStopCall      = "QPushButton { min-height: 40dip; max-height: 40dip; min-width: 40dip; max-width: 40dip; border-image: url(:/resources/contr_endcall_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/contr_endcall_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/contr_endcall_100_active.png); }";
+
+const QString buttonMicEnable     = "QPushButton { min-width: 40dip; max-width: 40dip; min-height: 40dip; max-height: 40dip; border-image: url(:/resources/video_panel/videoctrl_micro_mini_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_micro_mini_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/video_panel/videoctrl_micro_mini_100_active.png); }";
+
+const QString buttonMicDisable    = "QPushButton { min-width: 40dip; max-width: 40dip; min-height: 40dip; max-height: 40dip; border-image: url(:/resources/video_panel/videoctrl_micro_off_mini_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_micro_off_mini_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/video_panel/videoctrl_micro_off_mini_100_active.png); }";
+
+const QString buttonSoundEnable   = "QPushButton { min-width: 40dip; max-width: 40dip; min-height: 40dip; max-height: 40dip; border-image: url(:/resources/video_panel/videoctrl_volume_mini_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_volume_mini_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/video_panel/videoctrl_volume_mini_100_active.png); }";
+
+const QString buttonSoundDisable  = "QPushButton { min-width: 40dip; max-width: 40dip; min-height: 40dip; max-height: 40dip; border-image: url(:/resources/video_panel/videoctrl_volume_off_mini_100.png); }"
+                                    "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_volume_off_mini_100_hover.png); }"
+                                    "QPushButton:hover:pressed { border-image: url(:/resources/video_panel/videoctrl_volume_off_mini_100_active.png); }";
+
+const QString loginNameLable	  = "QPushButton:!enabled { color: rgb(0,0,0);}";
 
 namespace {
     enum {
@@ -18,6 +76,30 @@ namespace {
     };
 }
 #define ICON_SIZE Utils::scale_value(20)
+
+#define PANEL_DEF_COLOR_R 127
+#define PANEL_DEF_COLOR_G 127
+#define PANEL_DEF_COLOR_B 127
+#define PANEL_DEF_COLOR_A 255
+
+#define COLOR_R_VAL(x) (((x) & 0xff000000) >> 24)
+#define COLOR_G_VAL(x) (((x) & 0x00ff0000) >> 16)
+#define COLOR_B_VAL(x) (((x) & 0x0000ff00) >>  8)
+#define COLOR_A_VAL(x) (((x) & 0x000000ff)      )
+
+#define TOP_PANEL_BUTTONS_W              Utils::scale_value(46)
+#define TOP_PANEL_TITLE_W                Utils::scale_value(80)
+#define BOTTOM_PANEL_BETWEEN_BUTTONS_GAP Utils::scale_value(32)
+#define TOP_PANEL_SECURE_CALL_OFFSET     Utils::scale_value(8)
+
+#define SECURE_BTN_BORDER_W    Utils::scale_value(24)
+#define SECURE_BTN_ICON_W      Utils::scale_value(16)
+#define SECURE_BTN_ICON_H      SECURE_BTN_ICON_W
+#define SECURE_BTN_TEXT_W      Utils::scale_value(50)
+#define SECURE_BTN_ICON2TEXT_W TOP_PANEL_SECURE_CALL_OFFSET
+
+#define COLOR_SECURE_BTN_ACTIVE   QColor(0xf5, 0xc8, 0x36, 0xff)
+#define COLOR_SECURE_BTN_INACTIVE QColor(0, 0, 0, 0)
 
 extern std::string getFotmatedTime(unsigned ts);
 
@@ -51,7 +133,7 @@ Ui::SliderEx::SliderEx(QWidget* parent)
     slider_->setOrientation(Qt::Horizontal);
     
     horizontal_layout_->addWidget(slider_);
-    slider_icon_->setText(QString());
+    slider_icon_->setText(QString(), QString());
     
     QMetaObject::connectSlotsByName(this);
 
@@ -109,338 +191,511 @@ void Ui::SliderEx::set_property_for_slider(const char* name, bool val) {
     slider_->setStyle(QApplication::style());
 }
 
-Ui::CallPanelMain::CallPanelMain(QWidget* parent)
-    : QWidget(parent)
-    , _menu(NULL)
-    , actual_vol_(0)
-    , menu_show_(NULL)
-    , name_and_status_container_(NULL)
-    , avatar_container_(NULL) {
+Ui::CallPanelMainEx::CallPanelMainEx(QWidget* parent, const CallPanelMainFormat& panelFormat)
+: QWidget(parent)
+, format_(panelFormat)
+, nameLabel_(NULL)
+, rootWidget_(new QWidget(this))
+, _buttonMaximize(NULL)
+, _buttonLocalCamera(NULL)
+, _buttonLocalMic(NULL)
+, _buttonSoundTurn(NULL)
+, vVolControl_(this, false, widgetWithoutBgEx, widgetWithBg, [] (QPushButton& btn, bool muted)
+{
+    if (muted) {
+        Utils::ApplyStyle(&btn, buttonStyleEnabled);
+        Utils::ApplyStyle(&btn, buttonSoundDisable);
+    } else {
+        Utils::ApplyStyle(&btn, buttonStyleDisabled);
+        Utils::ApplyStyle(&btn, buttonSoundEnable);
+    }
+})
+, hVolControl_(this, true, widgetWithoutBgEx, widgetWithoutColor, [] (QPushButton& btn, bool muted)
+{
+    if (muted) {
+        Utils::ApplyStyle(&btn, buttonStyleEnabled);
+        Utils::ApplyStyle(&btn, buttonSoundDisable);
+    } else {
+        Utils::ApplyStyle(&btn, buttonStyleDisabled);
+        Utils::ApplyStyle(&btn, buttonSoundEnable);
+    }
+})
+, _secureCallEnabled(false)
+, _secureCallWnd(NULL)
+{
+    setFixedHeight(format_.topPartHeight + format_.bottomPartHeight);
+    {
+        QVBoxLayout* l = new QVBoxLayout();
+        l->setSpacing(0);
+        l->setContentsMargins(0, 0, 0, 0);
+        setLayout(l);
+    }
 
-        setProperty("CallPanelMain", true);
+    { // we need root widget to make transcluent window
+        layout()->addWidget(rootWidget_);
+    }
 
-        QVBoxLayout* root_layout = new QVBoxLayout();
-        root_layout->setContentsMargins(0, 0, 0, 0);
-        root_layout->setSpacing(0);
-        root_layout->setAlignment(Qt::AlignVCenter);
-        setLayout(root_layout);
+    {
+        QVBoxLayout* l = new QVBoxLayout();
+        l->setSpacing(0);
+        l->setContentsMargins(0, 0, 0, 0);
+        rootWidget_->setLayout(l);
+    }
 
-        QWidget* rootWidget = new QWidget(this);
-        rootWidget->setContentsMargins(0, 0, 0, 0);
-        rootWidget->setProperty("CallPanelMain", true);
-        layout()->addWidget(rootWidget);
+    {
+        std::stringstream rootWidgetStyle;
+        rootWidgetStyle << 
+            "QWidget { background: rgba(" << COLOR_R_VAL(format_.rgba) <<
+            "," << COLOR_G_VAL(format_.rgba) <<
+            "," << COLOR_B_VAL(format_.rgba) <<
+            "," << COLOR_A_VAL(format_.rgba) <<
+            "); }";
 
-        QHBoxLayout* layout = new QHBoxLayout();
-        layout->setContentsMargins(0, 0, 0, 0);
-        layout->setSpacing(0);
-        layout->setAlignment(Qt::AlignVCenter);
-        rootWidget->setLayout(layout);
+        Utils::ApplyStyle(rootWidget_, rootWidgetStyle.str().c_str());
+    }
 
-        avatar_container_ = new voipTools::BoundBox<AvatarContainerWidget>(rootWidget, Utils::scale_value(50), Utils::scale_value(16), Utils::scale_value(12), Utils::scale_value(5));
-        avatar_container_->setOverlap(0.6f);
-        layout->addWidget(avatar_container_);
+    if (!platform::is_apple()) 
+    { // top part
+        QWidget* topPartWidget = new QWidget(rootWidget_);
+        topPartWidget->setFixedHeight(format_.topPartHeight);
+        {
+            QHBoxLayout* l = new QHBoxLayout();
+            l->setSpacing(0);
+            l->setContentsMargins(0, 0, 0, 0);
+            topPartWidget->setLayout(l);
+        }
 
-        name_and_status_container_ = new NameAndStatusWidget(rootWidget, Utils::scale_value(17), Utils::scale_value(12));
-        name_and_status_container_->setNameProperty("CallPanelMainText_Name", true);
-        name_and_status_container_->setStatusProperty("CallPanelMainText_Status", true);
-        name_and_status_container_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred));
-        layout->addWidget(name_and_status_container_);
+        if (format_.topPartFormat & kVPH_ShowLogo) {
+            QWidget* logoWidg = new QWidget(topPartWidget);
+            logoWidg->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+            {
+                QHBoxLayout* l = new QHBoxLayout();
+                l->setSpacing(0);
+                l->setContentsMargins(0, 0, 0, 0);
+                l->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+                logoWidg->setLayout(l);
+            }
+            topPartWidget->layout()->addWidget(logoWidg);
 
-        layout->addSpacing(Utils::scale_value(6));
+            QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            sizePolicy.setHorizontalStretch(0);
+            sizePolicy.setVerticalStretch(0);
 
-        menu_show_ = new voipTools::BoundBox<QPushButton>(rootWidget);
-        menu_show_->setProperty("MenuShow", true);
-		menu_show_->setCursor(QCursor(Qt::PointingHandCursor));
-        connect(menu_show_, SIGNAL(clicked()), this, SLOT(onMenuButtonClicked()), Qt::QueuedConnection);
-        layout->addWidget(menu_show_);
+            QPushButton* logoBtn = new voipTools::BoundBox<QPushButton>(logoWidg);
+            logoBtn->setProperty("WindowIcon", QVariant(true));
+            logoBtn->setAttribute(Qt::WA_TransparentForMouseEvents);
+            logoWidg->layout()->addWidget(logoBtn);
 
-        layout->addSpacing(Utils::scale_value(24));
+            sizePolicy.setHeightForWidth(logoBtn->sizePolicy().hasHeightForWidth());
+            logoBtn->setSizePolicy(sizePolicy);
 
-        QPushButton* callStop = new voipTools::BoundBox<QPushButton>(rootWidget);
-        callStop->setProperty("StopCallMainButton", true);
-		callStop->setCursor(QCursor(Qt::PointingHandCursor));
-        connect(callStop, SIGNAL(clicked()), this, SLOT(onHangUpButtonClicked()), Qt::QueuedConnection);
-        layout->addWidget(callStop);
+            QLabel* title = new voipTools::BoundBox<QLabel>(logoWidg);
+            title->setProperty("Title", QVariant(true));
+            title->setText("ICQ");
+            title->setAttribute(Qt::WA_TransparentForMouseEvents);
+            title->setMouseTracking(true);
+            title->setFixedWidth(TOP_PANEL_TITLE_W);
+            logoWidg->layout()->addWidget(title);
+        }
 
-        layout->addSpacing(Utils::scale_value(16));
-        connect(&_menu, SIGNAL(onMenuOpenChanged(bool)), this, SLOT(onMenuOpenChanged(bool)), Qt::QueuedConnection);
-        _menu.hide();
+        if (format_.topPartFormat & kVPH_ShowName) {
+            QWidget* buttonWidg = new QWidget(topPartWidget);
+            buttonWidg->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+            {
+                QHBoxLayout* l = new QHBoxLayout();
+                l->setSpacing(0);
+                l->setContentsMargins(0, 0, 0, 0);
+                l->setAlignment(Qt::AlignCenter);
+                buttonWidg->setLayout(l);
+            }
+            topPartWidget->layout()->addWidget(buttonWidg);
 
-        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), this, SLOT(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), Qt::DirectConnection);
-        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallDestroyed(const voip_manager::ContactEx&)), this, SLOT(onVoipCallDestroyed(const voip_manager::ContactEx&)), Qt::DirectConnection);
-        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipVolumeChanged(const std::string&,int)), this, SLOT(onVoipVolumeChanged(const std::string&,int)), Qt::DirectConnection);
-        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMuteChanged(const std::string&,bool)), this, SLOT(onVoipMuteChanged(const std::string&,bool)), Qt::DirectConnection);
-        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalAudio(bool)), this, SLOT(onVoipMediaLocalAudio(bool)), Qt::DirectConnection);
-        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalVideo(bool)), this, SLOT(onVoipMediaLocalVideo(bool)), Qt::DirectConnection);
-		QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallTimeChanged(unsigned,bool)), this, SLOT(onVoipCallTimeChanged(unsigned,bool)), Qt::DirectConnection);
+            QFont f = QApplication::font();
+            f.setPixelSize(format_.topPartFontSize);
+            f.setStyleStrategy(QFont::PreferAntialias);
+
+            nameLabel_ = new voipTools::BoundBox<PushButton_t>(buttonWidg);
+            nameLabel_->setFont(f);
+            nameLabel_->setAlignment(Qt::AlignCenter);
+            nameLabel_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
+            nameLabel_->setPostfix(std::string(" " + getFotmatedTime(0)).c_str());
+            nameLabel_->setFixedWidth(nameLabel_->precalculateWidth() + 2*SECURE_BTN_BORDER_W);
+            nameLabel_->setPostfixColor(QColor(0x86, 0x6f, 0x3c, 0xff));
+
+			// Make disable text color also black.
+			Utils::ApplyStyle(nameLabel_, loginNameLable);
+
+            connect(nameLabel_, SIGNAL(clicked()), this, SLOT(onSecureCallClicked()), Qt::QueuedConnection);
+            buttonWidg->layout()->addWidget(nameLabel_);
+        }
 
         {
-            SliderEx* slider = new SliderEx(&_menu);
-            slider->setProperty("CallMenuItemCommon", true);
-            slider->set_property_for_slider("VideoPanelVolumeSlider", true);
-            slider->set_property_for_icon("CallMenuItemButtonAPlaybackOff", true);
-            slider->setIconSize(ICON_SIZE, ICON_SIZE);
+            QWidget* sysWidg = new QWidget(topPartWidget);
+            sysWidg->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+            {
+                QHBoxLayout* l = new QHBoxLayout();
+                l->setSpacing(0);
+                l->setContentsMargins(0, 0, 0, 0);
+                l->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+                sysWidg->setLayout(l);
+            }
+            topPartWidget->layout()->addWidget(sysWidg);
 
-            _menu.add_widget(kmenu_item_volume, slider);
-            connect(slider, SIGNAL(onSliderValueChanged(int)), this, SLOT(onVolumeChanged(int)), Qt::QueuedConnection);
-            connect(slider, SIGNAL(onSliderReleased()), this, SLOT(onVolumeReleased()), Qt::QueuedConnection);
-            connect(slider, SIGNAL(onIconClick()), this, SLOT(onVolumeOnOff()), Qt::QueuedConnection);
-        }
-        
-        {
-            PushButton_t* btn = new voipTools::BoundBox<PushButton_t>(&_menu);
-            btn->setProperty("CallMenuItemCommon", true);
-            btn->setProperty("CallMenuItemButton", true);
-			btn->setCursor(QCursor(Qt::PointingHandCursor));
-            btn->setOffsets(Utils::scale_value(12));
-            btn->setIconSize(ICON_SIZE, ICON_SIZE);
-            _menu.add_widget(kmenu_item_mic, btn);
-            connect(btn, SIGNAL(clicked()), this, SLOT(onMuteMicOnOffClicked()), Qt::QueuedConnection);
-        }
-        
-        {
-            PushButton_t* btn = new voipTools::BoundBox<PushButton_t>(&_menu);
-            btn->setProperty("CallMenuItemCommon", true);
-            btn->setProperty("CallMenuItemButton", true);
-            btn->setOffsets(Utils::scale_value(12));
-			btn->setCursor(QCursor(Qt::PointingHandCursor));
-            btn->setIconSize(ICON_SIZE, ICON_SIZE);
-            _menu.add_widget(kmenu_item_cam, btn);
-            connect(btn, SIGNAL(clicked()), this, SLOT(onVideoOnOffClicked()), Qt::QueuedConnection);
-        }
-}
-
-void Ui::CallPanelMain::onVolumeOnOff() {
-	Ui::GetDispatcher()->getVoipController().setSwitchAPlaybackMute();
-}
-
-void Ui::CallPanelMain::onMenuOpenChanged(bool opened) {
-    menu_show_->setProperty("MenuShow", !opened);
-    menu_show_->setProperty("MenuHide", opened);
-    menu_show_->setStyle(QApplication::style());
-}
-
-void Ui::CallPanelMain::onVoipMuteChanged(const std::string& device_type, bool muted) {
-    if (device_type == "audio_playback") {
-        if (SliderEx* slider_vol = (SliderEx*)_menu.get_widget(kmenu_item_volume)) {
-            slider_vol->set_enabled(!muted);
-            //slider_vol->set_property_for_icon("CallMenuVolume_en", !muted);
-            //slider_vol->set_property_for_icon("CallMenuVolume_dis", muted);
-            if (muted) {
-                slider_vol->setIconForState(PushButton_t::normal, ":/resources/dialog_sound_off_100.png");
-            } else {
-                slider_vol->setIconForState(PushButton_t::normal, ":/resources/dialog_sound_100.png");
+            if (format_.topPartFormat & kVPH_ShowMin) {
+                addButton<QPushButton>(*sysWidg, minButtonStyle, SLOT(_onMinimize()));
             }
 
-            slider_vol->setStyle(QApplication::style());
-			slider_vol->setCursor(QCursor(Qt::PointingHandCursor));
-        } else {
-            assert(false);
+            if (format_.topPartFormat & kVPH_ShowMax) {
+                _buttonMaximize = addButton<QPushButton>(*sysWidg, maxButtonStyle, SLOT(_onMaximize()));
+            }
+
+            if (format_.topPartFormat & kVPH_ShowClose) {
+                addButton<QPushButton>(*sysWidg, closeButtonStyle, SLOT(_onClose()));
+            }
         }
+
+        rootWidget_->layout()->addWidget(topPartWidget);
+    }
+
+    { // bottom part
+        QWidget* bottomPartWidget = new QWidget(rootWidget_);
+        bottomPartWidget->setFixedHeight(format_.bottomPartHeight);
+        {
+            QHBoxLayout* l = new QHBoxLayout();
+            l->setSpacing(0);
+            l->setContentsMargins(0, 0, 0, 0);
+            bottomPartWidget->setLayout(l);
+        }
+        bottomPartWidget->layout()->setAlignment(Qt::AlignCenter);
+
+        addButton<QPushButton>(*bottomPartWidget, buttonGoChat,        SLOT(_onClickGoChat()));
+        bottomPartWidget->layout()->setSpacing(BOTTOM_PANEL_BETWEEN_BUTTONS_GAP);
+        _buttonLocalCamera = addButton<QPushButton>(*bottomPartWidget, buttonCameraDisable, SLOT(_onCameraTurn()));
+        bottomPartWidget->layout()->setSpacing(BOTTOM_PANEL_BETWEEN_BUTTONS_GAP);
+        addButton<QPushButton>(*bottomPartWidget, buttonStopCall,      SLOT(_onStopCall()));
+        bottomPartWidget->layout()->setSpacing(BOTTOM_PANEL_BETWEEN_BUTTONS_GAP);
+        _buttonLocalMic = addButton<QPushButton>(*bottomPartWidget, buttonMicDisable,    SLOT(_onMicTurn()));
+        bottomPartWidget->layout()->setSpacing(BOTTOM_PANEL_BETWEEN_BUTTONS_GAP);
+        
+        // For Mac Volume button has default cursor, because it fix blinking on mouse hover.
+#ifdef __APPLE__
+        _buttonSoundTurn = addButton<QPushButtonEx>(*bottomPartWidget, buttonSoundDisable,  SLOT(_onSoundTurn()), true);
+#else
+        _buttonSoundTurn = addButton<QPushButtonEx>(*bottomPartWidget, buttonSoundDisable,  SLOT(_onSoundTurn()));
+#endif
+        connect(_buttonSoundTurn , SIGNAL(onHover()), this, SLOT(onSoundTurnHover()), Qt::QueuedConnection);
+
+        rootWidget_->layout()->addWidget(bottomPartWidget);
+    }
+
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), this, SLOT(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalVideo(bool)), this, SLOT(onVoipMediaLocalVideo(bool)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalAudio(bool)), this, SLOT(onVoipMediaLocalAudio(bool)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipUpdateCipherState(const voip_manager::CipherState&)), this, SLOT(onVoipUpdateCipherState(const voip_manager::CipherState&)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallDestroyed(const voip_manager::ContactEx&)), this, SLOT(onVoipCallDestroyed(const voip_manager::ContactEx&)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallTimeChanged(unsigned,bool)), this, SLOT(onVoipCallTimeChanged(unsigned,bool)), Qt::DirectConnection);
+
+    QObject::connect(&hVolControl_, SIGNAL(onMuteChanged(bool)), this, SLOT(onMuteChanged(bool)), Qt::QueuedConnection);
+
+    hVolControl_.hide();
+    vVolControl_.hide();
+}
+
+Ui::CallPanelMainEx::~CallPanelMainEx()
+{
+
+}
+
+void Ui::CallPanelMainEx::processOnWindowMaximized()
+{
+    if (_buttonMaximize) {
+        Utils::ApplyStyle(_buttonMaximize, maxButtonStyle2);
     }
 }
 
-void Ui::CallPanelMain::onVoipMediaLocalAudio(bool enabled) {
-    if (PushButton_t* btn = (PushButton_t*)_menu.get_widget(kmenu_item_mic)) {
-        if (enabled) {
-            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_micro_100.png");
-        } else {
-            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_micro_off_100.png");
-        }
+void Ui::CallPanelMainEx::processOnWindowNormalled()
+{
+    if (_buttonMaximize) {
+        Utils::ApplyStyle(_buttonMaximize, maxButtonStyle);
+    }
+}
 
-		btn->setText(enabled ? QT_TRANSLATE_NOOP("voip_pages", "Turn off microphone") : QT_TRANSLATE_NOOP("voip_pages", "Turn on microphone"));
-        btn->setStyle(QApplication::style());
-		btn->setCursor(QCursor(Qt::PointingHandCursor));
+void Ui::CallPanelMainEx::onSoundTurnHover()
+{
+    if (!_buttonSoundTurn) {
+        return;
+    }
+
+    const auto rc = rect();
+
+    VolumeControl* vc;
+    int xOffset = 0, yOffset = 0;
+    
+    if (rc.width() >= Utils::scale_value(660)) {
+        vc = &hVolControl_;
+#ifdef __APPLE__
+//        xOffset = Utils::scale_value(6); // i don't know where appeared this offsets
+        yOffset = Utils::scale_value(1);
+#endif
     } else {
-        assert(false);
-    }
-}
-
-void Ui::CallPanelMain::onVoipMediaLocalVideo(bool enabled) {
-    if (PushButton_t* btn = (PushButton_t*)_menu.get_widget(kmenu_item_cam)) {
-        if (enabled) {
-            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_video_100.png");
-        } else {
-            btn->setImageForState(PushButton_t::normal, ":/resources/dialog_video_off_100.png");
-        }
-
-        btn->setText(enabled ? QT_TRANSLATE_NOOP("voip_pages", "Turn off camera") : QT_TRANSLATE_NOOP("voip_pages", "Turn on camera"));
-        btn->setStyle(QApplication::style());
-    } else {
-        assert(false);
-    }
-}
-
-void Ui::CallPanelMain::onMuteMicOnOffClicked() {
-	Ui::GetDispatcher()->getVoipController().setSwitchACaptureMute();
-}
-
-
-void Ui::CallPanelMain::onVoipCallTimeChanged(unsigned sec_elapsed, bool have_call) {
-	if (have_call) {
-		if (name_and_status_container_) {
-			name_and_status_container_->setStatus(getFotmatedTime(sec_elapsed).c_str());
-		}
-	}
-}
-
-void Ui::CallPanelMain::onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex) {
-    if (name_and_status_container_) {
-        name_and_status_container_->setName("");
-        name_and_status_container_->setStatus("");
+        vc = &vVolControl_;
+#ifdef __APPLE__
+ //       yOffset = Utils::scale_value(-8);
+        xOffset = Utils::scale_value(1);
+#endif
     }
 
-    if (!!avatar_container_ && contact_ex.call_count <= 1) {
-        avatar_container_->dropExcess(std::vector<std::string>());
-    }
+    auto p = vc->getAnchorPoint();
+    auto p2 = _buttonSoundTurn->mapToGlobal(_buttonSoundTurn->rect().topLeft());
+    
+    p2.setX(p2.x() - p.x() + xOffset);
+    p2.setY(p2.y() - p.y() + yOffset);
+
+    vc->move(p2);
+    vc->show();
+    vc->activateWindow();
+#ifdef __APPLE__
+    vc->raise();
+#endif
+    vc->setFocus(Qt::OtherFocusReason);
 }
 
-std::string Ui::CallPanelMain::_get_tick_count() {
-    return "00:00:00";
+void Ui::CallPanelMainEx::_onSoundTurn()
+{
+    assert(false);
 }
 
-void Ui::CallPanelMain::onVideoOnOffClicked() {
-	Ui::GetDispatcher()->getVoipController().setSwitchVCaptureMute();
+void Ui::CallPanelMainEx::_onMicTurn()
+{
+    Ui::GetDispatcher()->getVoipController().setSwitchACaptureMute();
 }
 
-void Ui::CallPanelMain::onVolumeReleased() {
+void Ui::CallPanelMainEx::_onMinimize()
+{
+    emit onMinimize();
 }
 
-void Ui::CallPanelMain::onVoipVolumeChanged(const std::string& device_type, int vol) {
-    if (device_type == "audio_playback") {
-        actual_vol_ = std::max(std::min(100, vol), 0);
-        SliderEx* slider_vol = (SliderEx*)_menu.get_widget(kmenu_item_volume);
-        if (slider_vol) {
-            slider_vol->blockSignals(true);
-            slider_vol->set_value(actual_vol_);
-            slider_vol->blockSignals(false);
-        } else {
-            assert(false);
-        }
-    }
+void Ui::CallPanelMainEx::_onMaximize()
+{
+    emit onMaximize();
 }
 
-void Ui::CallPanelMain::onVolumeChanged(int _vol) {
-    const int new_vol = std::max(std::min(100, _vol), 0);
-    if (actual_vol_ != new_vol) {
-		Ui::GetDispatcher()->getVoipController().setVolumeAPlayback(new_vol);
-    }
+void Ui::CallPanelMainEx::_onStopCall()
+{
+    Ui::GetDispatcher()->getVoipController().setHangup();
 }
 
-Ui::CallPanelMain::~CallPanelMain() {
+void Ui::CallPanelMainEx::_onClose()
+{
+    emit onClose();
 }
 
-void Ui::CallPanelMain::onMenuButtonClicked() {
-    const QRect rect = menu_show_->rect();
-    const QPoint lt = menu_show_->mapToGlobal(QPoint(rect.left(), rect.top()));
-    const QRect rc(lt.x(), lt.y(), rect.width(), rect.height());
-
-    const QRect video_paner_rc = _menu.rect();
-
-    _menu.move(
-        rc.x() + rc.width() - video_paner_rc.width() - Utils::scale_value(6), // 6 - is a margin from qss !!! sic! 
-        rc.y() + rc.height());
-    _menu.raise();
-
-    if (_menu.isVisible()) {
-        _menu.hide();
-    } else {
-        _menu.show();
-        _menu.raise();
-        _menu.setFocus(Qt::NoFocusReason);
-    }
-}
-
-void Ui::CallPanelMain::onHangUpButtonClicked() {
-	Ui::GetDispatcher()->getVoipController().setHangup();
-}
-
-void Ui::CallPanelMain::onVoipCallNameChanged(const std::vector<voip_manager::Contact>& contacts) {
+void Ui::CallPanelMainEx::onVoipCallNameChanged(const std::vector<voip_manager::Contact>& contacts) {
     if(contacts.empty()) {
         return;
     }
 
-    std::vector<std::string> users;
-    std::vector<std::string> friendly_names;
-    for(unsigned ix = 0; ix < contacts.size(); ix++) {
-        users.push_back(contacts[ix].contact);
-        std::string n = Logic::GetContactListModel()->getDisplayName(contacts[ix].contact.c_str()).toUtf8().data();
-        friendly_names.push_back(n);
-    }
+    active_contact_ = contacts[0].contact;
+    QString friendlyName = Logic::GetContactListModel()->getDisplayName(active_contact_.c_str());
+    friendlyName += " -";
 
-    if (!!avatar_container_) {
-        avatar_container_->dropExcess(users);
-    }
-
-    auto name = voip_proxy::VoipController::formatCallName(friendly_names, QT_TRANSLATE_NOOP("voip_pages", "and").toUtf8());
-    assert(!name.empty());
-
-    name_and_status_container_->setName(name.c_str());
-}
-
-Ui::PushButton_t::PushButton_t(QWidget* parent/* = NULL*/) 
-    : QPushButton(parent)
-    , fromIconToText_(0)
-    , iconW_(-1)
-    , iconH_(-1)
-    , currentState_(normal) {
-    
-}
-
-void Ui::PushButton_t::paintEvent(QPaintEvent*) {
-    QPainter painter(this);
-    QRect rcDraw = rect();
-    const QPixmap& icon   = !bitmapsForStates_[currentState_].isNull() ? bitmapsForStates_[currentState_] : bitmapsForStates_[normal];
-    const QString textStr = text();
-
-    if (!icon.isNull()) {
-        const int w = std::min(iconW_ >= 0 ? iconW_ : icon.width(),  rcDraw.width());
-        const int h = std::min(iconH_ >= 0 ? iconH_ : icon.height(), rcDraw.height());
-        const QRect iconRect(rcDraw.left(), (rcDraw.top() + rcDraw.bottom() - h) * 0.5f, w, h);
-
-        painter.drawPixmap(iconRect, icon);
-        rcDraw.setLeft(rcDraw.left() + w + fromIconToText_);
-    }
-
-    if (!textStr.isEmpty()) {
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setRenderHint(QPainter::TextAntialiasing);
-        painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-        painter.setFont(font());
-        painter.drawText(rcDraw, Qt::AlignVCenter | Qt::AlignLeft, textStr);
-
-        painter.end();
+    if (nameLabel_) {
+        nameLabel_->setPrefix(friendlyName);
+        nameLabel_->setFixedWidth(nameLabel_->precalculateWidth() + 2*SECURE_BTN_BORDER_W);
     }
 }
 
-void Ui::PushButton_t::setIconSize(const int w, const int h) {
-    iconW_ = w;
-    iconH_ = h;
+void Ui::CallPanelMainEx::_onClickGoChat()
+{
+    emit onClickOpenChat(active_contact_);
 }
 
-void Ui::PushButton_t::setImageForState(const eButtonState state, const std::string& image) {
-    assert(state >= 0);
-    assert(state < total);
-
-    if (image.empty()) {
-        bitmapsForStates_[state] = QPixmap();
-    } else {
-        bitmapsForStates_[state] = QPixmap(Utils::parse_image_name(image.c_str()));
+void Ui::CallPanelMainEx::onVoipMediaLocalVideo(bool enabled) {
+    if (_buttonLocalCamera) {
+        if (enabled) {
+            Utils::ApplyStyle(_buttonLocalCamera, buttonStyleEnabled);
+            Utils::ApplyStyle(_buttonLocalCamera, buttonCameraEnable);
+        } else {
+            Utils::ApplyStyle(_buttonLocalCamera, buttonStyleDisabled);
+            Utils::ApplyStyle(_buttonLocalCamera, buttonCameraDisable);
+        }
     }
 }
 
-void Ui::PushButton_t::setOffsets(int fromIconToText) {
-    fromIconToText_ = fromIconToText;
+void Ui::CallPanelMainEx::onVoipMediaLocalAudio(bool enabled) {
+    if (_buttonLocalMic) {
+        if (enabled) {
+            Utils::ApplyStyle(_buttonLocalMic, buttonStyleEnabled);
+            Utils::ApplyStyle(_buttonLocalMic, buttonMicEnable);
+        } else {
+            Utils::ApplyStyle(_buttonLocalMic, buttonStyleDisabled);
+            Utils::ApplyStyle(_buttonLocalMic, buttonMicDisable);
+        }
+    }
 }
 
-bool Ui::PushButton_t::event(QEvent *event) {
-    if (event->type() == QEvent::Enter)
-        (currentState_ = hovered), update();
-    else if (event->type() == QEvent::Leave)
-        (currentState_ = normal), update();
-    if (event->type() == QEvent::MouseButtonPress)
-        (currentState_ = pressed), update();
+void Ui::CallPanelMainEx::_onCameraTurn()
+{
+    Ui::GetDispatcher()->getVoipController().setSwitchVCaptureMute();
+}
 
-    return QPushButton::event(event);
+template<typename __ButtonType>
+__ButtonType* Ui::CallPanelMainEx::addButton(QWidget& parentWidget, const QString& propertyName, const char* slot, bool bDefaultCursor)
+{
+    __ButtonType* btn = new voipTools::BoundBox<__ButtonType>(&parentWidget);
+    Utils::ApplyStyle(btn, propertyName);
+    btn->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
+
+    // For volume control we have blinking with cursor under mac.
+    // We will use dfault cursor to fix it.
+    if (!bDefaultCursor)
+    {
+        btn->setCursor(QCursor(Qt::PointingHandCursor));
+    }
+    btn->setFlat(true);
+    btn->setFixedWidth(TOP_PANEL_BUTTONS_W);
+    parentWidget.layout()->addWidget(btn);
+    connect(btn, SIGNAL(clicked()), this, slot, Qt::QueuedConnection);
+
+    return btn;
+}
+
+void Ui::CallPanelMainEx::hideEvent(QHideEvent* e) {
+    QWidget::hideEvent(e);
+    hVolControl_.hide();
+    vVolControl_.hide();
+}
+
+void Ui::CallPanelMainEx::moveEvent(QMoveEvent* e) {
+    QWidget::moveEvent(e);
+    hVolControl_.hide();
+    vVolControl_.hide();
+}
+
+void Ui::CallPanelMainEx::enterEvent(QEvent* e)
+{
+    QWidget::enterEvent(e);
+//    hVolControl_.hide();
+//    vVolControl_.hide();
+}
+
+void Ui::CallPanelMainEx::resizeEvent(QResizeEvent* e) {
+    QWidget::resizeEvent(e);
+    hVolControl_.hide();
+    vVolControl_.hide();
+}
+
+void Ui::CallPanelMainEx::onMuteChanged(bool muted) {
+    if (_buttonSoundTurn) {
+        if (muted) {
+            Utils::ApplyStyle(_buttonSoundTurn, buttonStyleEnabled);
+            Utils::ApplyStyle(_buttonSoundTurn, buttonSoundDisable);
+        } else {
+            Utils::ApplyStyle(_buttonSoundTurn, buttonStyleDisabled);
+            Utils::ApplyStyle(_buttonSoundTurn, buttonSoundEnable);
+        }
+    }
+}
+
+void Ui::CallPanelMainEx::onVoipUpdateCipherState(const voip_manager::CipherState& state)
+{
+    const bool enable = voip_manager::CipherState::kCipherStateEnabled == state.state;
+    _secureCallEnabled = enable;
+    if (nameLabel_) {
+        nameLabel_->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_INACTIVE);
+        nameLabel_->setColorForState(PushButton_t::hovered, enable ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+        nameLabel_->setColorForState(PushButton_t::pressed, enable ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+
+        nameLabel_->setEnabled(enable);
+        nameLabel_->setOffsets(enable ? TOP_PANEL_SECURE_CALL_OFFSET : 0);
+        nameLabel_->setImageForState(PushButton_t::normal, enable ? ":/resources/video_panel/content_securecall_100.png" : "");
+        nameLabel_->setFixedWidth(nameLabel_->precalculateWidth() + 2*SECURE_BTN_BORDER_W);
+        nameLabel_->setCursor(enable ? QCursor(Qt::PointingHandCursor) : QCursor(Qt::ArrowCursor));
+
+		// Return postfix time text to default state.
+		if (!enable)
+		{
+			nameLabel_->setPostfix(std::string(" " + getFotmatedTime(0)).c_str());
+		}
+    }
+
+    if (_secureCallWnd && voip_manager::CipherState::kCipherStateEnabled == state.state) {
+        _secureCallWnd->setSecureCode(state.secureCode);
+    }
+}
+
+void Ui::CallPanelMainEx::onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex) {
+    if (contact_ex.call_count <= 1) {
+        voip_manager::CipherState state;
+        state.state = voip_manager::CipherState::kCipherStateFailed;
+        onVoipUpdateCipherState(state);
+
+        if (_secureCallWnd) {
+            _secureCallWnd->hide();
+        }
+    }
+}
+
+void Ui::CallPanelMainEx::onVoipCallTimeChanged(unsigned sec_elapsed, bool /*have_call*/) {
+    if (nameLabel_) {
+        nameLabel_->setPostfix(_secureCallEnabled ? getFotmatedTime(sec_elapsed).c_str() : std::string(" " + getFotmatedTime(sec_elapsed)).c_str());
+        nameLabel_->setFixedWidth(nameLabel_->precalculateWidth() + 2*SECURE_BTN_BORDER_W);
+    }
+}
+
+void Ui::CallPanelMainEx::onSecureCallWndOpened()
+{
+    assert(nameLabel_);
+    if (nameLabel_) {
+        nameLabel_->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_ACTIVE);
+        nameLabel_->setColorForState(PushButton_t::hovered, COLOR_SECURE_BTN_ACTIVE);
+        nameLabel_->setColorForState(PushButton_t::pressed, COLOR_SECURE_BTN_ACTIVE);
+    }
+}
+
+void Ui::CallPanelMainEx::onSecureCallWndClosed()
+{
+    assert(nameLabel_);
+    if (nameLabel_) {
+        nameLabel_->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_INACTIVE);
+        nameLabel_->setColorForState(PushButton_t::hovered, _secureCallEnabled ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+        nameLabel_->setColorForState(PushButton_t::pressed, _secureCallEnabled ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+        nameLabel_->setCursor(_secureCallEnabled ? QCursor(Qt::PointingHandCursor) : QCursor(Qt::ArrowCursor));
+    }
+}
+
+void Ui::CallPanelMainEx::onSecureCallClicked()
+{
+    assert(nameLabel_);
+    if (!nameLabel_) {
+        return;
+    }
+
+    QRect rc = geometry();
+    rc.moveTopLeft(mapToGlobal(rc.topLeft()));
+
+    if (!_secureCallWnd) {
+        _secureCallWnd = new SecureCallWnd();
+        connect(_secureCallWnd, SIGNAL(onSecureCallWndOpened()), this, SLOT(onSecureCallWndOpened()), Qt::QueuedConnection);
+        connect(_secureCallWnd, SIGNAL(onSecureCallWndClosed()), this, SLOT(onSecureCallWndClosed()), Qt::QueuedConnection);
+    }
+
+    assert(_secureCallWnd);
+    if (!_secureCallWnd) {
+        return;
+    }
+
+    const QPoint windowTCPt(rc.center());
+    const QPoint secureCallWndTLPt(windowTCPt.x() - _secureCallWnd->width()*0.5f, windowTCPt.y() - Utils::scale_value(12));
+
+    voip_manager::CipherState cipherState;
+    Ui::GetDispatcher()->getVoipController().getSecureCode(cipherState);
+
+    if (voip_manager::CipherState::kCipherStateEnabled == cipherState.state) {
+        _secureCallWnd->setSecureCode(cipherState.secureCode);
+        _secureCallWnd->move(secureCallWndTLPt);
+        _secureCallWnd->show();
+        _secureCallWnd->raise();
+        _secureCallWnd->setFocus(Qt::NoFocusReason);
+    }
 }

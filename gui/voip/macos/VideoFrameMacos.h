@@ -18,6 +18,10 @@ namespace platform_macos {
     bool windowIsOverlapped(QWidget* frame);
     void setWindowPosition(QWidget& widget, const QWidget& parent, const bool top);
     
+    // @return true, if iTunes was paused.
+    bool pauseiTunes();
+    void playiTunes();
+    
     void fadeIn(QWidget* wnd);
     void fadeOut(QWidget* wnd);
     

@@ -11,81 +11,58 @@ namespace Ui
     HistoryControlPageThemePanel::HistoryControlPageThemePanel(HistoryControlPage* _parent) : QWidget(_parent), historyControlPage_(_parent), settingThemeToAll_(false)
     {
         QHBoxLayout *main_layout = new QHBoxLayout(this);
-        main_layout->setObjectName(QStringLiteral("horizontalLayout"));
+        main_layout->setSpacing(0);
         main_layout->setContentsMargins(0, 0, 0, 0);
-        
-        
-        h_spacer_0_ = new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        main_layout->addSpacerItem(h_spacer_0_);
+        main_layout->addSpacerItem(new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
         
         backFromThemeButton_ = new BackButton(this);
         connect(backFromThemeButton_, SIGNAL(clicked()), this, SLOT(backFromThemePressed()), Qt::QueuedConnection);
         backFromThemeButton_->setCursor(Qt::PointingHandCursor);
         main_layout->addWidget(backFromThemeButton_);
         
-        h_spacer_4_ = new QSpacerItem(Utils::scale_value(10), 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        main_layout->addSpacerItem(h_spacer_4_);
+        main_layout->addSpacerItem(new QSpacerItem(Utils::scale_value(10), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
         
         int buttonExtraSpace = Utils::scale_value(65);
         
-        previewButton_ = new CustomButton(this, "");
+        previewButton_ = new CustomButton(this, QString());
         connect(previewButton_, SIGNAL(clicked()), this, SLOT(backFromThemePressed()), Qt::QueuedConnection);
         Utils::ApplyStyle(previewButton_, "font-family: \"%FONT_FAMILY%\"; color: #282828; font-size: 17dip; text-align: left;");
         previewButton_->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
         previewButton_->setFlat(true);
-        previewButton_->setAutoDefault(1);
-        previewButton_->setDefault(1);
         previewButton_->setText(QT_TRANSLATE_NOOP("top_theme_widget", "Preview"));
         previewButton_->adjustSize();
-        previewButton_->setFixedWidth(previewButton_->sizeHint().width() + 10);
-        previewButton_->setObjectName("previewButton");
+        previewButton_->setFixedWidth(previewButton_->sizeHint().width() + Utils::scale_value(10));
         main_layout->addWidget(previewButton_, 0, Qt::AlignLeft);
         previewButton_->setVisible(true);
         
-        h_spacer_5_ = new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Expanding, QSizePolicy::Preferred);
-        main_layout->addSpacerItem(h_spacer_5_);
+        main_layout->addSpacerItem(new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Expanding, QSizePolicy::Preferred));
         
-        cancelButton_ = new CustomButton(this, "");
+        cancelButton_ = new CustomButton(this, QString());
         Utils::ApplyStyle(cancelButton_, grey_button_style);
         cancelButton_->setText(QT_TRANSLATE_NOOP("top_theme_widget", "Cancel"));
         cancelButton_->setFixedWidth(cancelButton_->sizeHint().width() + buttonExtraSpace);
         cancelButton_->adjustSize();
-        cancelButton_->setObjectName("cancelButton");
-        cancelButton_->setAutoDefault(1);
-        cancelButton_->setDefault(1);
         cancelButton_->setCursor(Qt::PointingHandCursor);
         cancelButton_->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
         cancelButton_->setCursor(Qt::PointingHandCursor);
         main_layout->addWidget(cancelButton_, 0, Qt::AlignRight);
         connect(cancelButton_, SIGNAL(clicked()), this, SLOT(cancelThemePressed()), Qt::QueuedConnection);
-        main_layout->setSpacing(0);
         
-        h_spacer_1_ = new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        main_layout->addSpacerItem(h_spacer_1_);
+        main_layout->addSpacerItem(new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
 
-        setToAllButton_ = new CustomButton(this, "");
+        setToAllButton_ = new CustomButton(this, QString());
         Utils::ApplyStyle(setToAllButton_, main_button_noborder_style);
-        setToAllButton_->setProperty("default", false);
-        setToAllButton_->setObjectName("setToAllThemeButton");
-        setToAllButton_->setAutoDefault(1);
-        setToAllButton_->setDefault(1);
         setToAllButton_->setCursor(Qt::PointingHandCursor);
         setToAllButton_->setSizePolicy(QSizePolicy::Policy::Maximum, QSizePolicy::Policy::Expanding);
         setToAllButton_->setText(QT_TRANSLATE_NOOP("top_theme_widget", "Set to all"));
         setToAllButton_->setFixedWidth(setToAllButton_->sizeHint().width() + buttonExtraSpace + Utils::scale_value(30));
-//        setToAllButton_->adjustSize();
         main_layout->addWidget(setToAllButton_, 0, Qt::AlignRight);
         connect(setToAllButton_, SIGNAL(clicked()), this, SLOT(setToAllThemePressed()), Qt::QueuedConnection);
         
-        h_spacer_2_ = new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        main_layout->addSpacerItem(h_spacer_2_);
+        main_layout->addSpacerItem(new QSpacerItem(Utils::scale_value(15), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
         
         setButton_ = new CustomButton(this, "");
         Utils::ApplyStyle(setButton_, main_button_noborder_style);
-        setButton_->setProperty("default", true);
-        setButton_->setObjectName("setThemeButton");
-        setButton_->setAutoDefault(1);
-        setButton_->setDefault(1);
         setButton_->setCursor(Qt::PointingHandCursor);
         setButton_->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
         setButton_->setText(QT_TRANSLATE_NOOP("top_theme_widget", "Set"));
@@ -94,13 +71,16 @@ namespace Ui
         main_layout->addWidget(setButton_);
         connect(setButton_, SIGNAL(clicked()), this, SLOT(setThemePressed()), Qt::QueuedConnection);
         
-        h_spacer_3_ = new QSpacerItem(Utils::scale_value(10), 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        main_layout->addSpacerItem(h_spacer_3_);
+        main_layout->addSpacerItem(new QSpacerItem(Utils::scale_value(10), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
 
         setVisible(false);
         setObjectName(QStringLiteral("top_widget"));
         setFixedHeight(Utils::scale_value(64));
         setLayout(main_layout);
+    }
+    
+    HistoryControlPageThemePanel::~HistoryControlPageThemePanel()
+    {
     }
     
     void HistoryControlPageThemePanel::updateTopThemeButtonsVisibility()
@@ -111,14 +91,14 @@ namespace Ui
         {
             bool showPreview = setToAllLeft - cancelButton_->sizeHint().width()  > Utils::scale_value(175) + previewButton_->sizeHint().width();
             bool showCancel = setToAllLeft - cancelButton_->sizeHint().width() > Utils::scale_value(165);
-            
-            if (previewButton_->isVisible() != showPreview || cancelButton_->isVisible() != showCancel)
-            {
-                QTimer::singleShot(50, [this](){ this->updateTopThemeButtonsVisibility(); });
-            }
             previewButton_->setVisible(showPreview);
             cancelButton_->setVisible(showCancel);
         }
+    }
+
+    void HistoryControlPageThemePanel::timerUpdateTopThemeButtonsVisibility()
+    {
+        updateTopThemeButtonsVisibility();
     }
     
     void HistoryControlPageThemePanel::setShowSetThemeButton(const bool _show)
@@ -181,12 +161,14 @@ namespace Ui
     void HistoryControlPageThemePanel::paintEvent(QPaintEvent *_e)
     {
         QWidget::paintEvent(_e);
-        
+
         QPainter painter(this);
         painter.fillRect(rect(), QColor(255, 255, 255, 0.95 * 255));
+        painter.setPen(QPen(QColor("#dadada"), Utils::scale_value(1)));
+        painter.drawLine(contentsRect().bottomLeft(), contentsRect().bottomRight());
     }
     
-    void HistoryControlPageThemePanel::resizeEvent(QResizeEvent *_e)
+    void HistoryControlPageThemePanel::resizeEvent(QResizeEvent *)
     {
         updateTopThemeButtonsVisibility();
     }

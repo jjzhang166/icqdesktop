@@ -481,6 +481,12 @@ namespace core
     }
 
     template<>
+    inline int64_t coll_helper::get<int64_t>(const char *_name, const int32_t _def) const
+    {
+        return get_value_as_int64(_name, _def);
+    }
+
+    template<>
     inline bool coll_helper::get<bool>(const char *_name) const
     {
         return get_value_as_bool(_name);

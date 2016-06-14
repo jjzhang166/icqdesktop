@@ -153,6 +153,7 @@ namespace Ui
         }
 
         emit received();
+        setIsLoaded(true);
     }
 
 

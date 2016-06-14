@@ -50,7 +50,7 @@ void GeneralSettingsWidget::Creator::initAttachUin(QWidget* parent, std::map<std
     });
     layout->addWidget(scroll_area);
 
-    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("profile_page", "Connect to ICQ account"));
+    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("sidebar", "Connect to ICQ account"));
 
     scroll_area_content_layout->addWidget(page);
 

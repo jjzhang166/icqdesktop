@@ -49,8 +49,7 @@ namespace Logic
             bool outgoing,
             bool isPreview,
             bool isDeleted,
-            control_type _control_type
-            );
+            control_type _control_type);
 
         bool isEmpty() const
         {
@@ -99,6 +98,8 @@ namespace Logic
 
         void setDeleted(const bool isDeleted);
 
+        void setId(const int64_t id);
+
         void setOutgoing(const bool isOutgoing);
 
         QString toLogStringShort() const;
@@ -132,6 +133,10 @@ namespace Logic
 
     typedef std::vector<MessageKey> MessageKeyVector;
 
+    typedef std::set<class InternalIndex> InternalIndexSet;
+
+    typedef InternalIndexSet::iterator InternalIndexSetIter;
+
     class InternalIndex
     {
     public:
@@ -153,17 +158,11 @@ namespace Logic
             return Key_ < other.Key_;
         }
 
-        bool contains(qint64 id) const
-        {
-            for (auto iter : MsgKeys_)
-            {
-                if (iter.Id_ == id)
-                    return true;
-            }
-            return false;
-        }
+        bool ContainsId(const int64_t id) const;
 
-        bool containsNotLast(qint64 id) const
+        bool ContainsKey(const MessageKey &needle) const;
+
+        bool containsNotLast(const int64_t id) const
         {
             int i = 0;
             for (auto iter : MsgKeys_)
@@ -204,6 +203,8 @@ namespace Logic
         const HistoryControl::FileSharingInfoSptr& GetFileSharing() const;
 
         const MessageKey& GetFirstMessageKey() const;
+
+        MessageKey GetKeyById(const int64_t id) const;
 
         const MessageKey& GetLastMessageKey() const;
 
@@ -313,13 +314,13 @@ Q_SIGNALS:
         void ready(QString);
         void updated(QList<Logic::MessageKey>, QString, unsigned);
         void deleted(QList<Logic::MessageKey>, QString);
-        void deliveredToClient(qint64);
-        void deliveredToClient(QString);
+        void readByClient(QString _aimid, qint64 _id);
         void deliveredToServer(QString);
         void messageIdFetched(QString, Logic::MessageKey);
         void pttPlayed(qint64);
         void canFetchMore(QString);
         void indentChanged(Logic::MessageKey, bool);
+        void chatEvent(QString aimId);
 
         private Q_SLOTS:
             void messageBuddies(std::shared_ptr<Data::MessageBuddies>, QString, Ui::MessagesBuddiesOpt, bool, qint64);
@@ -351,9 +352,10 @@ Q_SIGNALS:
         int64_t getLastMessageId(const QString &aimId) const;
         std::vector<int64_t> getBubbleMessageIds(const QString &aimId, const int64_t messageId) const;
         qint64 normalizeNewMessagesId(const QString& aimid, qint64 id);
+        Logic::MessageKey findFirstKeyAfter(const QString &aimId, const Logic::MessageKey &key) const;
+        bool isHasPending(const QString &aimId) const;
 
     private:
-
         Data::MessageBuddy item(const InternalIndex& index);
         void requestMessages(const QString& aimId);
         int generatedDomUid();
@@ -384,10 +386,12 @@ Q_SIGNALS:
         void removeDateItems(const QString &aimId);
         void removeDateItemIfOutdated(const QString &aimId, const Data::MessageBuddy &msg);
 
+        InternalIndexSetIter findIndexRecord(InternalIndexSet &indexRecords, const Logic::MessageKey &key) const;
+
     private:
         QHash<QString, std::set<MessageInternal>> Messages_;
-        QHash<QString, std::set<InternalIndex>> Indexes_;
-        QHash<QString, std::set<InternalIndex>> PendingMessages_;
+        QHash<QString, InternalIndexSet> Indexes_;
+        QHash<QString, InternalIndexSet> PendingMessages_;
         QHash<QString, qint64> LastRequested_;
         QStringList Requested_;
         QStringList FailedUploads_;

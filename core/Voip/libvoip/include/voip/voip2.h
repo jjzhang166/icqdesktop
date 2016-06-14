@@ -325,7 +325,10 @@ enum SessionEvent { // alive session events
     SE_CONNECTED_EXT_VIDEO_UDP,
     SE_CONNECTED_EXT_VIDEO_TCP,
     SE_CONNECTED_EXT_VIDEO_RELAY,
-    SE_CONNECTION_LAST = SE_CONNECTED_EXT_VIDEO_RELAY,
+    SE_CIPHER_ENABLED,               // app should call GetCipherSAS() and render it to user
+    SE_CIPHER_NOT_SUPPORTED_BY_PEER,
+    SE_CIPHER_FAILED,
+    SE_CONNECTION_LAST = SE_CIPHER_FAILED,
 
     SE_REMOTE_FIRST = 40,
     SE_REMOTE_MIC_ON = SE_REMOTE_FIRST,
@@ -408,12 +411,13 @@ public:
 
     virtual void InterruptByGsmCall(bool gsmCallStarted) = 0;
 
-    virtual void MinimalBandwidthMode_StateChanged(bool mbmEnabledLocal, bool mbmEnabledRemote) = 0;
+    virtual void MinimalBandwidthMode_StateChanged(bool mbmEnabled) = 0;
 };
 
 enum {
     MAX_DEVICE_NAME_LEN = 512,
-    MAX_DEVICE_GUID_LEN = 512
+    MAX_DEVICE_GUID_LEN = 512,
+    MAX_SAS_LENGTH      = 128
 };
 
 struct CreatePrms; // hidden from application
@@ -476,6 +480,8 @@ public:
 
     virtual void ShowIncomingConferenceParticipants(const char* user_id, ConferenceParticipants& conferenceParticipants) = 0;
     virtual void SendAndPlayOobDTMF(const char* user_id, int code, int play_ms=200, int play_Db=10) = 0;
+
+    virtual bool GetCipherSAS(const char* account_uid, const char* user_id, char SAS_utf8[MAX_SAS_LENGTH]) = 0;  // valid after receiving SE_CIPHER_ENABLED
 
     // Layout controls
     virtual void WindowAdd                  (hwnd_t wnd, const WindowSettings& windowSettings) = 0;

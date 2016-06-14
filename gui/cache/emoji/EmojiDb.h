@@ -23,6 +23,8 @@ namespace Emoji
 
 	void InitEmojiDb();
 
+    
+    static const EmojiRecordSptr EmptyEmoji;
 	const EmojiRecordSptr& GetEmojiInfoByCodepoint(const uint32_t codepoint, const uint32_t extendedCodepoint);
 
 	const QStringList& GetEmojiCategories();

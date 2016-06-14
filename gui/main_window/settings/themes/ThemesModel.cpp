@@ -14,6 +14,18 @@ namespace Ui
 {
     ThemesModel::ThemesModel(ThemesWidget* _themes_widget) : QObject(_themes_widget), themes_widget_(_themes_widget), target_contact_("")
     {
+        connect(GetDispatcher(), SIGNAL(on_themes_meta()), this, SLOT(on_themes_meta()));
+        connect(GetDispatcher(), SIGNAL(on_themes_meta_error()), this, SLOT(on_themes_meta_error()));
+        connect(Ui::GetDispatcher(), SIGNAL(im_created()), this, SLOT(im_created()), Qt::QueuedConnection);
+
+        if (Ui::GetDispatcher()->is_im_created())
+        {
+            im_created();
+        }
+    }
+    
+    void ThemesModel::im_created()
+    {
         gui_coll_helper collection(GetDispatcher()->create_collection(), true);
         int themes_scale = (int)ThemesScale100;
         if (Utils::is_mac_retina())
@@ -42,12 +54,11 @@ namespace Ui
         }
         collection.set_value_as_int("themes_scale", themes_scale);
         GetDispatcher()->post_message_to_core("themes/meta/get", collection.get());
-        connect(GetDispatcher(), SIGNAL(on_themes_meta()), this, SLOT(on_themes_meta()));
     }
     
     void ThemesModel::on_themes_meta()
     {
-        themes::themes_dict themes_dict = themes::loaded_themes();
+        auto themes_dict = themes::loaded_themes();
         
         std::vector<themes::themePtr> themesVector;
     
@@ -66,6 +77,13 @@ namespace Ui
             auto theme = *it;
             themes_widget_->onThemeGot(theme);
         }
+    }
+
+    void ThemesModel::on_themes_meta_error()
+    {
+        static int triesCount = 0;
+        if ((triesCount++) < 5)
+            QTimer::singleShot(100, [this]() { im_created(); });
     }
     
     void ThemesModel::themeSelected(int _theme_id)

@@ -20,16 +20,15 @@ namespace Logic
     private:
         int flags_;
 
-    private:
-        void setFlag(int flag);
-        void unsetFlag(int flag);
-
     protected:
         virtual void refreshList();
         
     public:
         CustomAbstractListModel(QObject *parent = 0);
         virtual ~CustomAbstractListModel();
+        
+        void setFlag(int flag);
+        void unsetFlag(int flag);
         
         inline bool customFlagIsSet(int flag) const
         {

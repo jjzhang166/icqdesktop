@@ -30,7 +30,7 @@ namespace Logic
 	{
 	}
 
-	const QPixmapSCptr& AvatarStorage::Get(const QString& aimId, const QString& displayName, const int sizePx, const bool isFilled, bool& isDefault)
+	const QPixmapSCptr& AvatarStorage::Get(const QString& aimId, const QString& displayName, const int sizePx, const bool isFilled, bool& isDefault, bool regenerate)
 	{
 		assert(!aimId.isEmpty());
 		assert(sizePx > 0);
@@ -68,14 +68,21 @@ namespace Logic
         assert(!avatarByAimId.isNull());
 
 		const auto regenerateAvatar = ((avatarByAimId.width() < sizePx) && isDefault);
-		if (regenerateAvatar)
+		if (regenerateAvatar || regenerate)
 		{
 			AvatarsByAimId_.erase(iterByAimId);
 			CleanupSecondaryCaches(aimId);
-			return Get(aimId, displayName, sizePx, isFilled, isDefault);
+			return Get(aimId, displayName, sizePx, isFilled, isDefault, regenerate);
 		}
 
-		auto scaledImage = avatarByAimId.scaled(sizePx, sizePx, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        int avatarWidth = avatarByAimId.width();
+        int avatarHeight = avatarByAimId.height();
+        QPixmap scaledImage;
+        if (avatarHeight >= avatarWidth)
+            scaledImage = avatarByAimId.scaledToWidth(sizePx, Qt::SmoothTransformation);
+        else
+            scaledImage = avatarByAimId.scaledToHeight(sizePx, Qt::SmoothTransformation);
+
 		const auto result = AvatarsByAimIdAndSize_.emplace(key, std::make_shared<QPixmap>(std::move(scaledImage)));
 		assert(result.second);
 
@@ -90,29 +97,49 @@ namespace Logic
 
 			RequestedAvatars_.insert(aimId);
 		}
+        else
+        {
+            Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+            collection.set_value_as_qstring("contact", aimId);
+            collection.set_value_as_int("size", sizePx); //request only needed size
+
+            Ui::GetDispatcher()->post_message_to_core("avatars/show", collection.get());
+        }
 
 		return result.first->second;
 	}
 
-	const QPixmapSCptr& AvatarStorage::GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool from_cl)
+    void AvatarStorage::UpdateAvatar(const QString& aimId)
+    {
+        if (TimesCache_.find(aimId) != TimesCache_.end())
+        {
+            AvatarsByAimId_.erase(aimId);
+            CleanupSecondaryCaches(aimId);
+            RequestedAvatars_.erase(aimId);
+            LoadedAvatars_.removeAll(aimId);
+            TimesCache_.erase(aimId);
+        }
+    }
+    
+	const QPixmapSCptr& AvatarStorage::GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool regenerate, bool from_cl)
 	{
 		assert(!aimId.isEmpty());
 		assert(sizePx > 0);
 
-		const auto &avatar = Get(aimId, display_name, sizePx, isFilled, isDefault);
+		const auto &avatar = Get(aimId, display_name, sizePx, isFilled, isDefault, regenerate);
         if (avatar->isNull())
         {
             assert(!"avatar is null");
             return avatar;
         }
 
-		return GetRounded(*avatar, aimId, state, from_cl);
+		return GetRounded(*avatar, aimId, state, from_cl, isDefault);
 	}
 
 	QString AvatarStorage::GetLocal(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled)
 	{
 		bool isDefault = false;
-		QPixmapSCptr avatar = Get(aimId, display_name, sizePx, isFilled, isDefault);
+		QPixmapSCptr avatar = Get(aimId, display_name, sizePx, isFilled, isDefault, false);
 
 		QFile file(QString(QDir::tempPath() + "/%1_%2.png").arg(aimId).arg(isDefault ? "_def" : "_"));
 		if (!file.exists())
@@ -224,7 +251,7 @@ namespace Logic
 		cleanupSecondaryCache(AvatarsByAimIdAndSize_);
 	}
 
-	const QPixmapSCptr& AvatarStorage::GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl)
+	const QPixmapSCptr& AvatarStorage::GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl, bool isDefault)
 	{
 		assert(!avatar.isNull());
 		assert(!aimId.isEmpty());
@@ -240,7 +267,7 @@ namespace Logic
 		auto i = RoundedAvatarsByAimIdAndSize_.find(key);
 		if (i == RoundedAvatarsByAimIdAndSize_.end())
 		{
-			const auto roundedAvatar = Utils::RoundImage(avatar, state, from_cl);
+			const auto roundedAvatar = Utils::RoundImage(avatar, state, isDefault, from_cl);
 			i = RoundedAvatarsByAimIdAndSize_
 				.emplace(
 					key,

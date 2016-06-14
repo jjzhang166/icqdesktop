@@ -6,11 +6,15 @@
 
 namespace Ui
 {
-    ThemeWidget::ThemeWidget(QWidget* _parent, QPixmap& _pixmap, ThemesModel* _themesModel, int _theme_id) : QWidget(_parent), pixmap_(QPixmap(_pixmap)), themesModel_(_themesModel), theme_id_(_theme_id)
+    ThemeWidget::ThemeWidget(QWidget* _parent, QPixmap& _pixmap, ThemesModel* _themesModel, int _theme_id)
+        : QWidget(_parent)
+        , pixmap_(QPixmap(_pixmap))
+        , themesModel_(_themesModel)
+        , theme_id_(_theme_id)
     {
         CustomButton *themeButton = new CustomButton(this, pixmap_);
-        borderWidget_ = new QWidget(this);
         
+        borderWidget_ = new QWidget(this);
         int w = _pixmap.width() / Utils::scale_bitmap(1);
         int h = _pixmap.height() / Utils::scale_bitmap(1);
         setFixedWidth(w);

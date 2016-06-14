@@ -12,12 +12,14 @@ using namespace wim;
 #endif //__APPLE__
 
 core::wim::auth_parameters::auth_parameters()
-    : 
-    exipired_in_(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())),
-    time_offset_(0),
-    dev_id_(WIM_DEV_ID),
-    robusto_client_id_(-1),
-    serializable_(true)
+    : exipired_in_(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()))
+    , time_offset_(0)
+    , dev_id_(WIM_DEV_ID)
+    , robusto_client_id_(-1)
+    , serializable_(true)
+    , need_promo_(false)
+    , login_()
+    , fetch_url_()
 {
 }
 
@@ -64,6 +66,7 @@ enum auth_param_type
     apt_exipired_in = 7,
     apt_time_offset = 8,
     apt_version = 11,
+    apt_locale = 12,
 
     apt_robusto_token = 100,
     apt_robusto_client_id = 101
@@ -93,6 +96,7 @@ void core::wim::auth_parameters::serialize(core::tools::binary_stream& _stream) 
     pack.push_child(core::tools::tlv(apt_exipired_in, (int64_t) exipired_in_));
     pack.push_child(core::tools::tlv(apt_time_offset, (int64_t) time_offset_));
     pack.push_child(core::tools::tlv(apt_version, version_));
+    pack.push_child(core::tools::tlv(apt_locale, locale_));
 
     pack.push_child(core::tools::tlv(apt_robusto_token, robusto_token_));
     pack.push_child(core::tools::tlv(apt_robusto_client_id, robusto_client_id_));
@@ -127,6 +131,7 @@ bool core::wim::auth_parameters::unserialize(core::tools::binary_stream& _stream
     auto tlv_exipired_in = tlv_pack_childs.get_item(apt_exipired_in);
     auto tlv_time_offset = tlv_pack_childs.get_item(apt_time_offset);
     auto tlv_version = tlv_pack_childs.get_item(apt_version);
+    auto tlv_locale = tlv_pack_childs.get_item(apt_locale);
 
     auto tlv_robusto_token = tlv_pack_childs.get_item(apt_robusto_token);
     auto tlv_robusto_client_id = tlv_pack_childs.get_item(apt_robusto_client_id);
@@ -157,6 +162,9 @@ bool core::wim::auth_parameters::unserialize(core::tools::binary_stream& _stream
 
     if (tlv_version)
         version_ = tlv_version->get_value<std::string>("");
+
+    if (tlv_locale)
+        locale_ = tlv_locale->get_value<std::string>("");
 
     return true;
 }
@@ -193,10 +201,53 @@ bool core::wim::auth_parameters::unserialize(const rapidjson::Value& _node)
 
     aimsid_ = iter_aimsid->value.GetString();
 
+    // TODO : time_t
+    auto iter_expiredin = _node.FindMember("expiredin");
+    if (iter_expiredin != _node.MemberEnd() && iter_expiredin->value.IsInt64())
+    {
+        exipired_in_ = iter_expiredin->value.GetInt64();
+    }
+
+    auto iter_timeoffset = _node.FindMember("timeoffset");
+    if (iter_timeoffset != _node.MemberEnd() && iter_timeoffset->value.IsInt64())
+    {
+        time_offset_ = iter_timeoffset->value.GetInt64();
+    }
+
+    auto iter_login = _node.FindMember("login");
+    if (iter_login != _node.MemberEnd() && iter_login->value.IsString())
+    {
+        login_ = iter_login->value.GetString();
+    }
+
+    auto iter_fetchurl = _node.FindMember("fetchurl");
+    if (iter_fetchurl != _node.MemberEnd() && iter_fetchurl->value.IsString())
+    {
+        fetch_url_ = iter_fetchurl->value.GetString();
+    }
+
+    auto iter_promo = _node.FindMember(settings_need_show_promo);
+    if (iter_promo != _node.MemberEnd() && iter_promo->value.IsBool())
+    {
+        need_promo_ = iter_promo->value.GetBool();
+    }
+
     return true;
 }
 
-
+void core::wim::auth_parameters::serialize(rapidjson::Value& _node, rapidjson_allocator& _a) const
+{
+    _node.AddMember("login", login_, _a);
+    _node.AddMember("aimid", aimid_, _a);
+    _node.AddMember("atoken", a_token_, _a);
+    _node.AddMember("sessionkey", session_key_, _a);
+    _node.AddMember("devid", dev_id_, _a);
+    _node.AddMember("expiredin", (int64_t)exipired_in_, _a);
+    _node.AddMember("timeoffset", (int64_t)time_offset_, _a);
+    _node.AddMember("aimsid", aimsid_, _a);
+    _node.AddMember("fetchurl", fetch_url_, _a);
+    _node.AddMember(settings_need_show_promo, need_promo_, _a);
+}
 
 
 

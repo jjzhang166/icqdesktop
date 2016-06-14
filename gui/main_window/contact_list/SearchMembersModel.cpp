@@ -16,6 +16,7 @@ namespace Logic
         : AbstractSearchModel(parent)
         , SearchRequested_(false)
         , chat_members_model_(NULL)
+        , SelectEnabled_(true)
     {
         // connect(Ui::GetDispatcher(), SIGNAL(searchResult(QStringList)), this, SLOT(searchResult(QStringList)), Qt::QueuedConnection);
     }
@@ -35,14 +36,18 @@ namespace Logic
         Data::ChatMemberInfo* ptr = &(Match_[ind.row()]);
         
         if (Testing::isAccessibleRole(role))
-            return Match_[ind.row()].AimdId_;
+            return Match_[ind.row()].AimId_;
         
         return QVariant::fromValue<Data::ChatMemberInfo*>(ptr);
     }
 
     Qt::ItemFlags SearchMembersModel::flags(const QModelIndex &) const
     {
-        return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
+        Qt::ItemFlags result = Qt::ItemIsEnabled;
+        if (SelectEnabled_)
+            result |= Qt::ItemIsEnabled;
+
+        return result;
     }
 
     void SearchMembersModel::setFocus()
@@ -77,7 +82,7 @@ namespace Logic
             {
                 for (auto iter = searchPatterns.begin(); iter != searchPatterns.end(); ++iter)
                 {
-                    if (item.AimdId_.contains(*iter)
+                    if (item.AimId_.contains(*iter)
                         || item.NickName_.toLower().contains(*iter) 
                         || item.FirstName_.toLower().contains(*iter)
                         || item.LastName_.toLower().contains(*iter))
@@ -106,6 +111,11 @@ namespace Logic
     void SearchMembersModel::SetChatMembersModel(ChatMembersModel* _chat_members_model)
     {
         chat_members_model_ = _chat_members_model;
+    }
+
+    void SearchMembersModel::setSelectEnabled(bool value)
+    {
+        SelectEnabled_ = value;
     }
 
     SearchMembersModel* GetSearchMemberModel()

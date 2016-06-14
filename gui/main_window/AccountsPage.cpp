@@ -106,7 +106,7 @@ namespace Ui
             bool isDefault = true;
             const auto avatarPix = Logic::GetAvatarStorage()->GetRounded(account_.uin(), account_.name(),
                                                                          Utils::scale_bitmap(Utils::scale_value(avatar_h_)),
-                                                                         "", true, isDefault);
+                                                                         "", true, isDefault, false);
             avatar_->setPixmap(avatarPix->copy());
         }
     }

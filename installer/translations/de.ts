@@ -32,7 +32,6 @@
     </message>
     <message>
         <source>Close</source>
-        <translatorcomment>To close installer</translatorcomment>
         <translation>Schließen</translation>
     </message>
 </context>

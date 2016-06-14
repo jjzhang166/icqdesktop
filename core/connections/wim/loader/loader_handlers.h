@@ -33,7 +33,7 @@ namespace core
             std::function<void(const web_file_info& _info)>			on_progress;
         };
 
-        class download_file_sharing_preview_handler
+        class download_image_handler
         {
         public:
 

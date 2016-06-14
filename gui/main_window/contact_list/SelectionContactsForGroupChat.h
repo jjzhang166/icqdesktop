@@ -41,7 +41,7 @@ namespace Ui
         void setView(bool _is_short_view);
 
     private:
-        QRect* CalcSizes() const;
+        QRect CalcSizes() const;
         void hideShowAllButton();
 
         SearchWidget*                            searchWidget_;

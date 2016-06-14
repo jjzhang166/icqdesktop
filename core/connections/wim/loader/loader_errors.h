@@ -29,6 +29,7 @@ namespace core
             move_file				= 115,
             store_info				= 116,
             too_large_file          = 117,
+            invalid_json            = 118,
 
             internal_logic_error	= 201
         };

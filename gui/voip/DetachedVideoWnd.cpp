@@ -330,7 +330,6 @@ Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
         this->resize(400, 300);
         this->setMinimumSize(QSize(0, 0));
         this->setMaximumSize(QSize(16777215, 16777215));
-        this->setProperty("DetachedVideoWindowCommon", QVariant(true));
         horizontal_layout_ = new QHBoxLayout(this);
         horizontal_layout_->setObjectName(QStringLiteral("horizontalLayout"));
         horizontal_layout_->setContentsMargins(0, 0, 0, 0);
@@ -341,8 +340,10 @@ Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
 #ifdef _WIN32
         setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::SubWindow);
 #else
-        setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Window | Qt::WindowDoesNotAcceptFocus/*| Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMaximizeButtonHint*/);
-        setAttribute(Qt::WA_ShowWithoutActivating);
+        // We have problem on Mac with WA_ShowWithoutActivating and WindowDoesNotAcceptFocus.
+        // If video window is showing with this flags,, we cannot activate main ICQ window.
+        setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Window /*| Qt::WindowDoesNotAcceptFocus*/);
+        //setAttribute(Qt::WA_ShowWithoutActivating);
         setAttribute(Qt::WA_X11DoNotAcceptFocus);
 #endif
 
@@ -500,17 +501,21 @@ void Ui::DetachedVideoWindow::onVoipWindowAddComplete(quintptr win_id) {
 }
 
 void Ui::DetachedVideoWindow::showFrame() {
+#ifdef _WIN32
     assert(_rootWidget->frameId());
     if (_rootWidget->frameId()) {
         Ui::GetDispatcher()->getVoipController().setWindowAdd((quintptr)_rootWidget->frameId(), false, false, 0);
     }
+#endif
 }
 
 void Ui::DetachedVideoWindow::hideFrame() {
+#ifdef _WIN32
     assert(_rootWidget->frameId());
     if (_rootWidget->frameId()) {
         Ui::GetDispatcher()->getVoipController().setWindowRemove((quintptr)_rootWidget->frameId());
     }
+#endif
 }
 
 void Ui::DetachedVideoWindow::showEvent(QShowEvent* e) {

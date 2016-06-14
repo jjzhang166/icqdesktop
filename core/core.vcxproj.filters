@@ -146,6 +146,18 @@
     <ClCompile Include="connections\wim\packets\update_profile.cpp" />
     <ClCompile Include="connections\wim\packets\join_chat_alpha.cpp" />
     <ClCompile Include="connections\wim\packets\set_buddy_attribute.cpp" />
+    <ClCompile Include="connections\wim\packets\get_chat_home.cpp" />
+    <ClCompile Include="tools\file_sharing.cpp" />
+    <ClCompile Include="connections\wim\packets\set_timezone.cpp" />
+    <ClCompile Include="connections\wim\loader\preview_proxy.cpp" />
+    <ClCompile Include="connections\wim\packets\set_avatar.cpp" />
+    <ClCompile Include="connections\wim\packets\get_chat_blocked.cpp" />
+    <ClCompile Include="connections\wim\packets\mod_chat_alpha.cpp" />
+    <ClCompile Include="connections\wim\packets\block_chat_member.cpp" />
+    <ClCompile Include="connections\wim\packets\mod_chat_member_alpha.cpp" />
+    <ClCompile Include="..\common.shared\common_defs.cpp" />
+    <ClCompile Include="..\common.shared\crash_sender_utils.cpp" />
+    <ClCompile Include="connections\wim\packets\phoneinfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="archive\opened_dialog.h" />
@@ -297,6 +309,18 @@
     <ClInclude Include="connections\wim\packets\join_chat_alpha.h" />
     <ClInclude Include="connections\wim\packets\set_buddy_attribute.h" />
     <ClInclude Include="connections\wim\favorites.h" />
+    <ClInclude Include="connections\wim\packets\get_chat_home.h" />
+    <ClInclude Include="tools\file_sharing.h" />
+    <ClInclude Include="connections\wim\packets\set_timezone.h" />
+    <ClInclude Include="connections\wim\loader\preview_proxy.h" />
+    <ClInclude Include="connections\wim\packets\set_avatar.h" />
+    <ClInclude Include="connections\wim\packets\get_chat_blocked.h" />
+    <ClInclude Include="connections\wim\packets\mod_chat_alpha.h" />
+    <ClInclude Include="connections\wim\packets\block_chat_member.h" />
+    <ClInclude Include="connections\wim\packets\mod_chat_member_alpha.h" />
+    <ClInclude Include="..\common.shared\common_defs.h" />
+    <ClInclude Include="..\common.shared\common_crash_sender.h" />
+    <ClInclude Include="connections\wim\packets\phoneinfo.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

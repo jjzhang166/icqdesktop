@@ -17,20 +17,20 @@
 #include "../../my_info.h"
 
 #ifdef _WIN32
-#include "toast_notifications/ToastManager.h"
+#   include "toast_notifications/ToastManager.h"
 typedef HRESULT (__stdcall *QueryUserNotificationState)(QUERY_USER_NOTIFICATION_STATE *pquns);
 typedef BOOL (__stdcall *QuerySystemParametersInfo)(__in UINT uiAction, __in UINT uiParam, __inout_opt PVOID pvParam, __in UINT fWinIni);
 #else
 
 #ifdef __APPLE__
-#include "notification_center/NotificationCenterManager.h"
-#include "../../utils/mac_support.h"
+#   include "notification_center/NotificationCenterManager.h"
+#   include "../../utils/mac_support.h"
 #endif
 
 #endif //_WIN32
 
 #ifdef _WIN32
-#include <Shobjidl.h>
+#   include <Shobjidl.h>
 extern HICON qt_pixmapToWinHICON(const QPixmap &p);
 QString pinPath = "\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar\\ICQ.lnk";
 #endif // _WIN32
@@ -77,8 +77,9 @@ namespace Ui
         
 #ifdef __APPLE__
         ncSupported(); //setup notification manager
+        setVisible(get_gui_settings()->get_value(settings_show_in_menubar, true));
 #endif //__APPLE__
-        
+
 	}
 
 	TrayIcon::~TrayIcon()
@@ -115,6 +116,11 @@ namespace Ui
 
         updateStatus();
     }
+    
+    void TrayIcon::setVisible(bool visible)
+    {
+        Icon_->setVisible(visible);
+    }
 
     void TrayIcon::setMacIcon()
     {
@@ -131,8 +137,10 @@ namespace Ui
         QString iconResource(QString(":resources/main_window/mac_tray/icq_osxlogo_%1_%2%3_100.png").
                              arg(state).arg(MacSupport::currentTheme()).
                              arg(unreads?"_unread":""));
+        bool visible = (Icon_ ? Icon_->isVisible() : true);
         QIcon icon(Utils::parse_image_name(iconResource));
         Icon_->setIcon(icon);
+        Icon_->setVisible(visible);
 #endif
     }
     
@@ -238,14 +246,6 @@ namespace Ui
 				    GetSoundsManager()->playIncomingMessage();
 			}
 		}
-		else if (state.Visible_ && ((!ShowedMessages_.contains(state.AimId_) && state.LastMsgId_ == -1) || state.LastMsgId_ == -1))
-		{
-			ShowedMessages_[state.AimId_] = state.LastMsgId_;
-#ifdef _WIN32
-            if (canShowNotificationsWin())
-#endif //_WIN32
-			    GetSoundsManager()->playOutgoingMessage();
-		}
 
 		updateIcon();
         if (state.Visible_)
@@ -272,7 +272,7 @@ namespace Ui
         {
             if (Logic::GetContactListModel()->selectedContact() != aimId)
                 Utils::InterConnector::instance().getMainWindow()->skipRead();
-            Logic::GetContactListModel()->setCurrent(aimId, true);
+            Logic::GetContactListModel()->setCurrent(aimId, true, true);
         }
         
         MainWindow_->activateFromEventLoop();
@@ -376,7 +376,7 @@ namespace Ui
         Menu_->addAction(QT_TRANSLATE_NOOP("tray_menu","Quit"), parent(), SLOT(exit()));
 #else
 #ifdef __linux__
-        Menu_->addActionWithIcon(QIcon(), QT_TRANSLATE_NOOP("tray_menu","Show"), parent(), SLOT(activate()));
+        Menu_->addActionWithIcon(QIcon(), QT_TRANSLATE_NOOP("tray_menu","Open"), parent(), SLOT(activate()));
         Menu_->addActionWithIcon(QIcon(), QT_TRANSLATE_NOOP("tray_menu","Quit"), parent(), SLOT(exit()));
 #else
         Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_quit_100.png")), QT_TRANSLATE_NOOP("tray_menu","Quit"), parent(), SLOT(exit()));
@@ -453,7 +453,11 @@ namespace Ui
         }
 
 #endif //_WIN32
-		return Icon_->isSystemTrayAvailable() && Icon_->supportsMessages() && !MainWindow_->isActive();
+#ifdef __APPLE__
+        return Icon_->isSystemTrayAvailable() && Icon_->supportsMessages() && (!MainWindow_->isActive() || MacSupport::previewIsShown());
+#else
+        return Icon_->isSystemTrayAvailable() && Icon_->supportsMessages() && !MainWindow_->isActive();
+#endif
 	}
 
 	void TrayIcon::activated(QSystemTrayIcon::ActivationReason reason)

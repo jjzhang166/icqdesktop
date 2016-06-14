@@ -81,6 +81,8 @@ Q_SIGNALS:
         FromServer,
         DlgState,
         Pending,
+        Init,
+        MessageStatus,
 
         Max
     };
@@ -103,6 +105,7 @@ Q_SIGNALS:
         void loginResultAttachUin(int64_t, int code);
         void loginResultAttachPhone(int64_t, int code);
         void avatarLoaded(const QString&, QPixmap*, int);
+
         void presense(Data::Buddy*);
         void searchResult(QStringList);
         void dlgState(Data::DlgState);
@@ -110,8 +113,10 @@ Q_SIGNALS:
         void guiSettings();
         void themeSettings();
         void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
+        void chatBlocked(QList<Data::ChatMemberInfo>);
         void chatInfoFailed(qint64, core::group_chat_info_errors);
         void myInfo();
+        void login_new_user();
         void messagesDeleted(QString, QList<int64_t>);
         void messagesDeletedUpTo(QString, int64_t);
         void messagesModified(QString, std::shared_ptr<Data::MessageBuddies>);
@@ -130,26 +135,40 @@ Q_SIGNALS:
         void on_sticker(qint32 _set_id, qint32 _sticker_id);
 
         void on_themes_meta();
+        void on_themes_meta_error();
         void on_theme(int,bool);
 
         // remote files signals
         void imageDownloaded(qint64, QString, QPixmap, QString);
-        void fileSharingDownloadError(qint64, QString, qint32);
-        void fileSharingFileDownloaded(qint64, QString, QString);
-        void fileSharingFileDownloading(qint64, QString, qint64);
-        void fileSharingMetadataDownloaded(qint64, QString, QString, QString, QString, QString, qint64, bool);
-        void fileSharingLocalCopyCheckCompleted(qint64, bool, QString);
-        void fileSharingUploadingProgress(QString, qint64);
-        void fileSharingUploadingResult(QString, bool, QString, bool);
+        void imageDownloadError(int64_t seq, QString rawUri);
+
+        void fileSharingError(qint64 seq, QString rawUri, qint32 errorCode);
+
+        void fileSharingFileDownloaded(qint64 seq, QString rawUri, QString localPath);
+        void fileSharingFileDownloading(qint64 seq, QString rawUri, qint64 bytesTransferred);
+
+        void fileSharingFileMetainfoDownloaded(qint64 seq, QString filename, QString downloadUri, qint64 size);
+        void fileSharingPreviewMetainfoDownloaded(qint64 seq, QString miniPreviewUri, QString fullPreviewUri);
+
+        void fileSharingLocalCopyCheckCompleted(qint64 seq, bool success, QString localPath);
+
+        void fileSharingUploadingProgress(QString uploadingId, qint64 bytesTransferred);
+        void fileSharingUploadingResult(QString seq, bool success, QString uri, bool isFileTooBig);
 
         void signedUrl(QString);
         void speechToText(qint64, int, QString, int);
+
+        void chatsHome(QList<Data::ChatInfo>, QString, bool, bool);
+        void chatsHomeError(int);
 
         void recv_permit_deny(bool);
 
         void recvFlags(int);
         void updateProfile(int);
         void getUserProxy();
+
+        void set_chat_role_result(int);
+        void block_member_result(int);
 
         public Q_SLOTS:
             void received(const QString, const qint64, core::icollection*);
@@ -177,11 +196,13 @@ Q_SIGNALS:
         qint64 getSticker(const qint32 setId, const qint32 stickerId, const core::sticker_size size);
         qint64 getTheme(const qint32 _themeId);
 
-        qint64 downloadImagePreview(const QUrl &uri, const QString& destination = QString());
+        int64_t downloadImage(const QUrl &uri, const QString& destination, const bool isPreview);
 
         qint64 delete_messages(const std::vector<int64_t> &_message_ids, const QString &_contact_aimid, const bool _for_all);
         qint64 delete_messages_from(const QString &_contact_aimid, const int64_t _from_id);
 
+        bool is_im_created() const;
+        
     private:
         typedef std::tuple<message_processed_callback, QDateTime> callback_info;
 
@@ -192,7 +213,7 @@ Q_SIGNALS:
         void cleanup_callbacks();
         void execute_callback(const int64_t seq, core::icollection* _params);
         void fileSharingDownloadResult(const int64_t seq, core::coll_helper _params);
-        void previewDownloadResult(const int64_t seq, core::coll_helper _params);
+        void imageDownloadResult(const int64_t seq, core::coll_helper _params);
         void fileUploadingProgress(core::coll_helper _params);
         void fileUploadingResult(core::coll_helper _params);
         void onEventTyping(core::coll_helper _params, bool _is_typing);
@@ -207,6 +228,7 @@ Q_SIGNALS:
         QDateTime last_time_callbacks_cleaned_up_;
 
         bool is_stats_enabled_;
+        bool is_im_created_;
     };
 
     core_dispatcher* GetDispatcher();

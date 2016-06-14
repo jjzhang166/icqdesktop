@@ -83,10 +83,8 @@ int32_t fetch_event_dlg_state::parse(const rapidjson::Value& _node_event_data)
     }
 
     auto iter_del_up_to = _node_event_data.FindMember("delUpto");
-    if (
-        (iter_del_up_to != _node_event_data.MemberEnd()) &&
-        iter_del_up_to->value.IsInt64()
-        )
+    if ((iter_del_up_to != _node_event_data.MemberEnd()) &&
+        iter_del_up_to->value.IsInt64())
     {
         state_.set_del_up_to(iter_del_up_to->value.GetInt64());
     }

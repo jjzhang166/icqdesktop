@@ -1,7 +1,9 @@
 #ifndef themes_hpp
 #define themes_hpp
+
 #include "../../../corelib/collection_helper.h"
 #include "../../core_dispatcher.h"
+
 #define UI_THEMES_NS_BEGIN namespace Ui { namespace themes {
 #define UI_THEMES_NS_END } }
 
@@ -18,13 +20,19 @@ class theme
     QColor spinner_color_;
     QColor edges_color_;
     bool is_image_loaded_;
+    theme(int);
 public:
     theme();
     theme(int _id, QString _tint_color, QByteArray& _imageData, QByteArray& _thumbData, const bool _tile);
     void unserialize(core::coll_helper _coll);
     void load_thumb(char* _data, int32_t _size);
+
     QPixmap get_thumb() const { return thumb_; }
-    void set_thumb(QPixmap pixmap) { thumb_ = pixmap; }
+    void set_thumb(QPixmap pixmap) 
+    {
+        thumb_ = pixmap; 
+    }
+    
     int get_id() const { return id_; }
     bool is_tile() const { return tile_; }
     QPixmap get_image() const {
@@ -33,7 +41,7 @@ public:
     }
     int get_position() const { return position_; }
     QColor get_tint_color();
-    void initDefault();
+    static theme getDefaultTheme();
     void set_image(QPixmap &_pixmap)
     {
         image_ = QPixmap(_pixmap);
@@ -123,9 +131,9 @@ public:
 };
 
 typedef std::shared_ptr<theme> themePtr;
-
-typedef std::map<int,themePtr> themes_dict;
+typedef std::unordered_map<int, themePtr> themes_dict;
 typedef std::vector<themePtr> themes_list;
+
 class cache
 {
 public:
@@ -134,16 +142,15 @@ public:
     void unserialize(const core::coll_helper &_coll);
     void set_theme_data(core::coll_helper _coll);
     themes_dict get_themes() { return themes_; }
-    void unload_unused_themes_images(std::set<int> used);
+    void unload_unused_themes_images(const std::set<int>& _used);
     
 private:
     themes_dict themes_;
-    
 };
 
 void unserialize(core::coll_helper _coll);
 void set_theme_data(core::coll_helper _coll);
-void unload_unused_themes_images(std::set<int> used);
+void unload_unused_themes_images(const std::set<int>& _used);
 themes_dict loaded_themes();
 
 UI_THEMES_NS_END

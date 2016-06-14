@@ -57,6 +57,8 @@ int32_t fetch_event_presence::parse(const rapidjson::Value& _node_event_data)
         }
         if (presense_->state_ == "occupied" || presense_->state_ == "na" || presense_->state_ == "busy")
             presense_->state_ = "dnd";
+        else if (presense_->state_ == "away")
+            presense_->state_ = "away";
         else if (presense_->state_ != "offline" && presense_->state_ != "invisible" && presense_->state_ != "mobile")
             presense_->state_ = "online";
 
@@ -70,6 +72,13 @@ int32_t fetch_event_presence::parse(const rapidjson::Value& _node_event_data)
                 presense_->capabilities_.insert(iter->GetString());
         }
 
+        auto iter_official = _node_event_data.FindMember("official");
+        if (iter_official != _node_event_data.MemberEnd())
+        {
+            if (iter_official->value.IsUint())
+                presense_->official_ = iter_official->value.GetUint() == 1;
+        }
+
         auto iter_mute = _node_event_data.FindMember("mute");
         if (iter_mute != _node_event_data.MemberEnd())
         {
@@ -78,6 +87,22 @@ int32_t fetch_event_presence::parse(const rapidjson::Value& _node_event_data)
             else if (iter_mute->value.IsBool())
                 presense_->muted_ = iter_mute->value.GetBool();
         }
+
+        auto iter_livechat = _node_event_data.FindMember("livechat");
+        if (iter_livechat != _node_event_data.MemberEnd())
+            presense_->is_live_chat_ = iter_livechat->value != 0;
+
+        auto iter_iconId = _node_event_data.FindMember("iconId");
+        if (iter_iconId != _node_event_data.MemberEnd() && iter_iconId->value.IsString())
+            presense_->icon_id_ = iter_iconId->value.GetString();
+
+        auto iter_bigIconId = _node_event_data.FindMember("bigIconId");
+        if (iter_bigIconId != _node_event_data.MemberEnd() && iter_bigIconId->value.IsString())
+            presense_->big_icon_id_ = iter_bigIconId->value.GetString();
+
+        auto iter_largeIconId = _node_event_data.FindMember("largeIconId");
+        if (iter_largeIconId != _node_event_data.MemberEnd() && iter_largeIconId->value.IsString())
+            presense_->large_icon_id_ = iter_largeIconId->value.GetString();
 
     }
     catch (const std::exception&)

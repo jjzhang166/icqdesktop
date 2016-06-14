@@ -12,6 +12,8 @@
 #include "../main_window/history_control/VoipEventInfo.h"
 #include "../main_window/history_control/MessagesModel.h"
 
+#include "../cache/avatars/AvatarStorage.h"
+
 namespace
 {
     bool isSupportedImagePreviewExts(const QStringRef &ext);
@@ -97,16 +99,18 @@ namespace Data
 
         if (modification.IsChatEvent())
         {
-            SetChatEvent(
-                std::make_shared<HistoryControl::ChatEventInfo>(
-                    *modification.GetChatEvent()
-                )
-            );
+            const auto &chatEventInfo = *modification.GetChatEvent();
+            const auto &eventText = chatEventInfo.formatEventText();
+            assert(!eventText.isEmpty());
 
-            Type_ = core::message_type::chat_event;
+            SetText(eventText);
+
+            Type_ = core::message_type::base;
 
             return;
         }
+
+        assert(!"unexpected modification type");
     }
 
     bool MessageBuddy::IsEmpty() const
@@ -369,13 +373,6 @@ namespace Data
 		return !Text_.isEmpty();
 	}
 
-	void MessageBuddy::MarkAsDeliveredToClient()
-	{
-		assert(!DeliveredToClient_);
-
-		DeliveredToClient_ = true;
-	}
-
 	void MessageBuddy::FillFrom(const MessageBuddy &buddy, const bool merge)
 	{
 		if (merge)
@@ -623,6 +620,16 @@ namespace Data
             state.senderNick_ = messageBuddy->ChatFriendly_;
 		    state.Time_ = value.get<int32_t>("time");
 		    state.Outgoing_ = value.get<bool>("outgoing");
+
+            if (messageBuddy->GetChatEvent() && messageBuddy->GetChatEvent()->eventType() == core::chat_event_type::avatar_modified)
+            {
+                static int32_t previousUpdateTime = 0;
+                if ((state.Time_ - previousUpdateTime) > 1)
+                {
+                    previousUpdateTime = state.Time_;
+                    Logic::GetAvatarStorage()->UpdateAvatar(state.AimId_);
+                }
+            }
         }
 	}
 }
@@ -631,21 +638,7 @@ namespace
 {
     bool isSupportedImagePreviewExts(const QStringRef &ext)
     {
-        static std::vector<QString> extensions;
-
-        const auto extNum = 5;
-        extensions.reserve(extNum);
-
-        if (extensions.empty())
-        {
-            extensions.emplace_back("bmp");
-            extensions.emplace_back("gif");
-            extensions.emplace_back("jpg");
-            extensions.emplace_back("jpeg");
-            extensions.emplace_back("png");
-        }
-
-        assert(extensions.size() == extNum);
+        const QString extensions[] = { "bmp", "gif", "jpg", "jpeg", "png", "tif", "tiff" };
 
         for (const auto &knownExt : extensions)
         {
@@ -720,7 +713,7 @@ namespace
 
 				if (message->Id_ <= theirs_last_delivered)
 				{
-					message->MarkAsDeliveredToClient();
+
 				}
 				else if (!message->InternalId_.isEmpty())
 				{
@@ -796,6 +789,8 @@ namespace
 
 		if (msgColl.is_value_exist("chat_event"))
 		{
+            assert(!message->IsChatEvent());
+
 			core::coll_helper chat_event(msgColl.get_value_as_collection("chat_event"), false);
 
 			message->SetType(core::message_type::chat_event);

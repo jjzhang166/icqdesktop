@@ -3,6 +3,7 @@
 #ifdef __APPLE__
 class MacSupport;
 #endif
+#include "../voip/CallPanelMain.h"
 
 class QApplication;
 
@@ -16,14 +17,14 @@ namespace Ui
     class main_window;
     class MainPage;
     class LoginPage;
+    class PromoPage;
 #ifdef __APPLE__
     class AccountsPage;
 #endif
     class TrayIcon;
     class HistoryControlPage;
     class BackgroundWidget;
-    class LiveChats;
-
+    
     class ShadowWindow : public QWidget
     {
         Q_OBJECT
@@ -52,6 +53,7 @@ Q_SIGNALS:
 
         void doubleClick();
         void moveRequest(QPoint);
+        void checkPosition();
 
     public:
         TitleWidgetEventFilter(QObject* parent);
@@ -72,6 +74,8 @@ Q_SIGNALS:
 
     public Q_SLOTS:
 
+        void showPromoPage();
+        void closePromoPage();
         void showLoginPage();
         void showMainPage();
         void showMigrateAccountPage(QString accountId);
@@ -79,12 +83,14 @@ Q_SIGNALS:
         void showIconInTaskbar(bool);
         void activate();
         void updateMainMenu();
+        void gotoSleep();
+        void gotoWake();
+        void exit();
 
     private Q_SLOTS:
 
         void maximize();
         void moveRequest(QPoint);
-        void exit();
         void minimize();
         void guiSettingsChanged(QString);
         void onVoipResetComplete();
@@ -105,6 +111,12 @@ Q_SIGNALS:
         void activatePrevChat();
         void toggleFullScreen();
         void pasteEmoji();
+        void checkPosition();
+
+        void onOpenChat(const std::string& contact);
+        void onVoipCallIncomingAccepted(const voip_manager::ContactEx& contact_ex);
+        void onVoipCallCreated(const voip_manager::ContactEx& contact_ex);
+        void onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex);
 
     public:
         MainWindow(QApplication* app);
@@ -112,6 +124,7 @@ Q_SIGNALS:
 
         void activateFromEventLoop();
         bool isActive() const;
+        bool isMainPage() const;
         void setBackgroundPixmap(QPixmap& _pixmap, const bool _tiling);
 
         int getScreen() const;
@@ -119,11 +132,19 @@ Q_SIGNALS:
 
         HistoryControlPage* getHistoryPage(const QString& aimId) const;
         MainPage* getMainPage() const;
-        const QString &activeAimId() const;
+
+        void insertTopWidget(const QString& aimId, QWidget* widget);
+        void removeTopWidget(const QString& aimId);
+
+        void showSidebar(const QString& aimId, int page);
+        void setSidebarVisible(bool show);
+        bool isSidebarVisible() const;
+        
+        void showMenuBarIcon(bool show);
 
     private:
+        void initSizes();
         void initSettings();
-        //        void paintEvent(QPaintEvent *_e);
 
     protected:
         bool nativeEventFilter(const QByteArray &, void * message, long * result);
@@ -140,6 +161,7 @@ Q_SIGNALS:
     private:
         MainPage* main_page_;
         LoginPage* login_page_;
+        PromoPage* promo_page_;
         QApplication* app_;
         TitleWidgetEventFilter* event_filter_;
         TrayIcon* tray_icon_;
@@ -156,10 +178,9 @@ Q_SIGNALS:
         QPushButton *close_button_;
         BackgroundWidget *stacked_widget_;
         ShadowWindow* Shadow_;
+        CallPanelMainEx* callPanelMainEx;
         bool SkipRead_;
         bool TaskBarIconHidden_;
-
-        std::unique_ptr<LiveChats> liveChats_;
 
 #ifdef _WIN32
         HWND fake_parent_window_;

@@ -5,6 +5,8 @@ namespace Ui
 	class HistoryControl;
     class HistoryControlPage;
 	class InputWidget;
+    class Sidebar;
+
 	namespace Smiles
 	{
 		class SmilesMenu;
@@ -41,6 +43,7 @@ namespace Ui
 
     private Q_SLOTS:
         void updateDragOverlay();
+        void historyControlClicked();
 
 	Q_SIGNALS:
 		void contactSelected(QString _aimId);
@@ -51,7 +54,13 @@ namespace Ui
 		InputWidget*				inputWidget_;
 		Smiles::SmilesMenu*			smilesMenu_;
         DragOverlayWindow*          dragOverlayWindow_;
+        Sidebar*                    sidebar_;
         QTimer*                     overlayUpdateTimer_;
+        QStackedWidget*             topWidget_;
+        QVBoxLayout*                rootLayout_;
+        QMap<QString, QWidget*>     topWidgetsCache_;
+        bool                        sidebarVisible_;
+        QHBoxLayout*                layout_;
 
 		void initSmilesMenu();
 		void initInputWidget();
@@ -65,7 +74,20 @@ namespace Ui
         void showDragOverlay();
         void hideDragOverlay();
 
-        const QString & currentAimId();
+        void showSidebar(const QString& aimId, int page);
+        bool isSidebarVisible() const;
+        void setSidebarVisible(bool show);
+        bool needShowSidebar() const;
+
+        static bool needShowSidebar(int _contact_dialog_width);
+        static bool sideBarShowSingle(int _contact_dialog_width);
+        static std::string getSideBarPolicy(int _contact_dialog_width);
+
+        void takeSidebar();
+        Sidebar* getSidebar() const;
+
+        void insertTopWidget(const QString& aimId, QWidget* widget);
+        void removeTopWidget(const QString& aimId);
         
         HistoryControlPage* getHistoryPage(const QString& aimId) const;
         const Smiles::SmilesMenu* getSmilesMenu() const;
@@ -74,5 +96,6 @@ namespace Ui
         virtual void dragEnterEvent(QDragEnterEvent *);
         virtual void dragLeaveEvent(QDragLeaveEvent *);
         virtual void dragMoveEvent(QDragMoveEvent *);
+        virtual void resizeEvent(QResizeEvent*);
 	};
 }

@@ -155,12 +155,11 @@ namespace core
             std::string base_url_;
             download_tasks meta_tasks_;
             download_tasks themes_tasks_;
-            long hash_;
             ThemesScale themes_scale_;
         public:
             cache(const std::wstring& _stickers_path);
             std::wstring get_meta_file_name() const;
-            bool parse(core::tools::binary_stream& _data, bool _insitu, bool& _up_todate);
+            bool parse(core::tools::binary_stream& _data, bool _insitu);
             void make_download_tasks();
             void make_download_task(theme& _theme);
             bool get_next_meta_task(download_task& _task);
@@ -173,35 +172,29 @@ namespace core
             bool meta_loaded(const download_task& _task);
             bool get_next_theme_task(download_task& _task);
             bool theme_loaded(const download_task& _task, std::list<int64_t>& _requests);
-            long calc_hash(core::tools::binary_stream _data);
-            long get_hash() const { return hash_; }
             void serialize_meta_sync(coll_helper _coll);
             void get_theme_image(int64_t _seq, int32_t _theme_id, tools::binary_stream& _data);
             theme* get_theme(int _theme_id);
             void clear_all();
-            ThemesScale set_themes_scale() { return themes_scale_; }
+            inline ThemesScale get_themes_scale() { return themes_scale_; }
             void set_themes_scale(ThemesScale _themes_scale) { themes_scale_ = _themes_scale; }
         };
         
         class parse_result
         {
             bool	result_;
-            bool	up_to_date_;
             std::string base_url_;
         public:
-            parse_result(bool _result, bool _up_to_date) :	result_(_result), up_to_date_(_up_to_date) {}
+            parse_result(bool _result) : result_(_result) {}
             bool get_result() const { return result_; }
-            bool get_up_to_date() const { return up_to_date_; }
         };
         
         class load_result
         {
             bool				result_;
-            const long          hash_;
         public:
-            load_result(bool _result, long hash = 0) :	result_(_result), hash_(hash) {}
-            bool get_result() const { return result_; }
-            long get_hash() const { return hash_; }
+            load_result(bool _result): result_(_result) {}
+            inline bool get_result() const { return result_; }
         };
 
         template<class T0, class T1 = void>
@@ -244,6 +237,7 @@ namespace core
             std::shared_ptr<result_handler<coll_helper>> serialize_meta(coll_helper _coll);
             theme* get_theme(int _theme_id);
             void clear_all();
+            ThemesScale get_themes_scale();
             void set_themes_scale(ThemesScale _themes_scale);
         };
     }

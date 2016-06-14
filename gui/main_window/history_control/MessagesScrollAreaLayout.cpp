@@ -2,6 +2,7 @@
 
 #include "../../utils/log/log.h"
 #include "../../utils/profiling/auto_stop_watch.h"
+#include "../../utils/utils.h"
 
 #include "ChatEventItem.h"
 #include "MessageItem.h"
@@ -314,6 +315,39 @@ namespace Ui
         return ViewportSize_.height();
     }
 
+    QList<Logic::MessageKey> MessagesScrollAreaLayout::getWidgetsOverBottomOffset(const int32_t offset) const
+    {
+        assert(offset >= 0);
+
+        if (LayoutItems_.empty())
+        {
+            return QList<Logic::MessageKey>();
+        }
+
+        const auto itemsAbsBounds = getItemsAbsBounds();
+        const auto absBottomY = itemsAbsBounds.second;
+        const auto absThresholdY = (absBottomY - offset);
+
+        QList<Logic::MessageKey> result;
+
+        for (auto iter = LayoutItems_.crbegin(); iter != LayoutItems_.crend(); ++iter)
+        {
+            const auto &layoutItem = *iter;
+
+            const auto &itemAbsGeometry = layoutItem.AbsGeometry_;
+
+            const auto isItemUnderThreshold = (itemAbsGeometry.bottom() > absThresholdY);
+            if (isItemUnderThreshold)
+            {
+                break;
+            }
+
+            result.push_back(layoutItem.Key_);
+        }
+
+        return result;
+    }
+
     void MessagesScrollAreaLayout::insertWidgets(const WidgetsList& _widgets)
     {
         assert(!_widgets.empty());
@@ -343,7 +377,7 @@ namespace Ui
             // -----------------------------------------------------------------------
             // apply widget width (if needed)
 
-            applyWidgetWidth(ViewportSize_.width(), widget, true);
+            applyWidgetWidth(getWidthForItem(), widget, true);
 
             __TRACE(
                 "geometry",
@@ -367,6 +401,7 @@ namespace Ui
 
             {
                 const auto absolutePosition = calculateInsertionRect(itemInfoIter, Out slideOp);
+
                 itemInfoIter->AbsGeometry_ = absolutePosition;
             }
 
@@ -477,6 +512,9 @@ namespace Ui
         // apply the viewport transformation
         result.translate(0, -ViewportAbsY_);
 
+        result.setX(getXForItem());
+        result.setWidth(getWidthForItem());
+
         return result;
     }
 
@@ -498,15 +536,11 @@ namespace Ui
     void MessagesScrollAreaLayout::applyTypingWidgetGeometry()
     {
         QRect typingWidgetGeometry(
-            0,
+            getXForItem(),
             getItemsAbsBounds().second,
-            ViewportSize_.width(),
+            getWidthForItem(),
             getTypingWidgetHeight()
         );
-
-        // voodoo-shmoodoo (wtf, really?)
-        typingWidgetGeometry.translate(0, getTypingWidgetHeight());
-        typingWidgetGeometry.translate(0, getTypingWidgetHeight());
 
         assert(TypingWidget_);
         assert(!typingWidgetGeometry.isEmpty());
@@ -531,9 +565,9 @@ namespace Ui
             assert(itemInfoIter == LayoutItems_.begin());
 
             const QRect result(
-                0,
+                getXForItem(),
                 -widgetHeight,
-                ViewportSize_.width(),
+                getWidthForItem(),
                 widgetHeight
             );
 
@@ -557,9 +591,9 @@ namespace Ui
             assert(!prevItemGeometry.isEmpty());
 
             const QRect result(
-                0,
+                getXForItem(),
                 prevItemGeometry.top() - widgetHeight,
-                ViewportSize_.width(),
+                getWidthForItem(),
                 widgetHeight
             );
 
@@ -583,9 +617,9 @@ namespace Ui
             assert(!nextItemGeometry.isEmpty());
 
             const QRect result(
-                0,
+                getXForItem(),
                 nextItemGeometry.bottom() + 1,
-                ViewportSize_.width(),
+                getWidthForItem(),
                 widgetHeight
             );
 
@@ -612,9 +646,9 @@ namespace Ui
             Out slideOp = SlideOp::SlideUp;
 
             const QRect result(
-                0,
+                getXForItem(),
                 overItemInfo.AbsGeometry_.bottom() + 1,
-                ViewportSize_.width(),
+                getWidthForItem(),
                 widgetHeight
             );
 
@@ -633,9 +667,9 @@ namespace Ui
         Out slideOp = SlideOp::SlideDown;
 
         const QRect result(
-            0,
+            getXForItem(),
             underItemInfo.AbsGeometry_.top(),
-            ViewportSize_.width(),
+            getWidthForItem(),
             widgetHeight
         );
 
@@ -1021,7 +1055,7 @@ namespace Ui
         {
             auto widget = iter->Widget_;
 
-            applyWidgetWidth(ViewportSize_.width(), widget, true);
+            applyWidgetWidth(getWidthForItem(), widget, true);
 
             const auto oldGeometry = iter->AbsGeometry_;
 
@@ -1030,7 +1064,7 @@ namespace Ui
             const QRect newGeometry(
                 oldGeometry.left(),
                 oldGeometry.top(),
-                ViewportSize_.width(),
+                getWidthForItem(),
                 newHeight
             );
 
@@ -1175,12 +1209,12 @@ namespace Ui
             return;
         }
 
-        auto onItemInfo = [this, visitor, reversed](const ItemInfo& itemInfo)
+        auto onItemInfo = [this, visitor, reversed](const ItemInfo& itemInfo)->bool
         {
             assert(itemInfo.Widget_);
             if (!itemInfo.Widget_)
             {
-                return;
+                return true;
             }
 
             const auto &itemGeometry = itemInfo.AbsGeometry_;
@@ -1193,12 +1227,13 @@ namespace Ui
 
             const auto isHidden = (isAboveViewport || isBelowViewport);
 
-            visitor(itemInfo.Widget_, !isHidden);
+            if (!visitor(itemInfo.Widget_, !isHidden))
+                return false;
 
             auto layout = itemInfo.Widget_->layout();
             if (!layout)
             {
-                return;
+                return true;
             }
 
             int i = (reversed ? (layout->count() - 1) : 0);
@@ -1212,7 +1247,8 @@ namespace Ui
 
                 if (widget)
                 {
-                    visitor(widget, !isHidden);
+                    if (!visitor(widget, !isHidden))
+                        return false;
                 }
 
                 if (reversed)
@@ -1224,13 +1260,16 @@ namespace Ui
                     ++i;
                 }
             }
+
+            return true;
         };
 
         if (!reversed)
         {
             for (auto iter = LayoutItems_.cbegin(); iter != LayoutItems_.cend(); ++iter)
             {
-                onItemInfo(*iter);
+                if (!onItemInfo(*iter))
+                    break;
             }
 
             return;
@@ -1238,8 +1277,19 @@ namespace Ui
 
         for (auto iter = LayoutItems_.crbegin(); iter != LayoutItems_.crend(); ++iter)
         {
-            onItemInfo(*iter);
+            if (!onItemInfo(*iter))
+                break;
         }
+    }
+
+    int MessagesScrollAreaLayout::getWidthForItem() const
+    {
+        return std::min(std::max<int>(Utils::scale_value(650), 0.6 * ViewportSize_.width()), ViewportSize_.width());
+    }
+
+    int MessagesScrollAreaLayout::getXForItem() const
+    {
+        return std::max((ViewportSize_.width() - getWidthForItem()) / 2, 0);
     }
 
     namespace

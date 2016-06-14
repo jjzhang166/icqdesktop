@@ -46,7 +46,7 @@ int32_t get_gateway::init_request(std::shared_ptr<core::http_request_simple> _re
     params["sig_sha256"] = sha256;
 
     std::stringstream ss_url;
-    ss_url << host << params_map_2_string(params);
+    ss_url << host << "?" << format_get_params(params);
 
     _request->set_url(ss_url.str());
     _request->set_keep_alive();

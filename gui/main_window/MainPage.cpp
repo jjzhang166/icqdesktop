@@ -14,6 +14,7 @@
 #include "../voip/VideoSettings.h"
 #include "../voip/IncomingCallWindow.h"
 #include "ContactDialog.h"
+#include "contact_list/ChatMembersModel.h"
 #include "../core_dispatcher.h"
 #include "../utils/utils.h"
 #include "../utils/InterConnector.h"
@@ -31,10 +32,16 @@
 #include "../controls/TextEmojiWidget.h"
 #include "settings/themes/ThemesSettingsWidget.h"
 #include "../controls/ContextMenu.h"
+#include "../controls/CustomButton.h"
+#include "../controls/FlatMenu.h"
 #include "contact_list/RecentsModel.h"
 #include "../utils/log/log.h"
 #include "IntroduceYourself.h"
+#include "livechats/LiveChatsHome.h"
 #include "GroupChatOperations.h"
+#include "livechats/LiveChatProfile.h"
+#include "sidebar/Sidebar.h"
+#include "contact_list/Common.h"
 
 namespace Ui
 {
@@ -61,26 +68,28 @@ namespace Ui
 
     MainPage::MainPage(QWidget* parent)
         : QWidget(parent)
-        , search_widget_(new SearchWidget(8, false, this))
+        , search_widget_(new SearchWidget(false, this))
         , contact_dialog_(new ContactDialog(this))
 #ifndef STRIP_VOIP
-        , video_window_(NULL)
-        , video_panel_(new CallPanelMain(this))
+        , video_window_(nullptr)
 #else
-        , video_window_(0)
-        , video_panel_(0)
+        , video_window_(nullptr)
 #endif //STRIP_VOIP
         , pages_(new WidgetsNavigator(this))
         , search_contacts_(nullptr)
         , profile_settings_(new ProfileSettingsWidget(this))
         , general_settings_(new GeneralSettingsWidget(this))
+        , live_chats_page_(new LiveChatHome(this))
         , themes_settings_(new ThemesSettingsWidget(this))
         , noContactsYetSuggestions_(nullptr)
-        , contact_list_widget_(new ContactList(this, Logic::MembersWidgetRegim::CONTACT_LIST, NULL))
-        , add_contact_menu_(0)
+        , contact_list_widget_(new ContactList(this, Logic::MembersWidgetRegim::CONTACT_LIST, nullptr))
+        , add_contact_menu_(nullptr)
         , settings_timer_(new QTimer(this))
         , introduceYourselfSuggestions_(nullptr)
         , needShowIntroduceYourself_(false)
+        , liveChats_(new LiveChats(this))
+        , login_new_user_(false)
+        , recv_my_info_(false)
     {
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::showPlaceholder, this, &MainPage::showPlaceholder);
 
@@ -99,11 +108,6 @@ namespace Ui
         QVBoxLayout* contactsLayout = new QVBoxLayout();
         contactsLayout->setContentsMargins(0, 0, 0, 0);
         contactsLayout->setSpacing(0);
-        assert(video_panel_);
-        if (video_panel_) {
-            contactsLayout->addWidget(video_panel_);
-            video_panel_->hide();
-        }
 
         contactsLayout->addWidget(search_widget_);
         contactsLayout->addWidget(contact_list_widget_);
@@ -119,6 +123,7 @@ namespace Ui
             pages_->addWidget(contact_dialog_);
             pages_->addWidget(profile_settings_);
             pages_->addWidget(general_settings_);
+            pages_->addWidget(live_chats_page_);
             pages_->addWidget(themes_settings_);
             if (!pc)
                 pages_->push(contact_dialog_);
@@ -139,6 +144,7 @@ namespace Ui
         connect(&Utils::InterConnector::instance(), SIGNAL(profileSettingsShow(QString)), this, SLOT(onProfileSettingsShow(QString)), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(themesSettingsShow(bool,QString)), this, SLOT(onThemesSettingsShow(bool,QString)), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(generalSettingsShow(int)), this, SLOT(onGeneralSettingsShow(int)), Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), SIGNAL(liveChatsShow()), this, SLOT(onLiveChatsShow()), Qt::QueuedConnection);
 
         connect(&Utils::InterConnector::instance(), SIGNAL(profileSettingsBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(generalSettingsBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
@@ -147,7 +153,7 @@ namespace Ui
         connect(&Utils::InterConnector::instance(), SIGNAL(attachUinBack()), pages_, SLOT(pop()), Qt::QueuedConnection);
 
         connect(&Utils::InterConnector::instance(), SIGNAL(makeSearchWidgetVisible(bool)), search_widget_, SLOT(setVisible(bool)), Qt::QueuedConnection);
-        connect(&Utils::InterConnector::instance(), SIGNAL(popPagesToRoot()), pages_, SLOT(poproot()), Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), SIGNAL(popPagesToRoot()), this, SLOT(popPagesToRoot()), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(profileSettingsDoMessage(QString)), contact_list_widget_, SLOT(select(QString)), Qt::QueuedConnection);
 
         connect(search_widget_, SIGNAL(searchBegin()), this, SLOT(searchBegin()), Qt::QueuedConnection);
@@ -156,7 +162,6 @@ namespace Ui
         connect(search_widget_, SIGNAL(enterPressed()), contact_list_widget_, SLOT(searchResult()), Qt::QueuedConnection);
         connect(search_widget_, SIGNAL(upPressed()), contact_list_widget_, SLOT(searchUpPressed()), Qt::QueuedConnection);
         connect(search_widget_, SIGNAL(downPressed()), contact_list_widget_, SLOT(searchDownPressed()), Qt::QueuedConnection);
-        connect(search_widget_, SIGNAL(nonActiveButtonPressed()), this, SLOT(addButtonClicked()), Qt::QueuedConnection);
         connect(contact_list_widget_, SIGNAL(searchEnd()), search_widget_, SLOT(searchCompleted()), Qt::QueuedConnection);
 
         connect(Logic::GetContactListModel(), SIGNAL(selectedContactChanged(QString)), Logic::GetMessagesModel(), SLOT(contactChanged(QString)), Qt::DirectConnection);
@@ -168,11 +173,26 @@ namespace Ui
 
         search_widget_->setVisible(!contact_list_widget_->shouldHideSearch());
 
+        post_stats_with_settings();
         QObject::connect(settings_timer_, SIGNAL(timeout()), this, SLOT(post_stats_with_settings()));
-        Utils::post_stats_with_settings();
+
         settings_timer_->start(Ui::period_for_stats_settings_ms);
         connect(Ui::GetDispatcher(), &core_dispatcher::myInfo, this, &MainPage::myInfo, Qt::UniqueConnection);
-
+        connect(Ui::GetDispatcher(), &core_dispatcher::login_new_user, this, &MainPage::loginNewUser, Qt::DirectConnection);
+        
+        add_contact_menu_ = new FlatMenu(search_widget_->searchEditIcon());
+        Utils::ApplyStyle(add_contact_menu_,
+                          "QMenu { background-color: #f2f2f2; border:1px solid #cccccc; } "
+                          "QMenu::item { padding-left:40dip; background-color:transparent; color:black; padding-top:6dip; padding-bottom:6dip; padding-right:12dip; } "
+                          "QMenu::item:selected { background-color:#e2e2e2; } "
+                          "QMenu::icon { padding-left:22dip; }"
+                          );
+        add_contact_menu_->addAction(QIcon(Utils::parse_image_name(":/resources/dialog_newchat_100.png")), QT_TRANSLATE_NOOP("contact_list", "New chat"), contact_list_widget_, SLOT(allClicked()));
+        add_contact_menu_->addAction(QIcon(Utils::parse_image_name(":/resources/dialog_newgroup_100.png")), QT_TRANSLATE_NOOP("contact_list", "Create Groupchat"), this, SLOT(createGroupChat()));
+        add_contact_menu_->setExpandDirection(Qt::AlignLeft);
+        add_contact_menu_->stickToIcon();
+        Utils::ApplyStyle(search_widget_->searchEditIcon(), "QPushButton::menu-indicator { image:none; } QPushButton:pressed { background-color:transparent; }");
+        search_widget_->searchEditIcon()->setMenu(add_contact_menu_);
     }
 
     MainPage::~MainPage()
@@ -181,21 +201,52 @@ namespace Ui
 
     void MainPage::resizeEvent(QResizeEvent*)
     {
-        if (video_panel_)
-            video_panel_->setFixedWidth(rect().width() / 3);
-        contact_list_widget_->setFixedWidth(rect().width() / 3);
-        search_widget_->setFixedWidth(rect().width() / 3);
+        auto new_cl_width = ::ContactList::ItemWidth(false, false, false).px();
+        contact_list_widget_->setFixedWidth(new_cl_width);
+        search_widget_->setFixedWidth(new_cl_width);
+
+        Sidebar* sidebar = contact_dialog_->getSidebar();
+        if (pages_->currentWidget() == sidebar)
+            sidebar->setFixedWidth(getContactDialogWidth(width()));
+    }
+
+    int MainPage::getContactDialogWidth(int _main_page_width)
+    {
+        return _main_page_width - ::ContactList::ItemWidth(false, false, false).px();
     }
 
     void MainPage::setSearchFocus()
     {
+        if (pages_->currentWidget() != contact_dialog_)
+        {
+            pages_->push(contact_dialog_);
+            contact_list_widget_->changeTab(RECENTS);
+        }
+            
         search_widget_->setFocus();
     }
 
     void MainPage::onProfileSettingsShow(QString uin)
     {
-        pages_->push(profile_settings_);
-        profile_settings_->updateInterface(uin);
+        if (uin.isEmpty())
+        {
+            contact_dialog_->takeSidebar();
+            Sidebar* sidebar = contact_dialog_->getSidebar();
+            sidebar->preparePage(uin, profile_page);
+            sidebar->setSidebarWidth(Utils::scale_value(428));
+            pages_->addWidget(sidebar);
+            pages_->push(sidebar);
+            sidebar->setFixedWidth(width() - ::ContactList::ItemWidth(false, false, false).px());
+        }
+        else
+        {
+            showSidebar(uin, profile_page);
+        }
+    }
+
+    void MainPage::onLiveChatsShow()
+    {
+        pages_->push(live_chats_page_);
     }
 
     void MainPage::raiseVideoWindow() {
@@ -217,14 +268,13 @@ namespace Ui
 
     void MainPage::onThemesSettingsShow(bool _show_back_button, QString _aimId)
     {
-        themes_settings_->setBackButton(_show_back_button);
-        themes_settings_->setTargetContact(_aimId);
+        ThemesSettingsWidget::initWhenNeeded(themes_settings_)->setBackButton(_show_back_button);
+        ThemesSettingsWidget::initWhenNeeded(themes_settings_)->setTargetContact(_aimId);
         pages_->push(themes_settings_);
     }
 
     void MainPage::clearSearchMembers()
     {
-        // pages_->push(contact_dialog_);
         contact_list_widget_->update();
     }
 
@@ -234,40 +284,15 @@ namespace Ui
         contact_dialog_->cancelSelection();
     }
 
-    void MainPage::show_popup_menu(QAction* _action)
-    {
-        const QString command = _action->data().toString();
-
-        if (command == "chat")
-        {
-            contact_list_widget_->show_contact_list();
-        }
-        else if (command == "groupchat")
-        {
-            createGroupChat();
-            GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::groupchat_from_create_button);
-        }
-    }
-
-    void MainPage::addButtonClicked()
-    {
-        if (!add_contact_menu_)
-        {
-            add_contact_menu_ = new ContextMenu(this);
-            add_contact_menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_newchat_100.png")), QT_TRANSLATE_NOOP("contact_list", "New chat"), "chat");
-            add_contact_menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_newgroup_100.png")), QT_TRANSLATE_NOOP("contact_list", "New groupchat"), "groupchat");
-            connect(add_contact_menu_, SIGNAL(triggered(QAction*)), this, SLOT(show_popup_menu(QAction*)));
-        }
-        if (add_contact_menu_->width() < contact_list_widget_->width())
-            add_contact_menu_->invertRight(true);
-
-        add_contact_menu_->popup(QCursor::pos());
-    }
-
     void MainPage::createGroupChat()
     {
         QStringList empty_list;
+        auto oldModel = Logic::GetChatMembersModel();
+        Logic::SetChatMembersModel(NULL);
         Ui::createGroupChat(empty_list);
+        Logic::SetChatMembersModel(oldModel);
+        
+        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::groupchat_from_create_button);
     }
 
     ContactDialog* MainPage::getContactDialog() const
@@ -281,6 +306,69 @@ namespace Ui
         return contact_dialog_->getHistoryPage(aimId);
     }
 
+    void MainPage::insertTopWidget(const QString& aimId, QWidget* widget)
+    {
+        contact_dialog_->insertTopWidget(aimId, widget);
+    }
+
+    void MainPage::removeTopWidget(const QString& aimId)
+    {
+        contact_dialog_->removeTopWidget(aimId);
+    }
+
+    void MainPage::showSidebar(const QString& aimId, int page)
+    {
+        if (search_contacts_ && pages_->currentWidget() == search_contacts_)
+        {
+            contact_dialog_->takeSidebar();
+            Sidebar* sidebar = contact_dialog_->getSidebar();
+            sidebar->preparePage(aimId, (SidebarPages)page);
+            sidebar->setSidebarWidth(Utils::scale_value(428));
+            sidebar->setFixedWidth(pages_->width());
+            pages_->addWidget(sidebar);
+            pages_->push(sidebar);
+        }
+        else
+        {
+            contact_dialog_->showSidebar(aimId, page);
+        }
+    }
+    
+    bool MainPage::isSidebarVisible() const
+    {
+        return contact_dialog_->isSidebarVisible();
+    }
+
+    void MainPage::setSidebarVisible(bool show)
+    {
+        Sidebar* sidebar = contact_dialog_->getSidebar();
+        if (pages_->currentWidget() == sidebar)
+        {
+            pages_->pop();
+            pages_->removeWidget(sidebar);
+            contact_list_widget_->clearSettingsSelection();
+            if (!show)
+                contact_dialog_->setSidebarVisible(show);
+        }
+        else
+        {
+            contact_dialog_->setSidebarVisible(show);
+        }
+    }
+
+    bool MainPage::isContactDialog() const
+    {
+        if (pages_ == 0)
+            return false;
+        
+        return pages_->currentWidget() == contact_dialog_;
+    }
+
+    ProfileSettingsWidget* MainPage::getProfileSettings() const
+    {
+        return profile_settings_;
+    }
+    
     void MainPage::onContactSelected(QString _contact)
     {
         pages_->poproot();
@@ -292,7 +380,7 @@ namespace Ui
             search_contacts_ = nullptr;
         }
 
-        emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_HideIntroduceYourself);
+        emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_SetExistanseOffIntroduceYourself);
     }
 
     void MainPage::onAddContactClicked()
@@ -360,29 +448,10 @@ namespace Ui
 
     void MainPage::onVoipCallIncomingAccepted(const voip_manager::ContactEx& contact_ex) {
         _destroy_incoming_call_window(contact_ex.contact.account, contact_ex.contact.contact);
-        assert(video_panel_);
-        if (video_panel_) {
-            video_panel_->show();
-        }
-    }
-
-    void MainPage::onVoipCallCreated(const voip_manager::ContactEx& cont) {
-        if (!cont.incoming) {
-            assert(video_panel_);
-            if (video_panel_) {
-                video_panel_->show();
-            }
-        }
     }
 
     void MainPage::onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex) {
         _destroy_incoming_call_window(contact_ex.contact.account, contact_ex.contact.contact);
-        if (contact_ex.call_count <= 1) { // in this moment destroyed call is active, e.a. call_count + 1
-            assert(video_panel_);
-            if (video_panel_) {
-                video_panel_->hide();
-            }
-        }
     }
 
     void MainPage::recentsTabActivate(bool selectUnread)
@@ -478,7 +547,8 @@ namespace Ui
         }
     }
 
-    void MainPage::hideInput() {
+    void MainPage::hideInput()
+    {
         contact_dialog_->hideInput();
     }
 
@@ -661,18 +731,6 @@ namespace Ui
             }
             break;
 
-        case Utils::PlaceholdersType::PlaceholdersType_HideIntroduceYourself:
-            if (!needShowIntroduceYourself_)
-                break;
-
-            if (introduceYourselfSuggestions_)
-            {
-                introduceYourselfSuggestions_->setHidden(true);
-                pages_->removeWidget(introduceYourselfSuggestions_);
-            }
-            pages_->poproot();
-            break;
-
         case Utils::PlaceholdersType::PlaceholdersType_IntroduceYourself:
             if (!needShowIntroduceYourself_)
                 break;
@@ -685,6 +743,9 @@ namespace Ui
             pages_->push(contact_list_widget_);
             pages_->poproot();
             break;
+                
+        default:
+            break;
         }
     }
 
@@ -692,7 +753,7 @@ namespace Ui
     {
         if (!introduceYourselfSuggestions_)
         {
-            introduceYourselfSuggestions_ = new IntroduceYourself(parent);
+            introduceYourselfSuggestions_ = new IntroduceYourself(MyInfo()->aimId(), MyInfo()->friendlyName(), parent);
             introduceYourselfSuggestions_->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding);
             introduceYourselfSuggestions_->setStyleSheet("border: 20px solid red;");
         }
@@ -701,15 +762,14 @@ namespace Ui
 
     void MainPage::post_stats_with_settings()
     {
-        Utils::post_stats_with_settings();
+        Utils::get_stats_sender()->trySendStats();
     }
 
     void MainPage::myInfo()
     {
-        static bool is_first_time = true;
-        if (MyInfo()->friendlyName().isEmpty() && !get_gui_settings()->get_value(get_account_setting_name(settings_skip_intro_yourself).c_str(), false))
+        if (login_new_user_ && MyInfo()->friendlyName().isEmpty() && !get_gui_settings()->get_value(get_account_setting_name(settings_skip_intro_yourself).c_str(), false))
         {
-            if (is_first_time)
+            if (!recv_my_info_)
             {
                 emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_SetExistanseOnIntroduceYourself);
                 emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_IntroduceYourself);
@@ -719,12 +779,26 @@ namespace Ui
         {
             emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_SetExistanseOffIntroduceYourself);
         }
-        is_first_time = false;
+        recv_my_info_ = true;
     }
 
     void MainPage::openCreatedGroupChat()
     {
         auto connect_id = connect(GetDispatcher(), SIGNAL(openChat(QString)), contact_list_widget_, SLOT(select(QString)));
         QTimer::singleShot(2000, [this, connect_id] { disconnect(connect_id); } );
+    }
+
+    void MainPage::loginNewUser()
+    {
+        login_new_user_ = true;
+    }
+
+    void MainPage::popPagesToRoot()
+    {
+        Sidebar* sidebar = contact_dialog_->getSidebar();
+        if (pages_->currentWidget() == sidebar)
+            setSidebarVisible(false);
+
+        pages_->poproot();
     }
 }

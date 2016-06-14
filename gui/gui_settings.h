@@ -99,6 +99,7 @@ Q_SIGNALS:
     private:
 
         int							shadow_width_;
+        bool is_loaded_;
     public:
 
         qt_gui_settings();
@@ -108,6 +109,9 @@ Q_SIGNALS:
         void set_shadow_width(int _width);
         int get_shadow_width() const;
         int get_current_shadow_width() const;
+
+        bool getIsLoaded() const { return is_loaded_; };
+        void setIsLoaded(bool _is_loaded) { is_loaded_ = _is_loaded; };
     };
 
     template<> void qt_gui_settings::set_value<QString>(const QString& _name, const QString& _value);

@@ -55,7 +55,7 @@ namespace Utils
         return res;
 #endif
     }
-
+    
     inline const std::string QStringToString(const QString& s)
     {
         return s.toUtf8().constData();
@@ -68,7 +68,7 @@ namespace Utils
     void ApplyStyle(QWidget *widget, QString style);
     void ApplyPropertyParameter(QWidget *widget, const char *property, QVariant parameter);
 
-    void SetFont(QString* qss);
+    QString SetFont(const QString& qss);
 
     QString LoadStyle(const QString& qss_file, double scale, bool import_common_style = true);
 
@@ -76,7 +76,7 @@ namespace Utils
 
     QStringList GetPossibleStrings(const QString& text);
 
-    QPixmap RoundImage(const QPixmap &img, const QString& state, bool mini_icons = false);
+    QPixmap RoundImage(const QPixmap &img, const QString& state, bool isDefault, bool mini_icons);
 
     QPixmap DrawStatus(const QString& state, int scale);
 
@@ -96,6 +96,8 @@ namespace Utils
     void removeLineBreaks(QString& source);
 
     bool isValidEmailAddress(const QString &email);
+
+    bool isProbablyPhoneNumber(const QString &number);
 
     bool foregroundWndIsFullscreened();
 
@@ -120,11 +122,11 @@ namespace Utils
     QColor getSelectionColor();
     QString rgbaStringFromColor(const QColor& _color);
 
-	int		scale_value(const int _px);
-	int		scale_bitmap(const int _px);
-	QSize	scale_bitmap(const QSize &_px);
-	QRect	scale_bitmap(const QRect &_px);
-	int		unscale_value(int _px);
+    int    scale_value(const int _px);
+    int    unscale_value(int _px);
+    int    scale_bitmap(const int _px);
+    QSize    scale_bitmap(const QSize &_px);
+    QRect    scale_bitmap(const QRect &_px);
 
     template <typename _T>
     void check_pixel_ratio(_T& _image);
@@ -165,8 +167,10 @@ namespace Utils
 
     bool saveAs(const QString& inputFilename, QString& filename, QString& directory);
 
-    const std::vector<QString> get_keys_send_by_names();
-    int get_key_send_by_index();
+    typedef std::vector<std::pair<QString, Ui::KeyToSendMessage>> SendKeysIndex;
+
+    const SendKeysIndex& getSendKeysIndex();
+
 
     void post_stats_with_settings();
     QRect GetMainRect();
@@ -181,10 +185,14 @@ namespace Utils
         const QString& _chat_name,
         const QString& _button_text,
         const QString& _header_text,
-        Out QString& result_chat_name);
+        Out QString& result_chat_name,
+        bool acceptEnter = true);
 
     bool GetConfirmationWithTwoButtons(const QString& _button_left, const QString& _button_right,
         const QString& _message_text, const QString& _label_text, QWidget* _parent);
+
+    bool GetErrorWithTwoButtons(const QString& _button_left_text, const QString& _button_right_text,
+        const QString& _message_text, const QString& _label_text, const QString& _error_text, QWidget* _parent);
 
     struct ProxySettings
     {
@@ -208,4 +216,24 @@ namespace Utils
     ProxySettings* get_proxy_settings();
 
     bool loadPixmap(const QString &path, Out QPixmap &pixmap);
+
+    class StatsSender : public QObject
+    {
+        Q_OBJECT
+    public :
+        StatsSender();
+
+    public Q_SLOTS:
+        void recv_gui_settings() { gui_settings_received_ = true; trySendStats(); }
+        void recv_theme_settings() { theme_settings_received_ = true; trySendStats(); }
+        
+    public:
+        void trySendStats() const;
+
+    private:
+        bool gui_settings_received_;
+        bool theme_settings_received_;
+    };
+    
+    StatsSender* get_stats_sender();
 }

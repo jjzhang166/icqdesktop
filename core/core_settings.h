@@ -14,7 +14,11 @@ namespace core
 
         csv_device_id = 1,
         core_settings_proxy = 2,
-        
+        core_settings_locale = 3,
+		voip_mute_fix_flag   = 4,
+
+        themes_settings_etag = 10,
+
         max
     };
 
@@ -32,7 +36,11 @@ namespace core
 		void init_default();
 
         void set_user_proxy_settings(const proxy_settings& _user_proxy_settings);
+        void set_locale(const std::string& _locale);
+        std::string get_locale() const;
         proxy_settings get_user_proxy_settings();
+		bool get_voip_mute_fix_flag() const;
+		void set_voip_mute_fix_flag(bool bValue);
 	};
 
 }

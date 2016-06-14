@@ -17,7 +17,7 @@ namespace Ui
     }
 
     FlatMenu::FlatMenu(QWidget* parent/* = nullptr*/):
-        QMenu(parent)
+        QMenu(parent), iconSticked_(false)
     {
         setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint);
         setStyle(new FlatMenuStyle());
@@ -65,15 +65,37 @@ namespace Ui
     void FlatMenu::showEvent(QShowEvent* event)
     {
         if (!parentWidget())
+        {
             return QMenu::showEvent(event);
+        }
+        auto posx = pos().x();
+        auto posy = pos().y();
+        if (iconSticked_)
+        {
+            if (auto button = qobject_cast<QPushButton *>(parentWidget()))
+            {
+                posx -= ((button->size().width() - button->iconSize().width()) / 2);
+                posy -= ((button->size().height() - button->iconSize().height()) / 2);
+                move(posx, posy);
+            }
+        }
         if ((expandDirection_ & Qt::AlignLeft) == Qt::AlignLeft)
+        {
             move(pos().x() + parentWidget()->geometry().width() - geometry().width(), pos().y());
+        }
         if ((expandDirection_ & Qt::AlignTop) == Qt::AlignTop)
+        {
             move(pos().x(), pos().y() - parentWidget()->geometry().height() - geometry().height());
+        }
     }
 
     void FlatMenu::setExpandDirection(Qt::Alignment direction)
     {
         expandDirection_ = direction;
+    }
+    
+    void FlatMenu::stickToIcon()
+    {
+        iconSticked_ = true;
     }
 }

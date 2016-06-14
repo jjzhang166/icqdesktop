@@ -7,6 +7,7 @@
 
 Ui::CustomButton::CustomButton(QWidget* _parent, const QString& _imageName)
     : QPushButton(_parent)
+    , activeState_(false)
 {
 	init();
     auto px = QPixmap(Utils::parse_image_name(_imageName));
@@ -46,6 +47,7 @@ void Ui::CustomButton::paintEvent(QPaintEvent *_e)
 		painter.fillRect(rect(), fillColor_);
 	}
     Utils::check_pixel_ratio(pixmapToDraw_);
+    Utils::check_pixel_ratio(pixmapDisabled_);
     double ratio = Utils::scale_bitmap(1);
     int x = (this->rect().width() / 2) - (pixmapToDraw_.width() / 2. / ratio);
     int y = (this->rect().height() / 2) - (pixmapToDraw_.height() / 2. / ratio);
@@ -69,7 +71,7 @@ void Ui::CustomButton::paintEvent(QPaintEvent *_e)
 		y += y_;
 	}
 
-    painter.drawPixmap(x, y, pixmapToDraw_);
+    painter.drawPixmap(x, y, (!isEnabled() && !pixmapDisabled_.isNull()) ? pixmapDisabled_ : pixmapToDraw_);
 }
 
 void Ui::CustomButton::leaveEvent(QEvent* _e)
@@ -134,6 +136,13 @@ void Ui::CustomButton::setActiveImage(const QString& _imageName)
     auto px = QPixmap(Utils::parse_image_name(_imageName));
     if (!px.isNull())
         pixmapActive_ = platform::is_apple() ? px.scaled(Utils::scale_value(px.width()), Utils::scale_value(px.width()), Qt::KeepAspectRatio, Qt::SmoothTransformation) : px;
+}
+
+void Ui::CustomButton::setDisabledImage(const QString& _imageName)
+{
+    auto px = QPixmap(Utils::parse_image_name(_imageName));
+    if (!px.isNull())
+        pixmapDisabled_ = platform::is_apple() ? px.scaled(Utils::scale_value(px.width()), Utils::scale_value(px.width()), Qt::KeepAspectRatio, Qt::SmoothTransformation) : px;
 }
 
 void Ui::CustomButton::setActive(bool _isActive)

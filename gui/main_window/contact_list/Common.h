@@ -22,6 +22,11 @@ namespace ContactList
 
 		const DipPixels operator/(const DipPixels& rhs) const { return DipPixels(Px_ / rhs.Px_); }
 
+        bool operator < (const DipPixels& _other) const
+        {
+            return Px_ < _other.Px_;
+        }
+
 	private:
 		int Px_;
 	};
@@ -54,7 +59,9 @@ namespace ContactList
 			const QDateTime &lastSeen,
 			const bool isWithCheckBox,
             bool isChatMember,
-            bool official);
+            bool official,
+            const bool _drawLastRead,
+            const QPixmap& _lastReadAvatar);
 
 		const QString AimId_;
 
@@ -81,6 +88,10 @@ namespace ContactList
         bool isChatMember_;
 
         bool isOfficial_;
+
+        const bool drawLastRead_;
+
+        const QPixmap& lastReadAvatar_;
 
         const QString& GetStatus() const;
 

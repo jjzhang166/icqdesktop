@@ -44,15 +44,15 @@ namespace installer
             current_task_watcher_.reset(new QFutureWatcher<installer::error>());
         }
 
-        void worker::final_install()
+        void worker::final_install(bool _is_from_8x)
         {
-            run_async_function(store_exported_settings, [this](const installer::error& /*_err*/)
+            run_async_function<installer::error>(std::bind(store_exported_settings, _is_from_8x), [this, _is_from_8x](const installer::error& /*_err*/)
             {
-
-                run_async_function(store_exported_account, [this](const installer::error& /*_err*/)
+                std::function<installer::error()> store_exported_account_without_args = std::bind(store_exported_account, _is_from_8x);
+                run_async_function<installer::error>(store_exported_account_without_args, [this](const installer::error& /*_err*/)
                 {
 
-                    run_async_function(start_process, [this](const installer::error& /*_err*/)
+                    run_async_function<installer::error>(start_process, [this](const installer::error& /*_err*/)
                     {
 
                         if (is_delete_8x_files_on_final())
@@ -62,7 +62,7 @@ namespace installer
 
                         if (is_delete_8x_self_on_final())
                         {
-                            run_async_function(delete_self_from_8x, [this](const installer::error& /*_err*/)
+                            run_async_function<installer::error>(delete_self_from_8x, [this](const installer::error& /*_err*/)
                             {
 
                                 emit finish();
@@ -84,14 +84,14 @@ namespace installer
             progress_ = 5;
             emit progress(progress_);
 
-            run_async_function(export_from_8x, [this](const installer::error& _err)
+            run_async_function<installer::error>(export_from_8x, [this](const installer::error& _err)
             {
                 if (!_err.is_ok())
                 {
                     emit error(_err);
                     return;
                 }
-                run_async_function(uninstall_8x_from_executable, [this](const installer::error& _err)
+                run_async_function<installer::error>(uninstall_8x_from_executable, [this](const installer::error& _err)
                 {
                     if (!_err.is_ok())
                     {
@@ -99,7 +99,7 @@ namespace installer
                         return;
                     }
                     
-                    run_async_function(terminate_process, [this](const installer::error& _err)
+                    run_async_function<installer::error>(terminate_process, [this](const installer::error& _err)
                     {
                         if (!_err.is_ok())
                         {
@@ -107,7 +107,7 @@ namespace installer
                             return;
                         }
 
-                        run_async_function(copy_files, [this](const installer::error& _err)
+                        run_async_function<installer::error>(copy_files, [this](const installer::error& _err)
                         {
                             if (!_err.is_ok())
                             {
@@ -115,7 +115,7 @@ namespace installer
                                 return;
                             }
 
-                            run_async_function(write_registry, [this](const installer::error& _err)
+                            run_async_function<installer::error>(write_registry, [this](const installer::error& _err)
                             {
                                 if (!_err.is_ok())
                                 {
@@ -123,7 +123,7 @@ namespace installer
                                     return;
                                 }
 
-                                run_async_function(create_links, [this](const installer::error& _err)
+                                run_async_function<installer::error>(create_links, [this](const installer::error& _err)
                                 {
                                     if (!_err.is_ok())
                                     {
@@ -144,7 +144,7 @@ namespace installer
                                         }
                                     }
 
-                                    final_install();
+                                    final_install(!get_exported_data().get_accounts().empty() /* from 8x */);
 
                                 }, 85);
                             }, 60);
@@ -159,15 +159,15 @@ namespace installer
             progress_ = 10;
             emit progress(progress_);
 
-            run_async_function(terminate_process, [this](const installer::error&)
+            run_async_function<installer::error>(terminate_process, [this](const installer::error&)
             {
-                run_async_function(clear_registry, [this](const installer::error&)
+                run_async_function<installer::error>(clear_registry, [this](const installer::error&)
                 {
-                    run_async_function(delete_links, [this](const installer::error&)
+                    run_async_function<installer::error>(delete_links, [this](const installer::error&)
                     {
-                        run_async_function(delete_files, [this](const installer::error&)
+                        run_async_function<installer::error>(delete_files, [this](const installer::error&)
                         {
-                            run_async_function(delete_self_and_product_folder, [this](const installer::error&)
+                            run_async_function<installer::error>(delete_self_and_product_folder, [this](const installer::error&)
                             {
                                 emit finish();
                             }, 100);
@@ -215,7 +215,7 @@ namespace installer
             progress_ = 5;
             emit progress(progress_);
 
-            run_async_function(copy_files_to_updates, [this](const installer::error& _err)
+            run_async_function<installer::error>(copy_files_to_updates, [this](const installer::error& _err)
             {
                 if (!_err.is_ok())
                 {
@@ -223,7 +223,7 @@ namespace installer
                     return;
                 }
 
-                run_async_function(write_update_version, [this](const installer::error&)
+                run_async_function<installer::error>(write_update_version, [this](const installer::error&)
                 {
 
                     emit finish();
@@ -237,7 +237,7 @@ namespace installer
             progress_ = 5;
             emit progress(progress_);
 
-            run_async_function(copy_files_from_updates, [this, &_mutex](const installer::error& _err)
+            run_async_function<installer::error>(copy_files_from_updates, [this, &_mutex](const installer::error& _err)
             {
                 if (!_err.is_ok())
                 {
@@ -245,7 +245,7 @@ namespace installer
                     return;
                 }
 
-                run_async_function(write_to_uninstall_key, [this, &_mutex](const installer::error& _err)
+                run_async_function<installer::error>(write_to_uninstall_key, [this, &_mutex](const installer::error& _err)
                 {
                     if (!_err.is_ok())
                     {
@@ -255,7 +255,7 @@ namespace installer
 
                     _mutex.Close();
 
-                    run_async_function(start_process, [this](const installer::error& _err)
+                    run_async_function<installer::error>(start_process, [this](const installer::error& _err)
                     {
                         if (!_err.is_ok())
                         {
@@ -263,7 +263,7 @@ namespace installer
                             return;
                         }
 
-                        run_async_function(copy_self_from_updates, [this](const installer::error& _err)
+                        run_async_function<installer::error>(copy_self_from_updates, [this](const installer::error& _err)
                         {
                             if (!_err.is_ok())
                             {
@@ -271,7 +271,7 @@ namespace installer
                                 return;
                             }
 
-                            run_async_function(delete_updates, [this](const installer::error& _err)
+                            run_async_function<installer::error>(delete_updates, [this](const installer::error& _err)
                             {
                                 if (!_err.is_ok())
                                 {
@@ -290,7 +290,7 @@ namespace installer
 
         void worker::update_from_8x_step_1()
         {
-            run_async_function(copy_files, [this](const installer::error& _err)
+            run_async_function<installer::error>(copy_files, [this](const installer::error& _err)
             {
                 if (!_err.is_ok())
                 {
@@ -299,7 +299,7 @@ namespace installer
                     return;
                 }
 
-                run_async_function(set_8x_update_downloaded, [this](const installer::error& /*_err*/)
+                run_async_function<installer::error>(set_8x_update_downloaded, [this](const installer::error& /*_err*/)
                 {
                     copy_self_to_bin_8x();
 
@@ -314,7 +314,7 @@ namespace installer
             progress_ = 5;
             emit progress(progress_);
 
-            run_async_function(export_from_8x, [this](const installer::error& _err)
+            run_async_function<installer::error>(export_from_8x, [this](const installer::error& _err)
             {
                 if (!_err.is_ok())
                 {
@@ -322,9 +322,9 @@ namespace installer
                     return;
                 }
 
-                run_async_function(delete_8x_links, [this](const installer::error& /*_err*/)
+                run_async_function<installer::error>(delete_8x_links, [this](const installer::error& /*_err*/)
                 {
-                    run_async_function(terminate_process, [this](const installer::error& _err)
+                    run_async_function<installer::error>(terminate_process, [this](const installer::error& _err)
                     {
                         if (!_err.is_ok())
                         {
@@ -332,7 +332,7 @@ namespace installer
                             return;
                         }
 
-                        run_async_function(write_registry, [this](const installer::error& _err)
+                        run_async_function<installer::error>(write_registry, [this](const installer::error& _err)
                         {
                             if (!_err.is_ok())
                             {
@@ -340,7 +340,7 @@ namespace installer
                                 return;
                             }
 
-                            run_async_function(create_links, [this](const installer::error& _err)
+                            run_async_function<installer::error>(create_links, [this](const installer::error& _err)
                             {
                                 if (!_err.is_ok())
                                 {
@@ -364,7 +364,7 @@ namespace installer
                                     }
                                 }
 
-                                final_install();
+                                final_install(true /* from 8x */);
                             }, 85);
                         }, 60);
                     }, 30);

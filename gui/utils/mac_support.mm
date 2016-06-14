@@ -17,6 +17,7 @@
 #include "stdafx.h"
 #include "../main_window/MainWindow.h"
 #include "../main_window/MainPage.h"
+#include "../main_window/contact_list/ContactListModel.h"
 
 #include "../utils/utils.h"
 #include "../utils/InterConnector.h"
@@ -52,6 +53,7 @@ enum
 };
     
 static QMap<int, QAction *> menuItems_;
+static Ui::MainWindow * mainWindow_ = nil;
 
 static QString toQString(NSString * src)
 {
@@ -81,7 +83,10 @@ static NSString * fromQString(const QString & src)
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
-    QApplication::exit();
+    if (mainWindow_ != nil)
+    {
+        mainWindow_->exit();
+    }
     return NSTerminateCancel;
 }
 @end
@@ -90,31 +95,32 @@ static NSString * fromQString(const QString & src)
 
 @interface LinkPreviewItem : NSObject <QLPreviewItem>
 @property (readonly) NSURL *previewItemURL;
+@property (readonly) NSString *previewItemURLString;
 @property (readonly) NSString *previewItemTitle;
 @property (readonly) CGPoint point;
 
-- (id)initWithURLString:(NSString *)path andTitle:(NSString *)title andPoint:(CGPoint)point;
+- (id)initWithPath:(NSString *)path andPoint:(CGPoint)point;
+
 @end
 
 
 @implementation LinkPreviewItem
 
-- (id)initWithURLString:(NSString *)path andTitle:(NSString *)title andPoint:(CGPoint)point
+- (id)initWithPath:(NSString *)path andPoint:(CGPoint)point
 {
     self = [super init];
     if (self)
     {
-        NSString * cachedPath = path;
-        
-        if ([[NSFileManager defaultManager] fileExistsAtPath:cachedPath])
+        if ([[NSFileManager defaultManager] fileExistsAtPath:path])
         {
-            _previewItemURL = [NSURL fileURLWithPath:cachedPath];
+            _previewItemURL = [NSURL fileURLWithPath:path];
         }
         else
         {
             _previewItemURL = [NSURL URLWithString:path];
         }
-        _previewItemTitle = title;
+        _previewItemURLString = [[NSString alloc] initWithString:path];
+        _previewItemTitle = [[NSString alloc] initWithString:_previewItemURL.lastPathComponent];
         _point = point;
     }
     return self;
@@ -124,7 +130,10 @@ static NSString * fromQString(const QString & src)
 {
     [_previewItemURL release];
     _previewItemURL = nil;
-    
+
+    [_previewItemURLString release];
+    _previewItemURLString = nil;
+
     [_previewItemTitle release];
     _previewItemTitle = nil;
     
@@ -137,7 +146,7 @@ static NSString * fromQString(const QString & src)
 
 @property (strong) LinkPreviewItem *previewItem;
 
-- (void)showPreviewPopupWithUrl:(NSURL *)url atPos:(CGPoint)point;
+- (void)showPreviewPopupWithPath:(NSString *)path atPos:(CGPoint)point;
 
 @end
 
@@ -174,12 +183,11 @@ static NSString * fromQString(const QString & src)
     return NO;
 }
 
-- (void)showPreviewPopupWithUrl:(NSURL *)url atPos:(CGPoint)point
+- (void)showPreviewPopupWithPath:(NSString *)path atPos:(CGPoint)point
 {
     if (![self hidePreviewPopup])
     {
-        self.previewItem = [[LinkPreviewItem alloc] initWithURLString:url.absoluteString andTitle:@"Preview" andPoint:point];
-        
+        self.previewItem = [[LinkPreviewItem alloc] initWithPath:path andPoint:point];
         [[QLPreviewPanel sharedPreviewPanel] makeKeyAndOrderFront:nil];
     }
 }
@@ -197,7 +205,7 @@ static NSString * fromQString(const QString & src)
 
 - (NSInteger)numberOfPreviewItemsInPreviewPanel:(QLPreviewPanel *)panel
 {
-    return (self.previewItem)?1:0;
+    return (self.previewItem) ? 1 : 0;
 }
 
 - (CGRect)previewPanel:(QLPreviewPanel *)panel sourceFrameOnScreenForPreviewItem:(id<QLPreviewItem>)item
@@ -239,14 +247,67 @@ static NSString * fromQString(const QString & src)
     }
 }
 
+@end
+
+// Events catcher
+
+@interface EventsCatcher : NSObject
+
+@property (nonatomic, copy) void(^sleep)(void);
+@property (nonatomic, copy) void(^wake)(void);
+
+- (instancetype)initWithSleepLambda:(void(^)(void))sleep andWakeLambda:(void(^)(void))wake;
+- (void)receiveSleepEvent:(NSNotification *)notification;
+- (void)receiveWakeEvent:(NSNotification *)notification;
 
 @end
 
+@implementation EventsCatcher
+
+- (instancetype)initWithSleepLambda:(void (^)())sleep andWakeLambda:(void (^)())wake
+{
+    self = [super init];
+    if (self)
+    {
+        self.sleep = sleep;
+        self.wake = wake;
+        [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+                                                               selector:@selector(receiveSleepEvent:)
+                                                                   name:NSWorkspaceWillSleepNotification object:nil];
+        [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+                                                               selector:@selector(receiveWakeEvent:)
+                                                                   name:NSWorkspaceDidWakeNotification object:nil];
+        [[NSDistributedNotificationCenter defaultCenter] addObserver:self
+                                                            selector:@selector(receiveSleepEvent:)
+                                                                name:@"com.apple.screenIsLocked"
+                                                              object:nil];
+        [[NSDistributedNotificationCenter defaultCenter] addObserver:self
+                                                            selector:@selector(receiveWakeEvent:)
+                                                                name:@"com.apple.screenIsUnlocked"
+                                                              object:nil];
+    }
+    return self;
+}
+
+- (void)receiveSleepEvent:(NSNotification *)notification
+{
+    self.sleep();
+}
+
+- (void)receiveWakeEvent:(NSNotification *)notification
+{
+    self.wake();
+}
+
+@end
+
+// ! Events catcher
+
+
 static SUUpdater * sparkleUpdater_ = nil;
 static MacPreviewProxy * macPreviewProxy_ = nil;
-static Ui::MainWindow * mainWindow_ = nil;
 
-MacSupport::MacSupport(Ui::MainWindow * mainWindow)
+MacSupport::MacSupport(Ui::MainWindow * mainWindow): mainMenu_(nullptr)
 {
     sparkleUpdater_ = nil;
     mainWindow_ = mainWindow;
@@ -308,6 +369,27 @@ void MacSupport::enableMacCrashReport()
 #endif
 }
 
+void MacSupport::listenSleepAwakeEvents()
+{
+    static EventsCatcher *eventsCatcher = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        //
+        eventsCatcher = [[EventsCatcher alloc] initWithSleepLambda:^{
+            //
+            if (mainWindow_)
+                mainWindow_->gotoSleep();
+            //
+        } andWakeLambda:^{
+            //
+            if (mainWindow_)
+                mainWindow_->gotoWake();
+            //
+        }];
+        //
+    });
+}
+
 void MacSupport::runMacUpdater()
 {
     if (sparkleUpdater_)
@@ -348,15 +430,20 @@ void MacSupport::toggleFullScreen(WId wid)
 
 void MacSupport::showPreview(QString previewPath, int x, int y)
 {
-    NSString * previewPath_ = fromQString(previewPath);
-    NSURL * previewUrl = [NSURL fileURLWithPath:previewPath_];
-    
-    if (y != -1)
+    if ([[[macPreviewProxy_ view] window] isKeyWindow])
     {
-        y = [NSScreen mainScreen].visibleFrame.size.height - y;
+        NSString *path = fromQString(previewPath);
+        if (y != -1)
+        {
+            y = [NSScreen mainScreen].visibleFrame.size.height - y;
+        }
+        [macPreviewProxy_ showPreviewPopupWithPath:path atPos:NSMakePoint(x, y)];
     }
-    
-    [macPreviewProxy_ showPreviewPopupWithUrl:previewUrl atPos:NSMakePoint(x, y)];
+}
+
+bool MacSupport::previewIsShown()
+{
+    return ([QLPreviewPanel sharedPreviewPanelExists] && [[QLPreviewPanel sharedPreviewPanel] isVisible]);
 }
 
 void MacSupport::openFinder(QString previewPath)
@@ -399,18 +486,20 @@ QAction * createAction(MenuT * menu, QString title, QString shortcut, const QObj
     return action;
 }
 
-QMenuBar * MacSupport::createMenuBar(bool simple/* = false*/)
+void MacSupport::createMenuBar(bool simple)
 {
-    QMenuBar * mainMenu = new QMenuBar();
-    QMenu * menu = nil;
-    
-    mainWindow_->menuBar()->clear();
-    
-    menuItems_.clear();
-    
-    if (!simple)
+    if (!mainMenu_)
     {
-        menu = mainMenu->addMenu(QT_TRANSLATE_NOOP("main_menu","Edit"));
+        mainMenu_ = mainWindow_->menuBar();
+        QObject::connect(mainMenu_, &QMenuBar::triggered, [](QAction *)
+        {
+            emit Utils::InterConnector::instance().closeAnyPopupWindow();
+        });
+
+        QMenu *menu = 0;
+        QAction *action = 0;
+        
+        menu = mainMenu_->addMenu(QT_TRANSLATE_NOOP("main_menu","&Edit"));
         menuItems_.insert(edit_undo, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Undo"), "Ctrl+Z", mainWindow_, SLOT(undo())));
         menuItems_.insert(edit_redo, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Redo"), "Shift+Ctrl+Z", mainWindow_, SLOT(redo())));
         menu->addSeparator();
@@ -419,38 +508,53 @@ QMenuBar * MacSupport::createMenuBar(bool simple/* = false*/)
         menuItems_.insert(edit_paste, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Paste"), "Ctrl+V", mainWindow_, SLOT(paste())));
         menuItems_.insert(edit_pasteAsQuote, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Paste as Quote"), "Alt+Ctrl+V", mainWindow_, SLOT(quote())));
         menu->addSeparator();
-        menuItems_.insert(edit_pasteEmoji, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Emoji & Symbols"), "Meta+Ctrl+Space", mainWindow_, SLOT(pasteEmoji())));
+        extendedMenus_.push_back(menu);
         
-        menu = mainMenu->addMenu(QT_TRANSLATE_NOOP("main_menu","Contact"));
+        menu = mainMenu_->addMenu(QT_TRANSLATE_NOOP("main_menu","Contact"));
         menuItems_.insert(contact_addBuddy, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Add Buddy"), "Ctrl+N", mainWindow_, SLOT(activateContactSearch())));
         menuItems_.insert(contact_profile, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Profile"), "Ctrl+I", mainWindow_, SLOT(activateProfile())));
         menuItems_.insert(contact_close, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Close"), "Ctrl+W", mainWindow_, SLOT(closeCurrent())));
+        extendedMenus_.push_back(menu);
         
-        menu = mainMenu->addMenu(QT_TRANSLATE_NOOP("main_menu","View"));
+        menu = mainMenu_->addMenu(QT_TRANSLATE_NOOP("main_menu","View"));
         menuItems_.insert(view_unreadMessage, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Next Unread Message"), "Ctrl+]", mainWindow_, SLOT(activateNextUnread())));
         menuItems_.insert(view_fullScreen, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Enter Full Screen"), "Meta+Ctrl+F", mainWindow_, SLOT(toggleFullScreen())));
+        extendedMenus_.push_back(menu);
         
-        menu = mainMenu->addMenu(QT_TRANSLATE_NOOP("main_menu","Window"));
+        menu = mainMenu_->addMenu(QT_TRANSLATE_NOOP("main_menu","Window"));
         menuItems_.insert(window_nextChat, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Select Next Chat"), "Shift+Ctrl+]", mainWindow_, SLOT(activateNextChat())));
         menuItems_.insert(window_prevChat, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Select Previous Chat"), "Shift+Ctrl+[", mainWindow_, SLOT(activatePrevChat())));
         menuItems_.insert(window_minimizeWindow, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Minimize"), "Ctrl+M", mainWindow_, SLOT(minimize())));
         menuItems_.insert(window_mainWindow, createAction(menu, QT_TRANSLATE_NOOP("main_menu","Main Window"), "Ctrl+1", mainWindow_, SLOT(activate())));
+        extendedMenus_.push_back(menu);
         
-        menuItems_.insert(global_about, createAction(menu, "about.*", "", mainWindow_, SLOT(activateAbout())));
-        menuItems_.insert(global_settings, createAction(menu, "settings", "", mainWindow_, SLOT(activateSettings())));
+        action = createAction(menu, "about.*", "", mainWindow_, SLOT(activateAbout()));
+        menuItems_.insert(global_about, action);
+        extendedActions_.push_back(action);
         
-//        mainWindow_->connect(menu, SIGNAL(aboutToShow()), mainWindow_, SLOT(toggleWindowMenu()), Qt::QueuedConnection);
-        
+        action = createAction(menu, "settings", "", mainWindow_, SLOT(activateSettings()));
+        menuItems_.insert(global_settings, action);
+        extendedActions_.push_back(action);
+
 #ifdef UPDATES
-        QAction * act = createAction(menu, QT_TRANSLATE_NOOP("context_menu", "Check for updates..."), "", mainWindow_, SLOT(checkForUpdates()));
-        act->setMenuRole(QAction::MenuRole::ApplicationSpecificRole);
-        
-        menuItems_.insert(global_update, act);
+        action = createAction(menu, QT_TRANSLATE_NOOP("context_menu", "Check for updates..."), "", mainWindow_, SLOT(checkForUpdates()));
+        action->setMenuRole(QAction::MenuRole::ApplicationSpecificRole);
+        menuItems_.insert(global_update, action);
+        extendedActions_.push_back(action);
 #endif
+
+        createAction(mainMenu_, "quit", "", mainWindow_, SLOT(exit()));
+        
+        mainWindow_->setMenuBar(mainMenu_);
     }
 
-    createAction(mainMenu, "quit", "", mainWindow_, SLOT(exit()));
-
+    for (auto menu: extendedMenus_)
+        menu->setEnabled(!simple);
+    
+    for (auto action: extendedActions_)
+        action->setEnabled(!simple);
+    
+    updateMainMenu();
     
 //    Edit
 //    Undo cmd+Z
@@ -485,11 +589,6 @@ QMenuBar * MacSupport::createMenuBar(bool simple/* = false*/)
 //    Select next chat shift+cmd+]
 //    Select previous chat shift+cmd+[
 //    Main window cmd+1
-    
-    mainWindow_->setMenuBar(mainMenu);
-    updateMainMenu();
-    
-    return mainMenu;
 }
 
 void MacSupport::updateMainMenu()
@@ -500,15 +599,15 @@ void MacSupport::updateMainMenu()
     QAction * prevChat = menuItems_[window_prevChat];
     QAction * fullScreen = menuItems_[view_fullScreen];
    
-    if (nextChat && prevChat)
+    if (mainWindow_ && mainWindow_->getMainPage() && mainWindow_->getMainPage()->getContactDialog() && nextChat && prevChat)
     {
-        const QString & aimId = mainWindow_->activeAimId();
+        const QString & aimId = Logic::GetContactListModel()->selectedContact();
         
         nextChat->setEnabled(aimId.length() > 0);
         prevChat->setEnabled(aimId.length() > 0);
     }
     
-    if (fullScreen)
+    if (mainWindow_ && fullScreen)
     {
         void * pntr = (void*)mainWindow_->winId();
         NSView * view = (__bridge NSView *)pntr;
@@ -725,7 +824,11 @@ bool MacSupport::nativeEventFilter(const QByteArray &data, void *message, long *
     NSEvent *e = (NSEvent *)message;
     // NSLog(@"------------\n%@\n%@", data.toNSData(), e);
 
-    if ([e type] == NSAppKitDefined && [e subtype] == NSApplicationDeactivatedEventType)
+    if ([e type] == NSEventType::NSKeyDown && ([e modifierFlags] & (NSControlKeyMask | NSCommandKeyMask)))
+    {
+        emit Utils::InterConnector::instance().closeAnyPopupWindow();
+    }
+    else if ([e type] == NSAppKitDefined && [e subtype] == NSApplicationDeactivatedEventType)
     {
         emit Utils::InterConnector::instance().closeAnyPopupWindow();
     }

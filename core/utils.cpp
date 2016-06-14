@@ -2,7 +2,8 @@
 #include "utils.h"
 
 #include "tools/system.h"
-#include "../../common.shared/version_info.h"
+#include "../common.shared/version_info.h"
+#include "../common.shared/common_defs.h"
 
 namespace core
 {
@@ -12,6 +13,8 @@ namespace core
         {
 #ifdef __linux__
             return (core::tools::system::get_user_profile() + L"/.config/" + L"ICQ");
+#elif _WIN32
+            return ::common::get_product_data_path();
 #else
             return (core::tools::system::get_user_profile() + L"/" + L"ICQ");
 #endif //__linux__
@@ -43,9 +46,28 @@ namespace core
             }
         }
 
-        std::string get_user_agent()
+        std::string get_user_agent(const string_opt &_uin)
         {
-            return (get_app_name() + " (version " + tools::version_info().get_version() + ")");
+            std::string user_agent;
+            user_agent.reserve(256);
+
+            if (_uin)
+            {
+                const auto &uin = *_uin;
+                assert(!uin.empty());
+
+                user_agent += uin;
+                user_agent += " ";
+            }
+
+            user_agent += get_app_name();
+            user_agent += " (version ";
+            user_agent += tools::version_info().get_version();
+            user_agent += ")";
+
+            user_agent.shrink_to_fit();
+
+            return user_agent;
         }
 
         std::string get_platform_string()
@@ -87,6 +109,12 @@ namespace core
             logs_dir.append(L"logs");
 
             return logs_dir;
+        }
+
+        bool is_writable(const boost::filesystem::path &p)
+        {
+            std::ofstream of(p.string());
+            return of.good();
         }
     }
 }

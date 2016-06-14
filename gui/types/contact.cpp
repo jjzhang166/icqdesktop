@@ -42,7 +42,11 @@ namespace Data
 				contact->Is_chat_ = value.get_value_as_bool("is_chat");
 				contact->GroupId_ = group->Id_;
 				contact->Muted_ = value.get_value_as_bool("mute");
+                contact->IsLiveChat_ = value.get_value_as_bool("livechat");
                 contact->IsOfficial_ = value.get_value_as_bool("official");
+                contact->iconId_ = value.get_value_as_string("iconId");
+                contact->bigIconId_ = value.get_value_as_string("bigIconId");
+                contact->largeIconId_ = value.get_value_as_string("largeIconId");
                 
 				cl.insert(contact, group);
 			}
@@ -83,8 +87,12 @@ namespace Data
 		result->LastSeen_ = lastSeen > 0 ? QDateTime::fromTime_t((uint)lastSeen) : QDateTime();
 		result->Is_chat_ = helper->get_value_as_bool("is_chat");
 		result->Muted_ = helper->get_value_as_bool("mute");
+        result->IsLiveChat_ = helper->get_value_as_bool("livechat");
         result->IsOfficial_ = helper->get_value_as_bool("official");
-
+        result->iconId_ = helper->get_value_as_string("iconId");
+        result->bigIconId_ = helper->get_value_as_string("bigIconId");
+        result->largeIconId_ = helper->get_value_as_string("largeIconId");
+        
 		return result;
 	}
 

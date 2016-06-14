@@ -94,7 +94,7 @@ namespace Ui
             QString aimId = QString::fromCFString((__bridge CFStringRef)notification.userInfo[@"aimId"]);
             QString displayName = QString::fromCFString((__bridge CFStringRef)notification.userInfo[@"displayName"]);
             
-            Logic::QPixmapSCptr avatar = Logic::GetAvatarStorage()->Get(aimId, displayName, Utils::scale_value(64), !Logic::GetContactListModel()->isChat(aimId), isDefault);
+            Logic::QPixmapSCptr avatar = Logic::GetAvatarStorage()->Get(aimId, displayName, Utils::scale_value(64), !Logic::GetContactListModel()->isChat(aimId), isDefault, false);
             
             if (avatar.get())
             {

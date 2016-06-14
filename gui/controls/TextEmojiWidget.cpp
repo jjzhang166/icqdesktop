@@ -150,15 +150,18 @@ namespace Ui
 	};
 
 	compiled_text::compiled_text()
-		:	width_(-1), height_(-1)
+		:	width_(-1), height_(-1), kerning_(0)
 	{
 	}
 
 	int compiled_text::width(QPainter& _painter)
 	{
-		if (width_ == -1)
-			for (auto lex : lexs_)
+		if (width_ == -1){
+			for (auto lex : lexs_) {
 				width_ += lex->width(_painter);
+            }
+            width_ += lexs_.empty() ? 0 : (lexs_.size() - 1) * kerning_;
+        }
 		return width_ + 1;
 	}
 
@@ -185,7 +188,7 @@ namespace Ui
 		int i = 0;
 		for (auto lex : lexs_)
 		{
-			_x += lex->draw(_painter, _x, _y);
+			_x += lex->draw(_painter, _x, _y) + kerning_;
 			if (xmax > 0 && _x > xmax && i < (int) lexs_.size() - 1)
 			{
 				_painter.drawText(_x, _y, "...");
@@ -209,7 +212,7 @@ namespace Ui
 			}
 			h = _y + _dh;
 			if (!(lex->is_space() && _x == 0))
-				_x += lex->draw(_painter, _x, _y);
+				_x += lex->draw(_painter, _x, _y) + kerning_;
 		}
 		return h;
 	}
@@ -354,7 +357,20 @@ namespace Ui
 		return descent_;
 	}
 
-	TextEmojiWidget::~TextEmojiWidget(void)
+    void TextEmojiWidget::set_size_to_baseline(int v)
+    {
+        size_to_baseline_ = v;
+        auto metrics = QFontMetrics(font_);
+        auto ascent = metrics.ascent();
+        auto height = metrics.height();
+        if (v > ascent)
+        {
+            height = size_to_baseline_ + descent_;
+        }
+        setFixedHeight(height);
+    }
+    
+    TextEmojiWidget::~TextEmojiWidget(void)
 	{
 	}
 
@@ -511,6 +527,12 @@ namespace Ui
 
 	void TextEmojiWidget::mousePressEvent(QMouseEvent *_e)
 	{
+        if (_e->button() == Qt::RightButton)
+        {
+            emit rightClicked();
+            return QWidget::mousePressEvent(_e);
+        }
+
 		if (selectable_)
 		{
 			selection_ = QPoint();
@@ -560,8 +582,9 @@ namespace Ui
 
 	////
 
-	TextEmojiLabel::TextEmojiLabel(QWidget* _parent) :
-		LabelEx(_parent)
+	TextEmojiLabel::TextEmojiLabel(QWidget* _parent) 
+        : LabelEx(_parent)
+        , kerning_(0)
 	{
 		setSizeToBaseline(-1);
         setSizeToOffset(5);
@@ -600,6 +623,7 @@ namespace Ui
 	{
 		QLabel::setText(text);
 		compiled_text_.reset(new compiled_text());
+        compiled_text_->setKerning(kerning_);
 		if (!compile_text(QLabel::text(), *compiled_text_, false))
 			assert(false && "TextEmojiLabel::setText: couldn't compile text.");
 	}
@@ -637,5 +661,13 @@ namespace Ui
 
 		compiled_text_->draw(painter, offset_x, offset_y, -1);
 	}
+
+    void TextEmojiLabel::setKerning(int kerning) 
+    {
+        kerning_ = kerning;
+        if (!!compiled_text_) {
+            compiled_text_->setKerning(kerning);
+        }
+    }
 }
 

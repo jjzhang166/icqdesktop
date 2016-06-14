@@ -1,45 +1,21 @@
 #ifndef __CALL_PANEL_H__
 #define __CALL_PANEL_H__
 
-#include "CallMenu.h"
 #include "AvatarContainerWidget.h"
 #include "NameAndStatusWidget.h"
+#include "PushButton_t.h"
+#include "WindowHeaderFormat.h"
+#include "VideoPanel.h"
+#include "secureCallWnd.h"
 
 namespace voip_manager {
+    struct CipherState;
     struct ContactEx;
     struct Contact;
 }
 
 class QLabel;
 namespace Ui {
-    class PushButton_t : public QPushButton {
-    public:
-        enum eButtonState {
-            normal = 0, 
-            hovered, 
-            pressed, 
-            //--------
-            total
-        };
-
-    public:
-        PushButton_t(QWidget* parent = NULL);
-        void setImageForState(const eButtonState state, const std::string& image);
-        void setOffsets(int fromIconToText);
-        void setIconSize(const int w, const int h);
-
-    protected:
-        void paintEvent(QPaintEvent*) override;
-        bool event(QEvent*) override;
-
-    private:
-        eButtonState currentState_;
-        QPixmap      bitmapsForStates_[total];
-        int          fromIconToText_;
-        int          iconW_;
-        int          iconH_;
-    };   
-
     class SliderEx : public QWidget {
         Q_OBJECT
 
@@ -72,42 +48,89 @@ namespace Ui {
         QSlider      *slider_;
     };
 
-    class CallPanelMain : public QWidget {
-        Q_OBJECT
+    class QPushButtonEx;
 
-    private Q_SLOTS:
-        void onHangUpButtonClicked();
-        void onMenuButtonClicked();
-        void onMenuOpenChanged(bool);
+    class CallPanelMainEx : public QWidget
+    { Q_OBJECT
+        public:
+            //  |L        topPart       _-x|
+            //  |--------------------------|
+            //  |       bottomPart         |
+            //  |    x x x x x x x x x x   |
+            struct CallPanelMainFormat
+            {
+                eVideoPanelHeaderItems topPartFormat;
+                unsigned topPartHeight;
+                unsigned topPartFontSize;
 
-        void onVideoOnOffClicked();
-        void onMuteMicOnOffClicked();
-        void onVolumeChanged(int);
-        void onVolumeReleased();
-        void onVolumeOnOff();
+                unsigned bottomPartHeight;
+                unsigned bottomPartPanelHeight;
 
-        void onVoipCallNameChanged(const std::vector<voip_manager::Contact>&);
-        void onVoipVolumeChanged(const std::string&,int);
-        void onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex);
-        void onVoipMuteChanged(const std::string& device_type, bool muted);
-		void onVoipCallTimeChanged(unsigned sec_elapsed, bool have_call);
-        void onVoipMediaLocalAudio(bool enabled);
-        void onVoipMediaLocalVideo(bool enabled);
+                unsigned rgba;
+            };
 
-    public:
-        CallPanelMain(QWidget* parent);
-        ~CallPanelMain();
+        private Q_SLOTS:
+            void _onMinimize();
+            void _onMaximize();
+            void _onClose();
 
-    protected:
-        std::string _get_tick_count();
+            void _onClickGoChat();
+            void _onCameraTurn();
+            void _onStopCall();
+            void _onMicTurn();
+            void _onSoundTurn();
+            void onSoundTurnHover();
+            void onSecureCallClicked();
+            void onSecureCallWndOpened();
+            void onSecureCallWndClosed();
+            void onMuteChanged(bool muted);
 
-    private:
-        CallMenu _menu;
-        QPushButton* menu_show_;
-        int actual_vol_;
+            void onVoipCallNameChanged(const std::vector<voip_manager::Contact>&);
+            void onVoipMediaLocalVideo(bool enabled);
+            void onVoipMediaLocalAudio(bool enabled);
+            void onVoipUpdateCipherState(const voip_manager::CipherState& state);
+            void onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex);
+            void onVoipCallTimeChanged(unsigned sec_elapsed, bool have_call);
 
-        AvatarContainerWidget* avatar_container_;
-        NameAndStatusWidget*   name_and_status_container_;
+        Q_SIGNALS:
+            void onMinimize();
+            void onMaximize();
+            void onClose();
+
+            void onClickOpenChat(const std::string& contact);
+
+        protected:
+            void hideEvent(QHideEvent* e) override;
+            void moveEvent(QMoveEvent* e) override;
+            void resizeEvent(QResizeEvent* e) override;
+            void enterEvent(QEvent* e) override;
+
+        public:
+            CallPanelMainEx(QWidget* parent, const CallPanelMainFormat& panelFormat);
+            virtual ~CallPanelMainEx();
+
+            void processOnWindowMaximized();
+            void processOnWindowNormalled();
+
+        private:
+            template<typename __ButtonType>
+            __ButtonType* addButton(QWidget& parentWidget, const QString& propertyName, const char* slot, bool bDefaultCursor = false);
+
+        private:
+            std::string               active_contact_;
+            const CallPanelMainFormat format_;
+            QWidget*                  rootWidget_;
+            PushButton_t*             nameLabel_;
+            VolumeControl             vVolControl_;
+            VolumeControl             hVolControl_;
+            bool                      _secureCallEnabled;
+
+        private:
+            QPushButton*   _buttonMaximize;
+            QPushButton*   _buttonLocalCamera;
+            QPushButton*   _buttonLocalMic;
+            QPushButtonEx* _buttonSoundTurn;
+            SecureCallWnd* _secureCallWnd;
     };
 }
 

@@ -9,11 +9,17 @@
 #include "profiling/auto_stop_watch.h"
 #include "InterConnector.h"
 #include "../main_window/MainWindow.h"
+#include "../main_window/MainPage.h"
+#include "../main_window/ContactDialog.h"
+
 #include "gui_coll_helper.h"
 #include "../controls/TextEditEx.h"
 #include "../controls/GeneralDialog.h"
 #include "../main_window/contact_list/Common.h"
 #include "../controls/CustomButton.h"
+#include "../controls/DpiAwareImage.h"
+
+#include "../theme_settings.h"
 
 #include "utils.h"
 
@@ -413,10 +419,7 @@ namespace Utils
     void ApplyStyle(QWidget *widget, QString style)
     {
         if (widget)
-        {
-            Utils::SetFont(&style);
-            widget->setStyleSheet(Utils::ScaleStyle(style, Utils::get_scale_coefficient()));
-        }
+            widget->setStyleSheet(Utils::SetFont(Utils::ScaleStyle(style, Utils::get_scale_coefficient())));
     }
 
 	QString LoadStyle(const QString& qss_file, double scale, bool import_common_style)
@@ -441,23 +444,24 @@ namespace Utils
 		if (import_common_style)
 			result << LoadStyle(":/resources/qss/common.qss", scale, false);
 
-        SetFont(&qss);
-		result << ScaleStyle(qss, scale);
+        result << ScaleStyle(SetFont(qss), scale);
 
 		return out_string;
 	}
 
-    void SetFont(QString* qss)
+    QString SetFont(const QString& qss)
     {
-        qss->replace("%FONT_FAMILY%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
-		qss->replace("%FONT_FAMILY_BOLD%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_BOLD));
-		qss->replace("%FONT_FAMILY_SEMIBOLD%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_SEMIBOLD));
-		qss->replace("%FONT_FAMILY_LIGHT%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_LIGHT));
+        QString result(qss);
+        result.replace("%FONT_FAMILY%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
+		result.replace("%FONT_FAMILY_BOLD%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_BOLD));
+		result.replace("%FONT_FAMILY_SEMIBOLD%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_SEMIBOLD));
+		result.replace("%FONT_FAMILY_LIGHT%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_LIGHT));
 
-        qss->replace("%FONT_WEIGHT%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI));
-        qss->replace("%FONT_WEIGHT_BOLD%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_BOLD));
-        qss->replace("%FONT_WEIGHT_SEMIBOLD%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_SEMIBOLD));
-        qss->replace("%FONT_WEIGHT_LIGHT%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_LIGHT));
+        result.replace("%FONT_WEIGHT%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI));
+        result.replace("%FONT_WEIGHT_BOLD%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_BOLD));
+        result.replace("%FONT_WEIGHT_SEMIBOLD%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_SEMIBOLD));
+        result.replace("%FONT_WEIGHT_LIGHT%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_LIGHT));
+        return result;
     }
 
 	QPixmap GetDefaultAvatar(const QString &uin, const QString &displayName, const int sizePx, const bool isFilled)
@@ -470,10 +474,10 @@ namespace Utils
 
 		// evaluate colors
 
-		const auto &str = uin.isEmpty() ? QString("0") : uin;
-		const auto crc32 = crc32FromString(str);
-		const auto colorIndex = (crc32 % ColorTableSize);
-		const auto color = ColorTable[colorIndex];
+        const auto &str = uin.isEmpty() ? QString("0") : uin;
+        const auto crc32 = crc32FromString(str);
+        const auto colorIndex = (crc32 % ColorTableSize);
+        QColor color = ColorTable[colorIndex];
 
 		QPainter painter(&bigResult);
 
@@ -517,14 +521,14 @@ namespace Utils
             return QPixmap::fromImage(scaledBigResult);
         }
 
-		const auto firstChar = Utils::PeekNextSuperChar(trimmedDisplayName);
 
+		const auto firstChar = Utils::PeekNextSuperChar(trimmedDisplayName);
 		if (firstChar.IsSimple())
 		{
 			QPainter letterPainter(&scaledBigResult);
 			letterPainter.setRenderHint(QPainter::Antialiasing);
 
-            QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, double(sizePx)/1.5);
+            QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, sizePx / 1.5);
 
 			letterPainter.setFont(font);
 
@@ -564,22 +568,12 @@ namespace Utils
 			letterPainter.translate(x, y);
 			letterPainter.fillPath(glyphPath, avatarPen.brush());
 		}
-
-		if (firstChar.IsEmoji())
+		else if (firstChar.IsEmoji())
 		{
 			QPainter emojiPainter(&scaledBigResult);
-
-            const auto nearestSizeAvailable = Emoji::GetNearestSizeAvailable(sizePx / 2 + (platform::is_apple()?8:0));
-
-            const auto &emoji =  Emoji::GetEmoji(firstChar.Main(), firstChar.Ext(), nearestSizeAvailable);
-
-			auto x = (sizePx / 2);
-			x -= (emoji.width() / 2);
-
-			auto y = (sizePx / 2);
-			y -= (emoji.height() / 2);
-
-			emojiPainter.drawImage(x, y, emoji);
+            const auto nearestSizeAvailable = Emoji::GetNearestSizeAvailable(sizePx / 2);// + (platform::is_apple() ? 8 : 0));
+            const auto &emoji = Ui::DpiAwareImage(Emoji::GetEmoji(firstChar.Main(), firstChar.Ext(), nearestSizeAvailable));
+            emoji.draw(emojiPainter, (sizePx - emoji.width()) / 2, (sizePx - emoji.height()) / 2 - 1);
 		}
 
 		return QPixmap::fromImage(scaledBigResult);
@@ -621,7 +615,7 @@ namespace Utils
 		return result;
 	}
 
-	QPixmap RoundImage(const QPixmap &img, const QString& state, bool mini_icons)
+	QPixmap RoundImage(const QPixmap &img, const QString& state, bool isDefault, bool mini_icons)
 	{
 		int scale = std::min(img.height(), img.width());
 		QImage imageOut(QSize(scale, scale), QImage::Format_ARGB32);
@@ -635,21 +629,48 @@ namespace Utils
 
 		painter.setPen(Qt::NoPen);
 		painter.setBrush(Qt::NoBrush);
-		QPainterPath path(QPointF(0,0));
+		QPainterPath path(QPointF(0, 0));
 		path.addEllipse(0, 0, scale, scale);
+
+        const auto x_rnd = 50;
+        const auto y_rnd = 36;
 
         if (state == "mobile")
         {
-            QPainterPath stPath(QPointF(0,0));
+            QPainterPath stPath(QPointF(0, 0));
             if (mini_icons)
-                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini))), 50, 36);
+                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini))), x_rnd, y_rnd);
             else
-                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height))), 50, 36);
+                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height))), x_rnd, y_rnd);
+            path -= stPath;
+        }
+
+        auto added_radius = Utils::scale_value(8);
+        if (state == "photo enter" || state == "photo leave")
+        {
+            QPixmap p(Utils::parse_image_name(":/resources/content_addphoto_100.png"));
+            int x = (scale - p.width());
+            int y = (scale - p.height());
+            QPainterPath stPath(QPointF(0, 0));
+            stPath.addEllipse(x - added_radius / 2, y - added_radius / 2, p.width() + added_radius, p.height() + added_radius);
             path -= stPath;
         }
 
 		painter.setClipPath(path);
-		painter.drawPixmap(0,0,img);
+		painter.drawPixmap(0, 0, img);
+
+        if (state == "photo enter")
+        {
+            painter.setBrush(QBrush(QColor(0, 0, 0, 80)));
+            painter.drawEllipse(0, 0, scale, scale);
+            painter.setBrush(Qt::NoBrush);
+
+            painter.setFont(Utils::appFont(Utils::FontsFamily::SEGOE_UI, scale_value(18)));
+            painter.setPen(QPen(Qt::white));
+
+            painter.drawText(QRectF(0, 0, scale, scale), Qt::AlignCenter, QT_TRANSLATE_NOOP("avatar_upload", "Edit\nphoto"));
+            painter.setPen(Qt::NoPen);
+        }
 
         if (state == "online" || state == "dnd")
         {
@@ -669,6 +690,22 @@ namespace Utils
             QPixmap p(Utils::parse_image_name(mini_icons ? ":/resources/cl_status_mobile_mini_100.png" : ":/resources/cl_status_mobile_100.png"));
             int x = (scale - p.width());
             int y = (scale - p.height());
+            painter.drawPixmap(x, y, p);
+        }
+        else if (state == "photo enter" || state == "photo leave")
+        {
+            QPixmap p(Utils::parse_image_name(":/resources/content_addphoto_100.png"));
+            int x = (scale - p.width());
+            int y = (scale - p.height());
+
+            painter.setPen(Qt::NoPen);
+    		painter.setBrush(Qt::NoBrush);
+            QPainterPath stPath(QPointF(0, 0));
+            stPath.addRect(0, 0, scale, scale);
+            painter.setClipPath(stPath);
+
+    		painter.setBrush(Qt::transparent);
+            painter.drawEllipse(x - added_radius / 2, y - added_radius / 2, p.width() + added_radius, p.height() + added_radius);
             painter.drawPixmap(x, y, p);
         }
 
@@ -718,7 +755,7 @@ namespace Utils
 
 		drawText(painter, QPointF(size/2, size/2 - 1), Qt::AlignHCenter | Qt::AlignVCenter, unreads);
 
-		return RoundImage(pixmap, QString());
+		return RoundImage(pixmap, QString(), false, false);
 	}
 
 	void setPropertyToWidget(QWidget* widget, char* name, bool value)
@@ -743,10 +780,24 @@ namespace Utils
         return r.exactMatch(email);
     }
 
+    bool isProbablyPhoneNumber(const QString &number)
+    {
+        QRegExp r("/^\\s*(?:\\+?(\\d{1,3}))?([-. (]*(\\d{3})[-. )]*)?((\\d{3})[-. ]*(\\d{2,4})(?:[-.x ]*(\\d+))?)\\s*$/gm");
+        r.setCaseSensitivity(Qt::CaseInsensitive);
+        r.setPatternSyntax(QRegExp::RegExp);
+        return r.exactMatch(number);
+    }
+
 	int scale_value(const int _px)
 	{
 		return (int)(Utils::get_scale_coefficient() * (double)_px);
 	}
+
+    int unscale_value(const int _px)
+    {
+        double scale = Utils::get_scale_coefficient();
+        return (int)((double) _px / (scale == 0 ? 1.0 : scale));
+    }
 
     bool foregroundWndIsFullscreened() {
 #ifdef _WIN32
@@ -791,12 +842,6 @@ namespace Utils
 		);
 	}
 
-	int unscale_value(const int _px)
-	{
-		double scale = Utils::get_scale_coefficient();
-		return (int)((double) _px / (scale == 0 ? 1.0 : scale));
-	}
-
     template <typename _T>
     void check_pixel_ratio(_T& _image)
     {
@@ -813,7 +858,7 @@ namespace Utils
         if (is_mac_retina())
         {
             QString result(_imageName);
-            result.replace("/100/", "/200/");  // e.g. for /themes/standard/100/cl/sending_mark.png format
+            result.replace("/100/", "/200/");
             result.replace("_100", "_200");
             return result;
         }
@@ -1303,7 +1348,7 @@ namespace Utils
 
         if (imagesExtensions.isEmpty())
         {
-            imagesExtensions << "jpg" << "png" << "jpeg" << "gif";
+            imagesExtensions << "jpg" << "png" << "jpeg" << "gif" << "bmp" << "tif" << "tiff" << "jpeg";
         }
 
         return imagesExtensions.contains(ext.toLower());
@@ -1342,20 +1387,18 @@ namespace Utils
         return false;
     }
 
-    const std::vector<QString> get_keys_send_by_names()
+    const SendKeysIndex& getSendKeysIndex()
     {
-        std::vector<QString> names;
-        names.push_back("Enter");
-        names.push_back(platform::is_apple() ? "Cmd+Enter" : "Ctrl+Enter");
-        names.push_back("Shift+Enter");
-        // names.push_back("Enter+Enter");
-        return names;
-    }
+        static SendKeysIndex index;
 
-    int get_key_send_by_index()
-    {
-         int key_1_to_send = Ui::get_gui_settings()->get_value<int>(settings_key1_to_send_message, Qt::NoModifier);
-         return ((key_1_to_send == Qt::Key_Control) * 1) + ((key_1_to_send == Qt::Key_Shift) * 2) + ((key_1_to_send == Qt::Key_Enter) * 3);
+        if (index.empty())
+        {
+            index.emplace_back(QT_TRANSLATE_NOOP("config_dialog", "Enter"), Ui::KeyToSendMessage::Enter);
+            index.emplace_back((platform::is_apple() ? QT_TRANSLATE_NOOP("config_dialog", "Cmd+Enter") : QT_TRANSLATE_NOOP("config_dialog", "Ctrl+Enter")), Ui::KeyToSendMessage::Ctrl_Enter);
+            index.emplace_back(QT_TRANSLATE_NOOP("config_dialog", "Shift+Enter"), Ui::KeyToSendMessage::Shift_Enter);
+        }
+
+        return index;
     }
 
     void post_stats_with_settings()
@@ -1376,18 +1419,39 @@ namespace Utils
         auto current_download_dir = Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath());
         props.emplace_back(std::make_pair("Settings_Download_Folder", std::to_string(current_download_dir == Utils::DefaultDownloadsPath())));
 
-        int key_index_to_send = Utils::get_key_send_by_index();
-        props.emplace_back(std::make_pair("Settings_Send_By", Utils::get_item_safe(Utils::get_keys_send_by_names(), key_index_to_send, " ").toStdString()));
+        QString keyToSend;
+        int currentKey = Ui::get_gui_settings()->get_value<int>(settings_key1_to_send_message, Ui::KeyToSendMessage::Enter);
+        for (const auto& key : Utils::getSendKeysIndex())
+        {
+            if (key.second == currentKey)
+                keyToSend = key.first;
+        }
+        props.emplace_back(std::make_pair("Settings_Send_By", keyToSend.toStdString()));
         props.emplace_back(std::make_pair("Settings_Show_Last_Message", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true))));
         props.emplace_back(std::make_pair("Settings_Previews", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true))));
         props.emplace_back(std::make_pair("Settings_Scale", std::to_string(Utils::get_scale_coefficient())));
         props.emplace_back(std::make_pair("Settings_Language", Ui::get_gui_settings()->get_value(settings_language, QString("")).toUpper().toStdString()));
 
-        // props.emplace_back(std::make_pair("Settings_Wallpaper_Global", std::to_string()));
-        // props.emplace_back(std::make_pair("Settings_Wallpaper_Local", std::to_string()));
+        if (Ui::get_qt_theme_settings()->getDefaultTheme())
+            props.emplace_back(std::make_pair("Settings_Wallpaper_Global", std::to_string(Ui::get_qt_theme_settings()->getDefaultTheme()->get_id())));
+        else
+            props.emplace_back(std::make_pair("Settings_Wallpaper_Global", std::to_string(-1)));
+
+        const auto& theme_counts = Ui::get_qt_theme_settings()->getThemeCounts();
+        for (auto iter = theme_counts.cbegin(); iter != theme_counts.cend(); ++iter)
+        {
+            props.emplace_back(std::make_pair(std::string("Settings_Wallpaper_Local") + " " + std::to_string(iter->first), std::to_string(iter->second)));
+        }
 
         props.emplace_back(std::make_pair("Settings_Sounds_Outgoing", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_outgoing_message_sound_enabled, true))));
         props.emplace_back(std::make_pair("Settings_Alerts", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_notify_new_messages, true))));
+
+        auto contact_dialog_width = Ui::MainPage::getContactDialogWidth(GetMainRect().width());
+        props.emplace_back(std::make_pair("Sidebar_Type", Ui::ContactDialog::getSideBarPolicy(contact_dialog_width)));
+
+        std::stringstream stream;
+        stream << Utils::get_proxy_settings()->type;
+        props.emplace_back(std::make_pair("Proxy_Type", stream.str()));
 
         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::client_settings, props);
     }
@@ -1451,7 +1515,8 @@ namespace Utils
         const QString& _chat_name,
         const QString& _button_text,
         const QString& _header_text,
-        Out QString& _result_chat_name)
+        Out QString& _result_chat_name,
+        bool acceptEnter)
     {
         QPalette palette;
         palette.setColor(QPalette::Highlight, "#579e1c");
@@ -1473,7 +1538,7 @@ namespace Utils
         text_edit_->setAutoFillBackground(false);
         text_edit_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         text_edit_->setTextInteractionFlags(Qt::TextEditable | Qt::TextEditorInteraction);
-        text_edit_->setCatchEnter(true);
+        text_edit_->setCatchEnter(acceptEnter);
         text_edit_->setMinimumWidth(Utils::scale_value(300));
         Utils::ApplyStyle(text_edit_, "padding: 0; margin: 0;");
         layout->addWidget(text_edit_);
@@ -1487,9 +1552,10 @@ namespace Utils
         std::unique_ptr<Ui::GeneralDialog> general_dialog(new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow()));
         general_dialog->addHead();
         general_dialog->addLabel(_header_text);
-        general_dialog->addAcceptButton(_button_text, 24);
+        general_dialog->addAcceptButton(_button_text, Utils::scale_value(24));
 
-        QObject::connect(text_edit_, SIGNAL(enter()), general_dialog.get(), SLOT(accept()));
+        if (acceptEnter)
+            QObject::connect(text_edit_, SIGNAL(enter()), general_dialog.get(), SLOT(accept()));
 
         QTextCursor cursor = text_edit_->textCursor();
         cursor.select(QTextCursor::Document);
@@ -1505,16 +1571,9 @@ namespace Utils
         return result;
     }
 
-    bool GetConfirmationWithTwoButtons(const QString& _button_left, const QString& _button_right,
+    bool GetConfirmationWithTwoButtons(const QString& _button_left_text, const QString& _button_right_text,
         const QString& _message_text, const QString& _label_text, QWidget* _parent)
     {
-        QString label_style = "font-family: " + Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI) + "; \
-            font-size: 15dip; \
-            color: rgba(105, 105, 105, 100%); \
-            padding: 0 0 0 0dip; \
-            padding-left: 24dip; \
-            padding-right: 24dip; ";
-
         auto main_widget = new QWidget(_parent);
         main_widget->setStyleSheet("background-color: white;");
 
@@ -1524,67 +1583,37 @@ namespace Utils
         layout->setContentsMargins(0, 0, 0, 0);
         main_widget->setLayout(layout);
 
-        {
-            QSpacerItem* upper_spacer = new QSpacerItem(0, Utils::scale_value(20), QSizePolicy::Minimum);
-            layout->addSpacerItem(upper_spacer);
-        }
-        {
-            auto label = new Ui::TextEditEx(main_widget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15), QColor(0x28, 0x28, 0x28), true, true);
-            label->setContentsMargins(0, 0, 0, 0);
-            label->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
-            label->setPlaceholderText("");
-            label->setAutoFillBackground(false);
-            label->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-            label->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-            {
-                QString ls = "QWidget { background: #ffffff; border: none; padding-left: 24dip; padding-right: 24dip; padding-top: 0dip; padding-bottom: 0dip; }";
-                Utils::ApplyStyle(label, ls);
-            }
-            label->setText(_message_text);
-            layout->addWidget(label);
-        }
+        auto general_dialog = new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow());
+        general_dialog->addHead();
+        general_dialog->addLabel(_label_text);
+        general_dialog->addText(_message_text, Utils::scale_value(12));
+        general_dialog->addButtonsPair(_button_left_text, _button_right_text, Utils::scale_value(24), Utils::scale_value(12));
+        Utils::setWidgetPopup(general_dialog, true);//platform::is_apple() ? false : true);
 
-        auto cancel_button = new QPushButton(main_widget);
-        auto remove_button = new QPushButton(main_widget);
-        {
-            auto bottom_layout = new QHBoxLayout();
-            bottom_layout->setAlignment(Qt::AlignTop);
-            QSpacerItem* horizontal_spacer_buttom1 = new QSpacerItem(Utils::scale_value(40), Utils::scale_value(20), QSizePolicy::Expanding, QSizePolicy::Minimum);
-            QSpacerItem* horizontal_spacer_buttom2 = new QSpacerItem(Utils::scale_value(12), Utils::scale_value(20), QSizePolicy::Fixed, QSizePolicy::Minimum);
-            QSpacerItem* horizontal_spacer_buttom3 = new QSpacerItem(Utils::scale_value(40), Utils::scale_value(20), QSizePolicy::Expanding, QSizePolicy::Minimum);
+        auto result = general_dialog->showInPosition(-1, -1);
+        delete general_dialog;
+        return result;
+    }
 
-            cancel_button->setCursor(QCursor(Qt::PointingHandCursor));
-            cancel_button->setText(_button_left);
-            Utils::ApplyStyle(cancel_button, Ui::grey_button_style);
-            Testing::setAccessibleName(cancel_button, "left_button");
+    bool GetErrorWithTwoButtons(const QString& _button_left_text, const QString& _button_right_text,
+        const QString& _message_text, const QString& _label_text, const QString& _error_text, QWidget* _parent)
+    {
+        auto main_widget = new QWidget(_parent);
+        main_widget->setStyleSheet("background-color: white;");
 
-            remove_button->setCursor(QCursor(Qt::PointingHandCursor));
-            remove_button->setText(_button_right);
-            Utils::ApplyStyle(remove_button, Ui::main_button_style);
-            Testing::setAccessibleName(remove_button, "right_button");
-
-            bottom_layout->addItem(horizontal_spacer_buttom1);
-            bottom_layout->addWidget(cancel_button);
-            bottom_layout->addItem(horizontal_spacer_buttom2);
-            bottom_layout->addWidget(remove_button);
-            bottom_layout->addItem(horizontal_spacer_buttom3);
-
-            QSpacerItem* middle_spacer = new QSpacerItem(0, Utils::scale_value(24), QSizePolicy::Minimum);
-            layout->addSpacerItem(middle_spacer);
-            layout->addLayout(bottom_layout);
-        }
-        {
-            QSpacerItem* buttom_spacer = new QSpacerItem(0, Utils::scale_value(24), QSizePolicy::Minimum);
-            layout->addSpacerItem(buttom_spacer);
-        }
+        auto layout = new QVBoxLayout(main_widget);
+        layout->setSpacing(0);
+        layout->setMargin(0);
+        layout->setContentsMargins(0, 0, 0, 0);
+        main_widget->setLayout(layout);
 
         auto general_dialog = new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow());
         general_dialog->addHead();
         general_dialog->addLabel(_label_text);
+        //general_dialog->addText(_message_text, Utils::scale_value(20));
+        general_dialog->addError(_error_text);
+        general_dialog->addButtonsPair(_button_left_text, _button_right_text, Utils::scale_value(24), Utils::scale_value(12));
         Utils::setWidgetPopup(general_dialog, true);//platform::is_apple() ? false : true);
-
-        QObject::connect(cancel_button, &QPushButton::clicked, general_dialog, &Ui::GeneralDialog::reject, Qt::QueuedConnection);
-        QObject::connect(remove_button, &QPushButton::clicked, general_dialog, &Ui::GeneralDialog::accept, Qt::QueuedConnection);
 
         auto result = general_dialog->showInPosition(-1, -1);
         delete general_dialog;
@@ -1640,7 +1669,7 @@ namespace Utils
             return false;
         }
 
-        static const char *availableFormats[] = { nullptr, "jpg", "png", "gif", "bmp" };
+        static const char *availableFormats[] = { nullptr, "jpg", "png", "gif", "bmp", "tif" };
 
         for (auto fmt : availableFormats)
         {
@@ -1653,5 +1682,28 @@ namespace Utils
         }
 
         return false;
+    }
+
+    StatsSender::StatsSender()
+        : gui_settings_received_(false)
+        , theme_settings_received_(false)
+    {
+        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::guiSettings, this, &StatsSender::recv_gui_settings, Qt::QueuedConnection);
+        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::themeSettings, this, &StatsSender::recv_theme_settings, Qt::QueuedConnection);
+    }
+
+    StatsSender* get_stats_sender()
+    {
+        static std::shared_ptr<StatsSender> stats_sender(new StatsSender());
+        return stats_sender.get();
+    }
+
+    void StatsSender::trySendStats() const
+    {
+        if ( ( gui_settings_received_ || Ui::get_gui_settings()->getIsLoaded() )
+            && ( theme_settings_received_ || Ui::get_qt_theme_settings()->getIsLoaded() ) )
+        {
+            Utils::post_stats_with_settings();
+        }
     }
 }

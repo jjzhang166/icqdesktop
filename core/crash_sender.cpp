@@ -2,34 +2,51 @@
 
 #ifdef _WIN32
 
-#include "crash_sender.h"
 #include <fstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include "crash_sender.h"
 #include "log/log.h"
 #include "utils.h"
 #include "core.h"
 #include "http_request.h"
 #include "async_task.h"
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "../common.shared/keys.h"
 
 namespace core
 {
     namespace dump
     {
+        const std::string& get_hockeyapp_url()
+        {
+            static std::string hockeyapp_url = "https://rink.hockeyapp.net/api/2/apps/" + hockey_app_id + "/crashes/upload";
+            return hockeyapp_url;
+        }
+
         bool report_sender::send_to_hockey_app(const std::string& _login, const proxy_settings& _proxy)
-        {                
+        {
             // http://support.hockeyapp.net/kb/api/api-crashes
-            core::http_request_simple post_request(_proxy);
-            post_request.set_url(hockeyapp_url);
+            core::http_request_simple post_request(_proxy, utils::get_user_agent());
+            post_request.set_url(get_hockeyapp_url());
             post_request.set_post_form(true);
             post_request.push_post_form_parameter("contact", _login);
             post_request.push_post_form_filedata(L"log", utils::get_report_log_path());
 
             auto dump_name = utils::get_report_mini_dump_path();
-            auto size = boost::filesystem::file_size(dump_name);
-            if (size < 1024 * 1024) // 1 mb
-                post_request.push_post_form_filedata(L"attachment0", dump_name);
-            return post_request.post();
+            try
+            {
+                boost::system::error_code e;
+                auto size = boost::filesystem::file_size(dump_name, e);
+                if (size < 1024 * 1024) // 1 mb
+                    post_request.push_post_form_filedata(L"attachment0", dump_name);
+                return post_request.post();
+            }
+            catch (const std::exception& /*exp*/)
+            {
+                // if error - delete folder
+                return true;
+            };
         }
 
         bool report_sender::is_report_existed()
@@ -45,7 +62,8 @@ namespace core
 
         void report_sender::clear_report_folder()
         {
-            boost::filesystem::remove_all(utils::get_report_path().c_str());
+            boost::system::error_code e;
+            boost::filesystem::remove_all(utils::get_report_path().c_str(), e);
         }
 
         report_sender::report_sender(const std::string& _login)

@@ -14,6 +14,7 @@ namespace Ui
     {
     private:
         Qt::Alignment expandDirection_;
+        bool iconSticked_;
 
     private:
         virtual void showEvent(QShowEvent* event) override;
@@ -25,6 +26,7 @@ namespace Ui
         ~FlatMenu();
 
         void setExpandDirection(Qt::Alignment direction);
+        void stickToIcon();
 
         inline Qt::Alignment expandDirection() const
         {

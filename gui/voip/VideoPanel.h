@@ -1,6 +1,10 @@
 #ifndef __VIDEO_PANEL_H__
 #define __VIDEO_PANEL_H__
 
+extern const QString widgetWithBg      ;
+extern const QString widgetWithoutBg   ;
+extern const QString widgetWithoutBgEx ;
+
 namespace voip_manager {
     struct ContactEx;
     struct Contact;
@@ -34,6 +38,7 @@ namespace Ui {
 	class VolumeControl : public QWidget { Q_OBJECT
     Q_SIGNALS:
         void controlActivated(bool);
+        void onMuteChanged(bool);
 
 	private Q_SLOTS:
         void onVoipVolumeChanged(const std::string&, int);
@@ -41,9 +46,16 @@ namespace Ui {
 
 		void onVolumeChanged(int);
 		void onMuteOnOffClicked();
+        void onCheckMousePos();
 
 	public:
-		VolumeControl(QWidget* parent, bool horizontal, bool withBackground);
+		VolumeControl(
+            QWidget* parent, 
+            bool horizontal, 
+            const QString& mutedBg, 
+            const QString& unmutedBg,
+            const std::function<void(QPushButton&, bool)>& onChangeStyle
+            );
 		virtual ~VolumeControl();
 
         QPoint getAnchorPoint() const;
@@ -54,15 +66,25 @@ namespace Ui {
         void hideEvent(QHideEvent *) override;
         void changeEvent(QEvent*) override;
 
+        void _updateSlider();
+
 	private:
 		int _actual_vol;
 
+        QWidget* _rootWidget;
 		QPushButton* btn;
 		QSlider* slider;
         QWidget* _parent;
+        std::function<void(QPushButton&, bool)> onChangeStyle_;
 
         const bool _horizontal;
         const int _border_offset;
+        bool      _audioPlaybackDeviceMuted;
+
+        const QString mutedBg_;
+        const QString unmutedBg_;
+
+        QTimer checkMousePos_;
 	};
 
     class VideoPanel : public QWidget {
@@ -88,7 +110,7 @@ namespace Ui {
 
         void onVoipMediaLocalAudio(bool enabled);
         void onVoipMediaLocalVideo(bool enabled);
-        void onVoipMuteChanged(const std::string&,bool);
+        void onMuteChanged(bool);
         void onVoipCallNameChanged(const std::vector<voip_manager::Contact>&);
 
     public:

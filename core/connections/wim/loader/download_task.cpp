@@ -103,8 +103,7 @@ bool download_task::load_metainfo_from_local_cache()
         return false;
     }
 
-    boost::filesystem::wpath path_for_folder(info.get_file_name());
-    if (!boost::filesystem::exists(path_for_folder))
+    if (!core::tools::system::is_exist(info.get_file_name()))
     {
         return false;
     }
@@ -121,7 +120,7 @@ bool download_task::is_downloaded_file_exists()
     const auto &local_path = info_->get_file_name();
     assert(!local_path.empty());
 
-    return boost::filesystem::exists(local_path);
+    return core::tools::system::is_exist(local_path);
 }
 
 void download_task::set_played(bool played)
@@ -198,19 +197,17 @@ int32_t download_task::download_metainfo()
 
 int32_t download_task::open_temporary_file()
 {
-    boost::filesystem::wpath path_for_folder(files_folder_);
-
-    if (!boost::filesystem::exists(path_for_folder))
+    if (!core::tools::system::is_exist(files_folder_))
     {
-        if (!boost::filesystem::create_directories(path_for_folder))
+        if (!core::tools::system::create_directory(files_folder_))
             return loader_errors::create_directory;
     }
 
     std::wstring file_name = files_folder_ + L"/" + (filename_.empty() ? core::tools::from_utf8(info_->get_file_name_short()) : filename_);
-    boost::filesystem::wpath path_for_file(file_name);
 
-    if (boost::filesystem::exists(path_for_file))
+    if (core::tools::system::is_exist(file_name))
     {
+        boost::filesystem::wpath path_for_file(file_name);
         std::wstring ext = path_for_file.extension().wstring();
         std::wstring file_name_without_ext = file_name.substr(0, file_name.length() - ext.length());
 
@@ -220,9 +217,7 @@ int32_t download_task::open_temporary_file()
 
             ss_file_name << file_name_without_ext << L"-" << i << ext;
 
-            boost::filesystem::wpath path_for_file_new(ss_file_name.str());
-
-            if (!boost::filesystem::exists(path_for_file_new))
+            if (!core::tools::system::is_exist(ss_file_name.str()))
             {
                 file_name = ss_file_name.str();
                 break;

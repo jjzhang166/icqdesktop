@@ -24,7 +24,7 @@ public:
 
     http_handles()
     {
-        
+
     }
 
     virtual ~http_handles()
@@ -74,7 +74,7 @@ public:
 
 http_handles* g_handles = 0;
 
-
+static size_t write_header_function(void *contents, size_t size, size_t nmemb, void *userp);
 static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userp);
 static int32_t progress_callback(void* ptr, double TotalToDownload, double NowDownloaded, double TotalToUpload, double NowUploaded);
 static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char* _data, size_t _size, void* _userp);
@@ -83,25 +83,34 @@ struct curl_context
 {
     CURL* curl_;
     std::shared_ptr<tools::binary_stream> output_;
-    std::function<bool()> is_stop_;
+    std::shared_ptr<tools::binary_stream> header_;
 
+    http_request_simple::stop_function must_stop_;
+
+    bool need_log_;
+    std::shared_ptr<tools::binary_stream> log_data_;
+
+    core::replace_log_function replace_log_function_;
+    
     curl_slist* header_chunk_;
     struct curl_httppost* post;
     struct curl_httppost* last;
 
-    bool need_log_;
     bool keep_alive_;
-        
+
     curl_context(std::function<bool()> _stop_func, bool _keep_alive)
-        :	
+        :
         curl_(_keep_alive ? g_handles->get_for_this_thread() : curl_easy_init()),
         output_(new core::tools::binary_stream()),
-        is_stop_(_stop_func),
+        header_(new core::tools::binary_stream()),
+        log_data_(new core::tools::binary_stream()),
+        must_stop_(_stop_func),
         header_chunk_(0),
         post(NULL),
         last(NULL),
         need_log_(true),
-        keep_alive_(_keep_alive)
+        keep_alive_(_keep_alive),
+        replace_log_function_([](tools::binary_stream&){})
     {
     }
 
@@ -114,8 +123,10 @@ struct curl_context
             curl_slist_free_all(header_chunk_);
     }
 
-    bool init(int32_t _connect_timeout, int32_t _timeout, core::proxy_settings _proxy_settings)
+    bool init(int32_t _connect_timeout, int32_t _timeout, core::proxy_settings _proxy_settings, const std::string &_user_agent)
     {
+        assert(!_user_agent.empty());
+
         if (!curl_)
             return false;
 
@@ -129,12 +140,13 @@ struct curl_context
 
         curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 2L);
 
-        curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
 
-        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, (void*) this);
+        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, (void *)this);
         curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_memory_callback);
-        curl_easy_setopt(curl_, CURLOPT_PROGRESSDATA, (void*) this);
+        curl_easy_setopt(curl_, CURLOPT_HEADERDATA, (void *)this);
+        curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, write_header_function);
+        curl_easy_setopt(curl_, CURLOPT_PROGRESSDATA, (void *)this);
         curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, false);
         curl_easy_setopt(curl_, CURLOPT_PROGRESSFUNCTION, progress_callback);
 
@@ -145,10 +157,8 @@ struct curl_context
 
         curl_easy_setopt(curl_, CURLOPT_ACCEPT_ENCODING, "gzip");
 
-        std::string user_agent = core::utils::get_user_agent();
-        curl_easy_setopt(curl_, CURLOPT_USERAGENT, user_agent.c_str());
+        curl_easy_setopt(curl_, CURLOPT_USERAGENT, _user_agent.c_str());
 
-        
         curl_easy_setopt(curl_, CURLOPT_DEBUGDATA, (void*) this);
         curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, trace_function);
         curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
@@ -179,6 +189,11 @@ struct curl_context
         return true;
     }
 
+    void set_replace_log_function(replace_log_function _func)
+    {
+        replace_log_function_ = _func;
+    }
+
     bool is_need_log()
     {
         return need_log_;
@@ -187,6 +202,16 @@ struct curl_context
     void set_need_log(bool _need)
     {
         need_log_ = _need;
+    }
+
+    void write_log_data(const char* _data, uint32_t _size)
+    {
+        log_data_->write(_data, _size);
+    }
+
+    void write_log_string(const std::string& _log_string)
+    {
+        log_data_->write<std::string>(_log_string);
     }
 
     void set_range(int64_t _from, int64_t _to)
@@ -204,6 +229,14 @@ struct curl_context
     void set_url(const char* sz_url)
     {
         curl_easy_setopt(curl_, CURLOPT_URL, sz_url);
+
+        curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl_, CURLOPT_MAXREDIRS, 10);
+
+        if (!keep_alive_)
+        {
+            curl_easy_setopt(curl_, CURLOPT_COOKIEFILE, "");
+        }
     }
 
     void set_post()
@@ -242,6 +275,11 @@ struct curl_context
         return output_;
     }
 
+    std::shared_ptr<tools::binary_stream> get_header()
+    {
+        return header_;
+    }
+
     void set_form_field(const char* _field_name, const char* _value)
     {
         curl_formadd(&post, &last, CURLFORM_COPYNAME, _field_name,
@@ -258,6 +296,7 @@ struct curl_context
     {
         const auto size = _data.available();
         const auto data = _data.read_available();
+        _data.reset_out();
         curl_formadd(&post, &last,
                      CURLFORM_COPYNAME, _field_name,
                      CURLFORM_BUFFER, _file_name,
@@ -266,10 +305,21 @@ struct curl_context
                      CURLFORM_CONTENTTYPE, "application/octet-stream",
                      CURLFORM_END);
     }
-    
+
     bool execute_request()
     {
         CURLcode res = curl_easy_perform(curl_);
+
+        std::stringstream error;
+        error << "curl_easy_perform result is ";
+        error << res;
+        error << std::endl;
+
+        write_log_string(error.str());
+
+        replace_log_function_(*log_data_);
+
+        g_core->get_network_log().write_data(*log_data_);
 
         return (res == CURLE_OK);
     }
@@ -284,36 +334,41 @@ struct curl_context
     }
 };
 
+static size_t write_header_function(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    size_t realsize = size * nmemb;
+    curl_context *ctx = (curl_context *)userp;
+    ctx->header_->reserve((uint32_t)realsize);
+    ctx->header_->write((char *)contents, (uint32_t)realsize);
+
+    return realsize;
+}
+
 static size_t write_memory_callback(void* _contents, size_t _size, size_t _nmemb, void* _userp)
 {
-    curl_context* ctx = (curl_context*) _userp;
-
     size_t realsize = _size * _nmemb;
-
+    curl_context* ctx = (curl_context*) _userp;
     ctx->output_->write((char*) _contents, (uint32_t) realsize);
-
-    tools::binary_stream bs;
-
-    bs.write((const char*) _contents, (uint32_t) realsize);
 
     if (ctx->is_need_log())
     {
-        g_core->get_network_log().write_data(bs);
+        ctx->write_log_data((const char*) _contents, (uint32_t) realsize);
     }
-
-    bs.reset();
 
     return realsize;
 }
 
 static int32_t progress_callback(void* ptr, double TotalToDownload, double NowDownloaded, double TotalToUpload, double NowUploaded)
 {
-    if (((curl_context*) ptr)->is_stop_())
+    auto cntx = (curl_context*)ptr;
+
+    if (cntx->must_stop_ && cntx->must_stop_())
+    {
         return -1;
+    }
 
     return 0;
 }
-
 
 std::vector<std::string> get_filter_keywords()
 {
@@ -327,20 +382,20 @@ std::vector<std::string> get_filter_keywords()
 const std::string filter1 = "schannel:";
 const std::string filter2 = "STATE:";
 
-
 static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char* _data, size_t _size, void* _userp)
 {
-    if (!((curl_context*) _userp)->is_need_log())
+    curl_context* ctx = (curl_context*) _userp;
+    if (!ctx->is_need_log())
         return 0;
-            
+
     std::stringstream ss;
 
     const char *text = "";
 
     (void)_userp;
-    (void)_handle; /* prevent compiler warning */ 
+    (void)_handle; /* prevent compiler warning */
 
-    switch (_type) 
+    switch (_type)
     {
     case CURLINFO_TEXT:
         {
@@ -373,23 +428,19 @@ static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char*
 
     if (*text != '\0')
     {
-        bs.write<std::string>(text);
-        bs.write<std::string>("\n");
+        ctx->write_log_string(text);
+        ctx->write_log_string("\n");
     }
 
-    bs.write((const char*)_data, (uint32_t)_size);
+    ctx->write_log_data((const char*) _data, (uint32_t) _size);
 
-    g_core->get_network_log().write_data(bs);
-
-    bs.reset();
-
-    return 0;	
+    return 0;
 }
 
-
-http_request_simple::http_request_simple(proxy_settings _proxy_settings, std::function<bool()> stop_func)
-    :	is_stop_(stop_func),
+http_request_simple::http_request_simple(proxy_settings _proxy_settings, const std::string &_user_agent, stop_function _stop_func)
+    : must_stop_(_stop_func),
     output_(new tools::binary_stream()),
+    header_(new tools::binary_stream()),
     is_time_condition_(false),
     last_modified_time_(0),
     post_data_(0),
@@ -402,8 +453,11 @@ http_request_simple::http_request_simple(proxy_settings _proxy_settings, std::fu
     is_post_form_(false),
     need_log_(true),
     keep_alive_(false),
-    proxy_settings_(_proxy_settings)
+    proxy_settings_(_proxy_settings),
+    user_agent_(_user_agent),
+    replace_log_function_([](tools::binary_stream&){})
 {
+    assert(!user_agent_.empty());
 }
 
 http_request_simple::~http_request_simple()
@@ -490,7 +544,7 @@ void http_request_simple::set_timeout(int32_t _timeout_ms)
 
 std::string http_request_simple::get_post_param() const
 {
-    std::string result = ""; 
+    std::string result = "";
     if (!post_parameters_.empty())
     {
         std::stringstream ss_post_params;
@@ -545,15 +599,15 @@ void http_request_simple::set_post_params(curl_context* _ctx)
 
 bool http_request_simple::send_request(bool _post, bool switch_proxy)
 {
-    curl_context ctx(is_stop_, keep_alive_);
+    curl_context ctx(must_stop_, keep_alive_);
 
     auto is_user_proxy = proxy_settings_.proxy_type_ != (int)core::proxy_types::auto_proxy;
 
-    auto current_proxy = switch_proxy ? g_core->get_registry_proxy_settings() : g_core->get_proxy_settings();
+    auto current_proxy = switch_proxy ? g_core->get_registry_proxy_settings() : g_core->get_auto_proxy_settings();
     if (is_user_proxy)
         current_proxy = proxy_settings_;
 
-    if (!ctx.init(connect_timeout_, timeout_, current_proxy))
+    if (!ctx.init(connect_timeout_, timeout_, current_proxy, user_agent_))
     {
         assert(false);
         return false;
@@ -572,7 +626,9 @@ bool http_request_simple::send_request(bool _post, bool switch_proxy)
 
     ctx.set_custom_header_params(custom_headers_);
     ctx.set_url(url_.c_str());
-    
+
+    ctx.set_replace_log_function(replace_log_function_);
+
     if (is_user_proxy)
     {
         if (!ctx.execute_request())
@@ -587,7 +643,7 @@ bool http_request_simple::send_request(bool _post, bool switch_proxy)
             {
                 if (switch_proxy)
                     return false;
-            
+
                 return send_request(_post, true);
             }
             return false;
@@ -598,8 +654,11 @@ bool http_request_simple::send_request(bool _post, bool switch_proxy)
             g_core->switch_proxy_settings();
     }
 
+
+
     response_code_ = ctx.get_response_code();
     output_ = ctx.get_response();
+    header_ = ctx.get_header();
 
     return true;
 }
@@ -623,6 +682,11 @@ void http_request_simple::set_range(int64_t _from, int64_t _to)
 std::shared_ptr<tools::binary_stream> http_request_simple::get_response()
 {
     return output_;
+}
+
+std::shared_ptr<tools::binary_stream> http_request_simple::get_header()
+{
+    return header_;
 }
 
 long http_request_simple::get_response_code()
@@ -730,11 +794,27 @@ void core::http_request_simple::set_keep_alive()
 {
     if (keep_alive_)
         return;
-    
+
     keep_alive_ = true;
 
     custom_headers_.push_back("Connection: keep-alive");
 }
+
+void core::http_request_simple::set_etag(const char *etag)
+{
+    if (etag && strlen(etag))
+    {
+        std::stringstream ss;
+        ss << "If-None-Match: \"" << etag << "\"";
+        custom_headers_.push_back(ss.str().c_str());
+    }
+}
+
+void core::http_request_simple::set_replace_log_function(replace_log_function _func)
+{
+    replace_log_function_ = _func;
+}
+
 
 ithread_callback* core::http_request_simple::create_http_handlers()
 {
@@ -750,5 +830,5 @@ std::string core::http_request_simple::get_post_url()
 
 proxy_settings core::http_request_simple::get_user_proxy() const
 {
-    return proxy_settings_; 
+    return proxy_settings_;
 }

@@ -17,7 +17,9 @@ std::wstring get_file_directory(const std::wstring& file);
 
 std::wstring get_file_name(const std::wstring& file);
 
+#ifndef _WIN32
 std::wstring get_user_profile();
+#endif // WIN32
 
 std::string generate_guid();
 
@@ -30,6 +32,14 @@ std::wstring get_user_downloads_dir();
 std::string to_upper(std::string str);
 
 size_t get_memory_size_mb();
+
+bool is_exist(const std::wstring& path);
+
+bool is_exist(const boost::filesystem::wpath & path);
+
+bool create_directory(const std::wstring& path);
+
+bool create_directory(const boost::filesystem::wpath& path);
 
 std::string get_os_version_string();
 

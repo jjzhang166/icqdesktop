@@ -56,8 +56,19 @@ int32_t my_info::unserialize(const rapidjson::Value& _node)
     if (iter_flags != _node.MemberEnd() && iter_flags->value.IsUint())
         flags_ = iter_flags->value.GetUint();
 
+    auto iter_expressions = _node.FindMember("expressions");
+    if (iter_expressions != _node.MemberEnd())
+    {
+        const auto & expression_node = iter_expressions->value;
+        auto iter_large_icon = expression_node.FindMember("largeBuddyIcon");
+        if (iter_large_icon != expression_node.MemberEnd() && iter_large_icon->value.IsString())
+            largeIconId_ = iter_large_icon->value.GetString();
+    }
+
     if (state_ == "occupied" || state_ == "na" || state_ == "busy")
         state_ = "dnd";
+    else if (state_ == "away")
+        state_ = "away";
     else if (state_ != "offline" && state_ != "invisible")
         state_ = "online";
 
@@ -73,6 +84,7 @@ void my_info::serialize(core::coll_helper _coll)
     _coll.set_value_as_string("userType", userType_);
     _coll.set_value_as_string("attachedPhoneNumber", phoneNumber_);
     _coll.set_value_as_uint("globalFlags", flags_);
+    _coll.set_value_as_string("largeIconId", largeIconId_);
 }
 
 void my_info::serialize(core::tools::binary_stream& _data) const

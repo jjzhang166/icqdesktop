@@ -39,7 +39,12 @@ namespace core
         bool is_uin(const std::string& _value);
         bool is_email(const std::string& _value);
         bool is_phone(const std::string& _value);
-
+        
+        std::string to_lower_case(const std::string &s);
+        std::string to_upper_case(const std::string &s);
+        
+        std::vector<std::string> to_array(const std::string &text, const std::string &separator);
+        
         std::string adler32(const std::string& _input);
     }
 }

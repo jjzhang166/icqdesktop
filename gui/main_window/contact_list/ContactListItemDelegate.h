@@ -31,9 +31,23 @@ namespace Logic
 
         void setDragIndex(const QModelIndex& index);
 
+        void setItemWidth(int width);
+
+        void setLeftMargin(int margin);
+
+        void setRightMargin(int margin);
+
+        void setRegim(int _regim);
+
+        void setRenderRole(bool render);
+
 	private:
         bool StateBlocked_;
+        bool renderRole_;
         int regim_;
+        int width_;
+        int leftMargin_;
+        int rightMargin_;
         QModelIndex DragIndex_;
 	};
 }

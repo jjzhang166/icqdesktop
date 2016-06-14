@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../types/contact.h"
+
 namespace Logic
 {
 	typedef std::shared_ptr<const QPixmap> QPixmapSCptr;
@@ -21,14 +23,15 @@ namespace Logic
 	public:
 		~AvatarStorage();
 
-		const QPixmapSCptr& Get(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled, bool& isDefault);
+		const QPixmapSCptr& Get(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled, bool& isDefault, bool regenerate);
 
-		const QPixmapSCptr& GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool from_cl = false);
+		const QPixmapSCptr& GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool regenerate, bool from_cl = false);
 
 		QString GetLocal(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled);
 
         void UpdateDefaultAvatarIfNeed(const QString& aimId);
-
+        void UpdateAvatar(const QString& aimId);
+        
 	private:
 		typedef std::map<QString, QPixmapSCptr> CacheMap;
 
@@ -36,7 +39,7 @@ namespace Logic
 
 		void CleanupSecondaryCaches(const QString &aimId);
 
-		const QPixmapSCptr& GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl);
+		const QPixmapSCptr& GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl, bool isDefault);
 
 		CacheMap AvatarsByAimIdAndSize_;
 

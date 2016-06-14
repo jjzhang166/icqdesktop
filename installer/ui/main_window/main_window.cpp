@@ -136,7 +136,7 @@ namespace installer
 
             pages_->setCurrentWidget(progress_page_);
 
-            installer::logic::get_worker()->final_install();
+            installer::logic::get_worker()->final_install(true /* from 8x */);
         }
 
         void main_window::on_close()

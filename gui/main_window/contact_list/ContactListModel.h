@@ -4,6 +4,7 @@
 
 #include "../../types/contact.h"
 #include "../../types/message.h"
+#include "../../types/chat.h"
 
 #include "ContactItem.h"
 
@@ -38,6 +39,10 @@ Q_SIGNALS:
         void results();
         void needSwitchToRecents();
         void needJoinLiveChat(QString _stamp);
+        void liveChatJoined(QString);
+        void liveChatRemoved(QString);
+        void switchTab(QString);
+		void ignoreContact(QString);
 
     private Q_SLOTS:
 
@@ -62,6 +67,7 @@ Q_SIGNALS:
         void auth_delete_contact(QString _aimid);
         void auth_ignore_contact(QString _aimid);
         void stats_spam_profile(QString _aimid);
+        void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
 
     public:
         explicit ContactListModel(QObject *parent);
@@ -78,7 +84,7 @@ Q_SIGNALS:
         std::vector<ContactItem> getSearchedContacts();
 
         void setFocus();
-        void setCurrent(QString aimdId, bool select = false, std::function<void(Ui::HistoryControlPage*)> getPageCallback = nullptr);
+        void setCurrent(QString aimdId, bool select = false, bool switchTab = false, std::function<void(Ui::HistoryControlPage*)> getPageCallback = nullptr);
 
         const ContactItem* getContactItem(const QString& _aimId) const;
 
@@ -93,7 +99,9 @@ Q_SIGNALS:
         void setInputText(const QString& aimId, const QString& _text);
         bool isChat(const QString& aimId) const;
         bool isMuted(const QString& aimId) const;
+        bool isLiveChat(const QString& aimId) const;
         bool isOfficial(const QString& aimId) const;
+        bool isNotAuth(const QString& aimId) const;
         QModelIndex contactIndex(const QString& aimId);
 
         void get_contact_profile(const QString& _aimId, std::function<void(profile_ptr, int32_t)> _call_back = [](profile_ptr, int32_t){});
@@ -104,6 +112,7 @@ Q_SIGNALS:
         bool block_spam_contact(const QString& _aimid, bool _with_confirmation = true);
         void ignore_contact(const QString& _aimid, bool ignore);
         bool ignore_and_remove_from_cl_contact(const QString& _aimid);
+        bool isYouAdmin(const QString& aimId);
         void static get_ignore_list();
 
         void emitChanged(int first, int last);

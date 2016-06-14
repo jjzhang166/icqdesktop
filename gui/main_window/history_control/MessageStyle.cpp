@@ -21,6 +21,15 @@ namespace
     }
 }
 
+QFont getTextFont()
+{
+    static QFont font(
+        Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15))
+    );
+
+    return font;
+}
+
 QColor getIncomingBodyColorA(const double alpha)
 {
     return QColor(0xff, 0xff, 0xff, byteAlpha(alpha));
@@ -41,7 +50,10 @@ QColor getOutgoingBodyColorB(const double alpha)
     return QColor(0xd5, 0xd2, 0xce, byteAlpha(alpha));
 }
 
-QBrush getBodyBrush(const bool isOutgoing, const bool isSelected, int _theme_id)
+QBrush getBodyBrush(
+    const bool isOutgoing, 
+    const bool isSelected, 
+    const int _theme_id)
 {
     auto _theme = get_qt_theme_settings()->themeForId(_theme_id);
 
@@ -68,6 +80,8 @@ QBrush getBodyBrush(const bool isOutgoing, const bool isSelected, int _theme_id)
                 outgoingSelectedBackgroundColor0 :
                 incomingSelectedBackgroundColor0
         );
+
+
         grad.setColorAt(0, color0);
 
         const auto color1 = (
@@ -100,11 +114,65 @@ QBrush getBodyBrush(const bool isOutgoing, const bool isSelected, int _theme_id)
     return result;
 }
 
+int32_t getBubbleHeight()
+{
+    return Utils::scale_value(32);
+}
+
+int32_t getBorderRadius()
+{
+    return Utils::scale_value(8);
+}
+
 int32_t getTopPadding(const bool hasTopMargin)
 {
     return Utils::scale_value(
         hasTopMargin ? 12 : 2
     );
+}
+
+int32_t getLeftPadding(const bool isOutgoing)
+{
+    return Utils::scale_value(
+        isOutgoing ? 118 : 24
+    );
+}
+
+int32_t getRightPadding(const bool isOutgoing)
+{
+    return Utils::scale_value(
+        isOutgoing ? 16 : 72
+    );
+}
+
+int32_t getTimeStatusMargin()
+{
+    return Utils::scale_value(8);
+}
+
+int32_t getAvatarSize()
+{
+    return Utils::scale_value(32);
+}
+
+int32_t getAvatarRightMargin()
+{
+    return Utils::scale_value(6);
+}
+
+int32_t getBubbleHorPadding()
+{
+    return Utils::scale_value(16);
+}
+
+int getLastReadAvatarSize()
+{
+    return Utils::scale_value(16);
+}
+
+int getLastReadAvatarMargin()
+{
+    return Utils::scale_value(4);
 }
 
 UI_MESSAGE_STYLE_NS_END

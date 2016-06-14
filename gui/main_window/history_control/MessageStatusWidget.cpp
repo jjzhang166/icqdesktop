@@ -8,23 +8,15 @@
 
 namespace
 {
-    int32_t getStatusIconBottomPadding(const Themes::PixmapResourceId resId);
-
     const QFont& getTimeFont();
-
-    int32_t getTimeStatusMargin();
 }
 
 namespace Ui
 {
 
-    int32_t MessageStatusWidget::getMaxWidth(const bool withStatusIcon)
+    int32_t MessageStatusWidget::getMaxWidth()
     {
-        return (
-            withStatusIcon ?
-                Utils::scale_value(54) :
-                Utils::scale_value(30)
-        );
+        return Utils::scale_value(30);
     }
 
     MessageStatusWidget::MessageStatusWidget(HistoryControlPageItem *messageItem)
@@ -35,40 +27,6 @@ namespace Ui
         , IsMessageBubbleVisible_(true)
     {
         setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    }
-
-    void MessageStatusWidget::setDeliveredToClient()
-    {
-        if (IsDeliveredToClient_)
-        {
-            return;
-        }
-
-        IsDeliveredToServer_ = true;
-
-        IsDeliveredToClient_ = true;
-
-        StatusIcon_ = Themes::PixmapResourceId::ContactListReadMark;
-
-        updateGeometry();
-
-        update();
-    }
-
-    void MessageStatusWidget::setDeliveredToServer()
-    {
-        if (IsDeliveredToServer_)
-        {
-            return;
-        }
-
-        IsDeliveredToServer_ = true;
-
-        StatusIcon_ = Themes::PixmapResourceId::ContactListDeliveredMark;
-
-        updateGeometry();
-
-        update();
     }
 
     void MessageStatusWidget::setTime(const int32_t timestamp)
@@ -92,27 +50,7 @@ namespace Ui
     {
         assert(!TimeTextSize_.isEmpty());
 
-        const auto hasStatusIcon = (StatusIcon_ != Themes::PixmapResourceId::Invalid);
-
-        const auto width = getMaxWidth(hasStatusIcon);
-
-        auto height = TimeTextSize_.height();
-
-        if (hasStatusIcon)
-        {
-            const auto statusPixmap = Themes::GetPixmap(StatusIcon_);
-            assert(statusPixmap);
-
-            auto statusHeight = statusPixmap->GetHeight();
-            statusHeight -= getStatusIconBottomPadding(StatusIcon_);
-
-            height = std::max(height, statusHeight);
-        }
-
-        assert(width > 0);
-        assert(height > 0);
-
-        return QSize(width, height);
+        return TimeTextSize_;
     }
 
     void MessageStatusWidget::paintEvent(QPaintEvent *)
@@ -122,21 +60,6 @@ namespace Ui
         const auto height = sizeHint().height();
 
         auto cursorX = 0;
-
-        if (StatusIcon_ != Themes::PixmapResourceId::Invalid)
-        {
-            const auto statusPixmap = Themes::GetPixmap(StatusIcon_);
-            assert(statusPixmap);
-
-            auto statusY = height;
-            statusY -= statusPixmap->GetHeight();
-            statusY += getStatusIconBottomPadding(StatusIcon_);
-
-            statusPixmap->Draw(p, cursorX, statusY);
-
-            cursorX += getTimeStatusMargin();
-            cursorX += statusPixmap->GetWidth();
-        }
 
         p.setFont(getTimeFont());
         p.setPen(getTimeColor());
@@ -179,10 +102,6 @@ namespace Ui
 
 namespace
 {
-    int32_t getStatusIconBottomPadding(const Themes::PixmapResourceId /*resId*/)
-    {
-        return Utils::scale_value(3);
-    }
 
     const QFont& getTimeFont()
     {
@@ -197,8 +116,4 @@ namespace
         return font;
     }
 
-    int32_t getTimeStatusMargin()
-    {
-        return Utils::scale_value(8);
-    }
 }

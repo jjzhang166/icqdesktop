@@ -6,6 +6,7 @@
 
 #include "../log/log.h"
 
+#include "../tools/file_sharing.h"
 #include "../tools/system.h"
 
 #include "history_message.h"
@@ -116,7 +117,9 @@ not_sent_message::not_sent_message(
     message_->set_outgoing(true);
     message_->set_time(_time);
 
-    if (history_message::is_file_sharing_uri(_message) && _type != message_type::file_sharing)
+    if (!_message.empty() &&
+        tools::is_new_file_sharing_uri(_message) &&
+        _type != message_type::file_sharing)
     {
         message_->init_file_sharing_from_link(_message);
         message_->set_text(_message);
@@ -130,6 +133,11 @@ not_sent_message::not_sent_message(
     else
     {
         message_->set_text(_message);
+    }
+
+    if (_aimid.find("@chat.agent") != _aimid.npos)
+    {
+        message_->set_chat_data(archive::chat_data());
     }
 }
 

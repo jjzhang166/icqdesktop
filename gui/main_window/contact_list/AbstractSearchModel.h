@@ -13,6 +13,7 @@ namespace Logic
         virtual void setFocus() = 0;
         virtual void emitChanged(int first, int last) = 0;
         virtual void searchPatternChanged(QString p) = 0;
+        virtual void setSelectEnabled(bool) { };
     };
     
     AbstractSearchModel* GetCurrentSearchModel(int _regim);

@@ -80,6 +80,21 @@ namespace Ui
         return *iter;
     }
 
+    void HistoryControl::updateCurrentPage()
+    {
+        HistoryControlPage* page = qobject_cast<HistoryControlPage*>(stacked_widget_->currentWidget());
+        if (page)
+            page->updateMoreButton();
+    }
+
+    void HistoryControl::mouseReleaseEvent(QMouseEvent *e)
+    {
+        QWidget::mouseReleaseEvent(e);
+        HistoryControlPage* page = qobject_cast<HistoryControlPage*>(stacked_widget_->currentWidget());
+        if (page)
+            emit clicked();
+    }
+
 	void HistoryControl::updatePages()
 	{
 		for (QMap<QString, QTime>::iterator iter = times_.begin(); iter != times_.end(); )
@@ -161,9 +176,4 @@ namespace Ui
 		delete iter_page.value();
 		pages_.erase(iter_page);
 	}
-    
-    const QString & HistoryControl::getCurrent()
-    {
-        return current_;
-    }
 }

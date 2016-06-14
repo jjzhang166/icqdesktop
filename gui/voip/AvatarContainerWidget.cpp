@@ -52,7 +52,7 @@ void Ui::AvatarContainerWidget::_addAvatarTo(const std::string& userId, std::map
     }
 
     bool isDefault = false;
-    avatars[userId] = Logic::GetAvatarStorage()->GetRounded(userId.c_str(), QString(), _avatarSize, QString(), true, isDefault);
+    avatars[userId] = Logic::GetAvatarStorage()->GetRounded(userId.c_str(), QString(), _avatarSize, QString(), true, isDefault, false);
 }
 
 void Ui::AvatarContainerWidget::_avatarChanged(QString userId) {
@@ -61,6 +61,8 @@ void Ui::AvatarContainerWidget::_avatarChanged(QString userId) {
     if (it != _avatars.end()) {
         _addAvatarTo(userIdUtf8, _avatars);
     }
+
+	repaint();
 }
 
 void Ui::AvatarContainerWidget::addAvatar(const std::string& userId) {
@@ -70,6 +72,8 @@ void Ui::AvatarContainerWidget::addAvatar(const std::string& userId) {
     setMinimumSize(sz);
 
     _avatarRects = _calculateAvatarPositions(rect(), sz);
+
+	repaint();
 }
 
 QSize Ui::AvatarContainerWidget::_calculateAvatarSize() {
@@ -141,10 +145,14 @@ void Ui::AvatarContainerWidget::dropExcess(const std::vector<std::string>& users
     QSize sz = _calculateAvatarSize();
     setMinimumSize(sz);
     _avatarRects = _calculateAvatarPositions(rect(), sz);
+
+	repaint();
 }
 
 void Ui::AvatarContainerWidget::removeAvatar(const std::string& userId) {
     _avatars.erase(userId);
+
+	repaint();
 }
 
 void Ui::AvatarContainerWidget::paintEvent(QPaintEvent*) {

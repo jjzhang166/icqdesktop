@@ -1,5 +1,6 @@
 #ifndef __VOIP_PROXY_H__
 #define __VOIP_PROXY_H__
+#include "../../core/Voip/VoipManagerDefines.h"
 
 namespace core{
 	class coll_helper;
@@ -32,7 +33,24 @@ namespace voip_proxy {
         bool isActive;
     };
 
-	class VoipController : public QObject {
+    class VoipEmojiManager
+    {
+        struct CodeMap   { size_t id; size_t codePointSize ;std::string path; unsigned sw; unsigned sh; std::vector<unsigned> codePoints; };
+        
+        std::vector<CodeMap>   codeMaps_;
+        size_t                 activeMapId_;
+        QImage                 activeMap_;
+
+    public:
+        VoipEmojiManager();
+        ~VoipEmojiManager();
+
+    public:
+        bool addMap(const unsigned sw, const unsigned sh, const std::string& path, const std::vector<unsigned>& codePoints, const size_t size);
+        bool getEmoji(const unsigned codePoint, const size_t size, QImage& image);
+    };
+
+    class VoipController : public QObject {
         
 	Q_OBJECT
 
@@ -48,6 +66,7 @@ namespace voip_proxy {
         void onVoipMediaLocalVideo(bool enabled);
         void onVoipMediaRemoteVideo(bool enabled);
         void onVoipMouseTapped(quintptr win_id, const std::string& tap_type);
+        void onVoipCallOutAccepted(const voip_manager::ContactEx& contact_ex);
         void onVoipCallCreated(const voip_manager::ContactEx& contact_ex);
         void onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex);
         void onVoipCallConnected(const voip_manager::ContactEx& contact_ex);
@@ -56,17 +75,31 @@ namespace voip_proxy {
         void onVoipResetComplete(); //hack for correct close
         void onVoipWindowRemoveComplete(quintptr win_id);
         void onVoipWindowAddComplete(quintptr win_id);
+        void onVoipUpdateCipherState(const voip_manager::CipherState& state);
 
 	private Q_SLOTS:
 		void _updateCallTime();
+		void _checkIgnoreContact(QString contact);
 
 	private:
+        voip_manager::CipherState _cipherState;
 		Ui::core_dispatcher& _dispatcher;
 		QTimer               _call_time_timer;
 		unsigned             _call_time_elapsed;
+        VoipEmojiManager     _voipEmojiManager;
         std::vector<voip_manager::Contact> _activePeerList;
+		bool				 _haveEstablishedConnection;
+        bool                 _iTunesWasPaused;
 
 		void _loadUserBitmaps(Ui::gui_coll_helper& collection, QPixmap* avatar, const std::string& contact, int size);
+
+		// Load and apply volume from settings.
+		void loadPlaybackVolumeFromSettings();
+
+		// This method is called, when you start or recive call.
+		void onStartCall();
+		// This method is called on end of call.
+		void onEndCall();
 
 	public:
 		VoipController(Ui::core_dispatcher& dispatcher);
@@ -75,6 +108,8 @@ namespace voip_proxy {
 	public:
         void voipReset();
         void updateActivePeerList();
+        void getSecureCode(voip_manager::CipherState& state) const;
+        VoipEmojiManager& getEmojiManager() { return _voipEmojiManager; }
 
 		void setWindowAdd(quintptr hwnd, bool primary_wnd, bool system_wnd, int panel_height);
 		void setWindowRemove(quintptr hwnd);
@@ -96,10 +131,11 @@ namespace voip_proxy {
         void setActiveDevice(const device_desc& description);
         void setMuteSounds(bool mute);
 
+		void setAPlaybackMute(bool mute);
+
 		void handlePacket(core::coll_helper& coll_params);
         static std::string formatCallName(const std::vector<std::string>& names, const char* clip);
 	};
-
 }
 
 #endif//__VOIP_PROXY_H__

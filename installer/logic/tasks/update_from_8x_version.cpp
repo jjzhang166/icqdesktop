@@ -71,18 +71,14 @@ namespace installer
 
         bool is_new_accounts_exist()
         {
-            QString folder_name = get_exported_account_folder();
-
             QString auth_file = get_exported_account_folder() + "/" + auth_file_name;
 
             return QFileInfo::exists(auth_file);
         }
 
-        bool is_new_settings_exits()
+        bool is_new_settings_exits() 
         {
-            QString folder_name = get_exported_account_folder();
-
-            QString auth_file = get_exported_account_folder() + "/" + gui_settings_file_name;
+            QString auth_file = get_exported_settings_folder() + "/" + gui_settings_file_name;
 
             return QFileInfo::exists(auth_file);
         }
@@ -130,7 +126,7 @@ namespace installer
             return installer::error();
         }
 
-        installer::error store_exported_account()
+        installer::error store_exported_account(bool _is_from_8x)
         {
             QString folder_name = get_exported_account_folder();
 
@@ -138,12 +134,12 @@ namespace installer
             if (!dir.mkpath(folder_name))
                 return installer::error(errorcode::create_exported_account_folder, QString("create folder: ") + folder_name);
 
-            get_exported_data().store_exported_account(folder_name + "/" + auth_export_file_name);
+            get_exported_data().store_exported_account(folder_name + "/" + auth_export_file_name, _is_from_8x);
 
             return installer::error();
         }
 
-        installer::error store_exported_settings()
+        installer::error store_exported_settings(bool _is_from_8x)
         {
             QString folder_name = get_exported_settings_folder();
 
@@ -151,7 +147,7 @@ namespace installer
             if (!dir.mkpath(folder_name))
                 return installer::error(errorcode::create_exported_settings_folder, QString("create folder: ") + folder_name);
 
-            get_exported_data().store_exported_settings(folder_name + "/" + settings_export_file_name);
+            get_exported_data().store_exported_settings(folder_name + "/" + settings_export_file_name, _is_from_8x);
 
             return installer::error();
         }

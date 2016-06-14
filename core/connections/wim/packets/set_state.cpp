@@ -24,8 +24,12 @@ int32_t set_state::init_request(std::shared_ptr<core::http_request_simple> _requ
     std::string state = "online";
     std::string invisible = "0";
 
-    if (state_ == profile_state::dnd)
+    if (state_ == profile_state::offline)
+        state = "offline";
+    else if (state_ == profile_state::dnd)
         state = "occupied";
+    else if (state_ == profile_state::away)
+        state = "away";
     else if (state_ == profile_state::invisible)
         invisible = "1";
 

@@ -58,7 +58,7 @@ statistics::~statistics()
         g_core->stop_timer(send_timer_);
 
     save_if_needed();
-    
+
     stats_thread_.reset();
 }
 
@@ -226,7 +226,7 @@ bool statistics::unserialize(tools::binary_stream& _bs)
                 assert(false);
                 return false;
             }
-            
+
             time_t last_time = tlv_last_sent_time->get_value<int64_t>();
             last_sent_time_ = std::chrono::system_clock::from_time_t(last_time);
         }
@@ -261,7 +261,7 @@ bool statistics::unserialize(tools::binary_stream& _bs)
                     return false;
                 }
             }
-            
+
             auto read_event_time = std::chrono::system_clock::from_time_t(tlv_event_time->get_value<int64_t>());
             auto read_event_id = tlv_event_id->get_value<int64_t>();
             insert_event(name, props, read_event_time, read_event_id);
@@ -282,7 +282,7 @@ void statistics::save_if_needed()
         std::wstring file_name = file_name_;
 
         g_core->save_async([bs_data, file_name]
-        { 
+        {
             bs_data->save_2_file(file_name);
             return 0;
         });
@@ -329,7 +329,7 @@ void statistics::send_async()
         for (auto& post_data : post_data_vector)
             statistics::send(user_proxy, post_data);
         return 0;
-            
+
     })->on_result_ = [wr_this](int32_t _error)
     {
         auto ptr_this = wr_this.lock();
@@ -347,7 +347,7 @@ std::string statistics::events_to_json(events_ci begin, events_ci end, time_t _s
 
     for (auto stat_event  = begin; stat_event != end; ++stat_event)
     {
-        if (stat_event != begin) 
+        if (stat_event != begin)
             data_stream << ",";
         data_stream << stat_event->to_string(_start_time);
         ++events_and_count[stat_event->get_name()];
@@ -357,7 +357,7 @@ std::string statistics::events_to_json(events_ci begin, events_ci end, time_t _s
 
     for (auto stat_event  = events_and_count.begin(); stat_event != events_and_count.end(); ++stat_event)
     {
-        if (stat_event != events_and_count.begin()) 
+        if (stat_event != events_and_count.begin())
             data_stream << ",";
         data_stream << "\"" << stat_event->first << "\":" << stat_event->second;
     }
@@ -377,11 +377,11 @@ std::vector<std::string> statistics::get_post_data() const
             ++end;
 
         assert(begin->get_name() == stats_event_names::service_session_start);
-        
+
         const long long time_now = std::chrono::system_clock::to_time_t(begin->get_time()) * 1000; // milliseconds
 
         std::string user_key = "";
-        auto props = begin->get_props(); 
+        auto props = begin->get_props();
 
         if (props.size() > 0 && props.begin()->first == "hashed_user_key")
         {
@@ -393,7 +393,7 @@ std::vector<std::string> statistics::get_post_data() const
         }
 
         ++begin;
-        
+
         if (begin == end)
             continue;
 
@@ -408,11 +408,11 @@ std::vector<std::string> statistics::get_post_data() const
         std::stringstream data_stream;
 
         data_stream << "{\"a\":{\"af\":" << time3
-            <<",\"aa\":1,\"ab\":10,\"ac\":9,\"ae\":\""<< version 
-            << "\",\"ad\":\"" << flurry_key 
-            << "\",\"ag\":" << time 
+            <<",\"aa\":1,\"ab\":10,\"ac\":9,\"ae\":\""<< version
+            << "\",\"ad\":\"" << flurry_key
+            << "\",\"ag\":" << time
             << ",\"ah\":" << time1
-            << ",\"ak\":1," 
+            << ",\"ak\":1,"
             << "\"cg\":\"" << user_key
             << "\"},\"b\":[{\"bd\":\"\",\"be\":\"\",\"bk\":-1,\"bl\":0,\"bj\":\"ru\",\"bo\":[";
 
@@ -440,28 +440,29 @@ bool statistics::send(const proxy_settings& _user_proxy, const std::string& post
 {
     const std::weak_ptr<stop_objects> wr_stop(stop_objects_);
 
-    auto stop_handler = [wr_stop]
-    {
-        auto ptr_stop = wr_stop.lock();
-        if (!ptr_stop)
-            return true;
+    const auto stop_handler =
+        [wr_stop]
+        {
+            auto ptr_stop = wr_stop.lock();
+            if (!ptr_stop)
+                return true;
 
-        return ptr_stop->is_stop_.load();
-    };
-    
-    core::http_request_simple post_request(_user_proxy, stop_handler);
+            return ptr_stop->is_stop_.load();
+        };
+
+    core::http_request_simple post_request(_user_proxy, utils::get_user_agent(), stop_handler);
     post_request.set_connect_timeout(1000);
     post_request.set_timeout(1000);
     post_request.set_keep_alive();
 
-    auto result_url = flurry_url 
-        + "?d=" + core::tools::base64::encode64(post_data) 
+    auto result_url = flurry_url
+        + "?d=" + core::tools::base64::encode64(post_data)
         + "&c=" + core::tools::adler32(post_data);
     post_request.set_url(result_url);
     return post_request.get();
 }
 
-void statistics::insert_event(stats_event_names _event_name, const event_props_type& _props, 
+void statistics::insert_event(stats_event_names _event_name, const event_props_type& _props,
                               std::chrono::system_clock::time_point _event_time, int _event_id)
 {
     events_.emplace_back(_event_name, _event_time, _event_id, _props);
@@ -512,7 +513,7 @@ const std::string statistics::stats_event::to_string(time_t _start_time) const
     }
 
     result << "{\"ce\":" << event_id_
-        << ",\"bp\":\"" << name_ 
+        << ",\"bp\":\"" << name_
         << "\",\"bq\":" << std::chrono::system_clock::to_time_t(event_time_) * 1000 - _start_time// milliseconds
         << ",\"bs\":{" << params_in_json.str() <<"},"
         << "\"br\":" << br << "}";

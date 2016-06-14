@@ -83,8 +83,8 @@ namespace installer
             
             const accounts_list& get_accounts() const;
             void set_exported_account(std::shared_ptr<wim_account> _account);
-            void store_exported_account(const QString& _file_name);
-            void store_exported_settings(const QString& _file_name);
+            void store_exported_account(const QString& _file_name, bool _is_from_8x);
+            void store_exported_settings(const QString& _file_name, bool _is_from_8x);
         };
 
         exported_data& get_exported_data();

@@ -1,7 +1,10 @@
 if __name__ != '__main__':
 	sys.exit(0)
 
-import os.path, time, sys, glob, re, argparse
+import os.path, time, sys, glob, re, argparse, subprocess
+
+qt_path = os.path.dirname(os.path.abspath(__file__ + "/..")).replace("\\", "/")
+qt_path += "/external/windows/qt/bin/"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-config", type=str, help="build configuration (release or debug)")
@@ -18,7 +21,7 @@ def get_7z_path():
 	program_files = os.environ["ProgramFiles(x86)"]
 	path_7z = program_files + "\\7-Zip\\7z.exe"
 	if not os.path.exists(path_7z):
-		program_files = os.environ["ProgramFiles"]
+		program_files = os.environ["ProgramW6432"]
 		path_7z = program_files + "\\7-Zip\\7z.exe"
 				
 	return path_7z
@@ -28,7 +31,7 @@ def pack_files():
 	sys.stdout.flush()
 	path_7z = get_7z_path()
 	if not os.path.exists(path_7z):
-		print("pack files:", "7z not found")
+		print("pack files:", "7z not found in ", path_7z)
 		sys.exit(-1)
 
 	archive_name = "resources/files.7z"
@@ -92,10 +95,10 @@ def build_mocs_in(dir):
 		if os.path.exists(moc_file):
 			if os.path.getmtime(h_file) > os.path.getmtime(moc_file):
 				print(os.path.basename(h_file), "is newer that", os.path.basename(moc_file),">> rebuild")
-				os.system("%QTPATH%/bin/moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
+				subprocess.call(qt_path + "moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
 		else:
 			print("build", os.path.basename(moc_file))
-			os.system("%QTPATH%/bin/moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
+			subprocess.call(qt_path + "moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
 
 	files = glob.glob(dir + "/moc_*.cpp")
 	for file in files:
@@ -108,41 +111,34 @@ def build_mocs_in(dir):
 	for dir in dirs:
 		build_mocs_in(dir[:-1])
 
-#
-# Main
-#
-
-translation_changed = False
-
-
-files = glob.glob("translations\*ts")
-for file in files:
-	file_name = os.path.splitext(file)[0]
-	ts_file = os.path.abspath(file_name + ".ts").replace("\\", "/")
-	qm_file = os.path.abspath(file_name + ".qm").replace("\\", "/")
-	if os.path.exists(qm_file):
-		if os.path.getmtime(ts_file) > os.path.getmtime(qm_file):
-			translation_changed = True
-			print(os.path.basename(ts_file), "is newer that", os.path.basename(qm_file),">> rebuild")
-			os.system("%QTPATH%/bin/lrelease.exe " + '"' + ts_file + '"')
-	else:
-		print("build", os.path.basename(qm_file))
-		os.system("%QTPATH%/bin/lrelease.exe " + '"' + ts_file + '"')
-		translation_changed = True
-
-
 def compile_resources():
 	qrc_file_name = os.path.abspath("resources/resource.qrc").replace("\\", "/")
 	cpp_file_name = os.path.abspath("resources/resource.cpp").replace("\\", "/")
 	qss_file_name = os.path.abspath("resources/styles/styles.qss").replace("\\", "/")
 	
 	if ((not os.path.exists(cpp_file_name)) or (os.path.getmtime(qrc_file_name) > os.path.getmtime(cpp_file_name)) or args.config.lower() != "debug" or (os.path.getmtime(qss_file_name) > os.path.getmtime(cpp_file_name))):
-		os.system("%QTPATH%/bin/rcc.exe " + '"' + qrc_file_name + '"' + " -o " + '"' + cpp_file_name + '"')
+		subprocess.call(qt_path + "rcc.exe " + '"' + qrc_file_name + '"' + " -o " + '"' + cpp_file_name + '"')
 
-pack_files()
-build_mocs_in(".")
-compile_resources()
+if __name__ == "__main__":
+	translation_changed = False
 
+	files = glob.glob("translations\*ts")
+	for file in files:
+		file_name = os.path.splitext(file)[0]
+		ts_file = os.path.abspath(file_name + ".ts").replace("\\", "/")
+		qm_file = os.path.abspath(file_name + ".qm").replace("\\", "/")
+		if os.path.exists(qm_file):
+			if os.path.getmtime(ts_file) > os.path.getmtime(qm_file):
+				translation_changed = True
+				print(os.path.basename(ts_file), "is newer that", os.path.basename(qm_file),">> rebuild")
+				subprocess.call(qt_path + "lrelease.exe " + '"' + ts_file + '"')
+		else:
+			print("build", os.path.basename(qm_file))
+			subprocess.call(qt_path + "lrelease.exe " + '"' + ts_file + '"')
+			translation_changed = True
 
+	pack_files()
+	build_mocs_in(".")
+	compile_resources()
 
-sys.exit(0)
+	sys.exit(0)

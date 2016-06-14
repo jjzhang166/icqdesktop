@@ -1,7 +1,7 @@
 if __name__ != '__main__':
 	sys.exit(0)
 
-import os.path, time, sys, glob
+import os.path, time, sys, glob, xml.etree.ElementTree
 
 qt_base_path = "../external/mac/Qt"
 
@@ -69,7 +69,29 @@ for file in files:
 		print("build", os.path.basename(qm_file))
 		os.system(qt_base_path + "/bin/lrelease " + '"' + ts_file + '"')	
 		
-os.system(qt_base_path + "/bin/rcc " + '"' + os.path.abspath("resource.qrc").replace("\\", "/") + '"' + " -o " + '"' + os.path.abspath("qresource").replace("\\", "/") + '"' + " --binary")
+qrc_file = os.path.abspath("resource.qrc").replace("\\", "/")
+qrc_cpp_file = os.path.abspath("qresource.cpp").replace("\\", "/")
+if os.path.exists(qrc_cpp_file):
+		qrc_cpp_time = os.path.getmtime(qrc_cpp_file)
+		if os.path.getmtime(qrc_file) > qrc_cpp_time:
+			print(os.path.basename(qrc_file), "is newer that", os.path.basename(qrc_cpp_file),">> rebuild")
+			os.system(qt_base_path + "/bin/rcc " + '"' + qrc_file + '"' + " -o " + '"' + qrc_cpp_file + '"')
+		else:
+			changed = False
+			e = xml.etree.ElementTree.parse(qrc_file).getroot()
+			for child in e:
+				for chil in child:
+					file = os.path.abspath(chil.text).replace("\\", "/")
+					if (os.path.getmtime(file) > qrc_cpp_time):
+						print(file + " is changed >> rebuild qrc")
+						os.system(qt_base_path + "/bin/rcc " + '"' + qrc_file + '"' + " -o " + '"' + qrc_cpp_file + '"')
+						changed = True
+						break
+				if changed == True:
+					break
+else:
+	print("build", os.path.basename(qrc_cpp_file))
+	os.system(qt_base_path + "/bin/rcc " + '"' + qrc_file + '"' + " -o " + '"' + qrc_cpp_file + '"')
 
 # compile_ui_in("./ui")
 

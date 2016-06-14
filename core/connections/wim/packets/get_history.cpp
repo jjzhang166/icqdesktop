@@ -22,13 +22,15 @@ get_history_params::get_history_params(
     const int64_t _from_msg_id,
     const int64_t _till_msg_id,
     const int32_t _count,
-    const std::string &_patch_version
+    const std::string &_patch_version,
+    bool _init
     )
     : aimid_(_aimid)
     , till_msg_id_(_till_msg_id)
     , from_msg_id_(_from_msg_id)
     , count_(_count)
     , patch_version_(_patch_version)
+    , init_(_init)
 {
     assert(!aimid_.empty());
     assert(!patch_version_.empty());
@@ -89,6 +91,11 @@ int32_t get_history::init_request(std::shared_ptr<core::http_request_simple> _re
         hist_params_.aimid_ % hist_params_.patch_version_
     );
 
+    if (!params_.full_log_)
+    {
+        _request->set_replace_log_function(std::bind(wim_packet::replace_log_messages, std::placeholders::_1));
+    }
+
     return 0;
 }
 
@@ -128,10 +135,8 @@ int32_t get_history::parse_results(const rapidjson::Value& _node_results)
     }
 
     auto iter_patch_version = _node_results.FindMember("patchVersion");
-    if (
-        (iter_patch_version != _node_results.MemberEnd()) &&
-        iter_patch_version->value.IsString()
-        )
+    if ((iter_patch_version != _node_results.MemberEnd()) &&
+        iter_patch_version->value.IsString())
     {
         const std::string patch_version = iter_patch_version->value.GetString();
 
@@ -148,7 +153,7 @@ int32_t get_history::parse_results(const rapidjson::Value& _node_results)
         "    contact=<%1%>\n"
         "    history-patch=<%2%>",
         hist_params_.aimid_ % dlg_state_->get_history_patch_version()
-        );
+    );
 
     auto iter_patch = _node_results.FindMember("patch");
     if (iter_patch != _node_results.MemberEnd())
@@ -163,7 +168,7 @@ int32_t get_history::parse_results(const rapidjson::Value& _node_results)
     }
 
     set_last_message();
-
+    
     apply_patches();
 
     return 0;
@@ -186,11 +191,11 @@ void get_history::apply_patches()
                 "    type=<delete>\n"
                 "    message-id=<%1%>",
                 message_id
-                );
+            );
 
             messages_->emplace_back(
                 history_message::make_deleted_patch(message_id)
-                );
+            );
             break;
 
         case history_patch::type::modified:
@@ -200,11 +205,11 @@ void get_history::apply_patches()
                 "    type=<modify>\n"
                 "    message-id=<%1%>",
                 message_id
-                );
+            );
 
             messages_->emplace_back(
                 history_message::make_modified_patch(message_id)
-                );
+            );
             break;
 
         default:
@@ -258,11 +263,11 @@ void get_history::parse_patches(const rapidjson::Value& _node_patch)
                 "    type=<deleted>\n"
                 "    msg_id=<%1%>",
                 msg_id
-                );
+            );
 
             history_patches_.emplace_back(
                 archive::history_patch::make_deleted(msg_id)
-                );
+            );
 
             continue;
         }
@@ -275,11 +280,11 @@ void get_history::parse_patches(const rapidjson::Value& _node_patch)
                 "    type=<modify>\n"
                 "    msg_id=<%1%>",
                 msg_id
-                );
+            );
 
             history_patches_.emplace_back(
                 archive::history_patch::make_modified(msg_id)
-                );
+            );
         }
     }
 }

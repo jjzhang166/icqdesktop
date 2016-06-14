@@ -35,7 +35,9 @@ namespace ContactList
 			const int unreadsCounter,
 			const bool muted,
             const QString &senderNick,
-            const bool isOfficial);
+            const bool isOfficial,
+            const bool _drawLastRead,
+            const QPixmap& _lastReadAvatar);
 
 		const DeliveryState DeliveryState_;
 

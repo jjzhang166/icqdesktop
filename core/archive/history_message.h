@@ -350,6 +350,7 @@ namespace core
                 const std::string &_sender_aimid);
             int32_t unserialize(core::tools::binary_stream& _data);
 
+            void set_msgid(const int64_t _msgid) {msgid_ = _msgid; }
             const int64_t get_msgid() const { return msgid_; }
             bool has_msgid() const { return (msgid_ > 0); }
 
@@ -375,6 +376,7 @@ namespace core
 
             archive::chat_data* get_chat_data();
             const archive::chat_data* get_chat_data() const;
+            void set_chat_data(const chat_data& _data);
 
             void set_internal_id(const std::string& _internal_id) { internal_id_ = _internal_id; }
             const std::string& get_internal_id() const { return internal_id_; }
@@ -407,9 +409,7 @@ namespace core
             void init_sticker_from_text(const std::string &_text);
             const file_sharing_data_uptr& get_file_sharing_data() const;
 
-            static bool is_file_sharing_uri(const std::string &_uri);
             static bool is_image(const std::string& _id);
-            static std::string extract_new_file_sharing_file_id(const std::string &uri);
 
             chat_event_data_uptr& get_chat_event_data();
             voip_data_uptr& get_voip_data();

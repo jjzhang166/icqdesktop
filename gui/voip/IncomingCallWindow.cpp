@@ -35,14 +35,16 @@ Ui::IncomingCallWindow::IncomingCallWindow(const std::string& account, const std
     
 #ifdef _WIN32
     setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::SubWindow);
-#else
-    setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Window | Qt::WindowDoesNotAcceptFocus/*| Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMaximizeButtonHint*/);
     setAttribute(Qt::WA_ShowWithoutActivating);
+#else
+    // We have problem on Mac with WA_ShowWithoutActivating and WindowDoesNotAcceptFocus.
+    // If video window is showing with this flags, we cannot activate main ICQ window.
+    setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Window /*| Qt::WindowDoesNotAcceptFocus*//*| Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMaximizeButtonHint*/);
+    //setAttribute(Qt::WA_ShowWithoutActivating);
     setAttribute(Qt::WA_X11DoNotAcceptFocus);
 #endif
     
     setAttribute(Qt::WA_UpdatesDisabled);
-    setAttribute(Qt::WA_ShowWithoutActivating);
 
     QVBoxLayout* root_layout = new QVBoxLayout();
     root_layout->setContentsMargins(0, 0, 0, 0);
@@ -137,8 +139,11 @@ void Ui::IncomingCallWindow::hideFrame() {
 }
 
 void Ui::IncomingCallWindow::showEvent(QShowEvent* e) {
+	updateTitle();
+
     header_->show();
     controls_->show();
+
     QWidget::showEvent(e);
 }
 
@@ -158,21 +163,16 @@ void Ui::IncomingCallWindow::onVoipCallNameChanged(const std::vector<voip_manage
     }
 
     if (contacts[0].account == account_ && contacts[0].contact == contact_) {
+		_contacts = contacts;
         std::vector<std::string> users;
-        std::vector<std::string> friendly_names;
         for(unsigned ix = 0; ix < contacts.size(); ix++) {
             users.push_back(contacts[ix].contact);
-
-            std::string n = Logic::GetContactListModel()->getDisplayName(contacts[ix].contact.c_str()).toUtf8().data();
-            friendly_names.push_back(n);
         }
 
         header_->setAvatars(users);
 
-        auto name = voip_proxy::VoipController::formatCallName(friendly_names, QT_TRANSLATE_NOOP("voip_pages", "and").toUtf8());
-        assert(!name.empty());
+		updateTitle();
 
-        header_->setTitle(name.c_str());
         header_->setStatus(QT_TRANSLATE_NOOP("voip_pages", "Incoming call").toUtf8());
     }
 }
@@ -199,3 +199,25 @@ void Ui::IncomingCallWindow::onDeclineButtonClicked() {
     }
 }
 
+
+void Ui::IncomingCallWindow::updateTitle()
+{
+    if(_contacts.empty()) {
+        return;
+    }
+
+	if (_contacts[0].account == account_ && _contacts[0].contact == contact_) 
+	{
+		std::vector<std::string> friendly_names;
+		for(unsigned ix = 0; ix < _contacts.size(); ix++) 
+		{
+			std::string n = Logic::GetContactListModel()->getDisplayName(_contacts[ix].contact.c_str()).toUtf8().data();
+			friendly_names.push_back(n);
+		}
+
+		auto name = voip_proxy::VoipController::formatCallName(friendly_names, QT_TRANSLATE_NOOP("voip_pages", "and").toUtf8());
+		assert(!name.empty());
+
+		header_->setTitle(name.c_str());
+	}
+}

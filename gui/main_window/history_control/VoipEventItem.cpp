@@ -24,41 +24,27 @@ namespace Ui
 
     namespace
     {
-        int32_t getAvatarRightMargin();
-
-        int32_t getAvatarSize();
-
-        int32_t getBodyHeight();
 
         QBrush getBodyHoveredBrush();
-
-        int32_t getIconLeftPadding();
 
         int32_t getIconRightPadding();
 
         int32_t getIconTopPadding();
 
-        int32_t getLeftPadding(const bool isOutgoing);
-
-        int32_t getRightPadding(const bool isOutgoing);
-
         int32_t getTextBaselineY();
 
         QColor getTextColor(const bool isHovered);
 
-        const QFont& getTextFont();
-
-        int32_t getTimeStatusMargin();
-
-        int32_t getTopPadding(const bool hasTopMargin);
     }
 
     VoipEventItem::VoipEventItem(const HistoryControl::VoipEventInfoSptr& eventInfo)
-        : HistoryControlPageItem(nullptr)
+        : MessageItemBase(nullptr)
         , EventInfo_(eventInfo)
         , IsAvatarHovered_(false)
         , IsBubbleHovered_(false)
         , StatusWidget_(nullptr)
+        , lastRead_(false)
+        , id_(-1)
     {
         assert(EventInfo_);
     }
@@ -66,11 +52,13 @@ namespace Ui
     VoipEventItem::VoipEventItem(
         QWidget *parent,
         const HistoryControl::VoipEventInfoSptr& eventInfo)
-        : HistoryControlPageItem(parent)
+        : MessageItemBase(parent)
         , EventInfo_(eventInfo)
         , IsAvatarHovered_(false)
         , IsBubbleHovered_(false)
         , StatusWidget_(new MessageStatusWidget(this))
+        , lastRead_(false)
+        , id_(-1)
     {
         assert(EventInfo_);
 
@@ -102,18 +90,28 @@ namespace Ui
         return EventInfo_->formatEventText();
     }
 
+    void VoipEventItem::updateHeight()
+    {
+        int height = MessageStyle::getBubbleHeight() + MessageStyle::getTopPadding(hasTopMargin());
+
+        if (lastRead_)
+        {
+            height += MessageStyle::getLastReadAvatarSize() + 2 * MessageStyle::getLastReadAvatarMargin();
+        }
+
+        setFixedHeight(height);
+    }
+
     void VoipEventItem::setTopMargin(const bool value)
     {
+        HistoryControlPageItem::setTopMargin(value);
+
         if (!EventInfo_->isVisible())
         {
             return;
         }
 
-        setFixedHeight(
-            getBodyHeight() + getTopPadding(value)
-        );
-
-        HistoryControlPageItem::setTopMargin(value);
+        updateHeight();
     }
 
     void VoipEventItem::setHasAvatar(const bool value)
@@ -124,10 +122,11 @@ namespace Ui
             Avatar_ = Logic::GetAvatarStorage()->GetRounded(
                 EventInfo_->getContactAimid(),
                 EventInfo_->getContactFriendly(),
-                Utils::scale_value(32),
+                MessageStyle::getAvatarSize(),
                 QString(),
                 true,
-                Out isDefault
+                Out isDefault,
+                false
             );
 
             assert(Avatar_);
@@ -207,7 +206,7 @@ namespace Ui
 
         if (Bubble_.isEmpty())
         {
-            Bubble_ = Utils::renderMessageBubble(BubbleRect_, Utils::scale_value(8), isOutgoing());
+            Bubble_ = Utils::renderMessageBubble(BubbleRect_, MessageStyle::getBorderRadius(), isOutgoing());
             assert(!Bubble_.isEmpty());
         }
 
@@ -225,7 +224,7 @@ namespace Ui
 
         const auto baseY = BubbleRect_.top();
 
-        auto cursorX = getLeftPadding(isOutgoing());
+        auto cursorX = MessageStyle::getLeftPadding(isOutgoing());
 
         if (!isOutgoing())
         {
@@ -237,14 +236,14 @@ namespace Ui
                 );
             }
 
-            cursorX += getAvatarSize();
-            cursorX += getAvatarRightMargin();
+            cursorX += MessageStyle::getAvatarSize();
+            cursorX += MessageStyle::getAvatarRightMargin();
         }
 
         auto &icon = (IsBubbleHovered_ ? HoverIcon_ : Icon_);
         if (icon)
         {
-            cursorX += getIconLeftPadding();
+            cursorX += MessageStyle::getBubbleHorPadding();
 
             icon->Draw(p, cursorX, baseY + getIconTopPadding());
             cursorX += icon->GetWidth();
@@ -253,7 +252,7 @@ namespace Ui
         }
         else
         {
-            cursorX += getIconLeftPadding();
+            cursorX += MessageStyle::getBubbleHorPadding();
         }
 
         const auto eventText = (
@@ -263,12 +262,17 @@ namespace Ui
         );
 
         p.setPen(getTextColor(IsBubbleHovered_));
-        p.setFont(getTextFont());
+        p.setFont(MessageStyle::getTextFont());
         p.drawText(
             cursorX,
             baseY + getTextBaselineY(),
             eventText
         );
+
+        if (lastRead_)
+        {
+            drawLastReadAvatar(p, EventInfo_->getContactAimid(), EventInfo_->getContactFriendly(), MessageStyle::getRightPadding(isOutgoing()));
+        }
     }
 
     void VoipEventItem::resizeEvent(QResizeEvent *event)
@@ -276,16 +280,16 @@ namespace Ui
         QRect newBubbleRect(QPoint(0, 0), event->size());
 
         QMargins margins(
-            getLeftPadding(isOutgoing()),
-            getTopPadding(hasTopMargin()),
-            getRightPadding(isOutgoing()),
-            0
+            MessageStyle::getLeftPadding(isOutgoing()),
+            MessageStyle::getTopPadding(hasTopMargin()),
+            MessageStyle::getRightPadding(isOutgoing()),
+            (lastRead_ ? (MessageStyle::getLastReadAvatarSize() + 2 * MessageStyle::getLastReadAvatarMargin()) : (0) )
         );
 
         if (!isOutgoing())
         {
             margins.setLeft(
-                margins.left() + getAvatarSize() + getAvatarRightMargin()
+                margins.left() + MessageStyle::getAvatarSize() + MessageStyle::getAvatarRightMargin()
             );
         }
 
@@ -300,11 +304,11 @@ namespace Ui
         const auto statusWidgetSize = StatusWidget_->sizeHint();
 
         auto statusX = BubbleRect_.right();
-        statusX -= getTimeStatusMargin();
+        statusX -= MessageStyle::getTimeStatusMargin();
         statusX -= statusWidgetSize.width();
 
         auto statusY = BubbleRect_.bottom();
-        statusY -= getTimeStatusMargin();
+        statusY -= MessageStyle::getTimeStatusMargin();
         statusY -= statusWidgetSize.height();
 
         QRect statusWidgetGeometry(
@@ -325,10 +329,10 @@ namespace Ui
         assert(hasAvatar());
 
         QRect result(
-            getLeftPadding(isOutgoing()),
+            MessageStyle::getLeftPadding(isOutgoing()),
             BubbleRect_.top(),
-            getAvatarSize(),
-            getAvatarSize()
+            MessageStyle::getAvatarSize(),
+            MessageStyle::getAvatarSize()
         );
 
         return result;
@@ -352,7 +356,7 @@ namespace Ui
         }
 
         const auto isHovered = (
-            (mousePos.y() > getTopPadding(hasTopMargin())) &&
+            (mousePos.y() > MessageStyle::getTopPadding(hasTopMargin())) &&
             (mousePos.x() > BubbleRect_.left()) &&
             (mousePos.x() < BubbleRect_.right())
         );
@@ -365,22 +369,34 @@ namespace Ui
         return !EventInfo_->isIncomingCall();
     }
 
+    bool VoipEventItem::setLastRead(const bool _isLastRead)
+    {
+        HistoryControlPageItem::setLastRead(_isLastRead);
+
+        if (_isLastRead != lastRead_)
+        {
+            lastRead_ = _isLastRead;
+
+            updateHeight();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    void VoipEventItem::setId(const qint64 _id)
+    {
+        id_ = _id;
+    }
+
+    qint64 VoipEventItem::getId() const
+    {
+        return id_;
+    }
+
     namespace
     {
-        int32_t getAvatarRightMargin()
-        {
-            return Utils::scale_value(6);
-        }
-
-        int32_t getAvatarSize()
-        {
-            return Utils::scale_value(32);
-        }
-
-        int32_t getIconLeftPadding()
-        {
-            return Utils::scale_value(16);
-        }
 
         int32_t getIconRightPadding()
         {
@@ -390,11 +406,6 @@ namespace Ui
         int32_t getIconTopPadding()
         {
             return Utils::scale_value(9);
-        }
-
-        int32_t getBodyHeight()
-        {
-            return Utils::scale_value(32);
         }
 
         QBrush getBodyHoveredBrush()
@@ -415,20 +426,6 @@ namespace Ui
             return result;
         }
 
-        int32_t getLeftPadding(const bool isOutgoing)
-        {
-            return Utils::scale_value(
-                isOutgoing ? 118 : 24
-            );
-        }
-
-        int32_t getRightPadding(const bool isOutgoing)
-        {
-            return Utils::scale_value(
-                isOutgoing ? 24 : 80
-            );
-        }
-
         int32_t getTextBaselineY()
         {
             return Utils::scale_value(21);
@@ -439,26 +436,6 @@ namespace Ui
             return (isHovered ? 0xffffff : 0x282828);
         }
 
-        const QFont& getTextFont()
-        {
-            static QFont font(
-                Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15))
-            );
-
-            return font;
-        }
-
-        int32_t getTimeStatusMargin()
-        {
-            return Utils::scale_value(8);
-        }
-
-        int32_t getTopPadding(const bool hasTopMargin)
-        {
-            return Utils::scale_value(
-                hasTopMargin ? 12 : 2
-            );
-        }
     }
 
 }

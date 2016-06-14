@@ -50,6 +50,12 @@ void GeneralSettingsWidget::Creator::initNotifications(QWidget* parent, std::map
                 get_gui_settings()->set_value(settings_outgoing_message_sound_enabled, c);
             return (c ? QT_TRANSLATE_NOOP("settings_pages", "On") : QT_TRANSLATE_NOOP("settings_pages", "Off"));
         });
+        if (!get_gui_settings()->get_value(settings_sounds_enabled, true))
+        {
+            outgoingSoundWidgets.check_->setChecked(false);
+            outgoingSoundWidgets.check_->setEnabled(false);
+            outgoingSoundWidgets.text_->setEnabled(false);
+        }
         GetDisconnector()->add("sounds/outgoing", connect(enableSoundsWidgets.check_, &QCheckBox::toggled, [enableSoundsWidgets, outgoingSoundWidgets]()
         {
             bool c = enableSoundsWidgets.check_->isChecked();

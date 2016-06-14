@@ -13,6 +13,7 @@ namespace Ui
 
 	Q_SIGNALS:
 		void quote(QString);
+        void clicked();
 
 	public Q_SLOTS:
 		void contactSelected(QString _aimId);
@@ -26,7 +27,10 @@ namespace Ui
 		~HistoryControl();
         void cancelSelection();
         HistoryControlPage* getHistoryPage(const QString& aimId) const;
-        const QString & getCurrent();
+        void updateCurrentPage();
+
+    protected:
+        virtual void mouseReleaseEvent(QMouseEvent *);
         
 	private:
 		QMap<QString, HistoryControlPage*> pages_;

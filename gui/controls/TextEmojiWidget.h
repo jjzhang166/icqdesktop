@@ -16,6 +16,7 @@ namespace Ui
 
 		int				width_;
         int				height_;
+        int             kerning_;
 
 	public:
 		compiled_text();
@@ -25,6 +26,7 @@ namespace Ui
         int draw(QPainter& _painter, int _x, int _y, int _w, int _h);
 		int width(QPainter& _painter);
         int height(QPainter& _painter);
+        void setKerning(int kerning) { kerning_ = kerning; }
 	};
 
 	enum TextEmojiAlign
@@ -63,6 +65,7 @@ namespace Ui
 
     Q_SIGNALS:
         void clicked();
+        void rightClicked();
         void setSize(int, int);
         
     public:
@@ -81,6 +84,8 @@ namespace Ui
         void set_ellipsis(bool _v);
         void set_multiline(bool _v);
         void set_selectable(bool _v);
+        
+        void set_size_to_baseline(int v);
 
         void setSizePolicy(QSizePolicy::Policy hor, QSizePolicy::Policy ver);
 
@@ -115,12 +120,12 @@ namespace Ui
         int                                 ascent_;
         int                                 descent_;
         int                                 left_offset_;
-
-        void paintEvent(QPaintEvent* event) override;
+        int                                 kerning_;
 
     protected:
         void internalDraw(QPainter& painter, const QRect& rc);
         int internalWidth(QPainter& painter);
+        void paintEvent(QPaintEvent* event) override;
 
     public:
         TextEmojiLabel(QWidget* _parent = nullptr);
@@ -129,6 +134,7 @@ namespace Ui
         void setSizeToBaseline(int size);
         void setText(const QString& text);
         void setSizeToOffset(int size);
+        void setKerning(int kerning);
 
         int ascent() const
         {

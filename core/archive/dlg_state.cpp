@@ -63,7 +63,7 @@ dlg_state::dlg_state(const dlg_state& _state)
 void dlg_state::copy_from(const dlg_state& _state)
 {
     unread_count_ = _state.unread_count_;
-    last_msgid_ = _state.last_msgid_;
+    set_last_msgid(_state.get_last_msgid());
     yours_last_read_ = _state.yours_last_read_;
     theirs_last_read_ = _state.theirs_last_read_;
     theirs_last_delivered_ = _state.theirs_last_delivered_;
@@ -75,6 +75,13 @@ void dlg_state::copy_from(const dlg_state& _state)
     del_up_to_ = _state.del_up_to_;
     friendly_ = _state.friendly_;
     official_ = _state.official_;
+}
+
+void dlg_state::set_last_msgid(const int64_t _value)
+{
+    assert(_value >= -1);
+
+    last_msgid_ = (_value <= 0) ? -1 : _value;
 }
 
 dlg_state& dlg_state::operator=(const dlg_state& _state)
@@ -171,7 +178,7 @@ void dlg_state::set_del_up_to(const int64_t _msg_id)
 
 bool dlg_state::has_del_up_to() const
 {
-    return (del_up_to_ > -1);
+    return (del_up_to_ > 0);
 }
 
 bool dlg_state::is_empty() const
@@ -342,8 +349,7 @@ bool archive_state::save()
         "    contact=<%1%>\n"
         "    history-patch=<%2%>\n"
         "    del-up-to=<%3%>",
-        contact_id_ % state_->get_history_patch_version() % state_->get_del_up_to()
-        );
+        contact_id_ % state_->get_history_patch_version() % state_->get_del_up_to());
 
     auto p_storage = storage_.get();
     core::tools::auto_scope lb([p_storage]{p_storage->close();});
@@ -394,53 +400,65 @@ const dlg_state& archive_state::get_state()
     return *state_;
 }
 
-void archive_state::merge_state(const dlg_state& _state, Out dlg_state_changes& _changes)
+void archive_state::merge_state(const dlg_state& _new_state, Out dlg_state_changes& _changes)
 {
     Out _changes.initial_fill_ = state_->is_empty();
 
-    state_->set_unread_count(_state.get_unread_count());
-    state_->set_last_msgid(_state.get_last_msgid());
-    state_->set_yours_last_read(_state.get_yours_last_read());
-    state_->set_theirs_last_read(_state.get_theirs_last_read());
-    state_->set_theirs_last_delivered(_state.get_theirs_last_delivered());
-    state_->set_visible(_state.get_visible());
-    state_->set_official(_state.get_official());
+    state_->set_last_msgid(_new_state.get_last_msgid());
+    state_->set_unread_count(_new_state.get_unread_count());
+    state_->set_visible(_new_state.get_visible());
+    state_->set_official(_new_state.get_official());
+    state_->set_theirs_last_read(_new_state.get_theirs_last_read());
+    state_->set_theirs_last_delivered(_new_state.get_theirs_last_delivered());
 
-    if (!_state.get_friendly().empty())
-        state_->set_friendly(_state.get_friendly());
+    if (!_new_state.get_friendly().empty())
+    {
+        state_->set_friendly(_new_state.get_friendly());
+    }
 
-    const auto &their_last_message = _state.get_last_message();
+    const auto update_yours_last_read = (_new_state.get_yours_last_read() <= _new_state.get_last_msgid());
+    if (update_yours_last_read)
+    {
+        state_->set_yours_last_read(_new_state.get_yours_last_read());
+    }
+    else
+    {
+        // workaround for server issue
+        state_->set_yours_last_read(_new_state.get_last_msgid());
+    }
+
+    const auto &new_last_message = _new_state.get_last_message();
 
     const auto &this_last_message = state_->get_last_message();
 
-    const auto their_has_last_message = (their_last_message.has_msgid() || their_last_message.has_internal_id());
-    const auto their_last_message_emptied = (!their_last_message.has_msgid() && !_state.has_last_msgid());
-    const auto update_last_message = (their_has_last_message || their_last_message_emptied);
+    const auto new_has_last_message = (new_last_message.has_msgid() || new_last_message.has_internal_id());
+    const auto new_last_message_emptied = (!new_last_message.has_msgid() && !_new_state.has_last_msgid());
+    const auto update_last_message = (new_has_last_message || new_last_message_emptied);
     if (update_last_message)
     {
         const auto last_message_changed = (
-            (this_last_message.get_msgid() != their_last_message.get_msgid()) ||
-            !this_last_message.contents_equal(their_last_message)
+            (this_last_message.get_msgid() != new_last_message.get_msgid()) ||
+            !this_last_message.contents_equal(new_last_message)
         );
 
         Out _changes.last_message_changed_= last_message_changed;
     }
 
-    const auto update_sender_friendly = their_last_message.has_sender_friendly();
+    const auto update_sender_friendly = new_last_message.has_sender_friendly();
     if (update_sender_friendly)
     {
-        state_->set_last_message_friendly(their_last_message.get_sender_friendly());
+        state_->set_last_message_friendly(new_last_message.get_sender_friendly());
     }
 
     const auto update_history_patch = (
-        _state.has_history_patch_version() &&
-        (_state.get_history_patch_version() != state_->get_history_patch_version())
+        _new_state.has_history_patch_version() &&
+        (_new_state.get_history_patch_version() != state_->get_history_patch_version())
     );
 
     Out _changes.history_patch_version_changed_ = update_history_patch;
 
     const auto update_del_up_to = (
-        _state.get_del_up_to() > state_->get_del_up_to()
+        _new_state.get_del_up_to() > state_->get_del_up_to()
     );
 
     Out _changes.del_up_to_changed_ = update_del_up_to;
@@ -462,28 +480,28 @@ void archive_state::merge_state(const dlg_state& _state, Out dlg_state_changes& 
         contact_id_ %
         logutils::yn(update_history_patch) %
         state_->get_history_patch_version() %
-        _state.get_history_patch_version() %
+        _new_state.get_history_patch_version() %
         logutils::yn(update_del_up_to) %
         state_->get_del_up_to() %
-        _state.get_del_up_to() %
+        _new_state.get_del_up_to() %
         logutils::yn(update_last_message) %
         logutils::yn(_changes.last_message_changed_) %
         this_last_message.get_msgid() %
-        their_last_message.get_msgid());
+        new_last_message.get_msgid());
 
     if (update_last_message)
     {
-        state_->set_last_message(their_last_message);
+        state_->set_last_message(new_last_message);
     }
 
     if (update_history_patch)
     {
-        state_->set_history_patch_version(_state.get_history_patch_version());
+        state_->set_history_patch_version(_new_state.get_history_patch_version());
     }
 
     if (update_del_up_to)
     {
-        state_->set_del_up_to(_state.get_del_up_to());
+        state_->set_del_up_to(_new_state.get_del_up_to());
     }
 }
 

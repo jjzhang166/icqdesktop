@@ -22,9 +22,8 @@ namespace core
         {
             auto handler = std::make_shared<result_handler<const load_result&>>();
             auto themes_cache = cache_;
-            auto hash = std::make_shared<long>(0);
             
-            thread_->run_async_function([themes_cache, hash]()->int32_t
+            thread_->run_async_function([themes_cache]()->int32_t
             {
                 core::tools::binary_stream bs;
                 if (!bs.load_from_file(themes_cache->get_meta_file_name()))
@@ -32,18 +31,14 @@ namespace core
                 
                 bs.write(0);
                 
-                bool up_todate = false;
-                
-                if (!themes_cache->parse(bs, true, up_todate))
+                if (!themes_cache->parse(bs, true))
                     return -1;
-                
-                *hash = themes_cache->get_hash();
-                
+
                 return 0;
                 
-            })->on_result_ = [handler, hash](int32_t _error)
+            })->on_result_ = [handler](int32_t _error)
             {
-                handler->on_result_(load_result((_error == 0), *hash));
+                handler->on_result_(load_result((_error == 0)));
             };
             return handler;
         }
@@ -54,10 +49,10 @@ namespace core
             auto themes_cache = cache_;
             
             thread_->run_async_function([themes_cache, _data]()->int32_t
-                                        {
-                                            return (_data->save_2_file(themes_cache->get_meta_file_name()) ? 0 : -1);
-                                            
-                                        })->on_result_ = [handler](int32_t _error)
+            {
+                return (_data->save_2_file(themes_cache->get_meta_file_name()) ? 0 : -1);
+            }
+            )->on_result_ = [handler](int32_t _error)
             {
                 handler->on_result_(_error == 0);
             };
@@ -69,15 +64,14 @@ namespace core
         {
             auto handler = std::make_shared<result_handler<const parse_result&>>();
             auto themes_cache = cache_;
-            auto up_to_date = std::make_shared<bool>();
             
-            thread_->run_async_function([themes_cache, _data, _insitu, up_to_date]()->int32_t
+            thread_->run_async_function([themes_cache, _data, _insitu]()->int32_t
                                         {
-                                            return (themes_cache->parse(*_data, _insitu, *up_to_date) ? 0 : -1);
+                                            return (themes_cache->parse(*_data, _insitu) ? 0 : -1);
                                             
-                                        })->on_result_ = [handler, up_to_date](int32_t _error)
+                                        })->on_result_ = [handler](int32_t _error)
                                         {
-                                            handler->on_result_(parse_result((_error == 0), *up_to_date));
+                                            handler->on_result_(parse_result(_error == 0));
                                         };
             
             return handler;
@@ -225,7 +219,12 @@ namespace core
         {
             cache_->clear_all();
         }
-        
+
+        ThemesScale face::get_themes_scale()
+        {
+            return cache_->get_themes_scale();
+        }
+
         void face::set_themes_scale(ThemesScale _themes_scale)
         {
             cache_->set_themes_scale(_themes_scale);
@@ -603,16 +602,12 @@ namespace core
         
         /* cache */
         cache::cache(const std::wstring& _themes_path)
-        :	themes_path_(_themes_path), base_url_(""), hash_(0), themes_scale_(ThemesScaleNoValue)
+        :	themes_path_(_themes_path), base_url_(""), themes_scale_(ThemesScaleNoValue)
         {
         }
         
-        bool cache::parse(core::tools::binary_stream& _data, bool _insitu, bool& _up_todate)
+        bool cache::parse(core::tools::binary_stream& _data, bool _insitu)
         {
-            long hash = hash_;
-            calc_hash(_data);
-            _up_todate = (hash == hash_);
-            
             themes_list_.clear();
             
             rapidjson::Document doc;
@@ -648,19 +643,6 @@ namespace core
             return true;
         }
         
-        long cache::calc_hash(core::tools::binary_stream _data)
-        {
-            uint32_t idx = 0;
-            char *data = _data.read_available();
-            hash_ = 0;
-            while (*data)
-            {
-                ++idx;
-                hash_ += idx * *data++;
-            }
-            return hash_;
-        }
-        
         std::wstring cache::get_theme_thumb_path(const int _theme_id) const
         {
             return themes_path_ + L"/" + theme::get_theme_folder(_theme_id) + L"/thumb.jpg";
@@ -685,7 +667,7 @@ namespace core
         {
             return themes_path_ + L"/" + themes_meta_file_name_;
         }
-        
+
         bool cache::get_next_meta_task(download_task& _task)
         {
             if (meta_tasks_.empty())
@@ -910,7 +892,8 @@ namespace core
         
         void cache::clear_all()
         {
-            boost::filesystem::remove_all(themes_path_);
+            boost::system::error_code e;
+            boost::filesystem::remove_all(themes_path_, e);
         }
     }
 }

@@ -30,17 +30,22 @@ namespace Ui
 		void focusedOut();
 		
 	public:
-		SearchWidget(int _offset, bool _isWithButton, QWidget* _parent = 0);
+		SearchWidget(bool _isWithButton, QWidget* _parent = 0, int _offset = 0);
 		~SearchWidget();
 		void ClearInput();
 		void SetShowButton(bool _isShow);
+        void setTransparent(bool _isTransparent);
         void setFocus();
+        
+        inline CustomButton *searchIcon() { return search_icon_; }
+        inline CustomButton *searchEditIcon() { return search_edit_icon_; }
 
 	private:
 		void setActive(bool active);
 		LineEditEx* search_edit_;
 		bool active_;
 		bool is_show_button_;
+        bool is_transparent_;
         
         void paintEvent(QPaintEvent *_e) override;
         void retranslateUi(QWidget *search_widget);
@@ -53,5 +58,6 @@ namespace Ui
         CustomButton *search_icon_;
         QWidget *widget_2_;
         CustomButton *search_edit_icon_;
+        QMenu* menu_;
 	};
 }

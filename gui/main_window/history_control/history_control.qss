@@ -7,8 +7,8 @@ QWidget[HistoryControl="true"]
 QWidget[ContactPageTopWidget="true"]
 {
 	background: rgba(255, 255, 255, 95%);
-	min-height: 64dip;
-	max-height: 64dip;
+	min-height: 63dip;
+	max-height: 63dip;
 	border-bottom-style: solid;
 	border-bottom-width: 1dip;
 	border-bottom-color: #dadada;
@@ -38,7 +38,7 @@ QPushButton[CallButton="true"]:hover:pressed
 
 QPushButton[FavoriteStar="true"]
 {
-	margin-top: 11dip;
+	margin-top: 4dip;
 	min-width: 12dip;
 	max-width: 12dip;
 	min-height: 12dip;
@@ -113,7 +113,7 @@ QPushButton[OptionButton="true"]:hover
 {
 	border-image: url(:/resources/contr_options_round_100_hover.png);
 }
-QPushButton[OptionButton="true"]:hover:pressed
+QPushButton[OptionButton="true"]:checked
 {
 	border-image: url(:/resources/contr_options_round_100_active.png);
 }
@@ -272,4 +272,13 @@ QWidget[TypingWidget="true"]
 	background-color: transparent;
 	min-height: 32dip;
 	max-height: 32dip;
+}
+
+QPushButton[EditMembersButton="true"]
+{
+	min-width: 12dip;
+	max-width: 12dip;
+	min-height: 8dip;
+	max-height: 8dip;
+	border-image: url(:/resources/widgets/content_dropdown_black_open_100.png);
 }

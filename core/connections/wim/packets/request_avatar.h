@@ -19,10 +19,10 @@ namespace core
     {
         class request_avatar : public wim_packet
         {
-            const std::string	avatar_type_;
-            const std::string	contact_;
-            std::shared_ptr<core::tools::binary_stream>	data_;	
-            time_t				write_time_;
+            const std::string avatar_type_;
+            const std::string contact_;
+            std::shared_ptr<core::tools::binary_stream> data_;
+            time_t write_time_;
 
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
             virtual int32_t parse_response(std::shared_ptr<core::tools::binary_stream> _response) override;

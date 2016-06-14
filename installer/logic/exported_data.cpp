@@ -6,6 +6,7 @@
 #include "../legacy/http_login_session.h"
 #include "../legacy/contact_info.h"
 #include "../legacy/const.h"
+#include "../../gui.shared/constants.h"
 
 namespace installer
 {
@@ -115,19 +116,19 @@ namespace installer
         }
 
 
-        std::string get_nick(MRABase& _base, const MAKFC_CLoginData& _login_data)
+        std::string get_nick(MRABase& _base, const MAKFC_CString& _login,  const MAKFC_CString& _database_key)
         {
-            std::string nick = _login_data.GetLogin().NetStrA(CP_UTF8);
+            std::string nick = _login.NetStrA(CP_UTF8);
 
             tstring tnick;
-            if (_base.ReadString((LPCWSTR) GetDatabaseKey(_login_data), L"", L"ICQMyNick", tnick))
+            if (_base.ReadString((LPCWSTR) _database_key, L"", L"ICQMyNick", tnick))
             {
                 nick = MAKFC_CString(tnick.c_str()).NetStrA(CP_UTF8);
             }
             else
             {
                 MAKFC_CContactInfo rci;
-                if (_base.RCI_Get((LPCWSTR) GetDatabaseKey(_login_data), (LPCWSTR) _login_data.GetLogin(), rci))
+                if (_base.RCI_Get((LPCWSTR) _database_key, (LPCWSTR) _login, rci))
                 {
                     if (!rci.nickname.IsEmpty())
                     {
@@ -168,8 +169,8 @@ namespace installer
                 if (auth_par)
                 {
                     auto converted_params = convert_from_8x(*auth_par, login_data_conv);
-                    converted_params->nick_ = get_nick(_base, login_data_conv);
-                    converted_params->database_key_ = GetDatabaseKey(login_data_conv);
+                    converted_params->nick_ = get_nick(_base, login_data_conv.GetLogin(), auth_par->m_database_key);
+                    converted_params->database_key_ = auth_par->m_database_key;
                     read_avatar(login_data_conv, get_profile_folder(), converted_params->avatar_);
 
                     accounts_list_.push_back(converted_params);
@@ -184,8 +185,8 @@ namespace installer
                     if (auth_par)
                     {
                         auto converted_params_child = convert_from_8x(*auth_par, login_data_child_conv);
-                        converted_params_child->nick_ = get_nick(_base, login_data_child_conv);
-                        converted_params_child->database_key_ = GetDatabaseKey(login_data_child_conv);
+                        converted_params_child->nick_ = get_nick(_base, login_data_child_conv.GetLogin(), auth_par->m_database_key);
+                        converted_params_child->database_key_ = auth_par->m_database_key;
                         read_avatar(login_data_child_conv, get_profile_folder(), converted_params_child->avatar_);
                         accounts_list_.push_back(converted_params_child);
                     }
@@ -213,26 +214,49 @@ namespace installer
             if (ERROR_SUCCESS == icq_key.QueryDWORDValue(L"set_show_cl_in_taskbar", val))
                 settings->show_in_taskbar_ = !!val;
 
-            if (ERROR_SUCCESS == icq_key.QueryDWORDValue(L"sound_scheme", val))
-                settings->enable_sounds_ = !!val;
+            DWORD sounds_scheme = 0;
+            if (ERROR_SUCCESS == icq_key.QueryDWORDValue(L"sound_scheme", sounds_scheme))
+            {
+                if (!sounds_scheme)
+                {
+                    settings->enable_sounds_ = false;
+                }
+            }
+
+            DWORD enable_sounds = 0;
+            if (ERROR_SUCCESS == icq_key.QueryDWORDValue(L"set_sounds", enable_sounds))
+            {
+                if (!enable_sounds)
+                {
+                    settings->enable_sounds_ = false;
+                }
+            }
 
             if (ERROR_SUCCESS == icq_key.QueryDWORDValue(L"set_autosave_incoming_files", val))
                 settings->auto_save_files_ = !!val;
 
             if (!accounts_list_.empty())
             {
-                std::wstring path;
-                if (_base.ReadString((*accounts_list_.begin())->database_key_, L"", L"SAVEPATH_DEFAULTW", path))
-                    settings->path_file_save_ = MAKFC_CString(path.c_str()).Trim(L"\\").NetStrA(CP_UTF8);
-                
-                if (_base.ReadDWORD((*accounts_list_.begin())->database_key_, L"", L"ENABLE_PREVIEW", val))
-                    settings->enable_preview_ = !!val;
+                try
+                {
+                    std::wstring path;
+                    if (_base.ReadString((*accounts_list_.begin())->database_key_, L"", L"SAVEPATH_DEFAULTW", path))
+                        settings->path_file_save_ = MAKFC_CString(path.c_str()).Trim(L"\\").NetStrA(CP_UTF8);
+
+
+                    if (_base.ReadDWORD((*accounts_list_.begin())->database_key_, L"", L"ENABLE_PREVIEW", val))
+                        settings->enable_preview_ = !!val;
+                }
+                catch (...)
+                {
+
+                }
             }
 
             if (ERROR_SUCCESS == icq_key.QueryDWORDValue(L"set_sendhotkey", val))
             {
                 if (val & HOTKEY_CTRLENTER)
-                    settings->send_hotkey_ = Qt::Key_Control;
+                    settings->send_hotkey_ = Ui::KeyToSendMessage::Ctrl_Enter;
                 else if (val & HOTKEY_DBENTER)
                     settings->send_hotkey_ = 0;
                 else
@@ -262,6 +286,9 @@ namespace installer
 
         void exported_data::read(bool _accounts, bool _settings)
         {
+            if (!_settings && !_accounts)
+                return;
+
             MRABase base;
             if (!base.Open(get_options_database_filename()))
                 return;
@@ -287,7 +314,7 @@ namespace installer
             exported_account_ = _account;
         }
 
-        void exported_data::store_exported_account(const QString& _file_name)
+        void exported_data::store_exported_account(const QString& _file_name, bool _is_from_8x)
         {
             if (!exported_account_)
                 return;
@@ -305,7 +332,9 @@ namespace installer
             doc.AddMember("timeoffset", exported_account_->time_offset_, a);
             doc.AddMember("aimsid", exported_account_->aim_sid_, a);
             doc.AddMember("fetchurl", exported_account_->fetch_url_, a);
-            
+
+            if (_is_from_8x)
+                doc.AddMember(settings_need_show_promo, true, a);
             
             rapidjson::StringBuffer buffer;
             rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -324,7 +353,7 @@ namespace installer
             file.close();
         }
 
-        void exported_data::store_exported_settings(const QString& _file_name)
+        void exported_data::store_exported_settings(const QString& _file_name, bool _is_from_8x)
         {
             if (!settings_)
                 return;
@@ -342,6 +371,8 @@ namespace installer
             doc.AddMember(settings_show_video_and_images, settings_->enable_preview_, a);
             doc.AddMember(settings_language, settings_->language_, a);
             doc.AddMember(settings_notify_new_messages, settings_->notify_messages_, a);
+            if (_is_from_8x)
+                doc.AddMember(settings_need_show_promo, true, a);
                         
             rapidjson::StringBuffer buffer;
             rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);

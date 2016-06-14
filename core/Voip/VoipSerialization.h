@@ -201,6 +201,16 @@ inline void operator<<(voip_manager::FrameSize& fs, core::coll_helper& coll) {
     fs.hwnd = coll.get_value_as_int64("wnd");
 }
 
+inline void operator>>(const voip_manager::CipherState& val, core::coll_helper& coll) {
+    coll.set_value_as_int("state", int(val.state));
+    coll.set_value_as_string("secure_code", val.secureCode);
+}
+
+inline void operator<<(voip_manager::CipherState& val, core::coll_helper& coll) {
+    val.state = (voip_manager::CipherState::State)coll.get_value_as_int("state");
+    val.secureCode = coll.get_value_as_string("secure_code");
+}
+
 inline void operator>>(const std::vector<voip_manager::Contact>& contacts, core::coll_helper& coll) {
     coll.set_value_as_int("count", (int)contacts.size());
 
@@ -285,6 +295,8 @@ inline void operator>>(const voip_manager::eNotificationTypes& type, core::coll_
     case kNotificationType_VoipResetComplete: coll.set_value_as_string(name, "voip_reset_complete"); return;
     case kNotificationType_VoipWindowRemoveComplete: coll.set_value_as_string(name, "voip_window_remove_complete"); return;
     case kNotificationType_VoipWindowAddComplete: coll.set_value_as_string(name, "voip_window_add_complete"); return;
+
+    case kNotificationType_CipherStateChanged:  coll.set_value_as_string(name, "voip_cipher_state_changed"); return;
 
     default: assert(false); return;
     }

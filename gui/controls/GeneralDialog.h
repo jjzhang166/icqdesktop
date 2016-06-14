@@ -14,7 +14,13 @@ namespace Ui
     {
         Q_OBJECT
 
+    Q_SIGNALS:
+		void leftButtonClicked();
+		void rightButtonClicked();
+
     private Q_SLOTS:
+        void leftButtonClick();
+        void rightButtonClick();
 
     public Q_SLOTS:
         void setButtonActive(bool _active);
@@ -24,9 +30,13 @@ namespace Ui
         ~GeneralDialog();
         bool showInPosition(int _x, int _y);
 
-        void addAcceptButton(QString _button_text, int _button_margin_dip);
+        void addAcceptButton(QString _button_text, int _button_margin_px);
+        void addButtonsPair(QString _button_text_left, QString _button_text_right, int _margin_px, int _button_between_px);
+
         void addLabel(QString _text_label);
         void addHead();
+        void addText(QString _message_text, int _upper_margin_px);
+        void addError(QString _message_text);
         void setKeepCenter(bool _is_keep_center);
 
     protected:
@@ -44,6 +54,8 @@ namespace Ui
         SemitransparentWindow* semi_window_;
         QWidget*            bottom_widget_;
         QWidget*            label_host_;
+        QWidget*            text_host_;
+        QWidget*            error_host_;
         QWidget*            head_host_;
         bool                keep_center_;
         int x_;

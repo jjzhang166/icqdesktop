@@ -28,10 +28,14 @@ namespace core
             int32_t				lastseen_;
             bool				is_chat_;
             bool				muted_;
+            bool                is_live_chat_;
             bool                official_;
-
+            std::string			icon_id_;
+            std::string			big_icon_id_;
+            std::string			large_icon_id_;
+            
             cl_presence()
-                : is_chat_(false), muted_(false), official_(false), lastseen_(-1)
+                : is_chat_(false), muted_(false), lastseen_(-1), is_live_chat_(false), official_(false)
             {
             }
 

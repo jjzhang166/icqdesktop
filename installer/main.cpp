@@ -1,13 +1,16 @@
 #include "stdafx.h"
 
 #ifdef _WIN32
-#include "ui/main_window/main_window.h"
-#include "utils/styles.h"
 #include <comutil.h>
 #include <comdef.h>
 
 #include "logic/tools.h"
 #include "logic/worker.h"
+#include "ui/main_window/main_window.h"
+#include "utils/styles.h"
+
+#include "../common.shared/crash_handler.h"
+#include "../common.shared/common_crash_sender.h"
 
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
 Q_IMPORT_PLUGIN(QICOPlugin);
@@ -18,14 +21,25 @@ const wchar_t* old_version_launch_mutex_name = L"MRAICQLAUNCH";
 
 int main(int _argc, char* _argv[])
 {
+    if (_argv[1] == send_dump_arg)
+    {
+        ::common_crash_sender::post_dump_to_hockey_app_and_delete();
+        return 0;
+    };
+
     int res = 0;
 
 #ifdef _WIN32
+    core::dump::crash_handler chandler;
+    chandler.set_product_bundle("icq.dekstop.installer");
+    chandler.set_process_exception_handlers();
+    chandler.set_thread_exception_handlers();
+    chandler.set_is_sending_after_crash(true);
+
     CHandle mutex(::CreateSemaphore(NULL, 0, 1, installer_singlton_mutex_name));
     if (ERROR_ALREADY_EXISTS == ::GetLastError())
         return res;
 #endif //_WIN32
-
 
     QApplication app(_argc, _argv);
 

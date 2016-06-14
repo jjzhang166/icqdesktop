@@ -45,22 +45,17 @@ namespace Utils
         bool isMainInstance();
         void switchInstance(launch::CommandLineParser& _cmd_parser);
 
-        void setUrlHandler();
-        void unsetUrlHandler();
-
         bool updating();
         void parseUrlCommand(const QString& _urlCommand);
 
    public Q_SLOTS:
 
             void initMainWindow();
-            void open_url(const QUrl& url);
             void receiveUrlCommand(QString _urlCommand);
             void applicationStateChanged(Qt::ApplicationState state);
 
     private:
         void init_win7_features();
-        bool parseLocalUrl(const QString& _urlString);
 
         std::unique_ptr<Ui::MainWindow> main_window_;
         std::unique_ptr<LocalPeer> peer_;

@@ -25,6 +25,8 @@ namespace Ui {
         void onAcceptVideoClicked();
         void onAcceptAudioClicked();
 
+		void updateTitle();
+
     public:
         IncomingCallWindow(const std::string& account, const std::string& contact);
         ~IncomingCallWindow();
@@ -37,6 +39,10 @@ namespace Ui {
         std::unique_ptr<VoipSysPanelControl> controls_;
         
         video_window::ResizeEventFilter* event_filter_;
+
+		// List of currect contacts.
+		std::vector<voip_manager::Contact> _contacts;
+
 #ifndef STRIP_VOIP
         FrameControl_t* _rootWidget;
 #endif //STRIP_VOIP

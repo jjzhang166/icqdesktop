@@ -89,6 +89,14 @@ namespace Logic
 	{
 		unsigned size = (unsigned)Match_.size();
 		Match_ = GetContactListModel()->getSearchedContacts(result.toStdList());
+        std::sort(Match_.begin(), Match_.end(), [](const ContactItem& first, const ContactItem& second) 
+        {
+            if (first.Get() && second.Get())
+                return first.Get()->GetDisplayName().compare(second.Get()->GetDisplayName(), Qt::CaseInsensitive) < 0;
+            else 
+                return first.get_aimid().compare(second.get_aimid()) < 0;
+        }
+        );
 		emit dataChanged(index(0), index(size));
 		if (!result.isEmpty())
 			emit results();
@@ -111,7 +119,7 @@ namespace Logic
     void SearchModel::contactRemoved(QString contact)
     {
         Match_.erase(std::remove_if(Match_.begin(), Match_.end(), [contact](const ContactItem& item) { return item.Get()->AimId_ == contact; }), Match_.end());
-        emitChanged(0, Match_.size());
+        emitChanged(0, (int)Match_.size());
     }
 
 	void SearchModel::emitChanged(int first, int last)

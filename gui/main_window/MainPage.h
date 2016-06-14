@@ -33,8 +33,10 @@ namespace Ui
     class HistoryControlPage;
     class ThemesSettingsWidget;
     class ContextMenu;
+    class FlatMenu;
     class IntroduceYourself;
-
+    class LiveChatHome;
+    class LiveChats;
     class MainPage : public QWidget
     {
         Q_OBJECT
@@ -43,24 +45,24 @@ namespace Ui
                 void searchEnd();
                 void onContactSelected(QString _contact);
                 void onAddContactClicked();
-                void addButtonClicked();
                 void createGroupChat();
                 // settings
                 void onProfileSettingsShow(QString uin);
                 void onGeneralSettingsShow(int type);
                 void onThemesSettingsShow(bool,QString);
+                void onLiveChatsShow();
                 //voip
                 void onVoipShowVideoWindow(bool);
                 void onVoipCallIncoming(const std::string&, const std::string&);
                 void onVoipCallIncomingAccepted(const voip_manager::ContactEx& contact_ex);
-                void onVoipCallCreated(const voip_manager::ContactEx& contact_ex);
                 void onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex);
 
                 void showPlaceholder(Utils::PlaceholdersType _PlaceholdersType);
 
-                void show_popup_menu(QAction* _action);
                 void post_stats_with_settings();
                 void myInfo();
+                void loginNewUser();
+                void popPagesToRoot();
 
     private:
         MainPage(QWidget* parent);
@@ -85,6 +87,18 @@ namespace Ui
         ContactDialog* getContactDialog() const;
         HistoryControlPage* getHistoryPage(const QString& aimId) const;
 
+        void insertTopWidget(const QString& aimId, QWidget* widget);
+        void removeTopWidget(const QString& aimId);
+
+        void showSidebar(const QString& aimId, int page);
+        bool isSidebarVisible() const;
+        void setSidebarVisible(bool show);
+
+        bool isContactDialog() const;
+
+        ProfileSettingsWidget* getProfileSettings() const;
+        static int getContactDialogWidth(int _main_page_width);
+        
     protected:
         virtual void resizeEvent(QResizeEvent* event);
 
@@ -106,13 +120,18 @@ namespace Ui
         GeneralSettingsWidget*      general_settings_;
         ProfileSettingsWidget*      profile_settings_;
         ThemesSettingsWidget*       themes_settings_;
+        LiveChatHome*               live_chats_page_;
         QHBoxLayout*                horizontal_layout_;
         QWidget*                    noContactsYetSuggestions_;
         QWidget*                    introduceYourselfSuggestions_;
         bool                        needShowIntroduceYourself_;
-        ContextMenu*                add_contact_menu_;
+        FlatMenu*                   add_contact_menu_;
         QTimer*                     settings_timer_;
+        bool                        login_new_user_;
+        bool                        recv_my_info_;
+
         std::map<std::string, std::shared_ptr<IncomingCallWindow> > incoming_call_windows_;
+        std::unique_ptr<LiveChats> liveChats_;
         void _destroy_incoming_call_window(const std::string& account, const std::string& contact);
     };
 }

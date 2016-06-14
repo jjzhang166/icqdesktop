@@ -47,20 +47,15 @@ namespace Ui
 
 #ifdef __APPLE__
         auto imageRect = Image_.rect();
+        imageRect.moveTopLeft(coords);
+        p.drawImage(coords, Image_);
 #else
 		auto imageRect = Utils::scale_bitmap(
 			Image_.rect()
 		);
+        imageRect.moveTopLeft(coords);
+        p.drawImage(imageRect, Image_);
 #endif
-
-		imageRect.moveTopLeft(coords);
-
-		p.drawImage(imageRect, Image_);
-	}
-
-	int32_t DpiAwareImage::height() const
-	{
-		return Image_.height();
 	}
 
 	bool DpiAwareImage::isNull() const
@@ -70,7 +65,20 @@ namespace Ui
 
 	int32_t DpiAwareImage::width() const
 	{
-		return Image_.width();
+#ifdef __APPLE__
+        return Image_.width() / Image_.devicePixelRatio();
+#else
+        return Image_.width();
+#endif
 	}
+
+    int32_t DpiAwareImage::height() const
+    {
+#ifdef __APPLE__
+        return Image_.height() / Image_.devicePixelRatio();
+#else
+        return Image_.height();
+#endif
+    }
 
 }

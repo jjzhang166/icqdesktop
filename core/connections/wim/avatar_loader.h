@@ -27,11 +27,9 @@ namespace core
             std::wstring avatar_file_path_;
             core::tools::binary_stream avatar_data_;
             bool avatar_exist_;
-            wim_packet_params wim_params_;
-
-            avatar_context(const wim_packet_params& _params, int32_t _avatar_size, std::string _contact, std::wstring _im_data_path) 
+            
+            avatar_context(int32_t _avatar_size, std::string _contact, std::wstring _im_data_path) 
                 :
-                wim_params_(_params),
                 avatar_size_(_avatar_size), 
                 contact_(_contact),
                 im_data_path_(_im_data_path),
@@ -58,26 +56,47 @@ namespace core
             std::shared_ptr<avatar_context> context_;
             std::shared_ptr<avatar_load_handlers> handlers_;
 
+            int64_t task_id_;
+
         public:
 
             std::shared_ptr<avatar_context> get_context() const;
             std::shared_ptr<avatar_load_handlers> get_handlers() const;
 
+            int64_t get_id() const;
+
             avatar_task(
+                int64_t task_id_,
                 std::shared_ptr<avatar_context> _context, 
                 std::shared_ptr<avatar_load_handlers> _handlers);
         };
 
         class avatar_loader : public std::enable_shared_from_this<avatar_loader>
         {
+            int64_t task_id_;
+
+            bool working_;
+            bool network_error_;
+
+            std::shared_ptr<wim_packet_params> wim_params_;
+
             std::shared_ptr<async_executer> local_thread_;
             std::shared_ptr<async_executer> server_thread_;
 
             std::list<std::shared_ptr<avatar_task>> failed_tasks_;
 
+            std::list<std::shared_ptr<avatar_task>> requests_queue_;
+
+            void remove_task(std::shared_ptr<avatar_task> _task);
+            void add_task(std::shared_ptr<avatar_task> _task);
+            std::shared_ptr<avatar_task> get_next_task();
+            void execute_task(std::shared_ptr<avatar_task> _task, std::function<void(int32_t)> _on_complete);
+            void run_tasks_loop();
+
             const std::wstring get_avatar_path(const std::wstring& _im_data_path, const std::string& _contact, const std::string _avatar_type);
             const std::string get_avatar_type_by_size(int32_t _size) const;
 
+            
             void load_avatar_from_server(std::shared_ptr<avatar_context> _context, std::shared_ptr<avatar_load_handlers> _handlers);
 
         public:
@@ -85,9 +104,11 @@ namespace core
             avatar_loader();
             virtual ~avatar_loader();
 
-            void resume();
+            void resume(const wim_packet_params& _params);
 
-            std::shared_ptr<avatar_load_handlers> get_contact_avatar_async(std::shared_ptr<avatar_context> _context);
+            std::shared_ptr<avatar_load_handlers> get_contact_avatar_async(const wim_packet_params& _params, std::shared_ptr<avatar_context> _context);
+
+            void show_contact_avatar(const std::string& _contact, const int32_t _avatar_size);
         };
 
     }

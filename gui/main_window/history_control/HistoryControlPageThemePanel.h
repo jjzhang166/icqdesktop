@@ -29,13 +29,6 @@ namespace Ui
         CustomButton *setButton_;
         BackButton *backFromThemeButton_;
         
-        QSpacerItem *h_spacer_0_;
-        QSpacerItem *h_spacer_1_;
-        QSpacerItem *h_spacer_2_;
-        QSpacerItem *h_spacer_3_;
-        QSpacerItem *h_spacer_4_;
-        QSpacerItem *h_spacer_5_;
-        
         HistoryControlPage *historyControlPage_;
         ThemePanelCallback callback_;
         
@@ -43,6 +36,8 @@ namespace Ui
         
     public:
         HistoryControlPageThemePanel(HistoryControlPage* _parent);
+        ~HistoryControlPageThemePanel();
+        
         void updateTopThemeButtonsVisibility();
         void setShowSetThemeButton(const bool _show);
         
@@ -55,6 +50,7 @@ namespace Ui
         void cancelThemePressed();
         void setToAllThemePressed();
         void setThemePressed();
+        void timerUpdateTopThemeButtonsVisibility();
     };
 }
 

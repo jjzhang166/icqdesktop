@@ -11,6 +11,9 @@ namespace Ui
         QString target_contact_;
     private Q_SLOTS:
         void on_themes_meta();
+        void on_themes_meta_error();
+        void im_created();
+
     public:
         ThemesModel(ThemesWidget* _flowLayout);
         void themeSelected(int _theme_id);

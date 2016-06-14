@@ -290,6 +290,11 @@ namespace Ui
         );
 	}
 
+    void ChatEventItem::clearSelection()
+    {
+        TextWidget_->clearSelection();
+    }
+
 	namespace
 	{
 		qint32 getBubbleHorPadding()

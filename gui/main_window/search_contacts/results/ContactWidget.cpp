@@ -107,11 +107,12 @@ namespace Ui
 
 		const QString display_name = _profile->get_contact_name();
 
-		ContactAvatarWidget* avatar_widget = new ContactAvatarWidget(
+		auto avatar_widget = new ContactAvatarWidget(
 			this, 
 			_profile->get_aimid(),
 			display_name,
-			Utils::scale_value(widget_height));
+			Utils::scale_value(widget_height),
+            false);
 
         avatar_widget->setCursor(QCursor(Qt::PointingHandCursor));
 
@@ -180,7 +181,7 @@ namespace Ui
 			emit call_contact(profile_->get_aimid());
 		});
 
-        connect(avatar_widget, &QPushButton::clicked, [this]()
+        connect(avatar_widget, &ContactAvatarWidget::clicked, [this]()
         {
             emit contact_info(profile_->get_aimid());
         });

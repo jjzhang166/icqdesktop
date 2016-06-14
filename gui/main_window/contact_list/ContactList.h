@@ -9,9 +9,10 @@ namespace Logic
     class ChatMembersModel;
     class AbstractSearchModel;
 
-	enum MembersWidgetRegim {CONTACT_LIST, SELECT_MEMBERS, DELETE_MEMBERS, IGNORE_LIST};
+	enum MembersWidgetRegim {CONTACT_LIST, SELECT_MEMBERS, DELETE_MEMBERS, IGNORE_LIST, ADMIN_MEMBERS};
     
     bool is_delete_members_regim(int _regim);
+    bool is_admin_members_regim(int _regim);
 }
 
 namespace Data
@@ -42,9 +43,9 @@ namespace Ui
         virtual void mouseReleaseEvent(QMouseEvent *);
 
     private:
-        QPainter* Painter_;
-        bool Hover_;
-        bool Select_;
+        QPainter* painter_;
+        bool hover_;
+        bool select_;
     };
 
     class EmptyIgnoreListLabel : public QWidget
@@ -57,7 +58,7 @@ namespace Ui
         virtual void paintEvent(QPaintEvent*);
 
     private:
-        QPainter* Painter_;
+        QPainter* painter_;
     };
 
     class ButtonEventFilter : public QObject
@@ -78,13 +79,14 @@ namespace Ui
     protected:
         bool eventFilter(QObject* _obj, QEvent* _event);
     private:
-        ContactList* Cl_;
+        ContactList* cl_;
     };
 
 	enum CurrentTab
 	{
 		RECENTS = 0,
 		ALL,
+        LIVE_CHATS,
 		SETTINGS,
 		SEARCH,
 	};
@@ -99,7 +101,7 @@ namespace Ui
 		void paintEvent(QPaintEvent *);
 
 	private:
-		QPainter* Painter_;
+		QPainter* painter_;
 	};
 
     class FocusableListView: public QListView
@@ -119,6 +121,7 @@ namespace Ui
         
 	Q_SIGNALS:
 		void itemSelected(QString);
+        void itemClicked(QString);
 		void groupClicked(int);
 		void searchEnd();
 		void addContactClicked();
@@ -133,6 +136,7 @@ namespace Ui
 
         void changeSelected(QString _aimId, bool _isRecent);
 		void recentsClicked();
+        void liveChatsClicked();
 		void allClicked();
 		void settingsClicked();
         void switchToRecents();
@@ -142,6 +146,7 @@ namespace Ui
 		void searchResultsFromModel();
 		void itemClicked(const QModelIndex&);
 		void itemPressed(const QModelIndex&);
+        void liveChatsItemPressed(const QModelIndex&);
 		void statsRecentItemPressed(const QModelIndex&);
 		void statsSearchItemPressed(const QModelIndex&);
 		void statsCLItemPressed(const QModelIndex&);
@@ -159,8 +164,8 @@ namespace Ui
         void typingStatus(Logic::TypingFires _typing, bool _isTyping);
 
         void messagesReceived(QString, QVector<QString>);
-        
 		void showPopupMenu(QAction* _action);
+        void switchTab(QString);
 
 	public:
 
@@ -176,18 +181,19 @@ namespace Ui
         bool tapAndHoldModifier() const;
         void dragPositionUpdate(const QPoint& _pos);
         void dropFiles(const QPoint& _pos, const QList<QUrl> _files);
-        void show_contact_list();
+        void showContactList();
         void setEmptyIgnoreLabelVisible(bool _is_visible);
+        void setClDelegate(Logic::ContactListItemDelegate* delegate);
+        void setTransparent(bool transparent);
+        void clearSettingsSelection();
 
 	private:
 
 		void updateTabState(bool _save);
-
-        void UpdateCheckedButtons();
-
+        void updateCheckedButtons();
         void updateSettingsState();
-		void show_recents_popup_menu(const QModelIndex& _current);
-		void show_contacts_popup_menu(const QModelIndex& _current);
+		void showRecentsPopup_menu(const QModelIndex& _current);
+		void showContactsPopupMenu(const QModelIndex& _current);
 		void selectionChanged(const QModelIndex &);
 
         QString getAimid(const QModelIndex &_current);
@@ -198,43 +204,37 @@ namespace Ui
         void hideNoContactsYet(QWidget *_list, QLayout *_layout);
         void hideNoRecentsYet(QWidget *_list, QLayout *_layout);
 
+    private:
 
-		Ui::ContextMenu*	popupMenu_;
-
-		unsigned CurrentTab_;
-
-		Logic::RecentItemDelegate*		recentsDelegate_;
+		Ui::ContextMenu* popupMenu_;
+		Logic::RecentItemDelegate* recentsDelegate_;
 		Logic::ContactListItemDelegate*	clDelegate_;
-		RecentsButton*					recentsTabButton_;
-        SettingsTab*					settingsTab_;
-		Logic::MembersWidgetRegim       regim_;
-        Logic::ChatMembersModel*        chatMembersModel_;
-        QVBoxLayout *mainLayout_;
+		RecentsButton* recentsButton_;
+        QPushButton*	livechatsButton_;
+        SettingsTab* settingsTab_;
+		Logic::MembersWidgetRegim regim_;
+        Logic::ChatMembersModel* chatMembersModel_;
         QVBoxLayout *contactListLayout_;
         QVBoxLayout *recentsLayout_;
-        QVBoxLayout *searchLayout_;
-        QHBoxLayout *buttonsLayout_;
-        QSpacerItem *horizontal_spacer_;
-        QSpacerItem *horizontal_spacer_2_;
         QStackedWidget *stackedWidget_;
         QWidget *recentsPage_;
         FocusableListView *recentsView_;
         QWidget *contactListPage_;
         FocusableListView *contactListView_;
-        QWidget *searchPage_;
         FocusableListView *searchView_;
-        QWidget *widget_;
-        QFrame *buttonsFrame_;
+        QWidget* liveChatsPage_;
+        FocusableListView *liveChatsView_;
         QPushButton *clTabButton_;
         QPushButton *settingsTabButton_;
-        QSpacerItem *vertical_spacer_;
-        bool noContactsYetShown_;
-        bool noRecentsYetShown_;
         QWidget *noContactsYet_;
         QWidget *noRecentsYet_;
-        bool TapAndHold_;
-        RCLEventFilter* ListEventFilter_;
-        ButtonEventFilter* ButtonEventFilter_;
+        RCLEventFilter* listEventFilter_;
+        ButtonEventFilter* buttonEventFilter_;
         EmptyIgnoreListLabel* emptyIgnoreListLabel_;
+
+        unsigned currentTab_;
+        bool noContactsYetShown_;
+        bool noRecentsYetShown_;
+        bool tapAndHold_;
 	};
 }

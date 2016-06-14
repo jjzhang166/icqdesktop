@@ -253,7 +253,8 @@ namespace Ui
         CurPlay_.init();
 
         MpegLoader l(file, false);
-        l.open();
+        if (!l.open())
+            return -1;
 
         QByteArray result;
         qint64 samplesAdded = 0, frequency = l.frequency(), format = l.format();
@@ -325,7 +326,8 @@ namespace Ui
         Incoming_.init();
         
         MpegLoader l(":/sounds/incoming", true);
-        l.open();
+        if (!l.open())
+            return;
         
         QByteArray result;
         qint64 samplesAdded = 0, frequency = l.frequency(), format = l.format();
@@ -356,7 +358,8 @@ namespace Ui
         Outgoing_.init();
         
         MpegLoader l(":/sounds/outgoing", true);
-        l.open();
+        if (!l.open())
+            return;
         
         QByteArray result;
         qint64 samplesAdded = 0, frequency = l.frequency(), format = l.format();

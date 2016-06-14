@@ -13,6 +13,11 @@ namespace Ui
 
 class MacSupport
 {
+private:
+    QMenuBar *mainMenu_;
+    std::vector<QMenu *> extendedMenus_;
+    std::vector<QAction *> extendedActions_;
+    
 public:
     MacSupport(Ui::MainWindow * mainWindow);
     virtual ~MacSupport();
@@ -21,6 +26,8 @@ public:
     void enableMacCrashReport();
     void enableMacPreview(WId wid);
     
+    void listenSleepAwakeEvents();
+    
     void runMacUpdater();
     void cleanMacUpdater();
     
@@ -28,6 +35,7 @@ public:
     
     static void toggleFullScreen(WId wid);
     static void showPreview(QString previewPath, int x, int y);
+    static bool previewIsShown();
     static void openFinder(QString previewPath);
     
     static QString currentRegion();
@@ -44,7 +52,7 @@ public:
     
     static void replacePasteboard(const QString & text);
 
-    QMenuBar * createMenuBar(bool simple = false);
+    void createMenuBar(bool simple);
     void updateMainMenu();
     
     void activateWindow(unsigned long long view = 0);

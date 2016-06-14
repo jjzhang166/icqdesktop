@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "network_log.h"
 #include "async_task.h"
+#include "utils.h"
+#include "tools/system.h"
 
 namespace core
 {
@@ -20,9 +22,10 @@ namespace core
 
     bool create_logs_directory(const boost::filesystem::wpath& _logs_directory)
     {
-        if (!boost::filesystem::is_directory(_logs_directory))
+        boost::system::error_code e;
+        if (!boost::filesystem::is_directory(_logs_directory, e))
         {
-            if (!boost::filesystem::create_directories(_logs_directory))
+            if (!core::tools::system::create_directory(_logs_directory))
                 return false;
         }
 
@@ -114,15 +117,18 @@ namespace core
             boost::filesystem::wpath file_path = _logs_directory;
             file_path.append(tools::from_utf8(iter->second));
 
-            if (boost::filesystem::exists(file_path))
+            if (core::tools::system::is_exist(file_path))
             {
                 if (size > max_logs_size)
                 {
-                    boost::filesystem::remove(file_path);
-                    continue;
+                    boost::system::error_code e;
+                    boost::filesystem::remove(file_path, e);
                 }
-
-                size += boost::filesystem::file_size(file_path);
+                else
+                {
+                    boost::system::error_code e;
+                    size += boost::filesystem::file_size(file_path, e);
+                }
             }
         }
     }
@@ -170,8 +176,7 @@ namespace core
                 }
                 else
                 {
-                    file_names_history->first = file_names_history->second;
-                    file_names_history->second = file_path.wstring();
+                    file_names_history->push(file_path.wstring());
                 }
             }
 

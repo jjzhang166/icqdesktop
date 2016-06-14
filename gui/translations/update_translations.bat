@@ -4,3 +4,5 @@
 %QTPATH%\bin\lupdate.exe .. -ts pt.ts -noobsolete -source-language en -target-language pt -locations none
 %QTPATH%\bin\lupdate.exe .. -ts uk.ts -noobsolete -source-language en -target-language uk -locations none
 %QTPATH%\bin\lupdate.exe .. -ts cs.ts -noobsolete -source-language en -target-language cs -locations none
+%QTPATH%\bin\lupdate.exe .. -ts fr.ts -noobsolete -source-language en -target-language fr -locations none
+%QTPATH%\bin\lupdate.exe .. -ts ar.ts -noobsolete -source-language en -target-language ar -locations none

@@ -8,6 +8,8 @@
 #include "../../../tools/system.h"
 #include "../../../tools/strings.h"
 
+#include "../../../../external/minizip/zip.h"
+
 using namespace core;
 using namespace wim;
 
@@ -31,85 +33,103 @@ send_feedback::~send_feedback()
 
 int32_t send_feedback::init_request(std::shared_ptr<core::http_request_simple> _request)
 {
+    log_.clear();
+
     const long sizeMax = (1024 * 1024); // 1 Mb per log file
-
-    auto dataCurr = std::vector<char>();
-    auto fromCurr = boost::filesystem::wpath(g_core->get_network_log().file_names_history().second);
-    if (boost::filesystem::exists(fromCurr))
+    long sizeLeft = sizeMax;
+    std::stack<std::vector<char>> logChunks;
+    std::vector<char> fullLog;
+    
+    auto logFilenames = g_core->get_network_log().file_names_history_copy();
+    while (!logFilenames.empty())
     {
-        auto tempCurr = fromCurr.parent_path().append(L"feedback_log_current.tmp");
-        boost::filesystem::copy_file(fromCurr, tempCurr, boost::filesystem::copy_option::overwrite_if_exists);
-        const long sizeCurr = boost::filesystem::file_size(tempCurr);
+        auto logFilename = logFilenames.top();
+        auto logPath = boost::filesystem::wpath(logFilename);
+        if (core::tools::system::is_exist(logFilename))
         {
-            std::ifstream ifs(tempCurr.string(), std::ios::binary);
-            const long size = ((sizeCurr - sizeMax) < 0 ? sizeCurr : sizeMax);
-            if (size > 0)
+            // prepare output
+            if (log_.empty())
             {
-                dataCurr.resize(size);
-                ifs.seekg(-((std::fstream::off_type)dataCurr.size()), std::ios::end);
-                ifs.read(&dataCurr[0], dataCurr.size());
-
+                log_ = logPath.parent_path().append("feedbacklog.zip").wstring();
+                auto l = boost::filesystem::wpath(log_);
+                if (core::tools::system::is_exist(log_))
+                {
+                    boost::system::error_code e;
+                    boost::filesystem::remove(l, e);
+                }
+            }
+            
+            // capture log file data
+            boost::system::error_code e;
+            auto logTmp = logPath.parent_path().append(L"feedbacklog.processing.tmp");
+            boost::filesystem::copy_file(logPath, logTmp, boost::filesystem::copy_option::overwrite_if_exists, e);
+            const long sizeTmp = boost::filesystem::file_size(logTmp, e);
+            std::ifstream ifs(logTmp.string(), std::ios::binary);
+            const long amountToRead = ((sizeTmp - sizeLeft) < 0 ? sizeTmp : sizeLeft);
+            if (amountToRead > 0)
+            {
+                std::vector<char> data;
+                data.resize(amountToRead);
+                ifs.seekg(-((std::fstream::off_type)amountToRead), std::ios::end);
+                ifs.read(&data[0], amountToRead);
+                logChunks.push(data);
             }
             ifs.close();
-        }
-        boost::filesystem::remove(tempCurr);
-    }
+            boost::filesystem::remove(logTmp, e);
 
-    auto dataPrev = std::vector<char>();
-    if (dataCurr.size() < sizeMax)
+            // recalc max possible size of data to send
+            sizeLeft -= amountToRead;
+            if (!sizeLeft)
+                break;
+        }
+        logFilenames.pop();
+    }
+    fullLog.resize(sizeMax - sizeLeft);
+    
+    // accumulate data
     {
-        auto fromPrev = boost::filesystem::wpath(g_core->get_network_log().file_names_history().first);
-        if (boost::filesystem::exists(fromPrev))
+        long previousSize = 0;
+        while (!logChunks.empty())
         {
-            auto tempPrev = fromPrev.parent_path().append(L"feedback_log_previous.tmp");
-            boost::filesystem::copy_file(fromPrev, tempPrev, boost::filesystem::copy_option::overwrite_if_exists);
-            const long sizePrev = boost::filesystem::file_size(tempPrev);
+            auto chunk = logChunks.top();
+            std::copy(chunk.begin(), chunk.end(), fullLog.begin() + previousSize);
+            previousSize = chunk.size();
+            logChunks.pop();
+        }
+    }
+    
+    // zip output and remove txt
+    if (!fullLog.empty())
+    {
+        auto logFile = boost::filesystem::wpath(log_);
+        auto zipFile = zipOpen(logFile.string().c_str(), APPEND_STATUS_CREATE);
+        if (zipFile)
+        {
+            auto succeeded = true;
+            zip_fileinfo zipInfo = {0};
+            auto stemmed = logFile.stem();
+            stemmed += L".txt";
+            if (zipOpenNewFileInZip(zipFile, stemmed.string().c_str(), &zipInfo, 0, 0, 0, 0, 0, Z_DEFLATED, Z_DEFAULT_COMPRESSION) == ZIP_OK)
             {
-                std::ifstream ifs(tempPrev.string(), std::ios::binary);
-                const long size = ((sizePrev - (sizeMax - (long)dataCurr.size())) < 0 ? sizePrev : (sizeMax - (long)dataCurr.size()));
-                if (size > 0)
-                {
-                    dataPrev.resize(size);
-                    ifs.seekg(-((std::fstream::off_type)dataPrev.size()), std::ios::end);
-                    ifs.read(&dataPrev[0], dataPrev.size());
-                }
-                ifs.close();
+                succeeded &= (zipWriteInFileInZip(zipFile, &fullLog[0], (unsigned int)fullLog.size()) == ZIP_OK);
+                succeeded &= (zipCloseFileInZip(zipFile) == ZIP_OK);
+                succeeded &= (zipClose(zipFile, 0) == ZIP_OK);
             }
-            boost::filesystem::remove(tempPrev);
+            if (!succeeded)
+            {
+                boost::system::error_code e;
+                boost::filesystem::remove(logFile, e);
+            }
         }
     }
 
-    log_ = fromCurr.parent_path().append("feedbacklog.txt").wstring();
-
-    auto to = boost::filesystem::wpath(log_);
-    if (boost::filesystem::exists(to))
-        boost::filesystem::remove(to);
-    if (!dataCurr.empty() || !dataPrev.empty())
-    {
-        std::ofstream ofs(to.string(), std::ios::binary);
-        if (!dataPrev.empty())
-            ofs.write(&dataPrev[0], dataPrev.size());
-        if (!dataCurr.empty())
-            ofs.write(&dataCurr[0], dataCurr.size());
-        ofs.close();
-    }
-
+    // fill in post fields
     for (auto f: fields_)
         _request->push_post_form_parameter(f.first, f.second);
-    if (1) // SET AS DATA
-    {
-        for (auto a: attachments_)
-            _request->push_post_form_filedata(L"fb.attachement", tools::from_utf8(a));
-        if (boost::filesystem::exists(to))
-            _request->push_post_form_filedata(L"fb.attachement", to.wstring());
-    }
-    else // SET AS FILENAME
-    {
-        for (auto a: attachments_)
-            _request->push_post_form_file("fb.attachement", tools::wstring_to_string(tools::from_utf8(a)));
-        if (boost::filesystem::exists(to))
-            _request->push_post_form_file("fb.attachement", tools::wstring_to_string(tools::from_utf8(to.string())));
-    }
+    for (auto a: attachments_)
+        _request->push_post_form_filedata(L"fb.attachement", tools::from_utf8(a));
+    if (core::tools::system::is_exist(log_))
+        _request->push_post_form_filedata(L"fb.attachement", log_);
     _request->push_post_form_parameter("submit", "send");
     _request->push_post_form_parameter("r", core::tools::system::generate_guid());
 
@@ -134,8 +154,11 @@ int32_t send_feedback::execute_request(std::shared_ptr<core::http_request_simple
         return wpie_http_error;
 
     auto to = boost::filesystem::wpath(log_);
-    if (boost::filesystem::exists(to))
-        boost::filesystem::remove(to);
+    if (core::tools::system::is_exist(to))
+    {
+        boost::system::error_code e;
+        boost::filesystem::remove(to, e);
+    }
 
     return 0;
 }

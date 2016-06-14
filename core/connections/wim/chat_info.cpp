@@ -139,7 +139,7 @@ int32_t chat_info::unserialize(const rapidjson::Value& _node)
     return 0;
 }
 
-void chat_info::serialize(core::coll_helper _coll)
+void chat_info::serialize(core::coll_helper _coll) const
 {
     _coll.set_value_as_string("aimid", aimid_);
     _coll.set_value_as_string("name", name_);
@@ -158,6 +158,7 @@ void chat_info::serialize(core::coll_helper _coll)
     _coll.set_value_as_bool("public", public_);
     _coll.set_value_as_bool("live", live_);
     _coll.set_value_as_bool("controlled", controlled_);
+    _coll.set_value_as_string("stamp", stamp_);
 
     ifptr<iarray> members_array(_coll->create_array());
 

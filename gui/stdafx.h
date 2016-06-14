@@ -3,7 +3,9 @@
 #include "utils/translator.h"
 #include "../gui.shared/constants.h"
 #include "../common.shared/constants.h"
-#include "../common.shared/common_defs.h"
+#include "../common.shared/TestingTools.h"
+
+#include <thread>
 
 #if defined (_WIN32)
 
@@ -33,6 +35,8 @@
 #include <limits>
 #include <cmath>
 #include <mutex>
+#include <numeric>
+#include <fstream>
 
 #include <stdint.h>
 
@@ -125,6 +129,7 @@
 #include <QPixmapCache>
 #include <QTextBrowser>
 #include <QClipboard>
+#include <QGraphicsOpacityEffect>
 
 #include <QGraphicsDropShadowEffect>
 #include <QProxyStyle>

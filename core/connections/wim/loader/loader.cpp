@@ -7,11 +7,14 @@
 #include "download_task.h"
 #include "loader_handlers.h"
 #include "loader_errors.h"
+#include "preview_proxy.h"
 #include "web_file_info.h"
 #include "../../../http_request.h"
 #include "../../../tools/md5.h"
+#include "../../../tools/system.h"
 #include "../../../../corelib/enumerations.h"
 #include "../../../core.h"
+#include "../../../utils.h"
 
 using namespace core;
 using namespace wim;
@@ -19,7 +22,9 @@ using namespace wim;
 namespace
 {
 
-    std::string sign_loader_uri(const std::string &_uri, const wim_packet_params &_params);
+    std::string sign_loader_uri(const std::string &_host, const wim_packet_params &_params, const Str2StrMap &_extra = Str2StrMap());
+
+    std::wstring build_local_path(const std::wstring& _cache_dir, const std::string& _image_url, const bool _is_preview);
 
 }
 
@@ -161,7 +166,7 @@ void loader::send_task_ranges_async(std::weak_ptr<upload_task> _wr_task)
 
             if (_error != loader_errors::network_error)
                 ptr_this->on_task_result(task, _error);
-                        
+
             return;
         }
 
@@ -319,6 +324,7 @@ std::shared_ptr<download_progress_handler> loader::download_file_sharing(
 {
     assert(_function > file_sharing_function::min);
     assert(_function < file_sharing_function::max);
+    assert(_function != file_sharing_function::download_preview_metainfo);
 
     auto task = std::make_shared<download_task>(
         boost::lexical_cast<std::string>(_seq),
@@ -327,7 +333,7 @@ std::shared_ptr<download_progress_handler> loader::download_file_sharing(
         _files_folder,
         _previews_folder,
         _filename
-        );
+    );
     task->set_handler(std::make_shared<download_progress_handler>());
     add_task(task);
 
@@ -386,14 +392,14 @@ std::shared_ptr<download_progress_handler> loader::download_file_sharing(
             if (!task)
                 return;
 
-            const auto is_download_meta_mode = (_function == file_sharing_function::download_meta);
-            if ((_error != 0) || is_download_meta_mode)
+            const auto is_download_file_metainfo_mode = (_function == file_sharing_function::download_file_metainfo);
+            if ((_error != 0) || is_download_file_metainfo_mode)
             {
                 ptr_this->on_task_result(task, _error);
                 return;
             }
 
-			g_core->insert_event(::core::stats::stats_event_names::filesharing_download_success);
+			g_core->insert_event(stats::stats_event_names::filesharing_download_success);
             ptr_this->on_task_progress(task);
 
             ptr_this->threads_->run_async_function([wr_task]
@@ -432,17 +438,20 @@ std::shared_ptr<download_progress_handler> loader::download_file_sharing(
 std::shared_ptr<async_task_handlers> loader::download_file(
     const std::string& _file_url,
     const std::wstring& _file_name,
+    const bool _keep_alive,
     const wim_packet_params& _params)
 {
     auto handler = std::make_shared<async_task_handlers>();
 
     auto user_proxy = g_core->get_user_proxy_settings();
-    threads_->run_async_function([_params, _file_url, _file_name, user_proxy]()->int32_t
+    threads_->run_async_function([_params, _file_url, _file_name, user_proxy, _keep_alive]()->int32_t
     {
-        core::http_request_simple request(user_proxy, _params.stop_handler_);
+        core::http_request_simple request(user_proxy, utils::get_user_agent(), _params.stop_handler_);
 
         request.set_url(_file_url);
         request.set_need_log(false);
+        if (_keep_alive)
+            request.set_keep_alive();
 
         if (!request.get() || request.get_response_code() != 200)
             return loader_errors::network_error;
@@ -461,75 +470,245 @@ std::shared_ptr<async_task_handlers> loader::download_file(
     return handler;
 }
 
-std::shared_ptr<download_file_sharing_preview_handler> loader::download_file_sharing_preview(
-    int64_t _seq,
-    const std::string& _file_url,
-    const std::wstring& _previews_folder,
-    const std::wstring& _destination,
+std::shared_ptr<download_image_handler> loader::download_image_file(
+    const int64_t _seq,
+    const std::string& _image_url,
+    const std::wstring& _local_path,
     const bool _sign_url,
     const wim_packet_params& _params)
 {
-    std::wstring file_name = _destination.empty() ? (_previews_folder + L"/" + core::tools::from_utf8(core::tools::md5(_file_url.c_str(), (uint32_t)_file_url.length()))) : _destination;
+    assert(_seq > 0);
+    assert(!_image_url.empty());
+    assert(!_local_path.empty());
 
-    auto handler = std::make_shared<download_file_sharing_preview_handler>();
+    auto handler = std::make_shared<download_image_handler>();
     auto preview_data = std::make_shared<core::tools::binary_stream>();
     auto user_proxy = g_core->get_user_proxy_settings();
 
-    threads_->run_async_function([_params, _file_url, _sign_url, file_name, preview_data, user_proxy]
-    {
-        boost::filesystem::wpath path_file(file_name);
-
-        for (int32_t i = 0; i < 2; i++)
+    auto file_extension = std::make_shared<std::wstring>();
+    
+    threads_->run_async_function(
+        [_params, _image_url, _sign_url, _local_path, preview_data, user_proxy, file_extension]
         {
-            if (!boost::filesystem::exists(path_file) || i > 0)
+            for (auto i = 0; i < 2; i++)
             {
-                core::http_request_simple request(user_proxy, _params.stop_handler_);
-
-                const auto &url = (_sign_url ? sign_loader_uri(_file_url, _params) : _file_url);
-
-                request.set_url(url);
-                request.set_need_log(false);
-                request.set_keep_alive();
-
-                if (!request.get() || request.get_response_code() != 200)
+                if (!core::tools::system::is_exist(_local_path) || i > 0)
                 {
-                    return loader_errors::network_error;
+                    core::http_request_simple request(user_proxy, utils::get_user_agent(), _params.stop_handler_);
+
+                    const auto &url = (_sign_url ? sign_loader_uri(_image_url, _params) : _image_url);
+
+                    request.set_url(url);
+                    request.set_need_log(false);
+
+                    if (!request.get() || request.get_response_code() != 200)
+                    {
+                        return loader_errors::network_error;
+                    }
+
+                    /*
+                    if (platform::is_apple())
+                    {
+                        auto header = core::tools::to_lower_case(request.get_header()->read<std::string>());
+                        auto header_fields = core::tools::to_array(header, "\r\n");
+                        for (auto header_field: header_fields)
+                        {
+                            auto header_field_parts = core::tools::to_array(header_field, ":");
+                            if (header_field_parts.size() == 2 && header_field_parts[0].find("content-type") < header_field_parts[0].length())
+                            {
+                                header_field_parts[1] = core::tools::trim_left<std::string>(header_field_parts[1], " ");
+                                header_field_parts[1] = core::tools::trim_right<std::string>(header_field_parts[1], " ");
+                                auto content_type_parts = core::tools::to_array(header_field_parts[1], "/");
+                                if (content_type_parts.size() == 2)
+                                {
+                                    file_extension->assign(L"." + core::tools::from_utf8(content_type_parts[1]));
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    */
+
+                    preview_data->swap(*request.get_response());
+
+                    if (!preview_data->save_2_file(_local_path + file_extension->c_str()))
+                        return loader_errors::save_2_file;
+
+                    preview_data->reset_out();
+
+                    break;
                 }
-
-                preview_data->swap(*request.get_response());
-
-                if (!preview_data->save_2_file(file_name))
-                    return loader_errors::save_2_file;
-
-                preview_data->reset_out();
-
-                break;
-            }
-            else
-            {
-                if (preview_data->load_from_file(file_name))
+                else if (preview_data->load_from_file(_local_path))
                 {
                     break;
                 }
             }
+
+            return loader_errors::success;
         }
-
-        return loader_errors::success;
-
-    })->on_result_ = [handler, preview_data, file_name](int32_t _error)
-    {
-        if (_error == 0 && preview_data->available() == 0)
+    )->on_result_ =
+        [handler, preview_data, _local_path, file_extension]
+        (int32_t _error)
         {
-            assert(!"logical error");
-        }
+            if (_error == 0 && preview_data->available() == 0)
+            {
+                assert(!"logical error");
+            }
 
-        if (handler->on_result)
-        {
-            handler->on_result(_error, preview_data, core::tools::from_utf16(file_name));
-        }
-    };
+            if (handler->on_result)
+            {
+                handler->on_result(_error, preview_data, core::tools::from_utf16(_local_path + file_extension->c_str()));
+            }
+        };
 
     return handler;
+}
+
+std::shared_ptr<download_image_handler> loader::download_preview(
+    const int64_t _seq,
+    const std::string& _image_url,
+    const std::wstring& _cache_dir,
+    const std::wstring& _local_path,
+    const int32_t _preview_height,
+    const wim_packet_params& _params)
+{
+    assert(_seq > 0);
+    assert(!_image_url.empty());
+    assert(!_local_path.empty());
+    assert(_preview_height > 100);
+    assert(_preview_height < 1000);
+
+    auto handler = std::make_shared<download_image_handler>();
+    auto user_proxy = g_core->get_user_proxy_settings();
+    auto preview_info = std::make_shared<preview_proxy::preview_info_uptr>();
+    auto preview_data = std::make_shared<core::tools::binary_stream>();
+
+    std::weak_ptr<loader> wr_this = shared_from_this();
+
+    threads_->run_async_function(
+        [_image_url, _local_path, _params, user_proxy, preview_info, preview_data]
+        {
+            if (core::tools::system::is_exist(_local_path))
+            {
+                preview_data->load_from_file(_local_path);
+
+                return loader_errors::success;
+            }
+
+            core::http_request_simple request(
+                user_proxy,
+                utils::get_user_agent(_params.aimid_),
+                _params.stop_handler_);
+
+            const auto ext_params = preview_proxy::format_params(_image_url);
+            const auto signed_request_uri = sign_loader_uri(preview_proxy::host(), _params, ext_params);
+            request.set_url(signed_request_uri);
+
+            request.set_need_log(false);
+            request.set_keep_alive();
+
+            if (!request.get() || (request.get_response_code() != 200))
+            {
+                return loader_errors::network_error;
+            }
+
+            auto response = request.get_response();
+            auto response_size = response->available();
+
+            const auto is_empty_response = (response_size == 0);
+            if (is_empty_response)
+            {
+                return loader_errors::invalid_json;
+            }
+
+            std::vector<char> json;
+            json.reserve(response_size + 1);
+
+            const auto str = (char*)response->read(response_size);
+            json.assign(str, str + response_size);
+            json.push_back('\0');
+
+            *preview_info = preview_proxy::parse_json(&json[0]);
+            if (*preview_info)
+            {
+                return loader_errors::success;
+            }
+
+            return loader_errors::invalid_json;
+        }
+    )->on_result_ =
+        [_seq, _cache_dir, _params, _local_path, preview_info, handler, wr_this, preview_data, _preview_height]
+        (int32_t _error)
+        {
+            const auto ptr_this = wr_this.lock();
+            if (!ptr_this)
+            {
+                return;
+            }
+
+            if (!handler->on_result)
+            {
+                return;
+            }
+
+            if (_error != loader_errors::success)
+            {
+                assert(!*preview_info);
+                handler->on_result(_error, std::make_shared<tools::binary_stream>(), std::string());
+                return;
+            }
+
+            const auto local_file_exists = (preview_data->available() > 0);
+            if (local_file_exists)
+            {
+                handler->on_result(loader_errors::success, preview_data, tools::from_utf16(_local_path));
+                return;
+            }
+
+            const auto preview_uri = (*preview_info)->get_preview_uri(0, _preview_height);
+
+            assert(*preview_info);
+            ptr_this->download_image(_seq, preview_uri, _cache_dir, _local_path, false, false, 0, _params)->on_result =
+                [handler]
+                (int32_t _error, std::shared_ptr<core::tools::binary_stream> _data, const std::string& _local_path)
+                {
+                    handler->on_result(loader_errors::success, _data, _local_path);
+                };
+        };
+
+    return handler;
+}
+
+std::shared_ptr<download_image_handler> loader::download_image(
+    const int64_t _seq,
+    const std::string& _image_url,
+    const std::wstring& _cache_dir,
+    const std::wstring& _forced_local_path,
+    const bool _sign_url,
+    const bool _download_preview,
+    const int32_t _preview_height,
+    const wim_packet_params& _params)
+{
+    assert(_seq > 0);
+    assert(!_image_url.empty());
+    assert(!_cache_dir.empty());
+    assert(_preview_height >= 0);
+    assert(_preview_height < 1000);
+
+    const auto &local_path =
+        _forced_local_path.empty() ?
+            build_local_path(_cache_dir, _image_url, _download_preview) :
+            _forced_local_path;
+    assert(!local_path.empty());
+
+    if (_download_preview)
+    {
+        assert(_preview_height > 0);
+        return download_preview(_seq, _image_url, _cache_dir, local_path, _preview_height, _params);
+    }
+
+    //assert(_preview_height == 0);
+    return download_image_file(_seq, _image_url, local_path, _sign_url, _params);
 }
 
 void loader::abort_process(const std::string &_process_id)
@@ -542,9 +721,9 @@ void loader::abort_process(const std::string &_process_id)
 namespace
 {
 
-    std::string sign_loader_uri(const std::string &_uri, const wim_packet_params &_params)
+    std::string sign_loader_uri(const std::string &_host, const wim_packet_params &_params, const Str2StrMap &_extra)
     {
-        assert(!_uri.empty());
+        assert(!_host.empty());
 
         const time_t ts = (std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - _params.time_offset_);
 
@@ -554,13 +733,42 @@ namespace
         p["ts"] = tools::from_int64(ts);
         p["client"] = "icq";
 
-        const auto sha256 = wim_packet::escape_symbols(wim_packet::get_url_sign(_uri, p, _params, false));
+        p.insert(_extra.begin(), _extra.end());
+
+        const auto sha256 = wim_packet::escape_symbols(wim_packet::get_url_sign(_host, p, _params, false));
         p["sig_sha256"] = sha256;
 
         std::stringstream ss_url;
-        ss_url << _uri << wim_packet::params_map_2_string(p);
+        ss_url << _host << "?" << wim_packet::format_get_params(p);
 
         return ss_url.str();
+    }
+
+    std::wstring build_local_path(const std::wstring& _cache_dir, const std::string& _image_url, const bool _is_preview)
+    {
+        assert(!_cache_dir.empty());
+        assert(!_image_url.empty());
+
+        boost::filesystem::wpath local_path(_cache_dir);
+
+        auto filename = core::tools::from_utf8(
+            core::tools::md5(
+                _image_url.c_str(),
+                (int)_image_url.length()));
+
+        if (_is_preview)
+        {
+            filename += L"_preview";
+        }
+        
+        if (platform::is_apple())
+        {
+            filename += L".jpg";
+        }
+
+        local_path /= filename;
+
+        return local_path.wstring();
     }
 
 }

@@ -1,6 +1,10 @@
 #ifndef __VOIP_TOOLS_H__
 #define __VOIP_TOOLS_H__
 
+#ifndef VOIP_TOOLS_ENABLE_BB
+    #define VOIP_TOOLS_ENABLE_BB
+#endif
+
 namespace voipTools {
     inline void __showBounds(QPainter& painter, const QRect& rc) {
         const QPen wasPen = painter.pen();
@@ -19,7 +23,7 @@ namespace voipTools {
     protected:
         void paintEvent(QPaintEvent* e) override {
             __Base::paintEvent(e);
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(VOIP_TOOLS_ENABLE_BB)
             QPainter painter(this);
             voipTools::__showBounds((painter), __Base::rect());
 #endif

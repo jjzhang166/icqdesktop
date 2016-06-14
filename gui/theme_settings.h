@@ -10,12 +10,13 @@ namespace Ui
     class qt_theme_settings : public QObject
     {
         Q_OBJECT
+    private:
         void set_value_simple_data(const QString& _name, const char* _data, int _len, bool _post_to_core = true);
         
         struct {
             int requested_id_;
             void reset() { requested_id_ = -1; callback_ = nullptr; }
-            std::function<void(themes::themePtr)> callback_;
+            std::function<void(themes::themePtr, bool)> callback_;
         } theme_request_;
         
         struct {
@@ -26,18 +27,23 @@ namespace Ui
         QMap<QString,int> contactsThemes_;
         QMap<QString,int> contactsThemesBackup_;
         std::vector<int> themesIdToLoad_;
+        
+        themes::themePtr default_theme_;
+        themes::themePtr initial_theme_;
+
     public:
         qt_theme_settings();
         ~qt_theme_settings();
+
         void themes_data_unserialized();
         int themeIdForContact(QString _aimId);
         void unserialize(core::coll_helper _collection);
+        
         void postDefaultThemeIdToCore(const int _theme_id) const;
-        themes::themePtr default_theme_;
-        themes::themePtr initial_theme_;
         void setOrLoadDefaultTheme();
         std::shared_ptr<themes::theme> getDefaultTheme() { return default_theme_; }
         void setDefaultTheme(std::shared_ptr<themes::theme> _theme);
+        
         void postContactsThemesToCore() const;
         std::shared_ptr<themes::theme> themeForContact(QString _aimId);
         int contactOpenned(QString _aimId);
@@ -45,9 +51,15 @@ namespace Ui
         std::shared_ptr<themes::theme> themeForId(int _theme_id);
         void flushThemesToLoad();
         void themeSelected(int _theme_id, const QString& _aimId);
+        std::unordered_map<int, int> getThemeCounts();
+
+        bool getIsLoaded() const { return is_loaded_; };
+        void setIsLoaded(bool _is_loaded) { is_loaded_ = _is_loaded; };
+
+
     private:
         bool setThemeToWindow(std::shared_ptr<themes::theme> _theme);
-        void requestThemeImage(int _theme_id, std::function<void(themes::themePtr)> requestThemeCallback);
+        void requestThemeImage(int _theme_id, std::function<void(themes::themePtr, bool)> requestThemeCallback);
         void processNoDefaultThemeCase();
         QString serializedContactsThemes() const;
         void unloadUnusedThemesImages();
@@ -56,6 +68,8 @@ namespace Ui
         void restoreThemesMapping();
         themes::themePtr initialTheme();
         bool setting_in_process_;
+        bool is_loaded_;
+
     private Q_SLOTS:
         void onThemeImageArrived(int, bool);
     };

@@ -1,16 +1,15 @@
-#ifndef __UTILS_H_
-#define __UTILS_H_
-
 #pragma once
 
 namespace core
 {
     namespace utils
     {
+        typedef boost::optional<std::string> string_opt;
+
         std::wstring get_product_data_path();
         std::string get_product_name();
         std::string get_app_name();
-        std::string get_user_agent();
+        std::string get_user_agent(const string_opt &_uin = string_opt());
         std::string get_platform_string();
 
         std::wstring get_report_path();
@@ -18,12 +17,7 @@ namespace core
         std::wstring get_report_mini_dump_path();
 
         const boost::filesystem::wpath get_logs_path();
+
+        bool is_writable(const boost::filesystem::path &p);
     }
 }
-
-
-#endif // !__UTILS_H_
-
-
-
-

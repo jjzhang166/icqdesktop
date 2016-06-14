@@ -5,10 +5,6 @@ namespace core
 {
     namespace dump
     {
-        // NOTE : this values must coincide with https://rink.hockeyapp.net
-        const std::string product_bundle = "icq.dekstop";
-
-        static std::wstring product_data_path;
         void set_product_data_path(const std::wstring& _product_data_path);
         std::wstring get_report_path();
 
@@ -42,6 +38,8 @@ namespace core
 
             static void create_log_file_for_hockey_app(EXCEPTION_POINTERS* pExcPtrs);
 
+            static void process_exception_pointers(EXCEPTION_POINTERS* pExcPtrs);
+
             /* Exception handler functions. */
 
             static LONG WINAPI seh_handler(PEXCEPTION_POINTERS pExceptionPtrs);
@@ -62,9 +60,17 @@ namespace core
             static void sigsegv_handler(int);
             static void sigterm_handler(int);
 
+            static void set_product_bundle(const std::string& _product_bundle);
+            static void set_is_sending_after_crash(bool _is_sending_after_crash);
+
         private:
             static bool need_write_dump();
             static int get_dump_type();
+
+            // NOTE : this values must coincide with value in https://rink.hockeyapp.net
+            static std::string product_bundle_;
+
+            static bool is_sending_after_crash_;
         };
     }
 }

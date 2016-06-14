@@ -3,19 +3,22 @@
 #include "../../corelib/collection_helper.h"
 #include "../../corelib/enumerations.h"
 
+#include "../connections/wim/wim_history.h"
+
 #include "../log/log.h"
+
+#include "../tools/file_sharing.h"
+
+#include "../tools/system.h"
 
 #include "history_patch.h"
 
 #include "history_message.h"
 
-#include "../connections/wim/wim_history.h"
-
 using namespace core;
 using namespace archive;
 
 using namespace boost::algorithm;
-using namespace boost::xpressive;
 
 namespace
 {
@@ -185,7 +188,7 @@ void message_header::merge_with(const message_header &rhs)
             "merging modification\n"
             "    id=<%1%>",
             id_
-            );
+        );
 
         modifications_.emplace_back(rhs);
     }
@@ -723,7 +726,7 @@ file_sharing_data::file_sharing_data(const std::string &_local_path,
     }
     else
     {
-        assert(boost::filesystem::exists(
+        assert(core::tools::system::is_exist(
             core::tools::from_utf8(local_path_)
             ));
         assert(uri_.empty());
@@ -806,7 +809,7 @@ void file_sharing_data::serialize(Out core::tools::tlvpack& _pack) const
     }
     else
     {
-        assert(boost::filesystem::exists(
+        assert(core::tools::system::is_exist(
             core::tools::from_utf8(local_path_)
         ));
 
@@ -1009,7 +1012,7 @@ chat_event_data_uptr chat_event_data::make_from_tlv(const tools::tlvpack& _pack)
 {
     return chat_event_data_uptr(
         new chat_event_data(_pack)
-        );
+    );
 }
 
 chat_event_data_uptr chat_event_data::make_simple_event(const chat_event_type _type)
@@ -1018,10 +1021,8 @@ chat_event_data_uptr chat_event_data::make_simple_event(const chat_event_type _t
     assert(_type < chat_event_type::max);
 
     return chat_event_data_uptr(
-        new chat_event_data(
-        _type
-        )
-        );
+        new chat_event_data(_type)
+    );
 }
 
 chat_event_data_uptr chat_event_data::make_generic_event(const rapidjson::Value& _text_node)
@@ -1034,10 +1035,7 @@ chat_event_data_uptr chat_event_data::make_generic_event(const rapidjson::Value&
 chat_event_data_uptr chat_event_data::make_generic_event(const std::string& _text)
 {
     chat_event_data_uptr result(
-        new chat_event_data(
-        chat_event_type::generic
-        )
-        );
+        new chat_event_data(chat_event_type::generic));
 
     result->generic_ = _text;
 
@@ -1360,7 +1358,7 @@ history_message_sptr history_message::make_modified_patch(const int64_t _archive
     result->set_modified(true);
     result->set_patch(true);
 
-    result->chat_event_ = chat_event_data::make_generic_event("Message deleted");
+    result->chat_event_ = chat_event_data::make_simple_event(chat_event_type::message_deleted);
 
     return result;
 }
@@ -1397,7 +1395,7 @@ void history_message::init_default()
 
 void history_message::init_file_sharing_from_local_path(const std::string &_local_path)
 {
-    assert(boost::filesystem::exists(
+    assert(core::tools::system::is_exist(
         core::tools::from_utf8(_local_path)
         ));
     assert(!file_sharing_);
@@ -1490,6 +1488,18 @@ archive::chat_data* history_message::get_chat_data()
         return nullptr;
 
     return chat_.get();
+}
+
+void history_message::set_chat_data(const chat_data& _data)
+{
+    if (!chat_)
+    {
+        chat_.reset(new chat_data(_data));
+
+        return;
+    }
+
+    *chat_ = _data;
 }
 
 const archive::chat_data* history_message::get_chat_data() const
@@ -1715,7 +1725,9 @@ int32_t history_message::unserialize(core::tools::binary_stream& _data)
         }
     }
 
-    if (is_file_sharing_uri(text_) && !file_sharing_)
+    if (!text_.empty() &&
+        tools::is_new_file_sharing_uri(text_) &&
+        !file_sharing_)
     {
         // initialize from the plain link
 
@@ -1770,7 +1782,7 @@ int32_t history_message::unserialize(const rapidjson::Value& _node,
 
     // try to initialize a file sharing from a plain link
 
-    if (!file_sharing_ && is_file_sharing_uri(text_))
+    if (!file_sharing_ && !text_.empty() && tools::is_new_file_sharing_uri(text_))
     {
         for (auto iter_field = _node.MemberBegin(); iter_field != _node.MemberEnd(); iter_field++)
         {
@@ -2058,27 +2070,6 @@ bool history_message::has_text() const
     return !text_.empty();
 }
 
-bool history_message::is_file_sharing_uri(const std::string &uri)
-{
-    static const auto re = sregex::compile("^(http(s?)://)?(www\\.)?files.icq.net/get/\\w{33}$");
-
-    smatch m;
-    return regex_match(uri, m, re);
-}
-
-std::string history_message::extract_new_file_sharing_file_id(const std::string &uri)
-{
-    static const auto new_id_regex = sregex::compile("^http(s?)://files.icq.net/get/(?P<id>\\w{33})$");
-
-    smatch m;
-    if (!regex_match(uri, m, new_id_regex))
-    {
-        return std::string();
-    }
-
-    return m["id"].str();
-}
-
 bool history_message::is_image(const std::string& _id)
 {
     if (_id.empty())
@@ -2155,11 +2146,14 @@ namespace
     {
         assert(!uri.empty());
 
-        const auto id = history_message::extract_new_file_sharing_file_id(uri);
-        if (id.empty())
+        std::string id;
+
+        if (!tools::parse_new_file_sharing_uri(uri, Out id))
         {
             return;
         }
+
+        assert(!id.empty());
 
         if (!history_message::is_image(id))
         {

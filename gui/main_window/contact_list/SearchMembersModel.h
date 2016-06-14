@@ -25,6 +25,7 @@ namespace Logic
         int rowCount(const QModelIndex &parent = QModelIndex()) const override;
         QVariant data(const QModelIndex &index, int role) const override;
         Qt::ItemFlags flags(const QModelIndex &index) const override;
+        void setSelectEnabled(bool value) override;
         void setFocus() override;
         const QStringList& GetPattern() const;
         void emitChanged(int first, int last) override;
@@ -34,6 +35,7 @@ namespace Logic
         mutable std::vector<Data::ChatMemberInfo> Match_;
         QStringList SearchPatterns_;
         bool SearchRequested_;
+        bool SelectEnabled_;
         ChatMembersModel* chat_members_model_;
     };
     

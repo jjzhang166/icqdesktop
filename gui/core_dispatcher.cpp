@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#include "LoadPixmapFromDataTask.h"
-
 #include "core_dispatcher.h"
 
 #include "utils/InterConnector.h"
@@ -9,6 +7,7 @@
 #include "utils/profiling/auto_stop_watch.h"
 #include "utils/utils.h"
 #include "utils/uid.h"
+#include "utils/LoadPixmapFromDataTask.h"
 
 #include "../corelib/collection_helper.h"
 #include "../corelib/enumerations.h"
@@ -76,6 +75,7 @@ core_dispatcher::core_dispatcher()
     , _voip_controller(*this)
     , last_time_callbacks_cleaned_up_(QDateTime::currentDateTimeUtc())
     , is_stats_enabled_(true)
+    , is_im_created_(false)
 {
     init();
 }
@@ -165,7 +165,7 @@ qint64 core_dispatcher::getSticker(const qint32 setId, const qint32 stickerId, c
 
 qint64 core_dispatcher::getTheme(const qint32 _themeId)
 {
-    assert(_themeId > 0);
+    assert(_themeId >= 0);
 
     core::coll_helper collection(create_collection(), true);
     collection.set_value_as_int("theme_id", _themeId);
@@ -173,7 +173,7 @@ qint64 core_dispatcher::getTheme(const qint32 _themeId)
     return post_message_to_core("themes/theme/get", collection.get());
 }
 
-qint64 core_dispatcher::downloadImagePreview(const QUrl &uri, const QString& destination)
+int64_t core_dispatcher::downloadImage(const QUrl &uri, const QString& destination, const bool isPreview)
 {
     assert(uri.isValid());
     assert(!uri.isLocalFile());
@@ -182,8 +182,12 @@ qint64 core_dispatcher::downloadImagePreview(const QUrl &uri, const QString& des
     core::coll_helper collection(create_collection(), true);
     collection.set<QUrl>("uri", uri);
     collection.set<QString>("destination", destination);
+    collection.set<bool>("is_preview", isPreview);
 
-    return post_message_to_core("preview/download", collection.get());
+    const int32_t previewHeight = (isPreview ? (int32_t)Utils::scale_value(240) : 0);
+    collection.set<int32_t>("preview_height", previewHeight);
+
+    return post_message_to_core("image/download", collection.get());
 }
 
 qint64 core_dispatcher::delete_messages(const std::vector<int64_t> &_message_ids, const QString &_contact_aimid, const bool _for_all)
@@ -347,21 +351,37 @@ void core_dispatcher::fileSharingDownloadResult(const int64_t seq, core::coll_he
 {
     const auto function = _params.get_value_as_enum<core::file_sharing_function>("function");
 
-#ifdef _DEBUG
+    const auto mode_download_preview_metainfo = (function == core::file_sharing_function::download_preview_metainfo);
     const auto mode_check_local_copy_exists = (function == core::file_sharing_function::check_local_copy_exists);
-#endif //_DEBUG
     const auto mode_download_file = (function == core::file_sharing_function::download_file);
-    const auto mode_download_meta = (function == core::file_sharing_function::download_meta);
+    const auto mode_download_file_metainfo = (function == core::file_sharing_function::download_file_metainfo);
 
-    const auto &filename = _params.get_value_as_string("file_name");
-    const auto &filename_short = _params.get_value_as_string("file_name_short");
-    const auto size = _params.get_value_as_int64("file_size");
-    const auto &raw_uri = _params.get_value_as_string("file_url");
-    const auto &preview_2k_uri = _params.get_value_as_string("file_preview_2k");
-    const auto &preview_uri = _params.get_value_as_string("file_preview");
-    const auto &download_uri = _params.get_value_as_string("file_dlink");
-    const auto bytes_transfer = _params.get_value_as_int64("bytes_transfer", 0);
-    const auto played = _params.get_value_as_bool("played", false);
+    const auto raw_uri = _params.get<QString>("file_url");
+    const auto error_code = _params.get<int32_t>("error", 0);
+
+    const auto request_failed = (error_code != 0);
+    if ((mode_download_file || mode_download_file_metainfo || mode_download_preview_metainfo) &&
+        request_failed)
+    {
+        emit fileSharingError(seq, raw_uri, error_code);
+        return;
+    }
+
+    if (mode_download_preview_metainfo)
+    {
+        const auto miniPreviewUri = _params.get<QString>("mini_preview_uri");
+        const auto fullPreviewUri = _params.get<QString>("full_preview_uri");
+
+        emit fileSharingPreviewMetainfoDownloaded(seq, miniPreviewUri, fullPreviewUri);
+
+        return;
+    }
+
+    const auto filename = _params.get<QString>("file_name");
+    const auto filename_short = _params.get<QString>("file_name_short");
+    const auto size = _params.get<int64_t>("file_size");
+    const auto download_uri = _params.get<QString>("file_dlink");
+    const auto bytes_transfer = _params.get<int64_t>("bytes_transfer", 0);
 
     const auto is_progress = !_params.is_value_exist("error");
     if (is_progress)
@@ -372,35 +392,25 @@ void core_dispatcher::fileSharingDownloadResult(const int64_t seq, core::coll_he
         return;
     }
 
-    const auto error_code = _params.get_value_as_int("error");
-    const auto request_failed = (error_code != 0);
-
-    if ((mode_download_file || mode_download_meta) && request_failed)
-    {
-        emit fileSharingDownloadError(seq, raw_uri, error_code);
-        return;
-    }
-
     if (mode_download_file)
     {
         emit fileSharingFileDownloaded(seq, raw_uri, filename);
         return;
     }
 
-    if (mode_download_meta)
+    if (mode_download_file_metainfo)
     {
-        emit fileSharingMetadataDownloaded(seq, raw_uri, preview_2k_uri, preview_uri, download_uri, filename_short, size, played);
+        emit fileSharingFileMetainfoDownloaded(seq, filename_short, download_uri, size);
         return;
     }
 
-#ifdef _DEBUG
+    mode_check_local_copy_exists;
     assert(mode_check_local_copy_exists);
-#endif
 
     emit fileSharingLocalCopyCheckCompleted(seq, !request_failed, filename);
 }
 
-void core_dispatcher::previewDownloadResult(const int64_t seq, core::coll_helper _params)
+void core_dispatcher::imageDownloadResult(const int64_t seq, core::coll_helper _params)
 {
     const auto is_progress = !_params.is_value_exist("error");
     if (is_progress)
@@ -414,16 +424,16 @@ void core_dispatcher::previewDownloadResult(const int64_t seq, core::coll_helper
 
     if (data->empty())
     {
-        emit imageDownloaded(seq, rawUri, QPixmap(), local);
+        emit imageDownloadError(seq, rawUri);
         return;
     }
 
-    auto task = new LoadPixmapFromDataTask(seq, rawUri, data, local);
+    auto task = new Utils::LoadPixmapFromDataTask(seq, rawUri, data, local);
 
     const auto succeeded = QObject::connect(
-        task, &LoadPixmapFromDataTask::loadedSignal,
+        task, &Utils::LoadPixmapFromDataTask::loadedSignal,
         this, &core_dispatcher::imageDownloaded
-        );
+    );
     assert(succeeded);
 
     QThreadPool::globalInstance()->start(task);
@@ -444,9 +454,8 @@ void core_dispatcher::fileUploadingResult(core::coll_helper _params)
     const auto error = _params.get<int32_t>("error");
 
     const auto success = (error == 0);
-    const auto too_large_file = (error == core::wim::loader_errors::too_large_file);
-
-    emit fileSharingUploadingResult(uploadingId, success, link, too_large_file);
+    const auto isFileTooBig = (error == core::wim::loader_errors::too_large_file);
+    emit fileSharingUploadingResult(uploadingId, success, link, isFileTooBig);
 }
 
 core::icollection* core_dispatcher::create_collection() const
@@ -533,6 +542,8 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
     }
     else if (received_message == "im/created")
     {
+        is_im_created_ = true;
+        
         emit im_created();
     }
     else if (received_message == "login/complete")
@@ -550,7 +561,7 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
     else if (received_message == "login_get_sms_code_result")
     {
         bool result = coll_params.get_value_as_bool("result");
-        int code_length = coll_params.get_value_as_int("code_length");
+        int code_length = coll_params.get_value_as_int("code_length", 0);
         int error = result ? 0 : coll_params.get_value_as_int("error");
         emit getSmsResult(seq, error, code_length);
     }
@@ -580,7 +591,6 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
     {
 #ifdef _WIN32
         auto data_path = coll_params.get_value_as_string("data_path");
-        core::dump::set_product_data_path(Utils::FromQString(data_path));
         core::dump::set_os_version(coll_params.get_value_as_string("os_version"));
 #endif
 
@@ -602,7 +612,8 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         received_message == "archive/messages/get/result" ||
         received_message == "messages/received/dlg_state" ||
         received_message == "messages/received/server"	  ||
-        received_message == "archive/messages/pending")
+        received_message == "archive/messages/pending"    ||
+        received_message == "messages/received/init")
     {
         const auto myAimid = coll_params.get<QString>("my_aimid");
 
@@ -616,7 +627,6 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         if (received_message == "messages/received/dlg_state")
         {
             type = Ui::MessagesBuddiesOpt::DlgState;
-
         }
         else if (received_message == "messages/received/server")
         {
@@ -625,6 +635,14 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         else if (received_message == "archive/messages/pending")
         {
             type = Ui::MessagesBuddiesOpt::Pending;
+        }
+        else if (received_message == "messages/received/init")
+        {
+            type = Ui::MessagesBuddiesOpt::Init;
+        }
+        else if (received_message == "messages/received/message_status")
+        {
+            type = Ui::MessagesBuddiesOpt::MessageStatus;
         }
 
         emit messageBuddies(msgs, aimId, type, havePending, seq);
@@ -691,6 +709,10 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         get_qt_theme_settings()->flushThemesToLoad();   // here we call delayed themes requests
         emit on_themes_meta();
     }
+    else if (received_message == "themes/meta/get/error")
+    {
+        emit on_themes_meta_error();
+    }
     else if (received_message == "stickers/sticker/get/result")
     {
         Ui::stickers::set_sticker_data(coll_params);
@@ -715,6 +737,12 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         if (!info->AimId_.isEmpty())
             emit chatInfo(seq, info);
     }
+    else if (received_message == "chats/blocked/result")
+    {
+        QList<Data::ChatMemberInfo> blocked;
+        Data::UnserializeChatMembers(&coll_params, blocked);
+        emit chatBlocked(blocked);
+    }
     else if (received_message == "chats/info/get/failed")
     {
         auto error_code = coll_params.get_value_as_int("error");
@@ -724,9 +752,9 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
     {
         fileSharingDownloadResult(seq, coll_params);
     }
-    else if (received_message == "preview/download/result")
+    else if (received_message == "image/download/result")
     {
-        previewDownloadResult(seq, coll_params);
+        imageDownloadResult(seq, coll_params);
     }
     else if (received_message == "files/upload/progress")
     {
@@ -756,6 +784,7 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
     else if (received_message == "my_info")
     {
         Ui::MyInfo()->unserialize(&coll_params);
+        Ui::MyInfo()->CheckForUpdate();
         emit myInfo();
     }
     else if (received_message == "signed_url")
@@ -819,6 +848,19 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
     {
         emit updateProfile(coll_params.get_value_as_int("error"));
     }
+    else if (received_message == "chats/home/get/result")
+    {
+        bool restart = false, finished = false;
+        QString newTag;
+        QList<Data::ChatInfo> chats;
+        UnserializeChatHome(&coll_params, chats, newTag, restart, finished);
+        emit chatsHome(chats, newTag, restart, finished);
+    }
+    else if (received_message == "chats/home/get/failed")
+    {
+        int error = coll_params.get_value_as_int("error");
+        emit chatsHomeError(error);
+	}
     else if (received_message == "user_proxy/result")
     {
         Utils::ProxySettings user_proxy;
@@ -839,6 +881,27 @@ void core_dispatcher::received(const QString received_message, const qint64 seq,
         auto aimid = coll_params.get_value_as_string("aimId");
         emit openChat(aimid);
     }
+    else if (received_message == "login_new_user")
+    {
+        emit login_new_user();
+    }
+    else if (received_message == "set_avatar/result")
+    {
+        emit Utils::InterConnector::instance().setAvatar(coll_params.get_value_as_int("error"));
+    }
+    else if (received_message == "chats/role/set/result")
+    {
+        emit set_chat_role_result(coll_params.get_value_as_int("error"));
+    }
+    else if (received_message == "chats/block/result")
+    {
+        emit block_member_result(coll_params.get_value_as_int("error"));
+    }
+}
+
+bool core_dispatcher::is_im_created() const
+{
+    return is_im_created_;
 }
 
 void core_dispatcher::onEventTyping(core::coll_helper _params, bool _is_typing)

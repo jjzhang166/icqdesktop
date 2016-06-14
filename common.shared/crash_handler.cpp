@@ -17,10 +17,13 @@
 #include <Shellapi.h>
 #include <dbghelp.h>
 
-#include "crash_handler.h"
 #include <ctime>
-#include "version_info.h"
 #include <fstream>
+
+#include "crash_handler.h"
+#include "version_info.h"
+#include "common_defs.h"
+#include "common_crash_sender.h"
 
 #ifndef _AddressOfReturnAddress
 
@@ -41,23 +44,30 @@ namespace core
 {
     namespace dump
     {
+        std::string crash_handler::product_bundle_ = "";
+        bool crash_handler::is_sending_after_crash_ = false;
 
         crash_handler::crash_handler()
-        {	
+        {
         }
 
         crash_handler::~crash_handler()
         {    
         }
-        
-        void set_product_data_path(const std::wstring& _product_data_path)
+
+        void crash_handler::set_product_bundle(const std::string& _product_bundle)
         {
-            product_data_path = _product_data_path;
+            product_bundle_ = _product_bundle;
+        }
+
+        void crash_handler::set_is_sending_after_crash(bool _is_sending_after_crash)
+        {
+            is_sending_after_crash_ = _is_sending_after_crash;
         }
 
         std::wstring get_report_path()
         {
-            return product_data_path + L"\\reports";
+            return ::common::get_product_data_path() + L"\\reports";
         }
 
         void set_os_version(const std::string& _os_version)
@@ -86,7 +96,7 @@ namespace core
 
             if (dump_type == -1)
             {
-                std::ifstream dump_type_file(product_data_path + L"/settings/dump_type.txt");
+                std::ifstream dump_type_file(::common::get_product_data_path() + L"/settings/dump_type.txt");
 
                 dump_type = 1;
                 if (dump_type_file.good())
@@ -253,6 +263,22 @@ namespace core
             (*ppExceptionPointers)->ExceptionRecord = pExceptionRecord;
             (*ppExceptionPointers)->ContextRecord = pContextRecord;  
         }
+        
+         const std::string from_utf16(const std::wstring& _source_16)
+        {
+            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>().to_bytes(_source_16);
+        }
+
+        bool is_dir_existed(const std::wstring& path)
+        {
+            struct stat info;
+            if (stat(from_utf16(path).c_str(), &info) != 0)
+                return false;
+            else if(info.st_mode & S_IFDIR)
+                return true;
+            else
+                return false;
+        }
 
         // This method creates minidump of the process
         void crash_handler::create_mini_dump(EXCEPTION_POINTERS* pExcPtrs)
@@ -266,6 +292,15 @@ namespace core
             {
                 // Error - couldn't load dbghelp.dll
                 return;
+            }
+
+            if (!is_dir_existed(::common::get_product_data_path()))
+            {
+                 if (!CreateDirectory((::common::get_product_data_path()).c_str(), NULL) &&
+                    ERROR_ALREADY_EXISTS != GetLastError())
+                {
+                    return;
+                }
             }
 
             // create folder if not existed
@@ -365,7 +400,10 @@ namespace core
             time_t now = time(0);
             std::stringstream log_stream;
             // TODO (*) : use real info about app
-            log_stream << "Package: " << product_bundle << std::endl;
+
+            assert(product_bundle_ != "");
+
+            log_stream << "Package: " << product_bundle_ << std::endl;
             log_stream << "Version: " << VERSION_INFO_STR << std::endl;
             log_stream << "OS: " << get_os_version() << std::endl;
             log_stream << "Manufacturer: MS" << std::endl;
@@ -391,14 +429,24 @@ namespace core
             WriteFile(hFile, log_text.c_str(), log_text.size(), &dwWritten, 0);
         }
 
+        void crash_handler::process_exception_pointers(EXCEPTION_POINTERS* pExceptionPtrs)
+        {
+             // Write minidump file
+            create_mini_dump(pExceptionPtrs);
+
+            if (is_sending_after_crash_)
+            {
+                ::common_crash_sender::start_sending_process();
+            }
+
+            // Terminate process
+            TerminateProcess(GetCurrentProcess(), 1);
+        }
+
         // Structured exception handler
         LONG WINAPI crash_handler::seh_handler(PEXCEPTION_POINTERS pExceptionPtrs)
         { 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
 
             // Unreacheable code  
             return EXCEPTION_EXECUTE_HANDLER;
@@ -413,11 +461,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
         }
 
         // CRT unexpected() call handler
@@ -429,11 +473,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    	    
+            process_exception_pointers(pExceptionPtrs);
         }
 
         // CRT Pure virtual method call handler
@@ -445,11 +485,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
         }
 
         // CRT invalid parameter handler
@@ -468,11 +504,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
 
         }
 
@@ -485,11 +517,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);
+            process_exception_pointers(pExceptionPtrs);
 
             // Unreacheable code
             return 0;
@@ -504,11 +532,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);   
+            process_exception_pointers(pExceptionPtrs);
 
         }
 
@@ -519,11 +543,7 @@ namespace core
 
             EXCEPTION_POINTERS* pExceptionPtrs = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
 
         }
 
@@ -536,11 +556,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
 
         }
 
@@ -553,11 +569,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
 
         }
 
@@ -568,11 +580,7 @@ namespace core
 
             PEXCEPTION_POINTERS pExceptionPtrs = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
         }
 
         // CRT SIGTERM signal handler
@@ -584,11 +592,7 @@ namespace core
             EXCEPTION_POINTERS* pExceptionPtrs = NULL;
             get_exception_pointers(0, &pExceptionPtrs);
 
-            // Write minidump file
-            create_mini_dump(pExceptionPtrs);
-
-            // Terminate process
-            TerminateProcess(GetCurrentProcess(), 1);    
+            process_exception_pointers(pExceptionPtrs);
         }
     }
 }

@@ -16,6 +16,7 @@ namespace core
             std::string userType_;
             std::string phoneNumber_;
             uint32_t	flags_;
+            std::string	largeIconId_;
 
         public:
             my_info();

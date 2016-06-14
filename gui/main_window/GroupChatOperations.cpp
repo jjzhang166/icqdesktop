@@ -17,7 +17,7 @@ namespace Ui
     void createGroupChat(QStringList _members_aimIds)
     {
         SelectContactsWidget select_members_dialog(nullptr, Logic::MembersWidgetRegim::SELECT_MEMBERS,
-            QT_TRANSLATE_NOOP("groupchat_pages", "New groupchat"), QT_TRANSLATE_NOOP("groupchat_pages", "Next"), Ui::MainPage::instance());
+            QT_TRANSLATE_NOOP("groupchat_pages", "Create Groupchat"), QT_TRANSLATE_NOOP("groupchat_pages", "Next"), Ui::MainPage::instance());
 
         for (auto& member_aimId : _members_aimIds)
         {
@@ -66,7 +66,7 @@ namespace Ui
         auto result = Utils::NameEditor(
             _parent,
             chat_name,
-            QT_TRANSLATE_NOOP("groupchat_pages","Create"),
+            QT_TRANSLATE_NOOP("groupchat_pages","Done"),
             QT_TRANSLATE_NOOP("popup_window", "Chat name"),
             result_chat_name);
 
@@ -125,16 +125,16 @@ namespace Ui
         QString text;
         
         if (_regim == Logic::MembersWidgetRegim::DELETE_MEMBERS || _regim == Logic::MembersWidgetRegim::SELECT_MEMBERS)
-            text = QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to remove user from this chat?");
+            text = QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to delete user from this chat?");
         else if (_regim == Logic::MembersWidgetRegim::IGNORE_LIST)
-            text = QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to remove user from ignore list?");
+            text = QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to delete user from ignore list?");
 
         auto left_button_text = QT_TRANSLATE_NOOP("popup_window", "Cancel");
-        auto right_button_text = QT_TRANSLATE_NOOP("popup_window", "Remove");
+        auto right_button_text = QT_TRANSLATE_NOOP("popup_window", "Delete");
 
         auto member = _model->getMemberItem(current);
         auto user_name = member->NickName_;
-        auto label = user_name.isEmpty() ? member->AimdId_ : user_name;
+        auto label = user_name.isEmpty() ? member->AimId_ : user_name;
 
         if (Utils::GetConfirmationWithTwoButtons(left_button_text, right_button_text, text, label, _parent))
         {

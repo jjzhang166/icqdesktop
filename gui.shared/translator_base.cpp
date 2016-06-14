@@ -61,6 +61,8 @@ namespace translate
 			return QString("d MMM");
 		else if (lang == "cs")
 			return QString("d. MMM");
+		else if (lang == "fr")
+			return QString("Le d MMM");
 		
 		return QString("MMM d");
 	}
@@ -78,6 +80,8 @@ namespace translate
 			return QString("d MMM yyyy");
 		else if (lang == "cs")
 			return QString("d. MMM yyyy");
+		else if (lang == "fr")
+			return QString("Le d MMM yyyy");
 
 		return QString("MMM d, yyyy");
 	}
@@ -93,6 +97,7 @@ namespace translate
             clist.push_back("de");
             clist.push_back("pt");
             clist.push_back("cs");
+			clist.push_back("fr");
         }
         return clist;
     }
@@ -107,7 +112,7 @@ namespace translate
 		else
 			lang = localLang.left(2);
 
-		if (lang != "ru" && lang != "en" && lang != "uk" && lang != "de" && lang != "pt" && lang != "cs")
+		if (lang != "ru" && lang != "en" && lang != "uk" && lang != "de" && lang != "pt" && lang != "cs" && lang != "fr")
 			lang = "en";
 		
 		return lang;

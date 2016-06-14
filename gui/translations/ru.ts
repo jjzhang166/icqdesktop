@@ -73,13 +73,13 @@
         <source>© ICQ LLC</source>
         <translation>© ICQ LLC</translation>
     </message>
+    <message>
+        <source>Presented by Mail.Ru</source>
+        <translation>Разработано в Mail.Ru</translation>
+    </message>
 </context>
 <context>
     <name>auth_widget</name>
-    <message>
-        <source>Add contact</source>
-        <translation>Добавить контакт</translation>
-    </message>
     <message>
         <source>Block</source>
         <translation>Заблокировать</translation>
@@ -108,6 +108,73 @@
         <comment>21</comment>
         <translation>год</translation>
     </message>
+    <message>
+        <source>Add</source>
+        <translation>Добавить</translation>
+    </message>
+</context>
+<context>
+    <name>avatar_upload</name>
+    <message>
+        <source>Back</source>
+        <translation>Назад</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Отмена</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Продолжить</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Просмотр</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Сохранить</translation>
+    </message>
+    <message>
+        <source>Images (*.jpg *.jpeg *.png *.bmp)</source>
+        <translation>Изображения (*.jpg *.jpeg *.png *.bmp)</translation>
+    </message>
+    <message>
+        <source>Avatar was not uploaded due to server error</source>
+        <translation>Аватар не загружен из-за ошибки сервера</translation>
+    </message>
+    <message>
+        <source>Choose file</source>
+        <translation>Выбрать файл</translation>
+    </message>
+    <message>
+        <source>Image should be at least 600x600 px</source>
+        <translation>Минимальный размер изображения - 600х600 рх</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <translation>Изменить</translation>
+    </message>
+    <message>
+        <source>Image size should be 8 Mb or less</source>
+        <translation>Размер изображения не должен превышать 8Мб</translation>
+    </message>
+    <message>
+        <source>Add
+photo</source>
+        <translation>Добавить
+фото</translation>
+    </message>
+    <message>
+        <source>Edit
+photo</source>
+        <translation>Сменить
+фото</translation>
+    </message>
+    <message>
+        <source>Upload photo</source>
+        <translation>Загрузка фото</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -132,16 +199,6 @@
         <translation> добавил вас в список контактов</translation>
     </message>
     <message>
-        <source> left the chat</source>
-        <comment>many</comment>
-        <translation> покинули чат</translation>
-    </message>
-    <message>
-        <source> left the chat</source>
-        <comment>one</comment>
-        <translation> покинул чат</translation>
-    </message>
-    <message>
         <source> removed </source>
         <translation> удалил </translation>
     </message>
@@ -150,20 +207,8 @@
         <translation>Вы удалили </translation>
     </message>
     <message>
-        <source> invited </source>
-        <translation> пригласил </translation>
-    </message>
-    <message>
         <source>Your friend is now available for chat and calls. You can say hi now!</source>
         <translation>Ваш друг теперь доступен для чата и звонков. Скажите привет!</translation>
-    </message>
-    <message>
-        <source>Has a birthday today!</source>
-        <translation>Сегодня празднует день рождения!</translation>
-    </message>
-    <message>
-        <source>You joined the chat</source>
-        <translation>Вы вошли в чат</translation>
     </message>
     <message>
         <source>You</source>
@@ -196,14 +241,6 @@
         <translation>Вы сменили тему на </translation>
     </message>
     <message>
-        <source>You invited </source>
-        <translation>Вы пригласили </translation>
-    </message>
-    <message>
-        <source> joined the chat</source>
-        <translation> вошел в чат</translation>
-    </message>
-    <message>
         <source>You changed description to &quot;</source>
         <translation>Вы сменили описание на &quot;</translation>
     </message>
@@ -212,12 +249,42 @@
         <translation> сменил описание на &quot;</translation>
     </message>
     <message>
-        <source>You changed picture of chat</source>
-        <translation>Вы сменили картинку чата</translation>
+        <source>Deleted message</source>
+        <translation>Сообщение удалено</translation>
     </message>
     <message>
-        <source> changed picture of chat</source>
-        <translation> сменил картинку чата</translation>
+        <source>You changed picture of group</source>
+        <translation>Вы сменили картинку группы</translation>
+    </message>
+    <message>
+        <source> changed picture of group</source>
+        <translation> сменил картинку группы</translation>
+    </message>
+    <message>
+        <source> has joined group</source>
+        <translation> вошел в группу</translation>
+    </message>
+    <message>
+        <source> have left group</source>
+        <comment>many</comment>
+        <translation> покинули группу</translation>
+    </message>
+    <message>
+        <source> has left group</source>
+        <comment>one</comment>
+        <translation> покинул группу</translation>
+    </message>
+    <message>
+        <source> added </source>
+        <translation> добавил </translation>
+    </message>
+    <message>
+        <source> has birthday!</source>
+        <translation>празднует день рождения!</translation>
+    </message>
+    <message>
+        <source>You have joined group</source>
+        <translation>Вы вошли в группу</translation>
     </message>
 </context>
 <context>
@@ -259,14 +326,6 @@
         <translation>участник</translation>
     </message>
     <message>
-        <source>Copy</source>
-        <translation>Копировать</translation>
-    </message>
-    <message>
-        <source>Quote</source>
-        <translation>Цитировать</translation>
-    </message>
-    <message>
         <source>new message</source>
         <comment>1</comment>
         <translation>новое сообщение</translation>
@@ -297,6 +356,29 @@
     <message>
         <source>New messages</source>
         <translation>Новые сообщения</translation>
+    </message>
+    <message>
+        <source>Official account</source>
+        <translation>Официальный аккаунт</translation>
+    </message>
+</context>
+<context>
+    <name>config_dialog</name>
+    <message>
+        <source>Enter</source>
+        <translation>Enter</translation>
+    </message>
+    <message>
+        <source>Cmd+Enter</source>
+        <translation>Cmd+Enter</translation>
+    </message>
+    <message>
+        <source>Ctrl+Enter</source>
+        <translation>Ctrl+Enter</translation>
+    </message>
+    <message>
+        <source>Shift+Enter</source>
+        <translation>Shift+Enter</translation>
     </message>
 </context>
 <context>
@@ -369,10 +451,6 @@
         <translation>Был </translation>
     </message>
     <message>
-        <source>is typing...</source>
-        <translation>печатает...</translation>
-    </message>
-    <message>
         <source>Sticker</source>
         <translation>Стикер</translation>
     </message>
@@ -383,10 +461,6 @@
     <message>
         <source>New chat</source>
         <translation>Новый чат</translation>
-    </message>
-    <message>
-        <source>New groupchat</source>
-        <translation>Новый групчат</translation>
     </message>
     <message>
         <source>Voice message</source>
@@ -400,20 +474,20 @@
         <source>RECENTS</source>
         <translation>ПОСЛЕДНИЕ</translation>
     </message>
+    <message>
+        <source>typing...</source>
+        <translation>пишет...</translation>
+    </message>
+    <message>
+        <source>Create Groupchat</source>
+        <translation>Создать групчат</translation>
+    </message>
 </context>
 <context>
     <name>contactus_page</name>
     <message>
-        <source>Contact us</source>
-        <translation>Связаться с нами</translation>
-    </message>
-    <message>
         <source>Attachments size exceeds 25 MB</source>
         <translation>Размер вложений превышает 25 МБ</translation>
-    </message>
-    <message>
-        <source>Images (*.jpg *.jpeg *.png *.bmp *.gif)</source>
-        <translation>Изображения (*.jpg *.jpeg *.png *.bmp *.gif)</translation>
     </message>
     <message>
         <source>KB</source>
@@ -424,16 +498,8 @@
         <translation>МБ</translation>
     </message>
     <message>
-        <source>Add screenshot</source>
-        <translation>Добавить скриншот</translation>
-    </message>
-    <message>
         <source>Your Email</source>
         <translation>Ваш Email</translation>
-    </message>
-    <message>
-        <source>Your comments or suggestions</source>
-        <translation>Напишите ваш отзыв</translation>
     </message>
     <message>
         <source>Please enter a valid email address</source>
@@ -471,6 +537,22 @@
         <source>File size exceeds 1 MB</source>
         <translation>Размер файла превышает 1 МБ</translation>
     </message>
+    <message>
+        <source>Images (*.jpg *.jpeg *.png *.bmp)</source>
+        <translation>Изображения (*.jpg *.jpeg *.png *.bmp)</translation>
+    </message>
+    <message>
+        <source>Contact Us</source>
+        <translation>Напишите нам</translation>
+    </message>
+    <message>
+        <source>Attach screenshot</source>
+        <translation>Прикрепите скриншот</translation>
+    </message>
+    <message>
+        <source>Your comments or suggestions...</source>
+        <translation>Ваш отзыв...</translation>
+    </message>
 </context>
 <context>
     <name>context_menu</name>
@@ -488,15 +570,7 @@
     </message>
     <message>
         <source>Report spam</source>
-        <translation>Спам</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Удалить</translation>
-    </message>
-    <message>
-        <source>Quit and delete</source>
-        <translation>Выйти и удалить</translation>
+        <translation>Сообщить о спаме</translation>
     </message>
     <message>
         <source>Mark as read</source>
@@ -519,22 +593,6 @@
         <translation>Пометить все прочитанным</translation>
     </message>
     <message>
-        <source>Add to chat</source>
-        <translation>Добавить в чат</translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation>Переименовать</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Удалить</translation>
-    </message>
-    <message>
-        <source>Add contact</source>
-        <translation>Добавить контакт</translation>
-    </message>
-    <message>
         <source>Save as...</source>
         <translation>Сохранить как...</translation>
     </message>
@@ -555,28 +613,24 @@
         <translation>Копировать ссылку</translation>
     </message>
     <message>
-        <source>Change wallpaper</source>
-        <translation>Сменить фон</translation>
-    </message>
-    <message>
-        <source>Favorite contact</source>
-        <translation>Добавить в избранные</translation>
-    </message>
-    <message>
-        <source>Unfavorite contact</source>
-        <translation>Удалить из избранных</translation>
-    </message>
-    <message>
         <source>Delete for me</source>
-        <translation>Удалить у меня</translation>
+        <translation>Удалить у себя</translation>
     </message>
     <message>
         <source>Delete for all</source>
         <translation>Удалить у всех</translation>
     </message>
     <message>
-        <source>Erase history</source>
-        <translation>Удалить историю</translation>
+        <source>Remove from favorites</source>
+        <translation>Убрать из избранных</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Выйти и удалить</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Удалить</translation>
     </message>
 </context>
 <context>
@@ -1564,20 +1618,8 @@
 <context>
     <name>groupchat_pages</name>
     <message>
-        <source>Add to groupchat</source>
-        <translation>Добавить в групчат</translation>
-    </message>
-    <message>
         <source>Done</source>
         <translation>Готово</translation>
-    </message>
-    <message>
-        <source>Create</source>
-        <translation>Создать</translation>
-    </message>
-    <message>
-        <source>New groupchat</source>
-        <translation>Новый групчат</translation>
     </message>
     <message>
         <source>Next</source>
@@ -1591,13 +1633,17 @@
         <source>View all </source>
         <translation>Все </translation>
     </message>
+    <message>
+        <source>Add to chat</source>
+        <translation>Добавить в чат</translation>
+    </message>
+    <message>
+        <source>Create Groupchat</source>
+        <translation>Создать групчат</translation>
+    </message>
 </context>
 <context>
     <name>input_widget</name>
-    <message>
-        <source>Message...</source>
-        <translation>Сообщение...</translation>
-    </message>
     <message>
         <source>EMOJI</source>
         <translation>EMOJI</translation>
@@ -1605,6 +1651,10 @@
     <message>
         <source>RECENTS</source>
         <translation>ПОСЛЕДНИЕ</translation>
+    </message>
+    <message>
+        <source>Message</source>
+        <translation>Сообщение</translation>
     </message>
 </context>
 <context>
@@ -1630,8 +1680,28 @@
         <translation>друг</translation>
     </message>
     <message>
-        <source>Join chat</source>
-        <translation>Вступить в чат</translation>
+        <source>Chat information is unavailable now, please try again later</source>
+        <translation>Информация о чате недоступна, попробуйте позднее</translation>
+    </message>
+    <message>
+        <source>Chat does not exist or it is hidden by privacy settings</source>
+        <translation>Чат не существует или скрыт настройками приватности</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Закрыть</translation>
+    </message>
+    <message>
+        <source>Live chats</source>
+        <translation>Лайвчаты</translation>
+    </message>
+    <message>
+        <source>Join</source>
+        <translation>Вступить</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Открыть</translation>
     </message>
 </context>
 <context>
@@ -1643,10 +1713,6 @@
     <message>
         <source>Edit</source>
         <translation>Редактировать</translation>
-    </message>
-    <message>
-        <source>Your code</source>
-        <translation>Введите код</translation>
     </message>
     <message>
         <source>UIN or Email</source>
@@ -1721,6 +1787,10 @@ your phone number</source>
         <source>Error occured, try again later</source>
         <translation>Произошла ошибка, попробуйте еще раз</translation>
     </message>
+    <message>
+        <source>Code from SMS</source>
+        <translation>Код из SMS</translation>
+    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1764,10 +1834,6 @@ your phone number</source>
         <translation>У вас нет открытых чатов</translation>
     </message>
     <message>
-        <source>Introduce yourself</source>
-        <translation>Представьтесь</translation>
-    </message>
-    <message>
         <source>Continue</source>
         <translation>Продолжить</translation>
     </message>
@@ -1791,16 +1857,8 @@ your phone number</source>
 <context>
     <name>popup_window</name>
     <message>
-        <source>Are you sure you want to remove user from this chat?</source>
-        <translation>Вы уверены, что хотите удалить пользователя из чата?</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Отмена</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Удалить</translation>
     </message>
     <message>
         <source>Are you sure you want to sign out?</source>
@@ -1809,10 +1867,6 @@ your phone number</source>
     <message>
         <source>Yes</source>
         <translation>Да</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to remove user from ignore list?</source>
-        <translation>Вы уверены, что хотите удалить пользователя из списка игнорируемых?</translation>
     </message>
     <message>
         <source>Are you sure you want to move contact to ignore list?</source>
@@ -1850,134 +1904,100 @@ your phone number</source>
         <source>Are you sure you want to erase chat history?</source>
         <translation>Вы уверены, что хотите удалить историю переписки?</translation>
     </message>
+    <message>
+        <source>Unfortunately, an error occurred:</source>
+        <translation>К сожалению, произошла ошибка:</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete user from this chat?</source>
+        <translation>Вы уверены, что хотите удалить пользователя из чата?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete user from ignore list?</source>
+        <translation>Вы уверены, что хотите удалить пользователя из списка игнорируемых?</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to block user in this chat?</source>
+        <translation>Вы уверены, что хотите заблокировать пользователя в этом чате?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to unblock user?</source>
+        <translation>Вы уверены, что хотите разблокировать пользователя?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to make user admin in this chat?</source>
+        <translation>Вы уверены, что хотите сделать пользователя админом этого чата?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to revoke admin role?</source>
+        <translation>Вы уверены, что хотите снять админа?</translation>
+    </message>
 </context>
 <context>
-    <name>profile_page</name>
+    <name>promo_page</name>
     <message>
-        <source>Ignore list</source>
-        <translation>Список игнорируемых</translation>
+        <source>Contacts</source>
+        <translation>Контакты</translation>
     </message>
     <message>
-        <source>Profile</source>
-        <translation>Профиль</translation>
+        <source>The contact list is now</source>
+        <translation>Список контактов</translation>
     </message>
     <message>
-        <source>Ignore</source>
-        <translation>Игнорировать</translation>
+        <source>located here</source>
+        <translation>теперь расположен тут</translation>
     </message>
     <message>
-        <source>Report spam</source>
-        <translation>Спам</translation>
+        <source>Next</source>
+        <translation>Далее</translation>
     </message>
     <message>
-        <source>Edit profile</source>
-        <translation>Редактировать</translation>
+        <source>Skip</source>
+        <translation>Пропустить</translation>
     </message>
     <message>
-        <source>UIN</source>
-        <translation>UIN</translation>
+        <source>Synchronization</source>
+        <translation>Синхронизация</translation>
     </message>
     <message>
-        <source>Phone number</source>
-        <translation>Номер телефона</translation>
+        <source>Stickers</source>
+        <translation>Стикеры</translation>
     </message>
     <message>
-        <source>Only visible for those, who has it in the phone book</source>
-        <translation>Виден только при наличии в телефонной книге</translation>
+        <source>Wallpapers</source>
+        <translation>Фон чата</translation>
     </message>
     <message>
-        <source>First name</source>
-        <translation>Имя</translation>
+        <source>Get Started</source>
+        <translation>Поехали!</translation>
     </message>
     <message>
-        <source>Last name</source>
-        <translation>Фамилия</translation>
+        <source>Synchronize your chat history</source>
+        <translation>История общения и контакты</translation>
     </message>
     <message>
-        <source>Birthdate</source>
-        <translation>Дата рождения</translation>
+        <source>and contact list across all devices</source>
+        <translation>доступны на любом вашем устройстве</translation>
     </message>
     <message>
-        <source>Gender</source>
-        <translation>Пол</translation>
+        <source>Click here and choose</source>
+        <translation>Более 500 стикеров на все случаи жизни</translation>
     </message>
     <message>
-        <source>Country</source>
-        <translation>Страна</translation>
+        <source>from over 500 bright stickers</source>
+        <translation>находятся тут</translation>
     </message>
     <message>
-        <source>City</source>
-        <translation>Город</translation>
+        <source>Customize your chats</source>
+        <translation>Для каждого чата можно установить</translation>
     </message>
     <message>
-        <source>Online</source>
-        <translation>Онлайн</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Не беспокоить</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Невидимый</translation>
-    </message>
-    <message>
-        <source>Report Spam</source>
-        <translation>Спам</translation>
-    </message>
-    <message>
-        <source>Seen </source>
-        <translation>Был </translation>
-    </message>
-    <message>
-        <source>today</source>
-        <translation>сегодня</translation>
-    </message>
-    <message>
-        <source>yesterday</source>
-        <translation>вчера</translation>
-    </message>
-    <message>
-        <source> at </source>
-        <translation> в </translation>
-    </message>
-    <message>
-        <source>Offline</source>
-        <translation>Офлайн</translation>
-    </message>
-    <message>
-        <source>Male</source>
-        <translation>Мужской</translation>
-    </message>
-    <message>
-        <source>Female</source>
-        <translation>Женский</translation>
-    </message>
-    <message>
-        <source>You have no ignored contacts</source>
-        <translation>У вас нет игнорируемых контактов</translation>
-    </message>
-    <message>
-        <source>About me</source>
-        <translation>Обо мне</translation>
-    </message>
-    <message>
-        <source>for safety and spam protection</source>
-        <translation>для безопасности и защиты от спама</translation>
-    </message>
-    <message>
-        <source>Attach phone number</source>
-        <translation>Привязать номер телефона</translation>
-    </message>
-    <message>
-        <source>Connect to ICQ account</source>
-        <translation>Подключить аккаунт ICQ</translation>
-    </message>
-    <message>
-        <source>This phone number is already attached to another account.
-Please edit phone number and try again.</source>
-        <translation>Этот номер телефона уже используется.
-Измените номер и попробуйте еще раз.</translation>
+        <source>Choose a wallpaper from our collection</source>
+        <translation>любые обои из коллекции</translation>
     </message>
 </context>
 <context>
@@ -1992,10 +2012,6 @@ Please edit phone number and try again.</source>
     <message>
         <source>Search</source>
         <translation>Поиск</translation>
-    </message>
-    <message>
-        <source>No contacts found</source>
-        <translation>Ничего не найдено</translation>
     </message>
     <message>
         <source>Add contact</source>
@@ -2032,6 +2048,10 @@ Please edit phone number and try again.</source>
         <source>years</source>
         <comment>21</comment>
         <translation>год</translation>
+    </message>
+    <message>
+        <source>Nothing found</source>
+        <translation>Ничего не найдено</translation>
     </message>
 </context>
 <context>
@@ -2118,7 +2138,7 @@ Please edit phone number and try again.</source>
     </message>
     <message>
         <source>Notifications</source>
-        <translation>Оповещения</translation>
+        <translation>Уведомления</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -2135,10 +2155,6 @@ Please edit phone number and try again.</source>
     <message>
         <source>About</source>
         <translation>О программе</translation>
-    </message>
-    <message>
-        <source>Contact us</source>
-        <translation>Связаться с нами</translation>
     </message>
     <message>
         <source>Outgoing messages sound</source>
@@ -2159,10 +2175,6 @@ Please edit phone number and try again.</source>
     <message>
         <source>Show notifications</source>
         <translation>Показывать уведомления</translation>
-    </message>
-    <message>
-        <source>Wallpapers</source>
-        <translation>Обои</translation>
     </message>
     <message>
         <source>ru</source>
@@ -2195,6 +2207,263 @@ Please edit phone number and try again.</source>
     <message>
         <source>Connection settings</source>
         <translation>Настройки соединения</translation>
+    </message>
+    <message>
+        <source>Wallpaper</source>
+        <translation>Фон чата</translation>
+    </message>
+    <message>
+        <source>Contact Us</source>
+        <translation>Напишите нам</translation>
+    </message>
+    <message>
+        <source>fr</source>
+        <translation>Français</translation>
+    </message>
+    <message>
+        <source>Show in menu bar</source>
+        <translation>Показывать в строке меню</translation>
+    </message>
+</context>
+<context>
+    <name>sidebar</name>
+    <message>
+        <source>Add to chat</source>
+        <translation>Добавить в чат</translation>
+    </message>
+    <message>
+        <source>Remove from favorites</source>
+        <translation>Убрать из избранных</translation>
+    </message>
+    <message>
+        <source>Add to favorites</source>
+        <translation>Добавить в избранные</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <translation>Еще</translation>
+    </message>
+    <message>
+        <source>Add contact</source>
+        <translation>Добавить контакт</translation>
+    </message>
+    <message>
+        <source>Report spam</source>
+        <translation>Сообщить о спаме</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Уведомления</translation>
+    </message>
+    <message>
+        <source>Wallpaper</source>
+        <translation>Фон чата</translation>
+    </message>
+    <message>
+        <source>Admins</source>
+        <translation>Админы</translation>
+    </message>
+    <message>
+        <source>All members</source>
+        <translation>Все участники</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <translation>Игнорировать</translation>
+    </message>
+    <message>
+        <source>This contact is in the ignore list</source>
+        <translation>Контакт находится в списке игнорируемых</translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation>ник</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <source>Seen </source>
+        <translation>Был </translation>
+    </message>
+    <message>
+        <source>today</source>
+        <translation>сегодня</translation>
+    </message>
+    <message>
+        <source>yesterday</source>
+        <translation>вчера</translation>
+    </message>
+    <message>
+        <source> at </source>
+        <translation> в </translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Сохранить</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Имя чата</translation>
+    </message>
+    <message>
+        <source>Blocked people</source>
+        <translation>Заблокированные</translation>
+    </message>
+    <message>
+        <source>UIN</source>
+        <translation>uin</translation>
+    </message>
+    <message>
+        <source>Phone number</source>
+        <translation>номер телефона</translation>
+    </message>
+    <message>
+        <source>First name</source>
+        <translation>имя</translation>
+    </message>
+    <message>
+        <source>Last name</source>
+        <translation>фамилия</translation>
+    </message>
+    <message>
+        <source>Online</source>
+        <translation>Онлайн</translation>
+    </message>
+    <message>
+        <source>Clear history</source>
+        <translation>Очистить историю</translation>
+    </message>
+    <message>
+        <source>Ignored Contacts</source>
+        <translation>Игнорируемые</translation>
+    </message>
+    <message>
+        <source>Connect to ICQ account</source>
+        <translation>Привязать аккаунт ICQ</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Профиль</translation>
+    </message>
+    <message>
+        <source>Edit profile</source>
+        <translation>Изменить профиль</translation>
+    </message>
+    <message>
+        <source>Only visible for those, who has it in the phone book</source>
+        <translation>виден только при наличии в телефонной книге</translation>
+    </message>
+    <message>
+        <source>Birthdate</source>
+        <translation>дата рождения</translation>
+    </message>
+    <message>
+        <source>Gender</source>
+        <translation>пол</translation>
+    </message>
+    <message>
+        <source>Country</source>
+        <translation>страна</translation>
+    </message>
+    <message>
+        <source>City</source>
+        <translation>город</translation>
+    </message>
+    <message>
+        <source>About me</source>
+        <translation>обо мне</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Не беспокоить</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Невидимый</translation>
+    </message>
+    <message>
+        <source>Offline</source>
+        <translation>Офлайн</translation>
+    </message>
+    <message>
+        <source>for safety and spam protection</source>
+        <translation>для безопасности и защиты от спама</translation>
+    </message>
+    <message>
+        <source>Male</source>
+        <translation>Мужской</translation>
+    </message>
+    <message>
+        <source>Female</source>
+        <translation>Женский</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Выйти и удалить</translation>
+    </message>
+    <message>
+        <source>Contact name</source>
+        <translation>Имя контакта</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>Редактировать</translation>
+    </message>
+    <message>
+        <source>Ignored contacts</source>
+        <translation>Игнорируемые</translation>
+    </message>
+    <message>
+        <source>Attach phone</source>
+        <translation>Добавьте телефон</translation>
+    </message>
+    <message>
+        <source>Public chat</source>
+        <translation>Публичный</translation>
+    </message>
+    <message>
+        <source>Chat description</source>
+        <translation>Описание чата</translation>
+    </message>
+    <message>
+        <source>Revoke admin role</source>
+        <translation>Снять права админа</translation>
+    </message>
+    <message>
+        <source>Make admin</source>
+        <translation>Сделать админом</translation>
+    </message>
+    <message>
+        <source>Block</source>
+        <translation>Заблокировать</translation>
+    </message>
+    <message>
+        <source>Delete from chat</source>
+        <translation>Удалить из чата</translation>
+    </message>
+    <message>
+        <source>Change chat name</source>
+        <translation>Изменить имя чата</translation>
+    </message>
+    <message>
+        <source>Change chat description</source>
+        <translation>Изменить описание чата</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Переименовать</translation>
+    </message>
+    <message>
+        <source>You have no ignored contacts</source>
+        <translation>У вас нет игнорируемых контактов</translation>
+    </message>
+    <message>
+        <source>This phone number is already attached to another account.
+Please edit phone number and try again.</source>
+        <translation>Этот номер телефона уже используется.
+Измените номер и попробуйте еще раз.</translation>
     </message>
 </context>
 <context>
@@ -2235,46 +2504,30 @@ Please edit phone number and try again.</source>
         <translation>Выход</translation>
     </message>
     <message>
-        <source>Show</source>
+        <source>Open</source>
         <translation>Открыть</translation>
     </message>
 </context>
 <context>
     <name>typing_widget</name>
     <message>
-        <source>is typing</source>
-        <translation>печатает</translation>
+        <source>typing</source>
+        <translation>пишет</translation>
     </message>
     <message>
         <source>are typing</source>
-        <translation>печатают</translation>
+        <translation>пишут</translation>
     </message>
 </context>
 <context>
     <name>voip_pages</name>
-    <message>
-        <source>Turn off microphone</source>
-        <translation>Отключить микрофон</translation>
-    </message>
-    <message>
-        <source>Turn on microphone</source>
-        <translation>Включить микрофон</translation>
-    </message>
-    <message>
-        <source>Turn off camera</source>
-        <translation>Отключить камеру</translation>
-    </message>
-    <message>
-        <source>Turn on camera</source>
-        <translation>Включить камеру</translation>
-    </message>
     <message>
         <source>and</source>
         <translation>и</translation>
     </message>
     <message>
         <source>Incoming call</source>
-        <translation>Входящий вызов</translation>
+        <translation>Входящий звонок</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -2293,8 +2546,28 @@ Please edit phone number and try again.</source>
         <translation>Видео</translation>
     </message>
     <message>
-        <source>Outgoing call</source>
-        <translation>Исходящий звонок</translation>
+        <source>Call is secured</source>
+        <translation>Звонок защищен</translation>
+    </message>
+    <message>
+        <source>For security check, you can verify your images with your partner</source>
+        <translation>Для проверки защиты можно сверить изображения с изображениями собеседника</translation>
+    </message>
+    <message>
+        <source>How it works</source>
+        <translation>Узнать как это работает</translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation>Ок</translation>
+    </message>
+    <message>
+        <source>turned off the camera</source>
+        <translation>выключил камеру</translation>
+    </message>
+    <message>
+        <source>Ringing...</source>
+        <translation>Звоним...</translation>
     </message>
 </context>
 </TS>

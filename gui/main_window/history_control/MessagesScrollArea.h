@@ -17,7 +17,7 @@ namespace Ui
 
         void fetchRequestedEvent();
 
-        void needCleanup();
+        void needCleanup(QList<Logic::MessageKey> keysToUnload);
 
         void scrollMovedToBottom();
 
@@ -34,6 +34,8 @@ namespace Ui
 
         void cancelSelection();
 
+        void cancelWheelBufferReset();
+
         void enumerateMessagesItems(const MessageItemVisitor visitor, const bool reversed) const;
 
         void enumerateWidgets(const WidgetVisitor visitor, const bool reversed) const;
@@ -47,6 +49,8 @@ namespace Ui
         Logic::MessageKeyVector getItemsKeys() const;
 
         QString getSelectedText() const;
+
+        QList<Logic::MessageKey> getKeysToUnload() const;
 
         void insertWidget(const Logic::MessageKey &key, QWidget *widget);
 
@@ -72,6 +76,7 @@ namespace Ui
 
         bool isScrollAtBottom() const;
 
+
     protected:
         virtual void mouseMoveEvent(QMouseEvent *e) override;
 
@@ -95,6 +100,8 @@ namespace Ui
         void onSliderValue(int value);
 
         void onIdleUserActivityTimeout();
+
+        void onWheelEventResetTimer();
 
     private:
         enum class ScrollingMode;
@@ -125,21 +132,29 @@ namespace Ui
 
         QTimer UserActivityTimer_;
 
-        void applySelection();
+        std::deque<int32_t> WheelEventsBuffer_;
+
+        QTimer WheelEventsBufferResetTimer_;
+
+        void applySelection(bool forShit = false);
 
         void clearSelection();
 
-        double evaluateScrollingSpeed() const;
+        bool enqueWheelEvent(const int32_t delta);
+
+        double evaluateScrollingVelocity() const;
 
         double evaluateScrollingStep(const int64_t now) const;
 
+        int32_t evaluateWheelHistorySign() const;
+
         bool isScrolling() const;
+
+        void scheduleWheelBufferReset();
 
         void startScrollAnimation(const ScrollingMode mode);
 
         void stopScrollAnimation();
-
-        void unloadWidgets();
 
         void resetUserActivityTimer();
     };

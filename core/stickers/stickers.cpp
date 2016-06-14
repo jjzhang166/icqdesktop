@@ -4,6 +4,8 @@
 
 #include "../../../corelib/enumerations.h"
 
+#include "../tools/system.h"
+
 #include "../async_task.h"
 
 
@@ -421,9 +423,7 @@ namespace core
                 for (auto iter_icon = icons.cbegin(); iter_icon != icons.cend(); iter_icon++)
                 {
                     std::wstring icon_file = get_set_icon_path(*(*iter), iter_icon->second);
-
-                    boost::filesystem::wpath path_for_file(icon_file);
-                    if (!boost::filesystem::exists(path_for_file))
+                    if (!core::tools::system::is_exist(icon_file))
                         return false;
                 }
             }
@@ -469,9 +469,7 @@ namespace core
                 for (auto iter_icon = icons.cbegin(); iter_icon != icons.cend(); iter_icon++)
                 {
                     std::wstring icon_file = get_set_icon_path(*(*iter), iter_icon->second);
-
-                    boost::filesystem::wpath path_for_file(icon_file);
-                    if (!boost::filesystem::exists(path_for_file))
+                    if (!core::tools::system::is_exist(icon_file))
                         meta_tasks_.push_back(download_task(iter_icon->second.get_url(), icon_file));
                 }
 
@@ -492,8 +490,7 @@ namespace core
 
                         std::wstring file_name = get_sticker_path(*(*iter), *(*iter_sticker), iter_size->second.get_size());
 
-                        boost::filesystem::wpath path_for_file(file_name);
-                        if (!boost::filesystem::exists(path_for_file))
+                        if (!core::tools::system::is_exist(file_name))
                         {
                             if (has_gui_request(set_id, sticker_id))
                             {

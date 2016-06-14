@@ -17,6 +17,7 @@ namespace core
             std::string session_key_;
             std::string dev_id_;
             std::string aimsid_;
+            std::string locale_;
             time_t exipired_in_;
             time_t time_offset_;
                         
@@ -25,6 +26,10 @@ namespace core
             std::string version_;
 
             bool serializable_;
+
+            std::string login_;
+            std::string fetch_url_;
+            bool need_promo_;
 
             auth_parameters();
             bool is_valid() const;
@@ -35,7 +40,9 @@ namespace core
 
             void serialize(core::tools::binary_stream& _stream) const;
             bool unserialize(core::tools::binary_stream& _stream);
+
             bool unserialize(const rapidjson::Value& _node);
+            void serialize(rapidjson::Value& _node, rapidjson_allocator& _a) const;
         };
 
         struct fetch_parameters

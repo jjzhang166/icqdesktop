@@ -13,9 +13,11 @@ namespace Ui
         class UI;
 
         Q_OBJECT
+
+    public Q_SLOTS:
+        void settingsProfileClicked();
         
     private Q_SLOTS:
-        void settingsProfileClicked();
         void settingsGeneralClicked();
         void settingsVoiceVideoClicked();
         void settingsNotificationsClicked();

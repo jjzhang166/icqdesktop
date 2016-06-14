@@ -22,6 +22,10 @@ namespace Ui
 
         const int maxCount_;
 
+        int realCount_;
+
+        QColor color_;
+
     private Q_SLOTS:
 
         void onAvatarLoaded(QString _aimid);
@@ -29,12 +33,16 @@ namespace Ui
     protected:
 
         virtual void paintEvent(QPaintEvent* _e) override;
+        virtual void resizeEvent(QResizeEvent* _e) override;
 
         const int sv(const int _v);
 
     public:
 
         void adjustWidth();
+        void setColor(const QColor& _color);
+        int getRealCount() const;
+        void updateInfo(std::shared_ptr<Data::ChatInfo> _info);
 
         LiveChatMembersControl(QWidget* _parent, std::shared_ptr<Data::ChatInfo> _info, const int _maxCount = maxMembersCount);
         virtual ~LiveChatMembersControl();

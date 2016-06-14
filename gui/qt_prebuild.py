@@ -1,7 +1,10 @@
 if __name__ != '__main__':
 	sys.exit(0)
 
-import os.path, time, sys, glob, re
+import os.path, time, sys, glob, re, subprocess
+
+qt_path = os.path.dirname(os.path.abspath(__file__ + "/..")).replace("\\", "/")
+qt_path += "/external/windows/qt/bin/"
 
 def file_contains_regex(path, regexes):
 	assert os.path.exists(path)
@@ -45,10 +48,10 @@ def build_mocs_in(dir):
 		if os.path.exists(moc_file):
 			if os.path.getmtime(h_file) > os.path.getmtime(moc_file):
 				print(os.path.basename(h_file), "is newer that", os.path.basename(moc_file),">> rebuild")
-				os.system("%QTPATH%/bin/moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
+				subprocess.call(qt_path + "moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
 		else:
 			print("build", os.path.basename(moc_file))
-			os.system("%QTPATH%/bin/moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
+			subprocess.call(qt_path + "moc.exe " + '"' + h_file + '"' + " -b stdafx.h" + " -o " + '"' + moc_file + '"')
 
 	files = glob.glob(dir + "/moc_*.cpp")
 	for file in files:
@@ -73,10 +76,10 @@ def compile_ui_in(dir):
 		if os.path.exists(h_file):
 			if os.path.getmtime(ui_file) > os.path.getmtime(h_file):
 				print(os.path.basename(ui_file), "is newer that", os.path.basename(h_file),">> rebuild")
-				os.system("%QTPATH%/bin/uic.exe " + '"' + ui_file + '"' + " -o " + '"' + h_file + '"')
+				subprocess.call(qt_path + "uic.exe " + '"' + ui_file + '"' + " -o " + '"' + h_file + '"')
 		else:
 			print("build", h_file)
-			os.system("%QTPATH%/bin/uic.exe " + '"' + ui_file + '"' + " -o " + '"' + h_file + '"')
+			subprocess.call(qt_path + "uic.exe " + '"' + ui_file + '"' + " -o " + '"' + h_file + '"')
 
 	dirs = glob.glob(dir + "/*/")
 	for dir in dirs:
@@ -95,12 +98,12 @@ for file in files:
 	if os.path.exists(qm_file):
 		if os.path.getmtime(ts_file) > os.path.getmtime(qm_file):
 			print(os.path.basename(ts_file), "is newer that", os.path.basename(qm_file),">> rebuild")
-			os.system("%QTPATH%/bin/lrelease.exe " + '"' + ts_file + '"')
+			subprocess.call(qt_path + "lrelease.exe " + '"' + ts_file + '"')
 	else:
 		print("build", os.path.basename(qm_file))
-		os.system("%QTPATH%/bin/lrelease.exe " + '"' + ts_file + '"')
+		subprocess.call(qt_path + "lrelease.exe " + '"' + ts_file + '"')
 		
-os.system("%QTPATH%/bin/rcc.exe " + '"' + os.path.abspath("resource.qrc").replace("\\", "/") + '"' + " -o " + '"' + os.path.abspath("qresource").replace("\\", "/") + '"' + " --binary")
+subprocess.call(qt_path + "rcc.exe " + '"' + os.path.abspath("resource.qrc").replace("\\", "/") + '"' + " -o " + '"' + os.path.abspath("qresource").replace("\\", "/") + '"' + " --binary")
 
 compile_ui_in(".")
 build_mocs_in(".")

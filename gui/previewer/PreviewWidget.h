@@ -6,7 +6,7 @@ namespace Previewer
 	class PreviewWidget : public QWidget
 	{
 	public:
-		PreviewWidget(QPixmap& preview);
+		PreviewWidget(const QPixmap& preview);
 
 		virtual ~PreviewWidget() override;
 
@@ -22,7 +22,7 @@ namespace Previewer
 		virtual void resizeEvent(QResizeEvent*) override;
 
 	private:
-		QPixmap& SourcePreview_;
+		QPixmap SourcePreview_;
 
 		QPixmap ScaledPreview_;
 

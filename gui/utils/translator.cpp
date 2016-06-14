@@ -2,6 +2,8 @@
 
 #include "../cache/countries.h"
 #include "../gui_settings.h"
+#include "../utils/gui_coll_helper.h"
+#include "../core_dispatcher.h"
 
 #ifdef __APPLE__
 #include "mac_support.h"
@@ -13,12 +15,24 @@ namespace Utils
 	{
         QString lang = getLang();
 		Ui::get_gui_settings()->set_value<QString>(settings_language, lang);
-		
+
 		QLocale::setDefault(QLocale(lang));
 		static QTranslator translator;
 		translator.load(lang, ":/translations");
 		QApplication::installTranslator(&translator);
+        updateLocale();
 	}
+
+    void Translator::updateLocale()
+    {
+        QLocale locale(getLang());
+        QString localeStr = locale.name();
+        localeStr.replace("_", "-");
+
+        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+        collection.set_value_as_qstring("locale", localeStr.toLower());
+        Ui::GetDispatcher()->post_message_to_core("set_locale", collection.get());
+    }
 
 	
 	QString Translator::getCurrentPhoneCode()

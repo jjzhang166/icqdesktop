@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HistoryControlPageItem.h"
+#include "MessageItemBase.h"
 
 namespace HistoryControl
 {
@@ -17,7 +17,7 @@ namespace Ui
 
     class MessageStatusWidget;
 
-    class VoipEventItem : public HistoryControlPageItem
+    class VoipEventItem : public MessageItemBase
     {
         Q_OBJECT
 
@@ -28,9 +28,17 @@ namespace Ui
 
         virtual QString formatRecentsText() const override;
 
-        virtual void setTopMargin(const bool value);
+        virtual void setTopMargin(const bool value) override;
 
-        virtual void setHasAvatar(const bool value);
+        virtual void setHasAvatar(const bool value) override;
+
+        virtual bool setLastRead(const bool _isLastRead) override;
+
+        virtual bool isOutgoing() const override;
+
+        virtual qint64 getId() const override;
+
+        void setId(const qint64 _id);
 
     protected:
         virtual void mouseMoveEvent(QMouseEvent *) override;
@@ -42,8 +50,8 @@ namespace Ui
         virtual void paintEvent(QPaintEvent *) override;
 
         virtual void resizeEvent(QResizeEvent *event) override;
-
     private:
+
         std::shared_ptr<const QPixmap> Avatar_;
 
         QPainterPath Bubble_;
@@ -64,13 +72,17 @@ namespace Ui
 
         MessageStatusWidget *StatusWidget_;
 
+        bool lastRead_;
+
+        qint64 id_;
+
         QRect getAvatarRect() const;
 
         bool isAvatarHovered(const QPoint &mousePos) const;
 
         bool isBubbleHovered(const QPoint &mousePos) const;
 
-        bool isOutgoing() const;
+        void updateHeight();
 
     };
 

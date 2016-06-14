@@ -106,7 +106,6 @@ bool gui_settings::unserialize(tools::binary_stream& _bs)
 {
     if (!_bs.available())
     {
-        assert(false);
         return false;
     }
 
@@ -211,6 +210,15 @@ bool gui_settings::unserialize(const rapidjson::Value& _node)
         bs.write<bool>(iter_notify->value.GetBool());
 
         set_value(settings_notify_new_messages, bs);
+    }
+
+    auto iter_promo = _node.FindMember(settings_need_show_promo);
+    if (iter_promo != _node.MemberEnd() && iter_promo->value.IsBool())
+    {
+        tools::binary_stream bs;
+        bs.write<bool>(iter_promo->value.GetBool());
+
+        set_value(settings_need_show_promo, bs);
     }
 
     return true;

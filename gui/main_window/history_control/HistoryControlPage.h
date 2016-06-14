@@ -28,7 +28,6 @@ namespace Ui
 	class HistoryControlPage;
 	class NewMessagesPlate;
 	class AuthWidget;
-	class ContextMenu;
     class LabelEx;
     class TextEmojiWidget;
     class MessagesWidget;
@@ -36,6 +35,34 @@ namespace Ui
     class HistoryControlPageThemePanel;
 
     enum ThemePanelChoice: int;
+    typedef std::function<void(ThemePanelChoice)> ThemePanelCallback;
+
+    class ClickWidget : public QWidget
+    {
+        Q_OBJECT
+Q_SIGNALS:
+        void clicked();
+
+    public:
+        ClickWidget(QWidget* parent);
+
+    protected:
+        virtual void mouseReleaseEvent(QMouseEvent *);
+    };
+
+    class TopWidget : public QStackedWidget
+    {
+        Q_OBJECT
+    public:
+        TopWidget(QWidget* parent, const QString& aimId);
+
+        void setWidgets(QWidget* main, QWidget* theme);
+        void updateThemeWidget(bool toCurrent, ThemePanelCallback callback);
+        void showThemeWidget(bool show);
+
+    private:
+        QString AimId_;
+    };
 
 	class MessagesWidgetEventFilter : public QObject
 	{
@@ -43,8 +70,6 @@ namespace Ui
 
 	public:
 		MessagesWidgetEventFilter(
-			QWidget* top,
-            QWidget* topTheme,
 			QWidget* buttonsWidget,
 			const QString& contactName,
             QTextBrowser *contactNameWidget,
@@ -66,12 +91,10 @@ namespace Ui
 
 	private:
 		QWidget* ButtonsWidget_;
-		QWidget* TopWidget_;
 
 		MessagesScrollArea* ScrollArea_;
         MessagesWidget* MessagesWidget_;
 
-        QWidget* TopThemeWidget_;
 		QScrollArea* BottomWidget_;
 
 		QWidget* FirstOverlay_;
@@ -133,8 +156,6 @@ namespace Ui
         HistoryControlPage(QWidget* parent, QString aimId);
         void updateTopThemeButtonsVisibility();
 
-        void SetContactStatusClickable(bool _is_enabled);
-
         ~HistoryControlPage();
 
 		void updateNewPlate(bool);
@@ -149,10 +170,10 @@ namespace Ui
         bool touchScrollInProgress() const;
         void updateWidgetsTheme();
 
-        typedef std::function<void(ThemePanelChoice)> ThemePanelCallback;
         void showThemesTopPanel(bool _show, bool _showSetToCurrent, ThemePanelCallback callback);
 
         void update(QString);
+        void updateMoreButton();
 
 	protected:
 		virtual void focusOutEvent(QFocusEvent* _event) override;
@@ -174,12 +195,12 @@ namespace Ui
         void updateChatInfo();
         void onReachedFetchingDistance();
         void fetchMore(QString);
+        void nameClicked();
+        void edit_members();
 
 		void contactChanged(QString);
 		void insertNextMessageSlot();
 		void removeWidget(Logic::MessageKey);
-        void createMenu();
-        void updateMenu(QString);
 
 		void copy(QString);
 		void quoteText(QString);
@@ -190,15 +211,15 @@ namespace Ui
 		void auth_delete_contact(QString _aimid);
 
 		void add_member();
-		void edit_members();
-		void popup_menu(QAction* _action);
-        void needCleanup();
+        void unloadWidgets(QList<Logic::MessageKey> keysToUnload);
 
         void stats_spam_profile(QString _aimid);
         void stats_spam_auth(QString _aimid);
         void stats_ignore_auth(QString _aimid);
         void stats_add_user_auth(QString _aimid);
         void stats_delete_contact_auth(QString _aimid);
+
+        void readByClient(QString _aimid, qint64 _id);
 
 	private:
 	    void updateName();
@@ -235,7 +256,6 @@ namespace Ui
         void updateTypingWidgets();
         void hideTypingWidgets();
 
-		void unloadWidgets();
 		void initStatus();
 		void appendAuthControlIfNeed();
 		bool isScrolling() const;
@@ -257,6 +277,7 @@ namespace Ui
         void switchToIdleState(const char *dbgWhere);
         void switchToInsertingState(const char *dbgWhere);
         void switchToFetchingState(const char *dbgWhere);
+        void setContactStatusClickable(bool _is_enabled);
 
         bool isChatAdmin() const;
 
@@ -270,13 +291,11 @@ namespace Ui
 		NewMessagesPlate*						new_messages_plate_;
 		qint64									chat_info_sequence_;
 		AuthWidget*								auth_widget_;
-		ContextMenu*							menu_;
 		qint32									next_local_position_;
         std::set<Logic::MessageKey>				remove_requests_;
         std::list<ItemData>                     items_data_;
         LabelEx*                                contact_status_;
         Logic::ChatMembersModel*                chat_members_model_;
-        QPushButton*                            edit_members_button_;
         QPushButton*                            favorite_star_;
         QPushButton*                            official_mark_;
         MessagesScrollArea*						messages_area_;
@@ -286,26 +305,16 @@ namespace Ui
         bool                                    is_messages_request_postponed_;
         char const*                             dbg_where_postponed_;
 
-        QWidget *top_widget_;
-        HistoryControlPageThemePanel *top_theme_widget_;
-        QHBoxLayout *horizontal_layout_;
+        TopWidget* top_widget_;
         QWidget *contact_widget_;
-        QVBoxLayout *vertical_layout_;
         QTextBrowser *contact_name_;
-        QHBoxLayout *horizontal_layout_2_;
-        QHBoxLayout *contact_status_layout_;
         QWidget* contact_status_widget_;
         QSpacerItem *horizontalSpacer_contact_status_;
-        QSpacerItem *horizontalSpacer_2_;
         QSpacerItem *vertical_spacer_;
-        QWidget *buttons_widget_;
-        QGridLayout *grid_layout_;
         QPushButton *call_button_;
         QPushButton *video_call_button_;
 		QPushButton *add_member_button_;
         QPushButton *more_button_;
-        QSpacerItem *vertical_spacer_2_;
-        bool is_chat_member_;
         bool is_contact_status_clickable_;
         bool is_public_chat_;
 	};

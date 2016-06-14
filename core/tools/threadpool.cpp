@@ -20,25 +20,8 @@ threadpool::threadpool(const unsigned count, std::function<void()> _on_thread_ex
     {
         for(;;)
         {
-            task nextTask;
-
-            {
-                std::unique_lock<std::mutex> lock(queue_mutex_);
-                condition_.wait(lock, [this]
-                {
-                    return stop_ || !tasks_.empty();
-                });
-
-                if (stop_ && tasks_.empty())
-                {
-                    break;
-                }
-
-                nextTask = std::move(tasks_.front());
-                tasks_.pop();
-            }
-
-            nextTask();
+            if (!run_task())
+                break;
         }
 
         _on_thread_exit();
@@ -51,6 +34,46 @@ threadpool::threadpool(const unsigned count, std::function<void()> _on_thread_ex
     }
 }
 
+bool threadpool::run_task_impl()
+{
+    task nextTask;
+
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex_);
+        condition_.wait(lock, [this]
+        {
+            return stop_ || !tasks_.empty();
+        });
+
+        if (stop_ && tasks_.empty())
+        {
+            return false;
+        }
+
+        nextTask = std::move(tasks_.front());
+        tasks_.pop();
+    }
+
+    nextTask();
+    return true;
+}
+
+bool threadpool::run_task()
+{
+#ifdef _WIN32
+     __try
+#endif // _WIN32
+    {
+         return run_task_impl();
+    }
+
+#ifdef _WIN32
+    __except(::core::dump::crash_handler::seh_handler(GetExceptionInformation()))
+    {
+    }
+#endif // _WIN32
+    return true;
+}
 
 threadpool::~threadpool()
 {
@@ -90,6 +113,7 @@ bool threadpool::enqueue(const task _task)
         tasks_.emplace([_task]
         {
             core::dump::crash_handler handler;
+            handler.set_product_bundle("icq.desktop");
             handler.set_thread_exception_handlers();
             _task();
         });

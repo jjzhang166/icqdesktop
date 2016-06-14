@@ -373,6 +373,8 @@ bool MacMigrationManager::migrateProfile(const MacProfile &profile)
         collection.set_value_as_qstring("login", profile.uin());
         collection.set_value_as_qstring("password", profile.token());
         collection.set_value_as_bool("save_auth_data", true);
+        collection.set_value_as_bool("is_login", true);
+        collection.set_value_as_bool("not_log", true);
         Ui::GetDispatcher()->post_message_to_core("login_by_password", collection.get());
         
         return true;

@@ -11,6 +11,18 @@
 #include "../main_window/MainWindow.h"
 #include "VoipTools.h"
 
+const QString widgetWithBg      = "QWidget { color: transparent; background-color : rgba(0,0,0,0%); background: rgba(0,0,0,65%); }";
+const QString widgetWithoutBg   = "QWidget { color: transparent; background-color : rgba(0,0,0,0%); background: rgba(0,0,0,1%); }";
+const QString widgetWithoutBgEx = "QWidget { color: transparent; background-color : rgba(0,0,0,0%); background: rgba(0,0,0,0%); }";
+
+const QString sliderGreenH = "QSlider:handle:horizontal { background: solid #579e1c; width: 8dip; height: 8dip; margin-top: -11dip; margin-bottom: -11dip; border-radius: 4dip; }"
+                             "QSlider:handle:horizontal:hover { background: solid #67bc21; border-radius: 4dip;}";
+const QString sliderRedH   = "QSlider:handle:horizontal { background: solid #992117; border-radius: 4dip; }";
+
+const QString sliderGreenV = "QSlider:handle:vertical { background: solid #579e1c; border: 1dip solid #579e1c; width: 8dip; height: 8dip; margin-left: -11dip; margin-right: -11dip; border-radius: 4dip; }"
+                             "QSlider:handle:vertical:hover { background: solid #67bc21; border-radius: 4dip; }";
+const QString sliderRedV   = "QSlider:handle:vertical { background: solid #992117; border-radius: 4dip; }";
+
 Ui::QSliderEx::QSliderEx(Qt::Orientation orientation, QWidget* parent)
 : QSlider(orientation, parent) {
     
@@ -54,14 +66,25 @@ void Ui::QPushButtonEx::enterEvent(QEvent* e) {
 	emit onHover();
 }
 
-Ui::VolumeControl::VolumeControl(QWidget* parent, bool horizontal, bool withBackground)
+Ui::VolumeControl::VolumeControl(
+    QWidget* parent, 
+    bool horizontal,             
+    const QString& mutedBg, 
+    const QString& unmutedBg,
+    const std::function<void(QPushButton&, bool)>& onChangeStyle)
 	: QWidget(NULL)
     , _parent(parent)
     , _horizontal(horizontal)
-    , _border_offset(Utils::scale_value((50 - 24) / 2) - 1)
+    , onChangeStyle_(onChangeStyle)
+    , _border_offset(Utils::scale_value(4))
+    , _rootWidget(NULL)
+    , _audioPlaybackDeviceMuted(false)
+    , mutedBg_(mutedBg)
+    , checkMousePos_(this)
+    , unmutedBg_(unmutedBg)
 	, _actual_vol(0) {
 
-    setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
     setAttribute(Qt::WA_NoSystemBackground, true);
     setAttribute(Qt::WA_TranslucentBackground, true);
         
@@ -79,7 +102,8 @@ Ui::VolumeControl::VolumeControl(QWidget* parent, bool horizontal, bool withBack
 	slider = new QSliderEx(horizontal ? Qt::Horizontal : Qt::Vertical, this);
     slider->setCursor(QCursor(Qt::PointingHandCursor));
 
-	auto widg = new QWidget(this);
+    _rootWidget = new QWidget(this);
+	auto widg = _rootWidget;
 	widg->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
     widg->setContentsMargins(0, 0, 0, 0);
 	
@@ -97,27 +121,24 @@ Ui::VolumeControl::VolumeControl(QWidget* parent, bool horizontal, bool withBack
     l->addSpacing(_border_offset);
     if (horizontal) {
         l->addWidget(btn);
-        l->addSpacing(Utils::scale_value(12));
+        l->addSpacing(Utils::scale_value(10));
         l->addWidget(slider);
     } else {
         l->addWidget(slider);
-        l->addSpacing(Utils::scale_value(12));
+        l->addSpacing(Utils::scale_value(8));
         l->addWidget(btn);
     }
 
     l->addSpacing(_border_offset);
     widg->setLayout(l);
 
-    if (!withBackground) {
-        widg->setProperty("WidgetWithoutBG", true);
-        setProperty("WidgetWithoutBG", true);
-    } else {
-        widg->setProperty("WidgetWithBG", true);
-        setProperty("WidgetWithBG", true);
+    Utils::ApplyStyle(widg,   mutedBg_);
+    Utils::ApplyStyle(slider, widgetWithoutBgEx);
+    Utils::ApplyStyle(btn,    widgetWithoutBgEx);
+
+    if (onChangeStyle_ != NULL && btn) {
+        onChangeStyle_(*btn, true);
     }
-    
-    btn->setProperty("CallPanelEnBtn", true);
-	btn->setProperty("CallSoundOn", true);
 
     if (horizontal) {
         slider->setProperty("VideoPanelVolumeSlider", true);
@@ -134,6 +155,8 @@ Ui::VolumeControl::VolumeControl(QWidget* parent, bool horizontal, bool withBack
 	
 	connect(slider, SIGNAL(valueChanged(int)), this, SLOT(onVolumeChanged(int)), Qt::QueuedConnection);
 	connect(btn, SIGNAL(clicked()), this, SLOT(onMuteOnOffClicked()), Qt::QueuedConnection);
+    connect(&checkMousePos_, SIGNAL(timeout()), this, SLOT(onCheckMousePos()), Qt::QueuedConnection);
+    checkMousePos_.setInterval(500);
 
 	QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMuteChanged(const std::string&,bool)), this, SLOT(onVoipMuteChanged(const std::string&,bool)), Qt::DirectConnection);
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipVolumeChanged(const std::string&,int)), this, SLOT(onVoipVolumeChanged(const std::string&,int)), Qt::DirectConnection);
@@ -141,6 +164,13 @@ Ui::VolumeControl::VolumeControl(QWidget* parent, bool horizontal, bool withBack
 
 Ui::VolumeControl::~VolumeControl() {
 
+}
+
+void Ui::VolumeControl::onCheckMousePos()
+{
+    if (!__underMouse(*this)) {
+        hide();
+    }
 }
 
 QPoint Ui::VolumeControl::getAnchorPoint() const {
@@ -154,16 +184,46 @@ QPoint Ui::VolumeControl::getAnchorPoint() const {
     }
 }
 
+void Ui::VolumeControl::_updateSlider()
+{
+    if (_horizontal) {
+        if (_audioPlaybackDeviceMuted || _actual_vol <= 0.0001f) {
+            Utils::ApplyStyle(slider, sliderRedH);
+        } else {
+            Utils::ApplyStyle(slider, sliderGreenH);
+        }
+    } else {
+        if (_audioPlaybackDeviceMuted || _actual_vol <= 0.0001f) {
+            Utils::ApplyStyle(slider, sliderRedV);
+        } else {
+            Utils::ApplyStyle(slider, sliderGreenV);
+        }
+    }
+}
+
 void Ui::VolumeControl::onVoipMuteChanged(const std::string& device_type, bool muted) {
     if (device_type == "audio_playback") {
-        slider->setEnabled(!muted);
+        //slider->setEnabled(!muted);
+        slider->setVisible(!muted);
 
-        btn->setProperty("CallPanelEnBtn", !muted);
-        btn->setProperty("CallPanelDisBtn", muted);
+        _audioPlaybackDeviceMuted = muted;
+        if (_rootWidget) {
+            if (muted) {
+                Utils::ApplyStyle(_rootWidget, mutedBg_);
+                Utils::ApplyStyle(this, mutedBg_);
+            } else {
+                Utils::ApplyStyle(_rootWidget, unmutedBg_);
+                Utils::ApplyStyle(this, unmutedBg_);
+            }
+        }
+        _updateSlider();
+        Utils::ApplyStyle(slider, widgetWithoutBgEx);
+        Utils::ApplyStyle(btn, widgetWithoutBgEx);
 
-        btn->setProperty("CallSoundOn", !muted);
-        btn->setProperty("CallSoundOff", muted);
-        btn->setStyle(QApplication::style());
+        if (onChangeStyle_ != NULL && btn) {
+            onChangeStyle_(*btn, muted || _actual_vol <= 0.0001f);
+        }
+        emit onMuteChanged(muted || _actual_vol <= 0.0001f);
     }
 }
 
@@ -182,18 +242,31 @@ void Ui::VolumeControl::onVoipVolumeChanged(const std::string& device_type, int 
     if (device_type == "audio_playback") {
         _actual_vol = std::max(std::min(100, vol), 0);
 
+        if (onChangeStyle_ != NULL && btn) {
+            onChangeStyle_(*btn, _audioPlaybackDeviceMuted || _actual_vol <= 0.0001f);
+        }
+        emit onMuteChanged(_audioPlaybackDeviceMuted || _actual_vol <= 0.0001f);
+
         slider->blockSignals(true);
         slider->setValue(_actual_vol);
         slider->blockSignals(false);
+
+        _updateSlider();
     }
 }
 
 void Ui::VolumeControl::showEvent(QShowEvent* e) {
+#ifdef __APPLE__
+    // Fix blikning of volume button.
+    btn->setAttribute(Qt::WA_UnderMouse);
+#endif
     QWidget::showEvent(e);
     emit controlActivated(true);
+    checkMousePos_.start();
 }
 
 void Ui::VolumeControl::hideEvent(QHideEvent* e) {
+    checkMousePos_.stop();
     QWidget::hideEvent(e);
     emit controlActivated(false);
 }
@@ -211,9 +284,7 @@ void Ui::VolumeControl::changeEvent(QEvent* e) {
 }
 
 #define internal_spacer_w  (Utils::scale_value(24))
-#define internal_spacer_w2 ((internal_spacer_w) / 2)
-#define internal_spacer_w3 (Utils::scale_value(18))
-#define internal_spacer_w4 (Utils::scale_value(36))
+#define internal_spacer_w4 (Utils::scale_value(16))
 
 Ui::VideoPanel::VideoPanel(QWidget* parent, QWidget* container)
 : QWidget(NULL)
@@ -221,8 +292,22 @@ Ui::VideoPanel::VideoPanel(QWidget* parent, QWidget* container)
 , root_widget_(NULL)
 , _parent(parent)
 , mouse_under_panel_(false)
-, v_vol_control_(this, false, true)
-, h_vol_control_(this, true, false)
+, v_vol_control_(this, false, widgetWithoutBgEx, widgetWithBg, [] (QPushButton& btn, bool muted)
+{
+    btn.setProperty("CallPanelEnBtn", !muted);
+    btn.setProperty("CallPanelDisBtn", muted);
+    btn.setProperty("CallSoundOn", !muted);
+    btn.setProperty("CallSoundOff", muted);
+    btn.setStyle(QApplication::style());
+})
+, h_vol_control_(this, true, widgetWithoutBgEx, widgetWithoutBg, [] (QPushButton& btn, bool muted)
+{
+    btn.setProperty("CallPanelEnBtn", !muted);
+    btn.setProperty("CallPanelDisBtn", muted);
+    btn.setProperty("CallSoundOn", !muted);
+    btn.setProperty("CallSoundOff", muted);
+    btn.setStyle(QApplication::style());
+})
 , fullscreen_button_(NULL)
 , add_chat_button_(NULL)
 , settings_button_(NULL)
@@ -307,8 +392,8 @@ Ui::VideoPanel::VideoPanel(QWidget* parent, QWidget* container)
     _reset_hangup_text();
     connect(&v_vol_control_, SIGNAL(controlActivated(bool)), this, SLOT(controlActivated(bool)), Qt::QueuedConnection);
     connect(&h_vol_control_, SIGNAL(controlActivated(bool)), this, SLOT(controlActivated(bool)), Qt::QueuedConnection);
+    connect(&h_vol_control_, SIGNAL(onMuteChanged(bool)), this,    SLOT(onMuteChanged(bool)),    Qt::QueuedConnection);
 
-    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMuteChanged(const std::string&,bool)), this, SLOT(onVoipMuteChanged(const std::string&,bool)), Qt::DirectConnection);
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalAudio(bool)), this, SLOT(onVoipMediaLocalAudio(bool)), Qt::DirectConnection);
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalVideo(bool)), this, SLOT(onVoipMediaLocalVideo(bool)), Qt::DirectConnection);
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), this, SLOT(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), Qt::DirectConnection);
@@ -384,13 +469,13 @@ void Ui::VideoPanel::onSoundOnOffHover() {
     if (rc.width() >= Utils::scale_value(660)) {
         vc = &h_vol_control_;
 #ifdef __APPLE__
-        xOffset = Utils::scale_value(6); // i don't know where appeared this offsets
+        //xOffset = Utils::scale_value(6); // i don't know where appeared this offsets
         yOffset = Utils::scale_value(1);
 #endif
     } else {
         vc = &v_vol_control_;
 #ifdef __APPLE__
-        yOffset = Utils::scale_value(-8);
+        //yOffset = Utils::scale_value(-8);
         xOffset = Utils::scale_value(1);
 #endif
     }
@@ -410,8 +495,8 @@ void Ui::VideoPanel::onSoundOnOffHover() {
     vc->setFocus(Qt::OtherFocusReason);
 }
 
-void Ui::VideoPanel::onVoipMuteChanged(const std::string& device_type, bool muted) {
-    if (device_type == "audio_playback" && sound_on_off_button_) {
+void Ui::VideoPanel::onMuteChanged(bool muted) {
+    if (sound_on_off_button_) {
         sound_on_off_button_->setProperty("CallPanelEnBtn", !muted);
         sound_on_off_button_->setProperty("CallPanelDisBtn", muted);
 

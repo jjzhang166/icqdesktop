@@ -15,6 +15,10 @@ namespace Ui
 	{
         Q_OBJECT
 
+    protected:
+
+        virtual void drawLastReadAvatar(QPainter& _p, const QString& _aimid, const QString& _friendly, const int _rightPadding);
+
     // template methods
 	public:
         virtual QString formatRecentsText() const = 0;
@@ -38,11 +42,18 @@ namespace Ui
 
         virtual void setContact(const QString& _aimId);
 
+        virtual void setSender(const QString& _sender);
+
         virtual QString getContact() const { return aimId_; }
 
         virtual themes::themePtr theme() const;
 
+        virtual bool setLastRead(const bool _isLastRead);
+
+        virtual qint64 getId() const;
+
     private:
+
         bool HasTopMargin_;
 
         bool HasAvatar_;

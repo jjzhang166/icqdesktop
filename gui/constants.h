@@ -13,6 +13,8 @@
 
 #define url_command_join_livechat "chat"
 #define url_command_open_profile "people"
+#define url_command_app "app"
+#define url_command_livechats_home "livechats"
 #define url_command_show_public_livechats "show_public_livechats"
 
 

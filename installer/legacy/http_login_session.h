@@ -22,16 +22,17 @@ bool LoadSessionData(IN MAKFC_CString databaseKey,
 
 struct wim_auth_parameters
 {
-    MAKFC_CString	m_aimid;
-    MAKFC_CString	m_a_token;
-    MAKFC_CString	m_session_key;
-    MAKFC_CString	m_dev_id;
-    time_t			m_exipired_in;
-    __int64			m_time_offset;
-    MAKFC_CString	m_aim_sid;
-    MAKFC_CString	m_fetch_url;
-    __int64			m_next_fetch_time;
-    __int64			m_active_session_id;
+    MAKFC_CString m_aimid;
+    MAKFC_CString m_a_token;
+    MAKFC_CString m_session_key;
+    MAKFC_CString m_dev_id;
+    time_t m_exipired_in;
+    __int64 m_time_offset;
+    MAKFC_CString m_aim_sid;
+    MAKFC_CString m_fetch_url;
+    __int64 m_next_fetch_time;
+    __int64 m_active_session_id;
+    MAKFC_CString m_database_key;
 
     wim_auth_parameters() : 
         m_exipired_in( ::time( 0 ) ), 

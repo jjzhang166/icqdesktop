@@ -2,7 +2,7 @@
 
 #include "../../types/message.h"
 
-#include "HistoryControlPageItem.h"
+#include "MessageItemBase.h"
 
 namespace HistoryControl
 {
@@ -28,17 +28,15 @@ namespace Ui
 	public:
 		MessageData();
 
-        bool isChatAdmin() const;
-
         bool isOutgoing() const;
 
 		bool AvatarVisible_;
 		bool SenderVisible_;
 		bool IndentBefore_;
-		bool Sending_;
 		QDate Date_;
-		bool DeliveredToServer_;
-        bool DeliveredToClient_;
+
+		bool deliveredToServer_;
+
 		bool Chat_;
 		qint64 Id_;
 		QStringList NotificationsKeys_;
@@ -49,12 +47,6 @@ namespace Ui
         QString SenderFriendly_;
 		int AvatarSize_;
 		qint32 Time_;
-
-        struct IsChatAdminField
-        {
-            bool IsChatAdmin_;
-            bool Set_;
-        } IsChatAdmin_;
 
         struct IsOutgoingField
         {
@@ -72,7 +64,31 @@ namespace Ui
 
     class MessageItemLayout;
 
-	class MessageItem : public HistoryControlPageItem
+    class MessageItemsAvatars
+    {
+    private:
+        struct Info
+        {
+            QString aimId_;
+            QString friendlyName_;
+            int size_;
+            QPixmap avatar_;
+            std::function<void()> callback_;
+        };
+        std::map<QString, MessageItemsAvatars::Info> data_;
+        
+    private:
+        MessageItemsAvatars();
+        static MessageItemsAvatars &instance();
+        
+    public:
+        ~MessageItemsAvatars();
+        
+        static QPixmap &get(const QString &aimId, const QString &friendlyName, int size, const std::function<void()> &callback);
+        static void reset(const QString &aimId);
+    };
+    
+	class MessageItem : public MessageItemBase
 	{
         friend class MessageItemLayout;
 
@@ -90,11 +106,14 @@ namespace Ui
 		virtual QString formatRecentsText() const override;
 
         virtual void setContact(const QString& _aimId) override;
+        virtual void setSender(const QString& _sender) override;
 
-		void selectByPos(const QPoint& pos);
+		void selectByPos(const QPoint& pos, bool doNotSelectImage = false);
 		QString selection(bool textonly = false);
 
 		void setId(qint64 id, const QString& aimId);
+        qint64 getId() const override;
+
 		void setNotificationKeys(const QStringList& keys);
 		const QStringList& getNotificationKeys();
 		void waitForAvatar(bool wait);
@@ -103,31 +122,38 @@ namespace Ui
         void setMchatSenderAimId(const QString& senderAimId);
         inline const QString& getMchatSenderAimId() const { return MessageSenderAimId_; };
 		void setMchatSender(const QString& sender);
-		void setOutgoing(const bool isOutgoing, const bool sending, const bool isDeliveredToServer, const bool isDeliveredToClient, const bool isMChat);
+
+		void setOutgoing(
+            const bool _isOutgoing, 
+            const bool _isDeliveredToServer, 
+            const bool _isMChat,
+            const bool _isInit = false);
+
+        virtual bool setLastRead(const bool _isLastRead) override;
+
+        virtual bool isOutgoing() const override;
+
 		void setTime(const int32_t time);
 		void setContentWidget(::HistoryControl::MessageContentWidget *widget);
 		void setStickerText(const QString& text);
 		virtual void setTopMargin(const bool value) override;
         virtual themes::themePtr theme() const override;
 		void setDate(const QDate& date);
-		void replace();
 		bool selected();
 		QDate date() const;
-		qint64 getId() const;
 		bool isRemovable() const;
         bool isUpdateable() const;
 		QString toLogString() const;
-        virtual void select();
-        virtual void clearSelection();
+        virtual void select() override;
+        virtual void clearSelection() override;
         void manualUpdateGeometry(const int32_t widgetWidth);
-        void setChatAdminFlag(const bool isChatAdmin);
         void updateMenus();
         QString contentClass() const;
 
 		void updateWith(MessageItem &messageItem);
 		std::shared_ptr<MessageData> getData();
 
-        void loadAvatar(const QString& sender, const QString& senderName, const int size);
+        void loadAvatar(const int size);
 
         virtual QSize sizeHint() const override;
 
@@ -135,15 +161,10 @@ namespace Ui
         bool updateData();
 
 	private Q_SLOTS:
-        void deliveredToClient(qint64);
-		void deliveredToClient(QString);
 		void deliveredToServer(QString);
-		void avatarChanged(QString);
+        void readByClient(QString _aimid, qint64 _id);
         void avatarClicked();
 		void menu(QAction*);
-
-        void createContentMenu();
-        void createMenu();
 
 	protected:
         virtual void leaveEvent(QEvent*) override;
@@ -159,9 +180,6 @@ namespace Ui
         virtual void resizeEvent(QResizeEvent*) override;
 
 	private:
-        void addDeleteAllMenuItem();
-
-        void initMenu();
 
         void createMessageBody();
 
@@ -193,21 +211,13 @@ namespace Ui
 
         const QRect& getAvatarRect() const;
 
-        Themes::PixmapResourceId getDeliveryStatusResId() const;
-
         void initializeContentWidget();
 
         bool isAvatarVisible() const;
 
         bool isBlockItem() const;
 
-        bool isOutgoing() const;
-
         bool isOverAvatar(const QPoint &p) const;
-
-        bool isSending() const;
-
-        void removeDeleteAllMenuItem();
 
         void updateBubbleGeometry(const QRect &bubbleGeometry);
 
@@ -221,13 +231,17 @@ namespace Ui
 
         void updateStatusGeometry(const QRect &contentGeometry);
 
-		void connectDeliverySignals(const bool isConnected);
 		bool isMessageBubbleVisible() const;
+
+        void trackContentMenu(const QPoint& _pos);
+        void trackMenu(const QPoint& _pos);
 
 		TextEditEx *MessageBody_;
 		TextEmojiWidget *Sender_;
         QString MessageSenderAimId_;
 		::HistoryControl::MessageContentWidget *ContentWidget_;
+
+        bool lastRead_;
 
 		SelectDirection Direction_;
 		ContextMenu* Menu_;
@@ -235,16 +249,19 @@ namespace Ui
 
 		std::shared_ptr<MessageData> Data_;
 
-        QPixmap Avatar_;
-
         QPainterPath Bubble_;
 
         mutable QRect AvatarRect_;
 
         bool ClickedOnAvatar_;
 
+        bool isConnectedToDeliveryEvent_;
+        bool isConnectedReadEvent_;
+
         MessageStatusWidget *StatusWidget_;
 
         MessageItemLayout *Layout_;
+        int start_select_y_;
+        bool is_selection_;
 	};
 }

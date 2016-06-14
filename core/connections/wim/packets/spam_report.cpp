@@ -8,6 +8,7 @@ using namespace core;
 using namespace wim;
 
 const std::string spam_report_url = "https://mlink.mail.ru:443/complaint/icq";
+//const std::string spam_report_url = "http://mras-test1.mail.ru/complaint/icq";
 
 spam_report::spam_report(
     const wim_packet_params& _params,
@@ -97,7 +98,7 @@ std::string spam_report::get_report_xml(time_t _current_time)
 
 std::string spam_report::get_report()
 {
-    time_t current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    time_t current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - params_.time_offset_;
 
     std::string salt = std::to_string(static_cast<int>(current_time / 86400));
     std::string key = std::string("{49712A6B-E30F-4EF9-82BF-AC4133DEDF8C}") + salt;

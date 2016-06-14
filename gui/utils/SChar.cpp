@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "SChar.h"
+#include "../cache/emoji/EmojiDb.h"
 
 namespace
 {
@@ -83,7 +84,7 @@ namespace Utils
 	bool SChar::IsSimple() const
 	{
 		return (
-            (LengthQChars() == 1) && 
+            (LengthQChars() == 1) &&
             !IsSingleCharacterEmoji()
         );
 	}
@@ -158,11 +159,12 @@ namespace Utils
 	{
 		QString result;
 
-		const auto maxSize = 4;
-		result.reserve(maxSize);
+		const auto MAX_LENGTH = 4;
+		result.reserve(MAX_LENGTH);
 
 		if (IsNull())
 		{
+            assert(result.length() <= MAX_LENGTH);
 			return result;
 		}
 
@@ -178,6 +180,7 @@ namespace Utils
 
 		if (!HasExt())
 		{
+            assert(result.length() <= MAX_LENGTH);
 			return result;
 		}
 
@@ -191,6 +194,7 @@ namespace Utils
 			result += QChar(Ext_);
 		}
 
+        assert(result.length() <= MAX_LENGTH);
 		return result;
 	}
 
@@ -287,41 +291,12 @@ namespace
 {
 	bool IsSingleCharacterEmoji(const uint32_t main)
 	{
-		const auto isEmoji = (
-			(main == 0x00a9) || (main == 0x00ae) || (main == 0x203c) || (main == 0x2049)
-			|| ((main >= 0x1f004) && (main <= 0x1f9c0))
-			|| ((main >= 0x2122) && (main <= 0x21aa)) || ((main >= 0x231a) && (main <= 0x27bf))
-			|| ((main >= 0x2934) && (main <= 0x2935)) || ((main >= 0x2b05) && (main <= 0x2b55)) || ((main >= 0x3030) && (main <= 0x3299))
-		);
-		if (isEmoji)
-		{
-			return true;
-		}
-
-		return false;
+        return Emoji::GetEmojiInfoByCodepoint(main, 0) != Emoji::EmptyEmoji;
 	}
 
 	bool IsTwoCharacterEmoji(const uint32_t main, const uint32_t ext)
 	{
-		if (ext == CH_KEYCAP)
-		{
-			const auto isNumber = ((main >= '0') || (main <= '9'));
-			const auto isSharp = (main == '#');
-
-			if (isNumber || isSharp)
-			{
-				return true;
-			}
-		}
-		const auto isEyeEmoji = ((main == 0x1f441) && (ext == 0x1f5e8));
-		if (isEyeEmoji)
-		{
-			return true;
-		}
-		const auto FLAG_LOW = 0x1f1e6;
-		const auto FLAG_HIGH = 0x1f1ff;
-		const auto isFlag = ((main >= FLAG_LOW) && (main <= FLAG_HIGH) && (ext >= FLAG_LOW) && (ext <= FLAG_HIGH));
-		return isFlag;
+		 return Emoji::GetEmojiInfoByCodepoint(main, ext) != Emoji::EmptyEmoji;
 	}
 
 	uint32_t ReadNextCodepoint(QTextStream &s)

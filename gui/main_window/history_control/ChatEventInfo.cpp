@@ -29,7 +29,7 @@ namespace HistoryControl
 			type, isOutgoing, myAimid
 		));
 
-        const auto isGeneric = (type == core::chat_event_type::generic);
+        const auto isGeneric = (type == chat_event_type::generic);
         if (isGeneric)
         {
             assert(!info.is_value_exist("sender_friendly"));
@@ -41,10 +41,11 @@ namespace HistoryControl
             return eventInfo;
         }
 
-		const auto isBuddyReg = (type == core::chat_event_type::buddy_reg);
-		const auto isBuddyFound = (type == core::chat_event_type::buddy_found);
-		const auto isBirthday = (type == core::chat_event_type::birthday);
-		if (isBuddyReg || isBuddyFound || isBirthday)
+		const auto isBuddyReg = (type == chat_event_type::buddy_reg);
+		const auto isBuddyFound = (type == chat_event_type::buddy_found);
+		const auto isBirthday = (type == chat_event_type::birthday);
+        const auto isMessageDeleted = (type == chat_event_type::message_deleted);
+		if (isBuddyReg || isBuddyFound || isBirthday || isMessageDeleted)
 		{
 			assert(!info.is_value_exist("sender_friendly"));
 			return eventInfo;
@@ -54,14 +55,14 @@ namespace HistoryControl
 			info.get<QString>("sender_friendly")
 		);
 
-		const auto isAddedToBuddyList = (type == core::chat_event_type::added_to_buddy_list);
-        const auto isAvatarModified = (type == core::chat_event_type::avatar_modified);
+		const auto isAddedToBuddyList = (type == chat_event_type::added_to_buddy_list);
+        const auto isAvatarModified = (type == chat_event_type::avatar_modified);
 		if (isAddedToBuddyList || isAvatarModified)
 		{
 			return eventInfo;
 		}
 
-		const auto isChatNameModified = (type == core::chat_event_type::chat_name_modified);
+		const auto isChatNameModified = (type == chat_event_type::chat_name_modified);
 		if (isChatNameModified)
 		{
 			const auto newChatName = info.get<QString>("chat/new_name");
@@ -72,7 +73,7 @@ namespace HistoryControl
 			return eventInfo;
 		}
 
-        const auto isChatDescriptionModified = (type == core::chat_event_type::chat_description_modified);
+        const auto isChatDescriptionModified = (type == chat_event_type::chat_description_modified);
         if (isChatDescriptionModified)
         {
             const auto newDescription = info.get<QString>("chat/new_description");
@@ -82,11 +83,11 @@ namespace HistoryControl
             return eventInfo;
         }
 
-		const auto isMchatAddMembers = (type == core::chat_event_type::mchat_add_members);
-		const auto isMchatInvite = (type == core::chat_event_type::mchat_invite);
-		const auto isMchatLeave = (type == core::chat_event_type::mchat_leave);
-		const auto isMchatDelMembers = (type == core::chat_event_type::mchat_del_members);
-		const auto isMchatKicked = (type == core::chat_event_type::mchat_kicked);
+		const auto isMchatAddMembers = (type == chat_event_type::mchat_add_members);
+		const auto isMchatInvite = (type == chat_event_type::mchat_invite);
+		const auto isMchatLeave = (type == chat_event_type::mchat_leave);
+		const auto isMchatDelMembers = (type == chat_event_type::mchat_del_members);
+		const auto isMchatKicked = (type == chat_event_type::mchat_kicked);
 		const auto hasMchatMembers = (isMchatAddMembers || isMchatInvite || isMchatLeave || isMchatDelMembers || isMchatKicked);
 		if (hasMchatMembers)
 		{
@@ -155,6 +156,9 @@ namespace HistoryControl
 			case chat_event_type::mchat_kicked:
 				return formatMchatKickedText();
 
+            case chat_event_type::message_deleted:
+                return formatMessageDeletedText();
+
             default:
                 break;
 		}
@@ -195,12 +199,12 @@ namespace HistoryControl
 
         if (IsOutgoing_)
         {
-            result += QT_TRANSLATE_NOOP("chat_event", "You changed picture of chat");
+            result += QT_TRANSLATE_NOOP("chat_event", "You changed picture of group");
         }
         else
         {
             result += SenderFriendly_;
-            result += QT_TRANSLATE_NOOP("chat_event", " changed picture of chat");
+            result += QT_TRANSLATE_NOOP("chat_event", " changed picture of group");
         }
 
         return result;
@@ -210,7 +214,11 @@ namespace HistoryControl
 	{
 		assert(Type_ == chat_event_type::birthday);
 
-		return QT_TRANSLATE_NOOP("chat_event", "Has a birthday today!");
+        QString result;
+        result.reserve(512);
+
+        result += QT_TRANSLATE_NOOP("chat_event", " has birthday!");
+        return result;
 	}
 
 	QString ChatEventInfo::formatBuddyFound() const
@@ -274,7 +282,7 @@ namespace HistoryControl
 
 		if (IsOutgoing_)
 		{
-			result += QT_TRANSLATE_NOOP("chat_event", "You invited ");
+			result += QT_TRANSLATE_NOOP("chat_event", "You added ");
 			result += formatMchatMembersList(false);
 
 			return result;
@@ -283,12 +291,12 @@ namespace HistoryControl
 		if (joinedSomeone)
 		{
 			result += SenderFriendly_;
-			result += QT_TRANSLATE_NOOP("chat_event", " joined the chat");
+			result += QT_TRANSLATE_NOOP("chat_event", " has joined group");
 
 			return result;
 		}
 		result += SenderFriendly_;
-        result += QT_TRANSLATE_NOOP("chat_event", " invited ");
+        result += QT_TRANSLATE_NOOP("chat_event", " added ");
         result += formatMchatMembersList(false);
 
 		return result;
@@ -329,11 +337,11 @@ namespace HistoryControl
 		const auto joinedMyselfOnly = isMyAimid(SenderFriendly_);
 		if ((IsOutgoing_) && (joinedMyselfOnly))
 		{
-			result += QT_TRANSLATE_NOOP("chat_event", "You joined the chat");
+			result += QT_TRANSLATE_NOOP("chat_event", "You have joined group");
 			return result;
 		}
 		result += SenderFriendly_;
-		result += QT_TRANSLATE_NOOP("chat_event", " invited ");
+		result += QT_TRANSLATE_NOOP("chat_event", " added ");
 		result += formatMchatMembersList(false);
 
 		return result;
@@ -399,11 +407,11 @@ namespace HistoryControl
 
 		if (hasMultipleMembers())
 		{
-			result += QT_TRANSLATE_NOOP3("chat_event", " left the chat", "many");
+			result += QT_TRANSLATE_NOOP3("chat_event", " have left group", "many");
 		}
 		else
 		{
-			result += QT_TRANSLATE_NOOP3("chat_event", " left the chat", "one");
+			result += QT_TRANSLATE_NOOP3("chat_event", " has left group", "one");
 		}
 
 		return result;
@@ -481,6 +489,16 @@ namespace HistoryControl
 		const auto emojiSize = Emoji::GetFirstLesserOrEqualSizeAvailable(sizePx);
 		return Emoji::GetEmoji(birthdayEmojiId, 0, emojiSize);
 	}
+    
+    core::chat_event_type ChatEventInfo::eventType() const
+    {
+        return Type_;
+    }
+
+    QString ChatEventInfo::formatMessageDeletedText() const
+    {
+        return QT_TRANSLATE_NOOP("chat_event", "Deleted message");
+    }
 
 	bool ChatEventInfo::isMyAimid(const QString &aimId) const
 	{

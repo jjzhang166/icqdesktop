@@ -171,14 +171,11 @@ namespace
 
 		auto resPath = pathIter->second;
 		resPath = resPath.arg(GetThemeNameById(ThemeId_));
-		if (!Pixmap_.load(resPath))
-		{
-			assert(!"failed to load a pixmap from resources");
-		}
+        Pixmap_.load(resPath);
+
+		assert(!Pixmap_.isNull() || "failed to load a pixmap from resources");
 
         Utils::check_pixel_ratio(Pixmap_);
-
-		assert(!Pixmap_.isNull());
 	}
 
 	void InitResourcePaths()

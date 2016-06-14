@@ -103,8 +103,8 @@ namespace {
 
         ws.avatarMain[voip2::WindowTheme_One].height = voip_manager::kAvatarDefaultSize * scale;
         ws.avatarMain[voip2::WindowTheme_One].width  = voip_manager::kAvatarDefaultSize * scale;
-        ws.avatarMain[voip2::WindowTheme_One].textHeight = voip_manager::kNickTextH;
-        ws.avatarMain[voip2::WindowTheme_One].textWidth  = voip_manager::kNickTextW;
+        ws.avatarMain[voip2::WindowTheme_One].textHeight = voip_manager::kNickTextH * scale;
+        ws.avatarMain[voip2::WindowTheme_One].textWidth  = voip_manager::kNickTextW * scale;
 
         ws.previewIsButton = true;
         ws.lentaBetweenChannelOffset = 20 * scale;
@@ -175,7 +175,7 @@ namespace {
     template<typename __Param>
     void __signal_to_ui(core::core_dispatcher& dispatcher, voip_manager::eNotificationTypes ntype, const __Param& vtype) {
         core::coll_helper coll(dispatcher.create_collection(), true); 
-        ntype >> coll; 
+        ntype >> coll;
         vtype >> coll;
         dispatcher.post_message_to_gui("voip_signal", 0, coll.get());
     }
@@ -243,12 +243,49 @@ namespace {
         ReleaseDC(NULL, hdc);
         return (void*)hBitmap;
 #else
-        CFDataRef imageData     = CFDataCreate(NULL, (const uint8_t*)data, width * height * bps / 8);
-        CGImageSourceRef source = CGImageSourceCreateWithData(imageData, NULL);
-        CGImageRef cgImage      = CGImageSourceCreateImageAtIndex(source, 0, NULL);
         
-        CFRelease(source);
-        CFRelease(imageData);
+        // We need to premultiply alpha and swap red and green channel, becuase apple does not support our format.
+        unsigned bytesPerRow = (bps>>3)*width;
+        std::shared_ptr<unsigned char> pMacCorrectImageDataPtr (new unsigned char[bytesPerRow * height], [=](unsigned char* pbuffer)
+            {
+                delete[] pbuffer;
+            });
+        
+        memcpy(pMacCorrectImageDataPtr.get(), data, height * bytesPerRow);
+        
+        // We make premultiplay and swap channels only for RGBA8
+        if (bps == 32)
+        {
+            unsigned char* pMacCorrectImageData = pMacCorrectImageDataPtr.get();
+            
+            for (int i = 0; i < height; i++)
+            {
+                unsigned char* pRow = pMacCorrectImageData;
+                
+                for (int j = 0; j < width; j++)
+                {
+                    unsigned char red   = pRow[2];
+                    unsigned char blue  = pRow[0];
+                    
+                    pRow[0] = ((unsigned)red * pRow[3]) / 255; // Red
+                    pRow[1] = ((unsigned)pRow[1] * pRow[3]) / 255; // Green
+                    pRow[2] = ((unsigned)blue * pRow[3]) / 255; // Blue
+                    pRow[3] = pRow[3]; // Alpha
+                    
+                    pRow += 4;
+                }
+                
+                pMacCorrectImageData += bytesPerRow;
+            }
+        }
+
+        CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
+        
+        CGContextRef bitmapContext = CGBitmapContextCreate((void *)pMacCorrectImageDataPtr.get(), width, height, 8, bytesPerRow, colorspace, (uint32_t)kCGImageAlphaPremultipliedLast);
+        CGImageRef cgImage = CGBitmapContextCreateImage(bitmapContext);
+        
+        CFRelease(bitmapContext);
+        CGColorSpaceRelease(colorspace);
         
         return cgImage;
 #endif//WIN32
@@ -455,6 +492,14 @@ namespace voip_manager {
             kCallState_Disconnected,
         };
 
+        enum
+        {
+            kVolumePos_Pre = 0,
+            kVolumePos_Cur = 1,
+            ///////////////////
+            kVolumePos_Tot
+        };
+
         struct VoipSettings {
             bool enableRtpDump;
             bool enableVoipLogs;
@@ -485,7 +530,7 @@ namespace voip_manager {
             bool  local_aud_en;
             bool  mute_en;
             bool  incomingSoundsMuted;
-            float volume;
+            float volume[kVolumePos_Tot];
 
             std::string aPlaybackDevice;
             std::string aCaptureDevice;
@@ -495,8 +540,11 @@ namespace voip_manager {
             std::string aCaptureDefDevice;
             std::string vCaptureDefDevice;
 
-            VoipDesc() : local_aud_en(true), local_cam_en(true), mute_en(false), volume(0), incomingSoundsMuted(false)
-            { }
+            VoipDesc() : local_aud_en(true), local_cam_en(true), mute_en(false), incomingSoundsMuted(false)
+            {
+                volume[kVolumePos_Pre] = 0.0f; 
+                volume[kVolumePos_Cur] = 0.0f;
+            }
         };
 
         struct WindowDesc {
@@ -532,6 +580,9 @@ namespace voip_manager {
 
         core::core_dispatcher& _dispatcher;
         bool _voipDestroyed;
+
+		// temp value of mute fix, we load it from settings once and reuse.
+		bool _voipMuteFix;
     private:
         std::shared_ptr<voip2::Voip2> _get_engine(bool skipCreation = false);
 
@@ -571,6 +622,11 @@ namespace voip_manager {
 
         void _window_set_bg(void* hwnd, void* hbmp);
         void _window_set_av(const std::string& contact, voip2::AvatarType type, void* hbmp);
+
+		void check_mute_compatibility(); // Make mute compatible with prev versions.
+
+		void set_speaker_volume_from_settings(); // Set mute or not, depends of sound enable settings.
+            
     public:
         //=========================== ICallManager API ===========================
         void call_set_proxy               (const VoipProxySettings& proxySettings) override;
@@ -628,7 +684,7 @@ namespace voip_manager {
         void FrameSizeChanged         (voip::hwnd_t hwnd, float aspectRatio) override;
         void InterruptByGsmCall       (bool gsmCallStarted) override;
         void VideoStreamChanged       (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, bool havePicture) override;
-        void MinimalBandwidthMode_StateChanged(bool mbmEnabledLocal, bool mbmEnabledRemote);
+        void MinimalBandwidthMode_StateChanged(bool mbmEnabled);
 
         //=========================== VoipConnection ===========================
         void SendVoipMsg(const char* from, voip2::VoipOutgoingMsg voipOutgoingMsg, const char *data, unsigned len, unsigned msg_idx) override;
@@ -677,7 +733,9 @@ namespace voip_manager {
         , _voipDestroyed(false)
         , sendViaIm_(false)
         , _defaultDevicesStored(false)
-        , _dispatcher(dispatcher) {
+        , _dispatcher(dispatcher)
+		, _voipMuteFix(false)
+	{
 
         srand(time(NULL));
 
@@ -938,6 +996,7 @@ namespace voip_manager {
             _init_signaling(_engine);
             _init_media    (_engine);
             _init_sounds_sc(_engine);
+            
 
             std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
             _engine->MuteAllIncomingSoundNotifications(_voip_desc.incomingSoundsMuted);
@@ -949,7 +1008,7 @@ namespace voip_manager {
 
             _update_device_list(AudioPlayback);
             _update_device_list(AudioRecording);
-            _update_device_list(VideoCapturing);
+            _update_device_list(VideoCapturing);            
         }
         return _engine;
     }
@@ -1075,7 +1134,7 @@ namespace voip_manager {
         auto engine = _get_engine();
         VOIP_ASSERT_RETURN(!!engine);
 
-        engine->EnableOutgoingAudio(enable);
+        engine->SetDeviceMute(voip2::AudioRecording, !enable);
 
         std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
         _voip_desc.local_aud_en = enable;
@@ -1118,7 +1177,7 @@ namespace voip_manager {
         
     }
 
-    void VoipManagerImpl::MinimalBandwidthMode_StateChanged(bool mbmEnabledLocal, bool mbmEnabledRemote)
+    void VoipManagerImpl::MinimalBandwidthMode_StateChanged(bool /*mbmEnabled*/)
     {
         
     }
@@ -1271,6 +1330,7 @@ namespace voip_manager {
         }
 
         media_video_en(video);
+		check_mute_compatibility();
         engine->CallStart(contact.account.c_str(), contact.contact.c_str());
     }
 
@@ -1317,6 +1377,7 @@ namespace voip_manager {
         VOIP_ASSERT_RETURN(!!engine);
 
         media_video_en(video);
+		check_mute_compatibility();
         engine->CallAccept(contact.account.c_str(), contact.contact.c_str());
     }
 
@@ -1446,6 +1507,15 @@ namespace voip_manager {
             getSecWindowSettings(ws, window_description.scaleCoeffitient);
         }
 
+        void* cameraStatusHBMP = NULL;
+        if (windowParams.cameraStatus.bitmap.data && windowParams.cameraStatus.bitmap.size && windowParams.cameraStatus.bitmap.w && windowParams.cameraStatus.bitmap.h) {
+            cameraStatusHBMP = bitmapHandleFromRGBData(windowParams.cameraStatus.bitmap.w, windowParams.cameraStatus.bitmap.h, sizeof(unsigned) * 8, windowParams.cameraStatus.bitmap.data, true);
+
+            if (cameraStatusHBMP) {
+                ws.avatarMain[voip2::LayoutType_One].status.videoPaused = cameraStatusHBMP;
+            }
+        }
+
         void* hbmp = NULL;
         if (windowParams.watermark.bitmap.data && windowParams.watermark.bitmap.size && windowParams.watermark.bitmap.w && windowParams.watermark.bitmap.h) {
             hbmp = bitmapHandleFromRGBData(windowParams.watermark.bitmap.w, windowParams.watermark.bitmap.h, sizeof(unsigned) * 8, windowParams.watermark.bitmap.data, true);
@@ -1467,7 +1537,7 @@ namespace voip_manager {
         if (windowParams.isSystem) {
             _set_layout(windowParams.hwnd, voip2::LayoutType_Two);
         } else if (windowParams.isPrimary) {
-            engine->WindowSetAvatarPosition(windowParams.hwnd, voip2::Position_Left | voip2::Position_Top);
+            engine->WindowSetAvatarPosition(windowParams.hwnd, voip2::Position_HCenter | voip2::Position_VCenter);
             _update_layout();
         } else {
             _set_layout(windowParams.hwnd, voip2::LayoutType_Two);
@@ -1475,6 +1545,9 @@ namespace voip_manager {
 
         if (hbmp) {
             bitmapReleaseHandle(hbmp);
+        }
+        if (cameraStatusHBMP) {
+            bitmapReleaseHandle(cameraStatusHBMP);
         }
     }
 
@@ -1548,11 +1621,22 @@ namespace voip_manager {
         VOIP_ASSERT_RETURN(bmp.bitmap.size);
         VOIP_ASSERT_RETURN(bmp.bitmap.data);
 
-        void* hbmp = bitmapHandleFromRGBData(bmp.bitmap.w, bmp.bitmap.h, sizeof(unsigned) * 8, bmp.bitmap.data, true);
-        VOIP_ASSERT_RETURN(hbmp);
+        std::lock_guard<std::recursive_mutex> __lock(_callsMx);
+        bool loadAvatar = (voip2::AvatarType_Camera == bmp.type) || (voip2::AvatarType_CameraCrossed == bmp.type);
+        for (unsigned ix = 0; ix < _calls.size(); ++ix) {
+            CallDescPtr call = _calls[ix];
+            VOIP_ASSERT_ACTION(!!call, continue);
 
-        _window_set_av(bmp.contact, bmp.type, hbmp);
-        bitmapReleaseHandle(hbmp);
+            loadAvatar = (call->call_state >= kCallState_Accepted) || loadAvatar;
+        }
+
+        if (loadAvatar) {
+            void* hbmp = bitmapHandleFromRGBData(bmp.bitmap.w, bmp.bitmap.h, sizeof(unsigned) * 8, bmp.bitmap.data, true);
+            VOIP_ASSERT_RETURN(hbmp);
+
+            _window_set_av(bmp.contact, bmp.type, hbmp);
+            bitmapReleaseHandle(hbmp);
+        }
     }
 
     void VoipManagerImpl::window_switch_layout(void* hwnd) {
@@ -1712,7 +1796,8 @@ namespace voip_manager {
     void VoipManagerImpl::AudioDeviceVolumeChanged(voip2::DeviceType deviceType, float volume) {
         if (voip2::AudioPlayback == deviceType) {
             std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
-            _voip_desc.volume  = volume;
+            _voip_desc.volume[kVolumePos_Pre] = _voip_desc.volume[1];
+            _voip_desc.volume[kVolumePos_Cur] = volume;
         }
 
         DeviceVol vol;
@@ -1831,9 +1916,6 @@ namespace voip_manager {
 
         if (start_new_call_event) {
             VOIP_ASSERT_RETURN(!!_call_create(account_uid, user_id, desc));
-            if (!is_phone) {
-                _load_avatars(account_uid, user_id);
-            }
         }
 
         const CallKey key = desc ? desc->call_key : getHash(account_uid, user_id);
@@ -1883,6 +1965,10 @@ namespace voip_manager {
                     notification        = is_phone ? kNotificationType_PhoneCallAccepted : kNotificationType_CallOutAccepted;
                     _notify_remote_video_state_changed();
                     _update_video_window_state();
+
+                    if (!is_phone) {
+                        _load_avatars(account_uid, user_id);
+                    }
                 }
                 break;
 
@@ -1912,6 +1998,10 @@ namespace voip_manager {
                     _voip_desc.local_cam_en = SE_INCOMING_ACCEPTED_VIDEO == sessionEvent;
                     notification            = kNotificationType_CallInAccepted;
                     _update_video_window_state();
+
+                    if (!is_phone) {
+                        _load_avatars(account_uid, user_id);
+                    }
                 }
                 break;
 
@@ -1981,6 +2071,42 @@ namespace voip_manager {
                 }
                 break;
 
+            case SE_CIPHER_ENABLED:
+                {
+                    auto e = _get_engine(true);
+                    VOIP_ASSERT(!!e);
+                    if (!!e) {
+                        char sas[MAX_SAS_LENGTH] = { 0 };
+
+                        CipherState state;
+                        state.state = CipherState::kCipherStateUnknown;
+                        if (e->GetCipherSAS(account_uid.c_str(), user_id.c_str(), sas)) {
+                            state.state      = CipherState::kCipherStateEnabled;
+                            state.secureCode = sas;
+                            SIGNAL_NOTIFICATOION(kNotificationType_CipherStateChanged, &state);
+                        }
+                    }
+                }
+                break;
+
+            case SE_CIPHER_NOT_SUPPORTED_BY_PEER:
+                {
+                    CipherState state;
+                    state.state = CipherState::kCipherStateNotSupportedByPeer;
+
+                    SIGNAL_NOTIFICATOION(kNotificationType_CipherStateChanged, &state);
+                }
+                break;
+
+            case SE_CIPHER_FAILED:
+                {
+                    CipherState state;
+                    state.state = CipherState::kCipherStateFailed;
+
+                    SIGNAL_NOTIFICATOION(kNotificationType_CipherStateChanged, &state);
+                }
+                break;
+
             case SE_CLOSED_BY_REMOTE_DECLINE:
             case SE_CLOSED_BY_REMOTE_HANDLED_BY_ANOTHER_INSTANCE:
             case SE_CLOSED_BY_REMOTE_BUSY:
@@ -2017,10 +2143,11 @@ namespace voip_manager {
                     std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
                     auto e = _get_engine();
                     _voip_desc.mute_en = e->GetDeviceMute(voip2::AudioPlayback);
-                    _voip_desc.volume  = e->GetDeviceVolume(voip2::AudioPlayback);
+                    _voip_desc.volume[kVolumePos_Pre] = _voip_desc.volume[1];
+                    _voip_desc.volume[kVolumePos_Cur] = e->GetDeviceVolume(voip2::AudioPlayback);
 
                     vol.type   = voip2::AudioPlayback;
-                    vol.volume = _voip_desc.volume;
+                    vol.volume = _voip_desc.volume[kVolumePos_Cur];
 
                     dm.mute = _voip_desc.mute_en;
                     dm.type = voip2::AudioPlayback;
@@ -2285,9 +2412,11 @@ namespace voip_manager {
         const auto call_count                  = call_get_count();
         const bool have_established_connection = call_have_established_connection();
         const bool have_outgoing               = _call_have_outgoing_connection();
-        const bool have_video                  = local_video_enabled() || remote_video_enabled();
+        const bool have_video                  = true;//local_video_enabled() || remote_video_enabled(); // not remove video window on off camera both
 
-        const bool enable_video = call_count > 1 || (have_video && call_count && (have_established_connection || have_outgoing));
+		// We to uncomment "call_count > 1" only if we will have video conference in client.
+		// For now it bring bug with unneeded video window.
+        const bool enable_video = /*call_count > 1 ||*/ (have_video && call_count && (have_established_connection || have_outgoing));
         SIGNAL_NOTIFICATOION(kNotificationType_ShowVideoWindow, &enable_video);
     }
 
@@ -2314,14 +2443,24 @@ namespace voip_manager {
         auto engine = _get_engine();
         VOIP_ASSERT_RETURN(!!engine);
 
-        engine->SetDeviceMute(deviceType, mute);
+        VOIP_ASSERT_RETURN(voip2::AudioPlayback == deviceType);
+
+        std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
+        if (mute) {
+            engine->SetDeviceVolume(deviceType, 0.0f);
+        } else {
+            float volume = _voip_desc.volume[kVolumePos_Pre] <= 0.0001f ? 0.5f : _voip_desc.volume[kVolumePos_Pre];
+            engine->SetDeviceVolume(deviceType, volume);
+        }
     }
 
     bool VoipManagerImpl::get_device_mute(voip2::DeviceType deviceType) {
         auto engine = _get_engine();
         VOIP_ASSERT_RETURN_VAL(!!engine, false);
 
-        return engine->GetDeviceMute(deviceType);
+        VOIP_ASSERT_RETURN_VAL(voip2::AudioPlayback == deviceType, false);
+        std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
+        return _voip_desc.volume[kVolumePos_Cur] <= 0.0001f;
     }
 
     void VoipManagerImpl::set_device_volume(voip2::DeviceType deviceType, float volume) {
@@ -2349,6 +2488,41 @@ namespace voip_manager {
         SIGNAL_NOTIFICATOION(kNotificationType_VoipResetComplete, &_voipDestroyed);
     }
 
+	void VoipManagerImpl::check_mute_compatibility()
+	{
+#ifdef _WIN32
+		// In prev version in mute we set SetDeviceMute to true, but
+		// now we change volume of sounde to 0, to make mute. 
+		// This code make mute comportable with prev versions.
+		if (!_voipMuteFix)
+		{
+			core::core_dispatcher& dispatcher = _dispatcher;
+			auto engine = _get_engine();
+			VOIP_ASSERT_RETURN(!!engine);
+
+			_dispatcher.excute_core_context([this, engine] () 
+			{
+				_voipMuteFix = _dispatcher.get_voip_mute_fix_flag();
+				if (!_voipMuteFix)
+				{
+					// Get prev mute value.
+					bool bPrevMute = engine->GetDeviceMute(voip2::AudioPlayback);
+
+					if (bPrevMute)
+					{
+						// Set mute to false and use current mute logic.
+						engine->SetDeviceMute(voip2::AudioPlayback, false);
+						set_device_mute(voip2::AudioPlayback, true);
+					}
+
+					// Ok. We made mute fix. Save it in settings.
+					_dispatcher.set_voip_mute_fix_flag(true);
+				}
+			});
+		}
+#endif
+	}    
+    
     VoipManager::VoipManager(core::core_dispatcher& dispatcher) {
         _impl.reset(new(std::nothrow) VoipManagerImpl(dispatcher));
     }

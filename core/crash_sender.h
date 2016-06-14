@@ -1,7 +1,6 @@
 #pragma once
 #ifdef _WIN32
 
-#include "../common.shared/keys.h"
 #include "proxy_settings.h"
 
 namespace core
@@ -10,7 +9,7 @@ namespace core
 
     namespace dump
     {
-        const static std::string hockeyapp_url =  "https://rink.hockeyapp.net/api/2/apps/" + hockey_app_id + "/crashes/upload";
+        const std::string& get_hockeyapp_url();
 
         class report_sender : public std::enable_shared_from_this<report_sender>
         {

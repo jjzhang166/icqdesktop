@@ -102,6 +102,8 @@ namespace core
         virtual void erase_auth_data() = 0; // when logout
         virtual void start_session(bool _is_ping = false) = 0;
         virtual void handle_net_error(int32_t err) = 0;
+        
+        virtual void phoneinfo(int64_t _seq, const std::string &phone, const std::string &gui_locale) = 0;
 
         // messaging functions
         virtual void send_message_to_contact(
@@ -126,6 +128,7 @@ namespace core
 
         // avatar function
         virtual void get_contact_avatar(int64_t _seq, const std::string& _contact, int32_t _avatar_size) = 0;
+        virtual void show_contact_avatar(int64_t _seq, const std::string& _contact, int32_t _avatar_size) = 0;
 
         // history functions
         virtual void get_archive_messages(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) = 0;
@@ -142,8 +145,16 @@ namespace core
 
         virtual void get_stickers_meta(int64_t _seq, const std::string& _size) = 0;
         virtual void get_sticker(int64_t _seq, int32_t _set_id, int32_t _sticker_id, core::sticker_size _size) = 0;
+        virtual void get_chat_home(int64_t _seq, const std::string& _tag) = 0;
         virtual void get_chat_info(int64_t _seq, const std::string& _aimid, const std::string& _stamp, int32_t _limit) = 0;
+        virtual void get_chat_blocked(int64_t _seq, const std::string& _aimid) = 0;
         virtual void get_themes_meta(int64_t _seq, const ThemesScale _themes_scale) = 0;
+
+        virtual void mod_chat_name(int64_t _seq, const std::string& _aimid, const std::string& _name) = 0;
+        virtual void mod_chat_about(int64_t _seq, const std::string& _aimid, const std::string& _about) = 0;
+        virtual void mod_chat_public(int64_t _seq, const std::string& _aimid, bool _public) = 0;
+        virtual void block_chat_member(int64_t _seq, const std::string& _aimid, const std::string& _contact, bool _block) = 0;
+        virtual void set_chat_member_role(int64_t _seq, const std::string& _aimid, const std::string& _contact, const std::string& _role) = 0;
 
         // search functions
         virtual void search(std::vector<std::string> searchPatterns) = 0;
@@ -191,6 +202,7 @@ namespace core
         virtual void on_voip_switch_media(bool video);
         virtual void on_voip_volume_change(int vol);
         virtual void on_voip_mute_switch();
+		virtual void on_voip_set_mute(bool mute);
         virtual void on_voip_mute_incoming_call_sounds(bool mute);
 
         virtual void post_voip_msg_to_server(const voip_manager::VoipProtoMsg& msg) = 0;
@@ -215,11 +227,12 @@ namespace core
             const std::string& _download_dir,
             const std::string& _filename,
             const file_sharing_function _function) = 0;
-        virtual void download_preview(
+        virtual void download_image(
             const int64_t _seq,
             const std::string& _file_url,
             const std::string& _destination,
-            const bool _sign_url) = 0;
+            const bool _download_preview,
+            const int32_t _preview_height) = 0;
         virtual void abort_file_sharing_download(
             const int64_t _seq,
             const int64_t _process_seq) = 0;
@@ -244,6 +257,12 @@ namespace core
 
         // live chats
         virtual void join_live_chat(int64_t _seq, const std::string& _stamp) = 0;
+
+        virtual void set_avatar(const int64_t _seq, tools::binary_stream image, const std::string& _aimId) = 0;
+
+        virtual void save_auth_to_export(std::function<void()> _on_result) = 0;
+        virtual void set_show_promo_in_auth(bool _need_promo) = 0;
+        virtual void start_after_close_promo() = 0;
     };
 
 }

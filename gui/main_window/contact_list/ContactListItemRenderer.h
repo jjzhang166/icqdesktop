@@ -18,16 +18,25 @@ namespace ContactList
 			const QDateTime &lastSeen,
 			bool isWithCheckBox,
             bool isChatMember,
-            bool official);
+            bool official,
+            int width,
+            int leftMaregin,
+            int rightMargin,
+            const QString& role);
+
+        int width_;
+        int leftMargin_;
+        int rightMargin_;
+        QString role_;
 	};
 
-	void RenderServiceContact(QPainter &painter, const bool _isHovered, const bool _isActive, int _regim, QString _name, Data::ContactType _type);
+	void RenderServiceContact(QPainter &painter, const bool _isHovered, const bool _isActive, int _regim, QString _name, Data::ContactType _type, int leftMargin);
 
-	void RenderContactItem(QPainter &painter, const ContactListVisualData &item, int _regim, bool _shortView);
+	void RenderContactItem(QPainter &painter, ContactListVisualData item, int _regim, bool _shortView);
 
-	void RenderGroupItem(QPainter &painter, const QString &groupName);
+	void RenderGroupItem(QPainter &painter, const QString &groupName, int leftMargin);
 
     void RenderContactsDragOverlay(QPainter& painter);
 
-    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView);
+    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView, int width);
 }

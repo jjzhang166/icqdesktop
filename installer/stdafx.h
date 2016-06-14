@@ -13,6 +13,7 @@
 #include "../gui.shared/translator_base.h"
 #include "../gui.shared/constants.h"
 #include "../common.shared/common_defs.h"
+#include "../common.shared/TestingTools.h"
 #include "../common.shared/constants.h"
 
 #include <cassert>

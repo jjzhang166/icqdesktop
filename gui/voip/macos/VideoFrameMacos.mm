@@ -3,7 +3,10 @@
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
 
+#include "stdafx.h"
 #include "../../../core/Voip/libvoip/include/voip/voip_types.h"
+#include "../../utils/utils.h"
+#include "../../../external/mac/iTunes.h"
 
 @interface WindowRect : NSObject
 {
@@ -264,6 +267,38 @@ bool platform_macos::windowIsOverlapped(QWidget* frame) {
     return remainsSquare < originalSquare*0.6f;
 }
 
+bool platform_macos::pauseiTunes()
+{
+    bool res = false;
+    iTunesApplication* iTunes = [SBApplication applicationWithBundleIdentifier:@"com.apple.iTunes"];
+    
+    if ([iTunes isRunning])
+    {
+        // pause iTunes if it is currently playing.
+        if (iTunesEPlSPlaying == [iTunes playerState])
+        {
+            [iTunes playpause];
+            res = true;
+        }
+    }
+    
+    return res;
+}
+
+void platform_macos::playiTunes()
+{
+    iTunesApplication* iTunes = [SBApplication applicationWithBundleIdentifier:@"com.apple.iTunes"];
+    
+    if ([iTunes isRunning])
+    {
+        // play iTunes if it was paused.
+        if (iTunesEPlSPaused == [iTunes playerState])
+        {
+            [iTunes playpause];
+        }
+    }
+}
+
 
 namespace platform_macos {
     
@@ -329,6 +364,12 @@ GraphicsPanelMacosImpl::GraphicsPanelMacosImpl(QWidget* parent, std::vector<QWid
 //        window.titleVisibility = NSWindowTitleHidden;
         window.styleMask |= (1 << 15);//NSFullSizeContentViewWindowMask;
     }
+    
+    // For smooth avatar and text on Retina displays.
+    //if (Utils::is_mac_retina())
+    //{
+    //    [_renderView setWantsBestResolutionOpenGLSurface: YES];
+    //}
     
     [parentView addSubview:_renderView];
 }
@@ -409,3 +450,4 @@ void GraphicsPanelMacosImpl::clearPanels() {
 platform_specific::GraphicsPanel* platform_macos::GraphicsPanelMacos::create(QWidget* parent, std::vector<QWidget*>& panels) {
     return new platform_macos::GraphicsPanelMacosImpl(parent, panels);
 }
+

@@ -1081,6 +1081,11 @@ namespace Ui
         InitStickers();
         InitResents();
 
+        if (Ui::GetDispatcher()->is_im_created())
+        {
+            im_created();
+        }
+        
         connect(Ui::GetDispatcher(), SIGNAL(im_created()), this, SLOT(im_created()), Qt::QueuedConnection);
     }
 

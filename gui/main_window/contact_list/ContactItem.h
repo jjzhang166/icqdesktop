@@ -25,12 +25,16 @@ namespace Logic
 		bool recently() const;
 		bool is_chat() const;
 		bool is_muted() const;
+        bool is_live_chat() const;
         bool is_official() const;
 		bool is_not_auth() const;
 		void reset_not_auth();
 
 		bool is_checked() const;
 		void set_checked(bool _is_checked);
+
+        void set_chat_admin(bool value);
+        bool is_you_admin() const;
 		
 		void set_input_text(const QString& _input_text);
 		QString get_input_text() const;
@@ -44,7 +48,8 @@ namespace Logic
 		std::shared_ptr<Data::Contact>				contact_;
 		std::shared_ptr<Logic::contact_profile>		profile_;
 		
-				
+		
+        bool            isYouAdmin_;
 		bool			visible_;
 		QString			input_text_;
 	};

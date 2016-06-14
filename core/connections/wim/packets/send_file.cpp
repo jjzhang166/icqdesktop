@@ -83,7 +83,7 @@ int32_t send_file::init_request(std::shared_ptr<core::http_request_simple> _requ
     params["sig_sha256"] = sha256;
 
     std::stringstream ss_url_signed;
-    ss_url_signed << ss_url.str() << params_map_2_string(params);
+    ss_url_signed << ss_url.str() << "?" << format_get_params(params);
 
     _request->set_url(ss_url_signed.str());
 

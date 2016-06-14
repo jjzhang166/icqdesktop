@@ -21,7 +21,6 @@
 #include "../controls/LineEditEx.h"
 #include "GeneralCreator.h"
 #include "../core_dispatcher.h"
-#include "../utils/IntValidator.h"
 
 namespace Ui
 {
@@ -32,15 +31,15 @@ namespace Ui
 
     ConnectionSettingsWidget::ConnectionSettingsWidget(QWidget* _parent)
         : QWidget(_parent)
-        , selectedProxyIndex_(-1)
+        , selectedProxyIndex_(0)
         , mainWidget_(new QWidget(this))
     {
         mainWidget_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
         addressEdit_ = new LineEditEx(mainWidget_);
         portEdit_ = new LineEditEx(mainWidget_);
-        passwordEdit_ = new LineEditEx(mainWidget_);
         usernameEdit_ = new LineEditEx(mainWidget_);
+        passwordEdit_ = new LineEditEx(mainWidget_);
         showPasswordCheckbox_ = new QCheckBox(mainWidget_);
 
         auto layout = new QVBoxLayout(mainWidget_);
@@ -53,7 +52,7 @@ namespace Ui
             Utils::ApplyPropertyParameter(showPasswordCheckbox_, "GreenCheckbox", true);
             Utils::ApplyPropertyParameter(showPasswordCheckbox_, "ordinary", true);
 
-            text_edit_width = showPasswordCheckbox_->sizeHint().width();
+            text_edit_width = Utils::unscale_value(showPasswordCheckbox_->sizeHint().width());
         }
         {
             fillProxyTypesAndNames();
@@ -64,6 +63,7 @@ namespace Ui
             {
                 selectedProxyIndex_ = ix;
                 updateVisibleParams(ix);
+                addressEdit_->setFocus();
             },
                 false, false, [](bool) -> QString { return ""; });
         }
@@ -107,7 +107,7 @@ namespace Ui
             portEdit_->setAttribute(Qt::WA_MacShowFocusRect, false);
             portEdit_->setStyleSheet(Utils::ScaleStyle(style_name_edit + style_focus_name_edit, Utils::get_scale_coefficient()));
 
-            portEdit_->setValidator(new Utils::IntValidator(0, 65535));
+            portEdit_->setValidator(new QIntValidator(0, 65535));
             proxy_layout->addWidget(portEdit_);
 
             layout->addLayout(proxy_layout);
@@ -136,19 +136,27 @@ namespace Ui
         }
 
         generalDialog_ = new GeneralDialog(mainWidget_, Utils::InterConnector::instance().getMainWindow());
-        generalDialog_->setKeepCenter(false);
+        generalDialog_->setKeepCenter(true);
         mainWidget_->setStyleSheet(Utils::LoadStyle(":/main_window/settings/general_settings.qss", Utils::get_scale_coefficient(), true));
 
         connect(showPasswordCheckbox_, &QCheckBox::toggled, [this](bool is_visible)
         {
-            usernameEdit_->setVisible(is_visible);
-            passwordEdit_->setVisible(is_visible);
+            setVisibleAuth(is_visible);
+            if (is_visible)
+            {
+                usernameEdit_->setFocus();
+            }
         });
+        
+        QObject::connect(addressEdit_, &LineEditEx::enter, this, &ConnectionSettingsWidget::enterClicked);
+        QObject::connect(portEdit_, &LineEditEx::enter, this, &ConnectionSettingsWidget::enterClicked);
+        QObject::connect(usernameEdit_, &LineEditEx::enter, this, &ConnectionSettingsWidget::enterClicked);
+        QObject::connect(passwordEdit_, &LineEditEx::enter, this, &ConnectionSettingsWidget::enterClicked);
 
         generalDialog_->addHead();
         generalDialog_->addLabel(QT_TRANSLATE_NOOP("connection_settings", "Connection settings"));
         generalDialog_->addAcceptButton(QT_TRANSLATE_NOOP("connection_settings", "Done"), Utils::scale_value(bottom_offset));
-        Utils::setWidgetPopup(generalDialog_, platform::is_apple() ? false : true);
+        // Utils::setWidgetPopup(generalDialog_, platform::is_apple() ? false : true);
     }
 
     void ConnectionSettingsWidget::show()
@@ -159,6 +167,14 @@ namespace Ui
             saveProxy();
         }
         delete generalDialog_;
+    }
+
+    void ConnectionSettingsWidget::enterClicked()
+    {
+        if (!addressEdit_->text().isEmpty() && !portEdit_->text().isEmpty())
+        {
+            generalDialog_->accept();
+        }
     }
 
     void ConnectionSettingsWidget::saveProxy() const
@@ -173,6 +189,12 @@ namespace Ui
         user_proxy->need_auth = showPasswordCheckbox_->isChecked();
 
         user_proxy->post_to_core();
+
+        core::stats::event_props_type props;
+        std::stringstream str;
+        str << user_proxy->type;
+        props.push_back(std::make_pair("Proxy_Type", str.str()));
+        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::proxy_set, props);
     }
 
     void ConnectionSettingsWidget::setVisibleAuth(bool _use_auth)
@@ -239,9 +261,9 @@ namespace Ui
 
         for (auto proxy_type : activeProxyTypes_)
         {
-            std::wostringstream str;
+            std::stringstream str;
             str << proxy_type;
-            typesNames_.push_back(Utils::GetQstring(str.str().c_str()));
+            typesNames_.push_back(QString(str.str().c_str()));
         }
     }
 

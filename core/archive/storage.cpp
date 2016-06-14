@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "storage.h"
+#include "../tools/system.h"
 
 using namespace core;
 using namespace archive;
@@ -33,17 +34,16 @@ bool storage::open(storage_mode _mode)
 
     boost::filesystem::wpath path_for_file(file_name_);
     std::wstring forder_name = path_for_file.parent_path().wstring();
-    boost::filesystem::wpath path_for_folder(forder_name);
 
-    if (_mode.flags_.read_ && !_mode.flags_.write_ && !boost::filesystem::exists(path_for_file))
+    if (_mode.flags_.read_ && !_mode.flags_.write_ && !core::tools::system::is_exist(file_name_))
     {
         last_error_ = archive::error::file_not_exist;
         return false;
     }
 
-    if (!boost::filesystem::exists(path_for_folder))
+    if (!core::tools::system::is_exist(forder_name))
     {
-        if (!boost::filesystem::create_directories(path_for_folder))
+        if (!core::tools::system::create_directory(forder_name))
         {
             last_error_ = archive::error::create_directory_error;
             return false;

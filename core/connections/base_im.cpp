@@ -329,6 +329,13 @@ void core::base_im::on_voip_mute_switch() {
 #endif
 }
 
+void core::base_im::on_voip_set_mute(bool mute)
+{
+#ifndef STRIP_VOIP
+	voip_manager_.get_device_manager()->set_device_mute(voip2::AudioPlayback, mute);
+#endif
+}
+
 void core::base_im::on_voip_reset() {
 #ifndef STRIP_VOIP
     voip_manager_.get_voip_manager()->reset();

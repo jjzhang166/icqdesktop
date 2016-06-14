@@ -33,7 +33,7 @@ namespace Ui
 
     public:
         
-        QPushButton* connection_type_chooser_;
+        TextEmojiWidget* connection_type_chooser_;
     };
 
     class GeneralSettingsWidget : public QStackedWidget
@@ -81,7 +81,7 @@ namespace Ui
         {
             static void initAbout(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
             static void initGeneral(GeneralSettings* parent, std::map<std::string, Synchronizator> &collector);
-            static void initVoiceVideo(QWidget* parent, VoiceAndVideoOptions& voiceAndVideo, std::map<std::string, Synchronizator> &/*collector*/);
+            static void initVoiceVideo(QWidget* parent, VoiceAndVideoOptions& voiceAndVideo);//, std::map<std::string, Synchronizator> &/*collector*/);
             static void initThemes(QWidget* parent);
             static void initNotifications(QWidget* parent, std::map<std::string, Synchronizator> &collector);
             static void initContactUs(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
@@ -96,8 +96,11 @@ namespace Ui
         void setType(int type);
 
     private:
+        void initialize();
+        
         virtual void paintEvent(QPaintEvent *event) override;
         virtual void hideEvent(QHideEvent *e) override;
+        virtual void showEvent(QShowEvent *e) override;
 
         private Q_SLOTS:
             void onVoipDeviceListUpdated(const std::vector< voip_proxy::device_desc >& devices);

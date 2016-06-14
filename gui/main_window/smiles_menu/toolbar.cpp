@@ -161,11 +161,16 @@ namespace Ui
 		int numDegrees = _e->delta() / 8;
 		int numSteps = numDegrees / 15;
 
+        if (!numSteps || !numDegrees)
+            return;
+        
 		if (numSteps > 0)
 			scrollStep(direction::left);
 		else
 			scrollStep(direction::right);
 
+        qDebug() << "Toolbar::wheelEvent" << " numDegrees=" << numDegrees << ", numSteps=" << numSteps;
+        
 		QWidget::wheelEvent(_e);
 	}
 

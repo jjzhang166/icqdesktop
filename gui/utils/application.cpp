@@ -22,8 +22,6 @@
 namespace
 {
     const int shadow_width = 10;
-    const QString hostIcqCom  = "icq.com";
-    const QString liveChatPrefix = "/chat/";
 }
 
 namespace Utils
@@ -130,56 +128,6 @@ namespace Utils
         return true;
     }
 
-    bool Application::parseLocalUrl(const QString& _urlString)
-    {
-        QUrl url(_urlString);
-
-        const QString hostString = url.host(); //icq.com
-        const QString path = url.path(); // /chat/novosibisk
-
-        if (hostString == hostIcqCom && path.length() > liveChatPrefix.length() && path.mid(0, liveChatPrefix.length()) == liveChatPrefix)
-        {
-            QString stamp = path.mid(liveChatPrefix.length());
-            if (stamp[stamp.length() - 1] == '/')
-                stamp = stamp.mid(0, stamp.length() - 1);
-
-            Logic::GetContactListModel()->joinLiveChat(stamp, false);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    void Application::open_url(const QUrl& url)
-    {
-        QString urlStr = url.toString(QUrl::FullyEncoded);
-        if (urlStr.isEmpty())
-            return;
-
-        QString decoded = url.fromPercentEncoding(urlStr.toUtf8());
-        decoded.remove(QString(QChar::SoftHyphen));
-
-        if (parseLocalUrl(decoded))
-        {
-            return;
-        }
-
-        QDesktopServices::openUrl(decoded);
-    }
-    
-    void Application::setUrlHandler()
-    {
-        QDesktopServices::setUrlHandler("http", this, "open_url");
-        QDesktopServices::setUrlHandler("https", this, "open_url");
-    }
-
-    void Application::unsetUrlHandler()
-    {
-        QDesktopServices::unsetUrlHandler("http");
-        QDesktopServices::unsetUrlHandler("https");
-    }
-
     void Application::switchInstance(launch::CommandLineParser& _cmd_parser)
     {
 #ifdef _WIN32
@@ -235,17 +183,14 @@ namespace Utils
         }
         
         dpi = 96;
-        bool isMacRetina = false;
-        isMacRetina = app_->primaryScreen()->devicePixelRatio() == 2;
-        Utils::set_mac_retina(isMacRetina);
-        
-        if (isMacRetina)
+        Utils::set_mac_retina(app_->primaryScreen()->devicePixelRatio() == 2);
+        if (Utils::is_mac_retina())
         {
             app_->setAttribute(Qt::AA_UseHighDpiPixmaps);
         }
 #endif
 
-        setUrlHandler();
+        Utils::InterConnector::instance().setUrlHandler();
 
         const auto guiScaleCoefficient = std::min(dpi / 96.0, 2.0);
 
@@ -302,7 +247,14 @@ namespace Utils
                 }
             }
 
+            if (main_window_)
+            {
+                main_window_->activate();
+                main_window_->raise();
+            }
+
             Logic::GetContactListModel()->joinLiveChat(stamp, silent);
+
         }
         else if (host == QString(url_command_open_profile))
         {
@@ -310,7 +262,20 @@ namespace Utils
             if (aimid.isEmpty())
                 return;
 
+            if (main_window_)
+            {
+                main_window_->activate();
+                main_window_->raise();
+            }
+
+
             emit Utils::InterConnector::instance().profileSettingsShow(aimid);
+        }
+        else if (host == QString(url_command_app))
+        {
+            const QString command = path.mid(1);
+            if (command == QString(url_command_livechats_home))
+                emit Utils::InterConnector::instance().liveChatsShow();
         }
     }
 

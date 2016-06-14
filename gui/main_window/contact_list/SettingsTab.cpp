@@ -166,11 +166,11 @@ namespace Ui
             settings_topic_label->setText(QT_TRANSLATE_NOOP("settings_pages","Settings"));
             settings_my_profile_button->setText(QT_TRANSLATE_NOOP("settings_pages", "My profile"));
             settings_general_button->setText(QT_TRANSLATE_NOOP("settings_pages", "General"));
-			settings_themes_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpapers"));
+			settings_themes_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpaper"));
             settings_voice_video_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Voice and video"));
             settings_notifications_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Notifications"));
             settings_about_button->setText(QT_TRANSLATE_NOOP("settings_pages", "About"));
-            settings_contact_us_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Contact us"));
+            settings_contact_us_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Contact Us"));
             settings_signout_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Change account"));
         }
         
@@ -180,7 +180,7 @@ namespace Ui
             settings_topic_label->setText(QT_TRANSLATE_NOOP("settings_pages", "Settings"));
             settings_my_profile_button->setText(QT_TRANSLATE_NOOP("settings_pages", "My profile"));
             settings_general_button->setText(QT_TRANSLATE_NOOP("settings_pages", "General"));
-			settings_themes_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpapers"));
+			settings_themes_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpaper"));
             settings_voice_video_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Voice and video"));
             settings_notifications_button->setText(QT_TRANSLATE_NOOP("settings_pages", "Notifications"));
             settings_about_button->setText(QT_TRANSLATE_NOOP("settings_pages", "About"));

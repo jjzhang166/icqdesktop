@@ -3,6 +3,7 @@
 #include "Text2DocConverter.h"
 #include "../cache/emoji/Emoji.h"
 #include "../controls/TextEditEx.h"
+#include "../utils/log/log.h"
 #include "../utils/SChar.h"
 #include "../utils/profiling/auto_stop_watch.h"
 
@@ -15,31 +16,35 @@ namespace
 	public:
 		Text2DocConverter();
 
-		void Convert(const QString &text, QTextCursor &cursor, const Text2DocHtmlMode htmlMode, const bool convertLinks, const bool breakDocument, const Text2HtmlUriCallback uriCallback, const Emoji::EmojiSizePx _emojiSize);
-		ResourceMap InsertEmoji(int _main, int _ext, QTextCursor& _cursor);
+		void Convert(const QString &text, QTextCursor &cursor, const Text2DocHtmlMode htmlMode, const bool convertLinks, const bool breakDocument, const Text2HtmlUriCallback uriCallback, const Emoji::EmojiSizePx _emojiSize, const QTextCharFormat::VerticalAlignment _aligment);
 
-		void make_uniq_resources(bool _make);
-		const ResourceMap& get_resources() const;
+		const ResourceMap& InsertEmoji(const int32_t main, const int32_t ext, QTextCursor& cursor);
+
+		void MakeUniqueResources(const bool make);
+
+		const ResourceMap& GetResources() const;
+
+        static void AddSoftHyphenIfNeed(QString& output, const QString& word, bool isWordWrapEnabled);
 
 	private:
 
 		bool ConvertEmail();
 
-		bool ConvertEmoji(const Emoji::EmojiSizePx _emojiSize);
+		bool ConvertEmoji(const Emoji::EmojiSizePx _emojiSize, const QTextCharFormat::VerticalAlignment _aligment);
 
 		bool ConvertHttpFtp(bool breakDocument);
 
 		bool ConvertNewline();
 
-		void ConvertPlainCharacter(bool brealDocument);
+		void ConvertPlainCharacter(const bool isWordWrapEnabled);
 
 		bool IsEos(const int offset = 0) const;
 
 		bool IsHtmlEscapingEnabled() const;
 
-		bool ExtractUrl(QString &url, bool breakDocument);
+		bool ExtractUrl(QString &url, const bool isWordWrapEnabled);
 
-		void FlushLastWord();
+		void FlushBuffers();
 
 		Utils::SChar PeekSChar();
 
@@ -51,7 +56,7 @@ namespace
 
 		QString ReadString(const int length);
 
-		void ReplaceEmoji(Utils::SChar ch, const Emoji::EmojiSizePx _emojiSize);
+		void ReplaceEmoji(Utils::SChar ch, const Emoji::EmojiSizePx _emojiSize, const QTextCharFormat::VerticalAlignment _aligment);
 
 		void WriteAnchor();
 
@@ -61,7 +66,9 @@ namespace
 
 		QTextCursor Writer_;
 
-		QString LastWordAccum_;
+		QString LastWord_;
+
+        QString Buffer_;
 
 		QString UrlAccum_;
 
@@ -73,23 +80,18 @@ namespace
 
 		Text2DocHtmlMode HtmlMode_;
 
-		ResourceMap		resources_;
-		bool			make_uniq_resources_;
+		ResourceMap		Resources_;
+
+		bool			MakeUniqResources_;
 	};
 
-//	bool IsEmailCharacter(const QChar ch);
-//
-//	bool IsOneCharacterEmoji(const unsigned main, const unsigned ext);
-//
-//	bool IsTwoCharacterEmoji(const unsigned main, const unsigned ext);
-
 	bool ExtractDomain(QTextStream &s, QString &domain);
-
-//	bool ExtractUrl(const QString &text, int &cursorPos, QString &url);
 
 	void ReplaceUrlSpec(const QString &url, QString &out);
 
 	const QChar CH_KEYCAP(0x20E3);
+
+    const QString SPACE_ENTITY("<span style='white-space: pre'>&#32;</span>");
 }
 
 namespace Logic
@@ -101,7 +103,7 @@ namespace Logic
         if (platform::is_apple())
         {
             doc.setDocumentMargin(0);
-
+            
             return;
         }
 
@@ -116,25 +118,41 @@ namespace Logic
 		doc.setDocumentMargin(0);
 	}
 
-	void Text4Edit(const QString& _text,
+	void Text4Edit(
+        const QString& _text,
 		Ui::TextEditEx& _edit,
 		const Text2DocHtmlMode _htmlMode,
 		const bool _convertLinks,
         const bool _breakDocument,
 		const Text2HtmlUriCallback _uriCallback,
-		const Emoji::EmojiSizePx _emojiSize)
+		const Emoji::EmojiSizePx _emojiSize,
+        const QTextCharFormat::VerticalAlignment _aligment)
 	{
+        _edit.blockSignals(true);
         _edit.document()->blockSignals(true);
+        _edit.setUpdatesEnabled(false);
+
 		Text2DocConverter converter;
-		converter.make_uniq_resources(true);
-        QTextCursor cursor = _edit.textCursor();
-		converter.Convert(_text, cursor, _htmlMode, _convertLinks, _breakDocument, _uriCallback, _emojiSize);
-		_edit.mergeResources(converter.get_resources());
+		converter.MakeUniqueResources(true);
+
+        auto cursor = _edit.textCursor();
+        cursor.beginEditBlock();
+
+		converter.Convert(_text, cursor, _htmlMode, _convertLinks, _breakDocument, _uriCallback, _emojiSize, _aligment);
+
+        cursor.endEditBlock();
+
+		_edit.mergeResources(converter.GetResources());
+
+        _edit.setUpdatesEnabled(true);
         _edit.document()->blockSignals(false);
+        _edit.blockSignals(false);
+
         emit (_edit.document()->contentsChanged());
 	}
 
-	void Text2Doc(const QString &text,
+	void Text2Doc(
+        const QString &text,
 		QTextCursor &cursor,
 		const Text2DocHtmlMode htmlMode,
 		const bool convertLinks,
@@ -142,7 +160,7 @@ namespace Logic
 	{
 		Text2DocConverter converter;
         cursor.document()->blockSignals(true);
-		converter.Convert(text, cursor, htmlMode, convertLinks, false, uriCallback, Emoji::EmojiSizePx::Auto);
+		converter.Convert(text, cursor, htmlMode, convertLinks, false, uriCallback, Emoji::EmojiSizePx::Auto, QTextCharFormat::AlignBaseline);
         cursor.document()->blockSignals(false);
         emit (cursor.document()->contentsChanged());
 	}
@@ -150,7 +168,7 @@ namespace Logic
 	ResourceMap InsertEmoji(int _main, int _ext, Ui::TextEditEx& _edit)
 	{
 		Text2DocConverter converter;
-		converter.make_uniq_resources(true);
+		converter.MakeUniqueResources(true);
         QTextCursor cursor = _edit.textCursor();
 		return converter.InsertEmoji(_main, _ext, cursor);
 	}
@@ -158,23 +176,24 @@ namespace Logic
 
 namespace
 {
-    const int max_word_length = 15;
+    const auto WORD_WRAP_LIMIT = 15;
 
 	Text2DocConverter::Text2DocConverter()
 		: HtmlMode_(Text2DocHtmlMode::Pass)
-		, make_uniq_resources_(false)
+		, MakeUniqResources_(false)
 	{
 		// allow downsizing without reallocation
-		const auto defaultSize = 1024;
-		UrlAccum_.reserve(defaultSize);
-		TmpBuf_.reserve(defaultSize);
-		LastWordAccum_.reserve(defaultSize);
+		const auto DEFAULT_SIZE = 1024;
+		UrlAccum_.reserve(DEFAULT_SIZE);
+		TmpBuf_.reserve(DEFAULT_SIZE);
+		LastWord_.reserve(DEFAULT_SIZE);
+        Buffer_.reserve(DEFAULT_SIZE);
 
 		// must be sufficient
 		InputCursorStack_.reserve(32);
 	}
 
-	void Text2DocConverter::Convert(const QString &text, QTextCursor &cursor, const Text2DocHtmlMode htmlMode, const bool convertLinks, const bool breakDocument, const Text2HtmlUriCallback uriCallback, const Emoji::EmojiSizePx _emojiSize)
+	void Text2DocConverter::Convert(const QString &text, QTextCursor &cursor, const Text2DocHtmlMode htmlMode, const bool convertLinks, const bool breakDocument, const Text2HtmlUriCallback uriCallback, const Emoji::EmojiSizePx _emojiSize, const QTextCharFormat::VerticalAlignment _aligment)
 	{
 		assert(!UriCallback_);
 		assert(htmlMode >= Text2DocHtmlMode::Min);
@@ -204,34 +223,43 @@ namespace
 				continue;
 			}
 
-//#ifndef __APPLE__
-			if (ConvertEmoji(_emojiSize))
+#ifndef __APPLE__
+            if (ConvertEmoji(_emojiSize, _aligment))
 			{
 				continue;
 			}
-//#endif
+#endif //__APPLE__
 
 			ConvertPlainCharacter(breakDocument);
 		}
 
-		FlushLastWord();
+		FlushBuffers();
 
 		InputCursorStack_.resize(0);
 		TmpBuf_.resize(0);
-		LastWordAccum_.resize(0);
+		LastWord_.resize(0);
+        Buffer_.resize(0);
 		UrlAccum_.resize(0);
 		UriCallback_ = nullptr;
 	}
 
+    void Text2DocConverter::AddSoftHyphenIfNeed(QString& output, const QString& word, bool isWordWrapEnabled)
+    {
+        const auto applyHyphen = (isWordWrapEnabled && (word.length() >= WORD_WRAP_LIMIT));
+        if (applyHyphen)
+        {
+            output += QChar::SoftHyphen;
+        }
+    }
 
-	ResourceMap Text2DocConverter::InsertEmoji(int _main, int _ext, QTextCursor& _cursor)
+	const ResourceMap& Text2DocConverter::InsertEmoji(int _main, int _ext, QTextCursor& _cursor)
 	{
 		Writer_ = _cursor;
         Utils::SChar ch(_main, _ext);
 
-		ReplaceEmoji(ch, Emoji::EmojiSizePx::Auto);
+        ReplaceEmoji(ch, Emoji::EmojiSizePx::Auto, QTextCharFormat::AlignBaseline);
 
-		return resources_;
+		return Resources_;
 	}
 
 	bool Text2DocConverter::ConvertEmail()
@@ -246,7 +274,7 @@ namespace
 			return false;
 		}
 
-		if (LastWordAccum_.isEmpty())
+		if (LastWord_.isEmpty())
 		{
 			return false;
 		}
@@ -256,7 +284,7 @@ namespace
 		ReadSChar();
 
 		UrlAccum_.resize(0);
-		UrlAccum_ += LastWordAccum_;
+		UrlAccum_ += LastWord_;
 
 		TmpBuf_.resize(0);
 		if (!ExtractDomain(Input_, TmpBuf_))
@@ -265,7 +293,8 @@ namespace
 			return false;
 		}
 
-		LastWordAccum_.resize(0);
+        Buffer_.resize(Buffer_.size() - LastWord_.size());
+        LastWord_.resize(0);
 
 		assert(!TmpBuf_.isEmpty());
 		UrlAccum_ += '@';
@@ -276,14 +305,14 @@ namespace
 		return true;
 	}
 
-	bool Text2DocConverter::ConvertEmoji(const Emoji::EmojiSizePx _emojiSize)
+	bool Text2DocConverter::ConvertEmoji(const Emoji::EmojiSizePx _emojiSize, const QTextCharFormat::VerticalAlignment _aligment)
 	{
 		const auto ch = PeekSChar();
 
 		if (ch.IsEmoji())
 		{
 			ReadSChar();
-			ReplaceEmoji(ch, _emojiSize);
+			ReplaceEmoji(ch, _emojiSize, _aligment);
 			return true;
 		}
 
@@ -321,13 +350,15 @@ namespace
 		const auto restLength = (probablyHttp ? 3 : 2);
 		const auto rest = ReadString(restLength);
 
-		if (probablyHttp && rest.compare("ttp", Qt::CaseInsensitive))
+        static const QString STR_TTP("ttp");
+		if (probablyHttp && rest.compare(STR_TTP, Qt::CaseInsensitive))
 		{
 			PopInputCursor();
 			return false;
 		}
 
-		if (probablyFtp && rest.compare("tp", Qt::CaseInsensitive))
+        static const QString STR_TP("tp");
+		if (probablyFtp && rest.compare(STR_TP, Qt::CaseInsensitive))
 		{
 			PopInputCursor();
 			return false;
@@ -350,11 +381,10 @@ namespace
 			return false;
 		}
 
-		FlushLastWord();
 		WriteAnchor();
 
-        LastWordAccum_ += "<span style='white-space: pre'>&#32;</span>";//"<span>&nbsp;</span>";
-        FlushLastWord();
+        Buffer_ += SPACE_ENTITY;
+        LastWord_.resize(0);
 
 		assert(!UrlAccum_.isEmpty());
 		if (UriCallback_)
@@ -367,7 +397,7 @@ namespace
 
 	bool Text2DocConverter::ConvertNewline()
 	{
-		const auto ch = PeekSChar();
+        const auto ch = PeekSChar();
 
 		const auto isNewline = (ch.IsNewline() || ch.IsCarriageReturn());
 		if (!isNewline)
@@ -377,9 +407,18 @@ namespace
 
 		ReadSChar();
 
-		FlushLastWord();
+        if (IsHtmlEscapingEnabled())
+        {
+            static const QString HTML_NEWLINE("<br/>");
+		    Buffer_ += HTML_NEWLINE;
+        }
+        else
+        {
+            static const QString TEXT_NEWLINE("\n");
+            Buffer_ += TEXT_NEWLINE;
+        }
 
-		Writer_.insertText(QChar('\n'));
+        LastWord_.resize(0);
 
 		if (!ch.IsCarriageReturn())
 		{
@@ -396,39 +435,56 @@ namespace
 		return true;
 	}
 
-	void Text2DocConverter::ConvertPlainCharacter(bool breakDocument)
+	void Text2DocConverter::ConvertPlainCharacter(const bool isWordWrapEnabled)
 	{
 		const auto nextChar = ReadSChar();
 
+        const auto nextCharStr = nextChar.ToQString();
+
+        const auto isNextCharSpace = nextChar.IsSpace();
+        
+        const auto isEmoji = nextChar.IsEmoji();
+
+        if (isNextCharSpace)
+        {
+            LastWord_.resize(0);
+        }
+        else
+        {
+            LastWord_ += nextCharStr;
+            if (!isEmoji)
+                AddSoftHyphenIfNeed(LastWord_, LastWord_, isWordWrapEnabled);
+        }
+
 		if (IsHtmlEscapingEnabled())
 		{
-			if (nextChar.IsSpace())
+			if (isNextCharSpace)
 			{
-                static const QString spaceEntity("<span style='white-space: pre'>&#32;</span>");
-                LastWordAccum_ += spaceEntity;
-                FlushLastWord();
+                Buffer_ += SPACE_ENTITY;
 			}
 			else
 			{
-				const auto htmlEscaped = nextChar.ToQString().toHtmlEscaped();
-				LastWordAccum_ += htmlEscaped;
+				const auto htmlEscaped = nextCharStr.toHtmlEscaped();
+				Buffer_ += htmlEscaped;
 			}
 		}
 		else
 		{
-			LastWordAccum_ += nextChar.ToQString();
+            Buffer_ += nextCharStr;
 		}
 
-        if (breakDocument && LastWordAccum_.length() >= max_word_length)
-            LastWordAccum_ += QChar::SoftHyphen;
+        if (!isEmoji)
+            AddSoftHyphenIfNeed(Buffer_, LastWord_, isWordWrapEnabled);
 	}
 
-	bool Text2DocConverter::ExtractUrl(QString &url, bool breakDocument)
+	bool Text2DocConverter::ExtractUrl(QString &url, const bool breakDocument)
 	{
 		PushInputCursor();
 
+        static const QString SCHEME_TAIL("://");
+
 		const auto schemeTail = ReadString(3);
-		if (schemeTail != "://")
+		if (schemeTail != SCHEME_TAIL)
 		{
 			PopInputCursor();
 			return false;
@@ -436,8 +492,7 @@ namespace
 
 		url += schemeTail;
 
-        bool needSoftHyphen = true;
-        int skipChars = 0;
+        auto isWordWrapEnabled = breakDocument;
 		for(;;)
 		{
 			const auto nextChar = PeekSChar();
@@ -448,7 +503,7 @@ namespace
 
             if (nextChar.IsColon())
             {
-                needSoftHyphen = false;
+                isWordWrapEnabled = false;
             }
 
 			ReadSChar();
@@ -461,16 +516,8 @@ namespace
 			}
 
 			url += nextChar.ToQString();
-            if (breakDocument && url.length() >= max_word_length && needSoftHyphen)
-            {
-                url += QChar::SoftHyphen;
-            }
 
-            if (!needSoftHyphen && ++skipChars >= max_word_length)
-            {
-                needSoftHyphen = true;
-                skipChars = 0;
-            }
+            AddSoftHyphenIfNeed(url, url, isWordWrapEnabled);
 		}
 
 		const auto isLongEnough = (url.length() > 8);
@@ -499,18 +546,24 @@ namespace
 		return (HtmlMode_ == Text2DocHtmlMode::Escape);
 	}
 
-	void Text2DocConverter::FlushLastWord()
+	void Text2DocConverter::FlushBuffers()
 	{
+        if (Buffer_.isEmpty())
+        {
+            return;
+        }
+
 		if (IsHtmlEscapingEnabled())
 		{
-			Writer_.insertHtml(LastWordAccum_);
+			Writer_.insertHtml(Buffer_);
 		}
 		else
 		{
-			Writer_.insertText(LastWordAccum_);
+			Writer_.insertText(Buffer_);
 		}
 
-		LastWordAccum_.resize(0);
+		Buffer_.resize(0);
+        LastWord_.resize(0);
 	}
 
 	Utils::SChar Text2DocConverter::PeekSChar()
@@ -549,17 +602,16 @@ namespace
 		return Input_.read(length);
 	}
 
-    void Text2DocConverter::ReplaceEmoji(Utils::SChar ch, const Emoji::EmojiSizePx _emojiSize)
+    void Text2DocConverter::ReplaceEmoji(Utils::SChar ch, const Emoji::EmojiSizePx _emojiSize, const QTextCharFormat::VerticalAlignment _aligment)
 	{
-#ifndef __APPLE__
         const unsigned _main = ch.Main();
         const unsigned _ext = ch.Ext();
 
 		assert(_main > 0);
 
-        const auto charFormat = Writer_.charFormat();
+        FlushBuffers();
 
-		Writer_.beginEditBlock();
+        const auto charFormat = Writer_.charFormat();
 
 		auto make_from_code = [](int _code)->QString
 		{
@@ -581,8 +633,6 @@ namespace
 			return result;
 		};
 
-		FlushLastWord();
-
 		const QImage& img = Emoji::GetEmoji(_main, _ext, _emojiSize);
 
 		QString emoji_code = make_from_code(_main);
@@ -593,14 +643,14 @@ namespace
 		static int64_t uniq_index = 0;
 
 		QString resource_name;
-		if (!make_uniq_resources_)
+		if (!MakeUniqResources_)
 		{
 			resource_name = QString::number(img.cacheKey());
 		}
 		else
 		{
 			resource_name = emoji_code + "_" + QString::number(++uniq_index);
-			resources_[resource_name] = emoji_code;
+			Resources_[resource_name] = emoji_code;
 		}
 
 		Writer_.document()->addResource(
@@ -611,32 +661,10 @@ namespace
 
 		QTextImageFormat format;
 		format.setName(resource_name);
-		format.setVerticalAlignment(QTextCharFormat::AlignBaseline);
+		format.setVerticalAlignment(_aligment);
 		Writer_.insertText(QString(QChar::ObjectReplacementCharacter), format);
 
-		Writer_.endEditBlock();
-
         Writer_.setCharFormat(charFormat);
-
-#else
-        QTextCharFormat prevFormat = Writer_.charFormat();
-        
-        QFont f = QFont(QStringLiteral("AppleColorEmoji"));
-        QTextCharFormat format;
-        format.setFont(f);
-        format.setVerticalAlignment(QTextCharFormat::AlignBaseline);
-        format.setFontPointSize(prevFormat.font().pointSize());
-        
-        Writer_.beginEditBlock();
-        FlushLastWord();
-        
-//        Writer_.insertText(QChar(QChar::), prevFormat);
-        Writer_.insertText(ch.ToQString(), format);
-        Writer_.insertText(QChar(QChar::SoftHyphen), prevFormat);
-        
-        Writer_.endEditBlock();
-//        Writer_.insertText(ch.ToQString());//, format);
-#endif
 	}
 
 	void Text2DocConverter::WriteAnchor()
@@ -650,7 +678,7 @@ namespace
 		QTextStream anchor(&UrlAccum_);
 		anchor << "<a href=\"" << TmpBuf_ << "\">" << TmpBuf_ << "</a>";
 
-		Writer_.insertHtml(UrlAccum_);
+		Buffer_ += UrlAccum_;
 	}
 
 	void Text2DocConverter::WriteEmail()
@@ -664,17 +692,17 @@ namespace
 		QTextStream anchor(&UrlAccum_);
 		anchor << "<a type=\"email\" href=\"mailto:" << TmpBuf_ << "\">" << TmpBuf_ << "</a>";
 
-		Writer_.insertHtml(UrlAccum_);
+		Buffer_ += UrlAccum_;
 	}
 
-	void Text2DocConverter::make_uniq_resources(bool _make)
+	void Text2DocConverter::MakeUniqueResources(const bool _make)
 	{
-		make_uniq_resources_ = _make;
+		MakeUniqResources_ = _make;
 	}
 
-	const ResourceMap& Text2DocConverter::get_resources() const
+	const ResourceMap& Text2DocConverter::GetResources() const
 	{
-		return resources_;
+		return Resources_;
 	}
 }
 
@@ -699,9 +727,10 @@ namespace
 			}
 
 			domain += ch.ToQString();
+            Text2DocConverter::AddSoftHyphenIfNeed(domain, domain, true);
 		}
 
-		return !domain.isEmpty();
+		return !domain.isEmpty() && domain.contains('.');
 	}
 
 	void ReplaceUrlSpec(const QString &url, QString &out)
@@ -709,21 +738,19 @@ namespace
 		assert(out.isEmpty());
 		assert(!url.isEmpty());
 
-		for (const auto ch : url)
+        static const QString AMP_ENTITY("&amp;");
+
+		for (const QChar ch : url)
 		{
 			switch (ch.unicode())
 			{
-			case '&':
-				{
-					out += "&amp;";
+			    case '&':
+					out += AMP_ENTITY;
 					break;
-				}
 
-			default:
-				{
+			    default:
 					out += ch;
 					break;
-				}
 			}
 		}
 	}

@@ -8,7 +8,9 @@ namespace Ui
 {
     LiveChatMembersControl::LiveChatMembersControl(QWidget* _parent, std::shared_ptr<Data::ChatInfo> _info, const int _maxCount)
         :   QWidget(_parent),
-            maxCount_(_maxCount)
+            maxCount_(_maxCount),
+            color_(Qt::white),
+            realCount_(_maxCount)
     {
         setFixedHeight(Utils::scale_value(controlHeight));
         
@@ -16,7 +18,7 @@ namespace Ui
         for (const auto& chatMember : _info->Members_)
         {
             assert(!chatMember.getFriendly().isEmpty());
-            members_.push_back(std::make_pair(chatMember.AimdId_, chatMember.getFriendly()));
+            members_.push_back(std::make_pair(chatMember.AimId_, chatMember.getFriendly()));
             if ((++i) >= _maxCount)
                 break;
         }
@@ -50,6 +52,13 @@ namespace Ui
         int width = (sv(avatarWithFrameHeight) - sv(avatarIntersection) - sv(frameWidth)) * members_.size() + (sv(avatarIntersection) + sv(frameWidth));
         
         setFixedWidth(width);
+
+        realCount_ = (geometry().width() - sv(avatarWithFrameHeight)) / (sv(avatarWithFrameHeight) - sv(avatarIntersection) - sv(frameWidth)) + 1;
+    }
+
+    void LiveChatMembersControl::setColor(const QColor& _color)
+    {
+        color_ = _color;
     }
 
     void LiveChatMembersControl::paintEvent(QPaintEvent* _e)
@@ -63,22 +72,21 @@ namespace Ui
 
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &painter, this);
 
-        int maxCount = (geometry().width() - sv(avatarWithFrameHeight)) / (sv(avatarWithFrameHeight) - sv(avatarIntersection) - sv(frameWidth)) + 1;
-
         int xOffset = 0;
         
+        int count = realCount_;
         for (const auto& chat : members_)
         {
-            if (maxCount <= 0)
+            if (count <= 0)
                 break;
 
-            painter.setBrush(Qt::white);
-            painter.setPen(Qt::white);
+            painter.setBrush(color_);
+            painter.setPen(color_);
 
             painter.drawEllipse(xOffset, 0, sv(avatarWithFrameHeight), sv(avatarWithFrameHeight));
 
             bool isDefault = false;
-            const auto &avatar = Logic::GetAvatarStorage()->GetRounded(chat.first, chat.second, Utils::scale_bitmap(sv(avatarHeight)), QString(), true, isDefault);
+            const auto &avatar = Logic::GetAvatarStorage()->GetRounded(chat.first, chat.second, Utils::scale_bitmap(sv(avatarHeight)), QString(), true, isDefault, false);
 
             if (!avatar->isNull())
             {
@@ -87,10 +95,37 @@ namespace Ui
 
             xOffset += sv(avatarWithFrameHeight) - sv(avatarIntersection) - sv(frameWidth);
 
-            --maxCount;
+            --count;
         }
 
 
         return QWidget::paintEvent(_e);
+    }
+
+    void LiveChatMembersControl::resizeEvent(QResizeEvent* _e)
+    {
+        QWidget::resizeEvent(_e);
+        realCount_ = (geometry().width() - sv(avatarWithFrameHeight)) / (sv(avatarWithFrameHeight) - sv(avatarIntersection) - sv(frameWidth)) + 1;
+    }
+
+    int LiveChatMembersControl::getRealCount() const
+    {
+        return realCount_;
+    }
+
+    void LiveChatMembersControl::updateInfo(std::shared_ptr<Data::ChatInfo> _info)
+    {
+        members_.clear();
+
+        int i = 0;
+        for (const auto& chatMember : _info->Members_)
+        {
+            assert(!chatMember.getFriendly().isEmpty());
+            members_.push_back(std::make_pair(chatMember.AimId_, chatMember.getFriendly()));
+            if ((++i) >= maxCount_)
+                break;
+        }
+
+        update();
     }
 }

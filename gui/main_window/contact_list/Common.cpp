@@ -22,7 +22,9 @@ namespace ContactList
 		const QDateTime &lastSeen,
 		bool isWithCheckBox,
         bool isChatMember,
-        bool isOfficial)
+        bool isOfficial,
+        const bool _drawLastRead,
+        const QPixmap& _lastReadAvatar)
 		: AimId_(aimId)
 		, Avatar_(avatar)
 		, State_(state)
@@ -35,6 +37,8 @@ namespace ContactList
 		, isCheckedBox_(isWithCheckBox)
         , isChatMember_(isChatMember)
         , isOfficial_(isOfficial)
+        , drawLastRead_(_drawLastRead)
+        , lastReadAvatar_(_lastReadAvatar)
 	{
 		assert(!AimId_.isEmpty());
 		assert(!ContactName_.isEmpty());
@@ -117,7 +121,8 @@ namespace ContactList
 
 		ctrl->setObjectName(name);
 		ctrl->setStyleSheet(stylesheet);
-		ctrl->setFixedHeight(textHeight);
+        if (textHeight)
+		    ctrl->setFixedHeight(textHeight);
 
 		ctrl->setFrameStyle(QFrame::NoFrame);
 		ctrl->setContentsMargins(0, 0, 0, 0);
@@ -137,7 +142,7 @@ namespace ContactList
             return DipPixels(280);
 
 		// TODO : use L::checkboxWidth
-		return ItemLength(true, 1. / 3, _isWithCheckBox ? dip(30) : dip(0));
+        return (_isWithCheckBox ? dip(30) : dip(0)) + std::min(dip(400), ItemLength(true, 1. / 3, dip(0)));
 	}
 
 	DipPixels ItemLength(bool _isWidth, double _koeff, DipPixels _addWidth)

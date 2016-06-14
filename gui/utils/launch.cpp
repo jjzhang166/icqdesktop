@@ -13,6 +13,10 @@ Q_IMPORT_PLUGIN(QICOPlugin);
 Q_IMPORT_PLUGIN(QWindowsAudioPlugin);
 #endif //_WIN32
 
+#ifndef __linux__
+Q_IMPORT_PLUGIN(QTiffPlugin);
+#endif //__linux__
+
 #ifdef __APPLE__
 Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin);
 #endif
@@ -89,6 +93,8 @@ int launch::main(int _argc, char* _argv[])
         qRegisterMetaType<std::shared_ptr<Data::ContactList>>("std::shared_ptr<Data::ContactList>");
         qRegisterMetaType<std::shared_ptr<Data::MessageBuddies>>("std::shared_ptr<Data::MessageBuddies>");
         qRegisterMetaType<std::shared_ptr<Data::ChatInfo>>("std::shared_ptr<Data::ChatInfo>");
+        qRegisterMetaType<QList<Data::ChatInfo>>("QList<Data::ChatInfo>");
+        qRegisterMetaType<QList<Data::ChatMemberInfo>>("QList<Data::ChatMemberInfo>");
         qRegisterMetaType<Data::DlgState>("Data::DlgState");
         qRegisterMetaType<Logic::MessageKey>("Logic::MessageKey");
         qRegisterMetaType<QList<Logic::MessageKey>>("QList<Logic::MessageKey>");
@@ -96,6 +102,7 @@ int launch::main(int _argc, char* _argv[])
         qRegisterMetaType<Ui::MessagesBuddiesOpt>("Ui::MessagesBuddiesOpt");
         qRegisterMetaType<QSystemTrayIcon::ActivationReason>("QSystemTrayIcon::ActivationReason");
         qRegisterMetaType<Logic::TypingFires>("Logic::TypingFires");
+        qRegisterMetaType<int64_t>("int64_t");
     }
     else
     {

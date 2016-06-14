@@ -6,6 +6,27 @@
 	<string>./</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>*</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>icons-bundle-icq</string>
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>ICQ</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>NSDocumentClass</key>
+			<string></string>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>

@@ -1,16 +1,14 @@
 #include "stdafx.h"
-#include "wim_packet.h"
 
+#include "wim_packet.h"
 
 #include "../../http_request.h"
 #include "../../tools/hmac_sha_base64.h"
 #include "../../log/log.h"
-
-#include <sstream>
+#include "../../utils.h"
 
 using namespace core;
 using namespace wim;
-
 
 wim_packet::wim_packet(const wim_packet_params& params)
     :	params_(params),
@@ -30,7 +28,7 @@ wim_packet::~wim_packet()
 
 int32_t wim_packet::execute()
 {
-    auto request = std::make_shared<core::http_request_simple>(params_.proxy_, params_.stop_handler_);
+    auto request = std::make_shared<core::http_request_simple>(params_.proxy_, utils::get_user_agent(), params_.stop_handler_);
 
     ++repeat_count_;
 
@@ -66,6 +64,18 @@ int32_t wim_packet::execute_request(std::shared_ptr<core::http_request_simple> r
 
     http_code_ = (uint32_t)request->get_response_code();
 
+    if (request->get_header()->available())
+    {
+        auto header = request->get_header();
+        uint32_t size = header->available();
+        auto buf = (const char *)header->read(size);
+        if (buf && size)
+        {
+            header_str_.assign(buf, size);
+        }
+        header->reset_out();
+    }
+    
     if (http_code_ != 200)
     {
         if (http_code_ > 400 && http_code_ < 500)
@@ -77,17 +87,27 @@ int32_t wim_packet::execute_request(std::shared_ptr<core::http_request_simple> r
     return 0;
 }
 
-void wim_packet::load_response_str(const char* buf, unsigned size) {
+void wim_packet::load_response_str(const char* buf, unsigned size)
+{
     assert(buf && size);
-    if (buf && size) {
+    if (buf && size)
+    {
         response_str_.assign(buf, size);
-    } else {
+    }
+    else
+    {
         response_str_.clear();
     }
 }
 
-const std::string& wim_packet::response_str() {
+const std::string& wim_packet::response_str() const
+{
     return response_str_;
+}
+
+const std::string& wim_packet::header_str() const
+{
+    return header_str_;
 }
 
 int32_t wim_packet::parse_response(std::shared_ptr<core::tools::binary_stream> response)
@@ -154,6 +174,12 @@ int32_t wim_packet::parse_response(std::shared_ptr<core::tools::binary_stream> r
         }
         else
         {
+            auto iter_data = iter_response->value.FindMember("data");
+            if (iter_data != iter_response->value.MemberEnd())
+            {
+                parse_response_data_on_error(iter_data->value);
+            }
+
             return on_response_error_code();
         }
     }
@@ -202,11 +228,11 @@ std::string wim_packet::escape_symbols(const std::string& _data)
 {
     std::stringstream ss_out;
 
-    char buffer[100];
+    std::array<char, 100> buffer;
 
     for (uint32_t i = 0; i < _data.size(); i++)
     {
-        char sym = _data[i];
+        auto sym = _data[i];
 
         if (core::tools::is_latin(sym) || core::tools::is_digit(sym) || strchr("-._~", sym))
         {
@@ -215,11 +241,11 @@ std::string wim_packet::escape_symbols(const std::string& _data)
         else
         {
 #ifdef _WIN32
-            sprintf_s(buffer, 100, "%%%.2X", (unsigned char) sym);
+            sprintf_s(buffer.data(), buffer.size(), "%%%.2X", (unsigned char) sym);
 #else
-            sprintf(buffer, "%%%.2X", (unsigned char) sym);
+            sprintf(buffer.data(), "%%%.2X", (unsigned char) sym);
 #endif
-            ss_out << buffer;
+            ss_out << buffer.data();
         }
     }
 
@@ -299,19 +325,15 @@ std::string wim_packet::get_url_sign(const std::string& _host, const Str2StrMap&
     return detect_digest(hash_data, _wim_params.session_key_);
 }
 
-std::string wim_packet::params_map_2_string(const std::map<std::string, std::string>& _params)
+std::string wim_packet::format_get_params(const std::map<std::string, std::string>& _params)
 {
     std::stringstream ss_out;
 
-    bool first = true;
+    auto first = true;
 
     for (const auto& it : _params)
     {
-        if (first)
-        {
-            ss_out << "?";
-        }
-        else
+        if (!first)
         {
             ss_out << "&";
         }
@@ -324,9 +346,13 @@ std::string wim_packet::params_map_2_string(const std::map<std::string, std::str
     return ss_out.str();
 }
 
-int32_t wim_packet::parse_response_data(const rapidjson::Value& _node_results)
+int32_t wim_packet::parse_response_data(const rapidjson::Value& _data)
 {
     return 0;
+}
+
+void wim_packet::parse_response_data_on_error(const rapidjson::Value& _data)
+{
 }
 
 const std::string core::wim::wim_packet::get_rand_float() const
@@ -347,4 +373,49 @@ const wim_packet_params& core::wim::wim_packet::get_params() const
 uint32_t core::wim::wim_packet::get_repeat_count() const
 {
     return repeat_count_;
+}
+
+void core::wim::wim_packet::replace_log_messages(tools::binary_stream& _bs)
+{
+    uint32_t sz = _bs.available();
+    char* logdata = _bs.get_data();
+    char* end = logdata + sz;
+
+    if (!logdata || !sz)
+        return;
+
+    std::string marker("\"text\":");
+
+    char* cursor = logdata;
+
+    while (cursor < end)
+    {
+        cursor = std::search(cursor, end, marker.c_str(), marker.c_str() + marker.length());
+        cursor += marker.length();
+        if (cursor >= end)
+            return;
+
+        while (cursor < end && *cursor++ != '\"') {}
+        
+
+        while (cursor < end)
+        {
+            if (*cursor == '\"')
+                break;
+
+            if (*cursor == '\\')
+            {
+                *cursor = '*';
+
+                ++cursor;
+                if (cursor >= end)
+                    return;
+            }
+
+            *cursor = '*';
+
+            ++cursor;
+        }
+    }
+
 }

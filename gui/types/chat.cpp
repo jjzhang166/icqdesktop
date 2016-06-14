@@ -26,7 +26,7 @@ namespace Data
         if (!friendly.isEmpty())
             return friendly;
 
-        return AimdId_;
+        return AimId_;
     }
 
     ChatInfo::ChatInfo()
@@ -39,6 +39,28 @@ namespace Data
         , FriendsCount(-1)
         , BlockedCount_(-1)
     {
+    }
+
+    void UnserializeChatMembers(core::coll_helper* helper, QList<ChatMemberInfo>& members)
+    {
+        members.clear();
+        core::iarray* membersArray = helper->get_value_as_array("members");
+        for (int i = 0; i < membersArray->size(); ++i)
+        {
+            ChatMemberInfo member;
+            core::coll_helper value(membersArray->get_at(i)->get_as_collection(), false);
+            member.AimId_ = value.get_value_as_string("aimid");
+            if (value.is_value_exist("role"))
+                member.Role_ = value.get_value_as_string("role");
+            member.FirstName_ = QString(value.get_value_as_string("first_name")).trimmed();
+            member.LastName_ = QString(value.get_value_as_string("last_name")).trimmed();
+            member.NickName_ = QString(value.get_value_as_string("nick_name")).trimmed();
+            if (value.is_value_exist("friend"))
+                member.Friend_ = value.get_value_as_bool("friend");
+            if (value.is_value_exist("no_avatar"))
+                member.NoAvatar_ = value.get_value_as_bool("no_avatar");
+            members.push_back(member);
+        }
     }
 
 	void UnserializeChatInfo(core::coll_helper* helper, ChatInfo& info)
@@ -60,20 +82,23 @@ namespace Data
 		info.Public_ = helper->get_value_as_bool("public");
 		info.Live_ = helper->get_value_as_bool("live");
 		info.Controlled_ = helper->get_value_as_bool("controlled");
-
-		core::iarray* membersArray = helper->get_value_as_array("members");
-		for (int i = 0; i < membersArray->size(); ++i)
-		{
-			ChatMemberInfo member;
-			core::coll_helper value(membersArray->get_at(i)->get_as_collection(), false);
-			member.AimdId_ = value.get_value_as_string("aimid");
-			member.Role_ = value.get_value_as_string("role");
-			member.FirstName_ = QString(value.get_value_as_string("first_name")).trimmed();
-			member.LastName_ = QString(value.get_value_as_string("last_name")).trimmed();
-			member.NickName_ = QString(value.get_value_as_string("nick_name")).trimmed();
-			member.Friend_ = value.get_value_as_bool("friend");
-			member.NoAvatar_ = value.get_value_as_bool("no_avatar");
-			info.Members_.push_back(member);
-		}
+        info.Stamp_ = helper->get_value_as_string("stamp");
+        UnserializeChatMembers(helper, info.Members_);
 	}
+
+    void UnserializeChatHome(core::coll_helper* helper, QList<ChatInfo>& chats, QString& newTag, bool& restart, bool& finished)
+    {
+        newTag = helper->get_value_as_string("new_tag");
+        restart = helper->get_value_as_bool("need_restart");
+        finished = helper->get_value_as_bool("finished");
+        core::iarray* chatsArray = helper->get_value_as_array("chats");
+        chats.clear();
+        for (int i = 0; i < chatsArray->size(); ++i)
+        {
+            ChatInfo info;
+            core::coll_helper value(chatsArray->get_at(i)->get_as_collection(), false);
+            UnserializeChatInfo(&value, info);
+            chats.append(info);
+        }
+    }
 }

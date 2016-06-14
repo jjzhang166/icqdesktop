@@ -88,13 +88,48 @@ int32_t client_login::init_request(std::shared_ptr<core::http_request_simple> _r
     _request->push_post_parameter("f", "json");
     _request->push_post_parameter("devId", params_.dev_id_);
     _request->push_post_parameter("s", escape_symbols(login_));
-    _request->push_post_parameter("pwd", escape_symbols(password_));
+    std::string password = escape_symbols(password_);
+    _request->push_post_parameter("pwd", password);
     _request->push_post_parameter("clientName", escape_symbols(utils::get_app_name()));
     _request->push_post_parameter("clientVersion", core::tools::version_info().get_version());
     _request->push_post_parameter("tokenType", WIM_APP_TOKENTYPE);
     _request->push_post_parameter("r", core::tools::system::generate_guid());
 
     _request->set_keep_alive();
+    
+    _request->set_replace_log_function([password](tools::binary_stream& _bs)
+    {
+        uint32_t sz = _bs.available();
+        char* logdata = _bs.get_data();
+
+        if (!logdata || !sz)
+            return;
+
+        std::string marker("&pwd=");
+
+        std::string search_text = marker + password;
+
+        char* cursor = std::search(logdata, logdata + sz, search_text.c_str(), search_text.c_str() + search_text.length());
+
+        if (cursor >= logdata + sz)
+        {
+            assert(false);
+            return;
+        }
+
+        cursor += marker.length();
+        if (cursor >= logdata + sz)
+        {
+            assert(false);
+            return;
+        }
+
+        for (uint32_t i  = 0; i < password.length() && cursor < logdata + sz; ++i)
+        {
+            *cursor++ = '*';
+        }
+    });
+
     return 0;
 }
 

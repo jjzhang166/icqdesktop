@@ -18,7 +18,7 @@ namespace Data
 		{
 		}
 
-		QString AimdId_;
+		QString AimId_;
 		QString Role_;
 		QString FirstName_;
 		QString LastName_;
@@ -58,7 +58,11 @@ namespace Data
 		QList<ChatMemberInfo> Members_;
 	};
 
+    void UnserializeChatMembers(core::coll_helper* helper, QList<ChatMemberInfo>& members);
     void UnserializeChatInfo(core::coll_helper* helper, ChatInfo& info);
+    void UnserializeChatHome(core::coll_helper* helper, QList<ChatInfo>& chats, QString& newTag, bool& restart, bool& finished);
 }
 
 Q_DECLARE_METATYPE(Data::ChatMemberInfo*);
+Q_DECLARE_METATYPE(Data::ChatInfo);
+Q_DECLARE_METATYPE(QList<Data::ChatMemberInfo>);

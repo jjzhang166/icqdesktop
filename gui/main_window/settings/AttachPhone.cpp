@@ -39,7 +39,7 @@ void GeneralSettingsWidget::Creator::initAttachPhone(QWidget* parent, std::map<s
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
     
-    LoginPage* page = new LoginPage(scroll_area, false /* is_login */);
+    LoginPage* page = new LoginPage(nullptr, false /* is_login */);
     GeneralCreator::addBackButton(scroll_area, layout, [page]()
     {
         page->prevPage();
@@ -47,7 +47,7 @@ void GeneralSettingsWidget::Creator::initAttachPhone(QWidget* parent, std::map<s
     });
     layout->addWidget(scroll_area);
 
-    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("profile_page", "Attach phone number"));
+    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("sidebar", "Attach phone"));
     scroll_area->setStyleSheet(Utils::LoadStyle(":/main_window/login_page.qss", Utils::get_scale_coefficient(), true));
     scroll_area_content_layout->addWidget(page);
 

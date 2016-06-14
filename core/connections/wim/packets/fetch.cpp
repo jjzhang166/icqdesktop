@@ -67,6 +67,11 @@ int32_t fetch::init_request(std::shared_ptr<core::http_request_simple> _request)
     _request->set_timeout((uint32_t)timeout_ + 5000);
     _request->set_keep_alive();
 
+    if (!params_.full_log_)
+    {
+        _request->set_replace_log_function(std::bind(wim_packet::replace_log_messages, std::placeholders::_1));
+    }
+
     return 0;
 }
 

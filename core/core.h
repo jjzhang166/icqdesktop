@@ -155,10 +155,15 @@ namespace core
 
         network_log& get_network_log();
 
+        proxy_settings get_auto_proxy_settings();
         proxy_settings get_proxy_settings();
         proxy_settings get_registry_proxy_settings();
         proxy_settings get_user_proxy_settings();
+
         void set_user_proxy_settings(const proxy_settings& _user_proxy_settings);
+
+        void set_locale(const std::string& _locale);
+        std::string get_locale() const;
 
         void switch_proxy_settings();
 
@@ -167,6 +172,9 @@ namespace core
 
         std::thread::id get_core_thread_id() const;
 
+        void save_themes_etag(const std::string &etag);
+        std::string load_themes_etag();
+        
         //template<typename __ParamType> void on_voip_signal(voip_manager::eNotificationTypes type, const __ParamType* param) {
         //    coll_helper coll(create_collection(), true); 
         //    type >> coll; 
@@ -180,6 +188,11 @@ namespace core
         //    type >> coll; 
         //    post_message_to_gui(L"voip_signal", 0, coll.get()); 
         //}
+
+		// We save fix voip mute flag in settings,
+		// Because we want to call this fix once.
+		void set_voip_mute_fix_flag(bool bValue);
+		bool get_voip_mute_fix_flag();        
     };
 
     extern std::unique_ptr<core::core_dispatcher>		g_core;	

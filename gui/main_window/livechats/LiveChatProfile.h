@@ -23,12 +23,14 @@ namespace Ui
         QWidget* parent_;
         bool connected_;
         GeneralDialog* activeDialog_;
+        QString joinedLiveChat_;
 
     private Q_SLOTS:
 
         void needJoinLiveChat(QString _stamp);
         void chatInfo(qint64, std::shared_ptr<Data::ChatInfo> _info);
         void chatInfoFailed(qint64, core::group_chat_info_errors _error);
+        void liveChatJoined(QString _aimid);
 
     private:
 
@@ -44,7 +46,7 @@ namespace Ui
     {
         Q_OBJECT
 
-        const QString stamp_;
+        QString stamp_;
         QVBoxLayout* rootLayout_;
         ContactAvatarWidget* avatar_;
         LiveChatMembersControl* members_;
@@ -66,8 +68,9 @@ Q_SIGNALS:
     public:
 
         void viewChat(std::shared_ptr<Data::ChatInfo> _info);
+        void setStamp(const QString& _stamp);
 
-        LiveChatProfileWidget(QWidget* _parent, const QString& _stamp);
+        LiveChatProfileWidget(QWidget* _parent, const QString& _stamp = QString());
         virtual ~LiveChatProfileWidget();
     };
 

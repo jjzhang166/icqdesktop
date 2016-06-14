@@ -9,8 +9,11 @@ struct app_config
 {
     app_config();
 
-    app_config(const bool _is_server_history_enabled,
-        const int forced_dpi_);
+    app_config(
+        const bool _is_server_history_enabled,
+        const int _forced_dpi, 
+        const bool _is_crash_enabled,
+        const bool _full_log);
 
     void serialize(Out core::coll_helper &_collection) const;
 
@@ -18,6 +21,9 @@ struct app_config
 
     const int forced_dpi_;
 
+    const bool is_crash_enabled_;
+
+    const bool full_log_;
 };
 
 const app_config& get_app_config();

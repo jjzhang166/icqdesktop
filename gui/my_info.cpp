@@ -1,32 +1,41 @@
 #include "stdafx.h"
 #include "my_info.h"
 #include "core_dispatcher.h"
+#include "cache/avatars/AvatarStorage.h"
 
 namespace Ui
 {
-	my_info::my_info()
-		: flags_(0)
-	{
+    my_info::my_info()
+    {
+    }
 
-	}
+    void my_info::unserialize(core::coll_helper* _collection)
+    {
+        prevData_ = data_;
+        data_.aimId_ = _collection->get_value_as_string("aimId");
+        data_.displayId_ = _collection->get_value_as_string("displayId");
+        data_.friendlyName_ = _collection->get_value_as_string("friendly");
+        data_.state_ = _collection->get_value_as_string("state");
+        data_.userType_ = _collection->get_value_as_string("userType");
+        data_.phoneNumber_ = _collection->get_value_as_string("attachedPhoneNumber");
+        data_.flags_ = _collection->get_value_as_uint("globalFlags");
+        data_.largeIconId_ = _collection->get_value_as_string("largeIconId");
 
-	void my_info::unserialize(core::coll_helper* _collection)
-	{
-		aimId_ = _collection->get_value_as_string("aimId");
-		displayId_ = _collection->get_value_as_string("displayId");
-		friendlyName_ = _collection->get_value_as_string("friendly");
-		state_ = _collection->get_value_as_string("state");
-		userType_ = _collection->get_value_as_string("userType");
-		phoneNumber_ = _collection->get_value_as_string("attachedPhoneNumber");
-		flags_ = _collection->get_value_as_uint("globalFlags");
+        emit received();
+    }
 
-		emit received();
-	}
+    my_info* MyInfo()
+    {
+        static std::unique_ptr<my_info> info(new my_info());
+        return info.get();
+    }
 
-	my_info* MyInfo()
-	{
-		static std::unique_ptr<my_info> info(new my_info());
-		return info.get();
-	}
-
+    void my_info::CheckForUpdate() const
+    {
+        if (prevData_.largeIconId_ != data_.largeIconId_)
+        {
+            Logic::GetAvatarStorage()->UpdateAvatar(aimId());
+            emit Logic::GetAvatarStorage()->avatarChanged(aimId());
+        }
+    }
 }

@@ -9,7 +9,7 @@ namespace Ui
     SemitransparentWindow::SemitransparentWindow(QWidget* _parent)
         : QWidget(_parent)
     {
-        const auto rect = Utils::GetMainRect();
+        const auto rect = _parent->rect();
         auto width = rect.width();
         auto height = rect.height();
 

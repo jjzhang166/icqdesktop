@@ -32,6 +32,10 @@ void cl_presence::serialize(icollection* _coll)
     cl.set_value_as_bool("mute", muted_);
     cl.set_value_as_bool("official", official_);
     cl.set_value_as_int("lastseen", lastseen_);
+    cl.set_value_as_bool("livechat", is_live_chat_);
+    cl.set_value_as_string("iconId", icon_id_);
+    cl.set_value_as_string("bigIconId", big_icon_id_);
+    cl.set_value_as_string("largeIconId", large_icon_id_);
 }
 
 
@@ -45,8 +49,12 @@ void cl_presence::serialize(rapidjson::Value& _node, rapidjson_allocator& _a)
     _node.AddMember("abContactName",  ab_contact_name_, _a);
     _node.AddMember("lastseen",  lastseen_, _a);
     _node.AddMember("mute",  muted_, _a);
+    _node.AddMember("livechat", is_live_chat_ ? 1 : 0, _a);
     _node.AddMember("official", official_ ? 1 : 0, _a);
-
+    _node.AddMember("iconId",  icon_id_, _a);
+    _node.AddMember("bigIconId",  big_icon_id_, _a);
+    _node.AddMember("largeIconId",  large_icon_id_, _a);
+    
     if (!capabilities_.empty())
     {
         rapidjson::Value node_capabilities(rapidjson::Type::kArrayType);
@@ -73,8 +81,12 @@ void cl_presence::unserialize(const rapidjson::Value& _node)
     auto iter_ab_contact_name = _node.FindMember("abContactName");
     auto iter_last_seen = _node.FindMember("lastseen");
     auto iter_mute = _node.FindMember("mute");
+    auto iter_livechat = _node.FindMember("livechat");
     auto iter_official = _node.FindMember("official");
-
+    auto iter_iconId = _node.FindMember("iconId");
+    auto iter_bigIconId = _node.FindMember("bigIconId");
+    auto iter_largeIconId = _node.FindMember("largeIconId");
+    
     if (iter_state != _node.MemberEnd() && iter_state->value.IsString())
         state_ = iter_state->value.GetString();
 
@@ -110,11 +122,25 @@ void cl_presence::unserialize(const rapidjson::Value& _node)
             muted_ = iter_mute->value.GetBool();
     }
 
+
+    if (iter_livechat != _node.MemberEnd())
+        is_live_chat_ = iter_livechat->value != 0;
+
     if (iter_official != _node.MemberEnd())
     {
         if (iter_official->value.IsUint())
             official_ = iter_official->value.GetUint() == 1;
     }
+    
+    if (iter_iconId != _node.MemberEnd() && iter_iconId->value.IsString())
+        icon_id_ = iter_iconId->value.GetString();
+
+    if (iter_bigIconId != _node.MemberEnd() && iter_bigIconId->value.IsString())
+        big_icon_id_ = iter_bigIconId->value.GetString();
+
+    if (iter_largeIconId != _node.MemberEnd() && iter_largeIconId->value.IsString())
+        large_icon_id_ = iter_largeIconId->value.GetString();
+
 }
 
 
@@ -133,6 +159,7 @@ void contactlist::update_presence(const std::string& _aimid, std::shared_ptr<cl_
     iter_contact->second->presence_->lastseen_ = _presence->lastseen_;
     iter_contact->second->presence_->is_chat_ = _presence->is_chat_;
     iter_contact->second->presence_->muted_ = _presence->muted_;
+    iter_contact->second->presence_->is_live_chat_ = _presence->is_live_chat_;
     iter_contact->second->presence_->official_ = _presence->official_;
     set_changed(true);
 }

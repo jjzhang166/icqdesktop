@@ -36,8 +36,8 @@ namespace Utils
         const auto heightMinusBorder = (rect.height() - borderDiameter);
         const auto widthMinusBorder = (rect.width() - borderDiameter);
 
-        assert(heightMinusBorder > 0);
-        assert(widthMinusBorder > 0);
+        assert(heightMinusBorder >= 0);
+        assert(widthMinusBorder >= 0);
 
         QPainterPath clipPath;
 
@@ -46,17 +46,11 @@ namespace Utils
 
         // lt
 
-        if (isOutgoing)
-        {
-            x += borderRadius;
-        }
+        x += borderRadius;
 
         clipPath.moveTo(x, y);
 
-        if (isOutgoing)
-        {
-            clipPath.arcTo(0, 0, borderDiameter, borderDiameter, 90, 90);
-        }
+        clipPath.arcTo(0, 0, borderDiameter, borderDiameter, 90, 90);
 
         // lb
 
@@ -68,15 +62,12 @@ namespace Utils
 
         // rb
 
-        x = (isOutgoing ? rect.width() : widthMinusBorder);
+        x = widthMinusBorder;
         y = rect.height();
         clipPath.lineTo(x, y);
 
-        if (!isOutgoing)
-        {
-            y -= borderDiameter;
-            clipPath.arcTo(x, y, borderDiameter, borderDiameter, 270, 90);
-        }
+        y -= borderDiameter;
+        clipPath.arcTo(x, y, borderDiameter, borderDiameter, 270, 90);
 
         // rt
 
@@ -90,7 +81,7 @@ namespace Utils
 
         // the final closure
 
-        x = (isOutgoing ? borderRadius : 0);
+        x = borderRadius;
         y = 0;
         clipPath.lineTo(x, y);
 

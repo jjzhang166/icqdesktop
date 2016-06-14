@@ -26,6 +26,8 @@ namespace HistoryControl
 
 		QImage loadEventIcon(const int32_t sizePx) const;
 
+        core::chat_event_type eventType() const;
+        
 	private:
 		const core::chat_event_type Type_;
 
@@ -81,6 +83,8 @@ namespace HistoryControl
 		QString formatMchatLeaveText() const;
 
 		QString formatMchatMembersList(const bool activeVoice) const;
+
+        QString formatMessageDeletedText() const;
 
 		bool isMyAimid(const QString &aimId) const;
 

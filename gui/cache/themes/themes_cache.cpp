@@ -8,96 +8,118 @@
 UI_THEMES_NS_BEGIN
 std::unique_ptr<cache> t_cache;
 
-theme::theme(int _id, QString _tint_color_string, QByteArray& _imageData, QByteArray& _thumbData, const bool _tile) : id_(_id), position_(0), is_image_loaded_(false) {
-    
-    initDefault();
-    
+QPixmap CopyOnWriteLoadFromData(const QByteArray & data, const char * format = 0, Qt::ImageConversionFlags flags = Qt::AutoColor)
+{
+    QPixmap pixmap;
+    pixmap.loadFromData(data, format, flags);
+    return pixmap;
+}
+
+QPixmap CopyOnWriteLoadFromData(const uchar * data, uint len, const char * format = 0, Qt::ImageConversionFlags flags = Qt::AutoColor)
+{
+    QPixmap pixmap;
+    pixmap.loadFromData(data, len, format, flags);
+    return pixmap;
+}
+
+theme::theme(int _id, QString _tint_color_string, QByteArray& _imageData, QByteArray& _thumbData, const bool _tile) 
+    : position_(0)
+    , is_image_loaded_(false)
+{
+    *this = getDefaultTheme();
     tile_ = _tile;
-    
+    id_ = _id;
+
     tint_color_ = colorFromString(_tint_color_string.toLatin1().data());
+    image_ = CopyOnWriteLoadFromData(_imageData);
     
-    QPixmap pi;
-    pi.loadFromData(_imageData);
-    image_ = pi;
     if (!image_.isNull())
     {
         is_image_loaded_ = true;
     }
     
-    QPixmap pt;
-    pt.loadFromData(_thumbData);
-    thumb_ = pt;
+    thumb_ = CopyOnWriteLoadFromData(_thumbData);
     Utils::check_pixel_ratio(thumb_);
 }
 
 QColor theme::colorFromString(const char* _colorString)
 {
-    QColor color;
-    color.setNamedColor("#" + QString(_colorString));
-    return color;
+    return QColor("#" + QString(_colorString));
 }
 
 theme::theme() : image_(QPixmap()), thumb_(QPixmap()), tile_(false), id_(0), position_(0), is_image_loaded_(true)
 {
-    initDefault();
+    *this = getDefaultTheme();
 }
 
-void theme::initDefault()
-{
-    tile_ = true;
-    tint_color_ = QColor(0xff, 0xff, 0xff, 0x00);
-    
-    contact_list_item_.bg_color_ = QColor(0xff, 0xff, 0xff, 0xff);
-    contact_list_item_.name_color_ = QColor(0x28, 0x28, 0x28, 0xff);
-    contact_list_item_.message_color_ = QColor(0x69, 0x69, 0x69, 0xff);
-    contact_list_item_.sender_color_ = QColor(0x69, 0x69, 0x69, 0xff);
-    contact_list_item_.time_color_ = QColor(0x69, 0x69, 0x69, 0xff);
+theme::theme(int) 
+{}
 
-    incoming_bubble_.bg1_color_ = QColor(0xff, 0xff, 0xff, 0xff);
-    incoming_bubble_.bg2_color_ = QColor(0xff, 0xff, 0xff, 0xb8);
-    incoming_bubble_.text_color_ = QColor(0x28, 0x28, 0x28, 0xff);
-    incoming_bubble_.time_color_ = QColor(0x97, 0x97, 0x97, 0xff);
-    incoming_bubble_.link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
-    incoming_bubble_.info_color_ = QColor(0x28, 0x28, 0x28, 0xff);
-    incoming_bubble_.info_link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
+theme theme::getDefaultTheme()
+{
+    static bool is_default_theme_constructed = false;
+
+    static theme default_theme(0);
+    if (!is_default_theme_constructed)
+    {
+        default_theme.tile_ = true;
+        default_theme.tint_color_ = QColor(0xff, 0xff, 0xff, 0x00);
     
-    outgoing_bubble_.bg1_color_ = QColor(0xd8, 0xd4, 0xce, 0xe5);
-    outgoing_bubble_.bg2_color_ = QColor(0xd5, 0xd2, 0xce, 0xb8);
-    outgoing_bubble_.text_color_ = QColor(0x28, 0x28, 0x28, 0xff);
-    outgoing_bubble_.time_color_ = QColor(0x97, 0x97, 0x97, 0xff);
-    outgoing_bubble_.link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
-    outgoing_bubble_.info_color_ = QColor(0x28, 0x28, 0x28, 0xff);
-    outgoing_bubble_.info_link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
+        default_theme.contact_list_item_.bg_color_ = QColor(0xff, 0xff, 0xff, 0xff);
+        default_theme.contact_list_item_.name_color_ = QColor(0x28, 0x28, 0x28, 0xff);
+        default_theme.contact_list_item_.message_color_ = QColor(0x69, 0x69, 0x69, 0xff);
+        default_theme.contact_list_item_.sender_color_ = QColor(0x69, 0x69, 0x69, 0xff);
+        default_theme.contact_list_item_.time_color_ = QColor(0x69, 0x69, 0x69, 0xff);
+
+        default_theme.incoming_bubble_.bg1_color_ = QColor(0xff, 0xff, 0xff, 0xff);
+        default_theme.incoming_bubble_.bg2_color_ = QColor(0xff, 0xff, 0xff, 0xb8);
+        default_theme.incoming_bubble_.text_color_ = QColor(0x28, 0x28, 0x28, 0xff);
+        default_theme.incoming_bubble_.time_color_ = QColor(0x97, 0x97, 0x97, 0xff);
+        default_theme.incoming_bubble_.link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
+        default_theme.incoming_bubble_.info_color_ = QColor(0x28, 0x28, 0x28, 0xff);
+        default_theme.incoming_bubble_.info_link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
     
-    preview_stickers_.time_color_ = QColor(0x97, 0x97, 0x97, 0xff);
+        default_theme.outgoing_bubble_.bg1_color_ = QColor(0xd8, 0xd4, 0xce, 0xe5);
+        default_theme.outgoing_bubble_.bg2_color_ = QColor(0xd5, 0xd2, 0xce, 0xb8);
+        default_theme.outgoing_bubble_.text_color_ = QColor(0x28, 0x28, 0x28, 0xff);
+        default_theme.outgoing_bubble_.time_color_ = QColor(0x97, 0x97, 0x97, 0xff);
+        default_theme.outgoing_bubble_.link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
+        default_theme.outgoing_bubble_.info_color_ = QColor(0x28, 0x28, 0x28, 0xff);
+        default_theme.outgoing_bubble_.info_link_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
     
-    date_.bg_color_ = QColor(0x83, 0x83, 0x83, 0xff);
-    date_.text_color_ = QColor(0xff, 0xff, 0xff, 0xff);
+        default_theme.preview_stickers_.time_color_ = QColor(0x97, 0x97, 0x97, 0xff);
     
-    chat_event_.bg_color_ = QColor(0xff, 0xff, 0xff, 0x00);
-    chat_event_.text_color_ = QColor(0x97, 0x97, 0x97, 0xff);
+        default_theme.date_.bg_color_ = QColor(0x83, 0x83, 0x83, 0xff);
+        default_theme.date_.text_color_ = QColor(0xff, 0xff, 0xff, 0xff);
     
-    contact_name_.text_color_ = QColor(0x97, 0x97, 0x97, 0xff);
+        default_theme.chat_event_.bg_color_ = QColor(0xff, 0xff, 0xff, 0x00);
+        default_theme.chat_event_.text_color_ = QColor(0x97, 0x97, 0x97, 0xff);
     
-    new_messages_bubble_.bg_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
-    new_messages_bubble_.bg_hover_color_ = QColor(0x60, 0xaa, 0x23, 0xff);
-    new_messages_bubble_.bg_pressed_color_ = QColor(0x49, 0x88, 0x12, 0xff);
-    new_messages_bubble_.text_color_ = QColor(0xff, 0xff, 0xff, 0xff);
+        default_theme.contact_name_.text_color_ = QColor(0x97, 0x97, 0x97, 0xff);
     
-    new_messages_plate_.bg_color_ = QColor(0x57, 0x9e, 0x1c, 0x7f);
-    new_messages_plate_.text_color_ = QColor(0xff, 0xff, 0xff, 0xff);
+        default_theme.new_messages_bubble_.bg_color_ = QColor(0x57, 0x9e, 0x1c, 0xff);
+        default_theme.new_messages_bubble_.bg_hover_color_ = QColor(0x60, 0xaa, 0x23, 0xff);
+        default_theme.new_messages_bubble_.bg_pressed_color_ = QColor(0x49, 0x88, 0x12, 0xff);
+        default_theme.new_messages_bubble_.text_color_ = QColor(0xff, 0xff, 0xff, 0xff);
     
-    typing_.text_color_ = QColor(0x57, 0x54, 0x4c, 0xff);
-    typing_.light_gif_ = 0;
+        default_theme.new_messages_plate_.bg_color_ = QColor(0x57, 0x9e, 0x1c, 0x7f);
+        default_theme.new_messages_plate_.text_color_ = QColor(0xff, 0xff, 0xff, 0xff);
     
-    spinner_color_ = QColor(0x83, 0x86, 0x93, 0xff);
-    edges_color_ = QColor(0xc7, 0xc7, 0xc7, 0xff);
+        default_theme.typing_.text_color_ = QColor(0x57, 0x54, 0x4c, 0xff);
+        default_theme.typing_.light_gif_ = 0;
     
+        default_theme.spinner_color_ = QColor(0x83, 0x86, 0x93, 0xff);
+        default_theme.edges_color_ = QColor(0xc7, 0xc7, 0xc7, 0xff);
     
-    image_ = QPixmap(Utils::parse_image_name(":/resources/main_window/pat_100.png"));
-    Utils::check_pixel_ratio(image_);
-    thumb_ = QPixmap(Utils::parse_image_name(":/resources/main_window/pat_thumb_100.png"));
-    Utils::check_pixel_ratio(thumb_);
+        default_theme.image_ = QPixmap(Utils::parse_image_name(":/resources/main_window/pat_100.png"));
+        default_theme.thumb_ = QPixmap(Utils::parse_image_name(":/resources/main_window/pat_thumb_100.png"));
+    
+        Utils::check_pixel_ratio(default_theme.image_);
+        Utils::check_pixel_ratio(default_theme.thumb_);
+        
+        is_default_theme_constructed = true;
+    }
+    return default_theme;
 }
 
 QColor theme::get_tint_color()
@@ -261,20 +283,19 @@ void cache::set_theme_data(core::coll_helper _coll)
         int32_t image_size = image_stream->size();
         if (image_size > 0)
         {
-            QPixmap p;
-            p.loadFromData((const uchar*)image_stream->read(image_size), image_size);
+            auto p = CopyOnWriteLoadFromData((const uchar*)image_stream->read(image_size), image_size);
             theme->set_image(p);
         }
     }
 }
 
-void cache::unload_unused_themes_images(std::set<int> used)
+void cache::unload_unused_themes_images(const std::set<int>& _used)
 {
     for (auto it = themes_.begin(); it != themes_.end(); ++it)
     {
         auto theme = it->second;
         int theme_id = theme->get_id();
-        if (used.find(theme_id) == used.end() && theme->is_image_loaded())
+        if (_used.count(theme_id) == 0 && theme->is_image_loaded())
         {
             theme->unload_image();
         }
@@ -283,7 +304,7 @@ void cache::unload_unused_themes_images(std::set<int> used)
 
 void theme::load_thumb(char* _data, int32_t _size)
 {
-    thumb_.loadFromData((const uchar*)_data, _size);
+    thumb_ = CopyOnWriteLoadFromData((const uchar*)_data, _size);
     Utils::check_pixel_ratio(thumb_);
 }
 
@@ -306,9 +327,9 @@ void unserialize(core::coll_helper _coll)
     get_cache().unserialize(_coll);
 }
 
-void unload_unused_themes_images(std::set<int> used)
+void unload_unused_themes_images(const std::set<int>& _used)
 {
-    get_cache().unload_unused_themes_images(used);
+    get_cache().unload_unused_themes_images(_used);
 }
 
 void set_theme_data(core::coll_helper _coll)

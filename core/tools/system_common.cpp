@@ -94,4 +94,30 @@ namespace core { namespace tools { namespace system {
 #endif
     }
 
+    bool is_exist(const std::wstring& path)
+    {
+        boost::filesystem::wpath pathW(path);
+        boost::system::error_code e;
+        return boost::filesystem::exists(pathW, e);
+    }
+
+    bool is_exist(const boost::filesystem::wpath & path)
+    {
+        boost::system::error_code e;
+        return boost::filesystem::exists(path, e);
+    }
+
+    bool create_directory(const std::wstring& path)
+    {
+        boost::filesystem::wpath pathW(path);
+        boost::system::error_code e;
+        return boost::filesystem::create_directories(pathW, e);
+    }
+
+    bool create_directory(const boost::filesystem::wpath& path)
+    {
+        boost::system::error_code e;
+        return boost::filesystem::create_directories(path, e);
+    }
+
 }}}

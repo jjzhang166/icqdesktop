@@ -6,26 +6,26 @@ namespace core
 {
     namespace wim
     {
+        struct chat_member_info
+        {
+            std::string aimid_;
+            std::string role_;
+            std::string first_name_;
+            std::string last_name_;
+            std::string nick_name_;
+
+            bool friend_;
+            bool no_avatar_;
+
+            chat_member_info()
+                : friend_(false)
+                , no_avatar_(false)
+            {
+            }
+        };
+
         class chat_info
         {
-            struct chat_member_info
-            {
-                std::string aimid_;
-                std::string role_;
-                std::string first_name_;
-                std::string last_name_;
-                std::string nick_name_;
-
-                bool friend_;
-                bool no_avatar_;
-
-                chat_member_info()
-                    : friend_(false)
-                    , no_avatar_(false)
-                {
-                }
-            };
-
             std::string aimid_;
             std::string name_;
             std::string about_;
@@ -52,7 +52,7 @@ namespace core
             chat_info();
 
             int32_t unserialize(const rapidjson::Value& _node);
-            void serialize(core::coll_helper _coll);
+            void serialize(core::coll_helper _coll) const;
         };
 
     }

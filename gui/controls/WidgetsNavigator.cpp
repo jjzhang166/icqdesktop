@@ -13,7 +13,6 @@ namespace Ui
     
     void WidgetsNavigator::insertWidget(int index, QWidget *widget)
     {
-        assert(indexes.count(widget) == 0);
         indexes.insert(std::make_pair(widget, index));
         QStackedWidget::insertWidget(index, widget);
     }
@@ -50,7 +49,6 @@ namespace Ui
 
     void WidgetsNavigator::removeWidget(QWidget *widget)
     {
-        assert(indexes.count(widget) != 0);
         if (indexes.count(widget) != 0)
             indexes.erase(widget);
         QStackedWidget::removeWidget(widget);

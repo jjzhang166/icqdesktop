@@ -49,7 +49,7 @@ namespace Ui
 
         QPushButton* button_add = new QPushButton(this);
         button_add->setObjectName("button_add");
-        button_add->setText(QT_TRANSLATE_NOOP("auth_widget","Add contact"));
+        button_add->setText(QT_TRANSLATE_NOOP("auth_widget","Add"));
         button_add->setCursor(Qt::PointingHandCursor);
         connect(button_add, &QPushButton::clicked, [this]() { emit add_contact(); });
 

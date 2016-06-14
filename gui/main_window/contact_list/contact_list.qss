@@ -35,8 +35,8 @@ QPushButton[RecentButton="true"]
 	min-height: 24dip;
 	max-height: 24dip;
 	border-image: url(:/resources/tabs_recents_100.png);
-	margin-left: 28dip;
-	margin-right: 28dip;
+	margin-left: 24dip;
+	margin-right: 24dip;
 	margin-top: 24dip;
 	margin-bottom: 24dip;
 }
@@ -56,6 +56,58 @@ QPushButton[RecentButton="true"]:checked:hover
 	border-image: url(:/resources/tabs_recents_100_active.png);
 }
 
+QPushButton[LiveChatButton="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/tabs_livechats_100.png);
+	margin-left: 24dip;
+	margin-right: 24dip;
+	margin-top: 24dip;
+	margin-bottom: 24dip;
+}
+
+QPushButton[LiveChatButton="true"]:hover
+{
+	border-image: url(:/resources/tabs_livechats_100_hover.png);
+}
+
+QPushButton[LiveChatButton="true"]:checked
+{
+	border-image: url(:/resources/tabs_livechats_100_active.png);
+}
+
+QPushButton[LiveChatButton="true"]:checked:hover
+{
+	border-image: url(:/resources/tabs_livechats_100_active.png);
+}
+
+QLabel[LiveChatTitle="true"]
+{
+    text-align: left baseline;
+    font-family: "%FONT_FAMILY_LIGHT%";
+    font-weight: %FONT_WEIGHT_LIGHT%;
+    font-size: 32dip;
+    color: #282828;
+    margin-left: 16dip;
+    margin-bottom: 6dip;
+    margin-top: 22dip;
+}
+
+QLabel[MyLiveChatsLabel="true"]
+{
+    text-align: left baseline;
+    font-family: "%FONT_FAMILY_BOLD%";
+    font-weight: %FONT_WEIGHT_BOLD%;
+    font-size: 12dip;
+    color: #579e1c;
+    margin-left: 16dip;
+    margin-bottom: 12dip;
+    margin-top: 12dip;
+}
+
 QPushButton[AllButton="true"]
 {
 	min-width: 24dip;
@@ -63,8 +115,8 @@ QPushButton[AllButton="true"]
 	min-height: 24dip;
 	max-height: 24dip;
 	border-image: url(:/resources/tabs_contacts_100.png);
-	margin-left: 28dip;
-	margin-right: 28dip;
+	margin-left: 24dip;
+	margin-right: 24dip;
 	margin-top: 24dip;
 	margin-bottom: 24dip;
 }

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "../tools/threadpool.h"
+#include "../tools/system.h"
 #include "log.h"
 
 #define LOG_FILE_EXT_HTML "html"
@@ -90,7 +91,8 @@ namespace core
 
         void determine_log_index()
         {
-            assert(fs::is_directory(logs_dir_));
+            boost::system::error_code error;
+            assert(fs::is_directory(logs_dir_, error));
             assert(log_file_index_ == -1);
 
             using namespace boost::xpressive;
@@ -129,9 +131,10 @@ namespace core
 
         bool create_logs_directory(const fs::wpath &_path)
         {
-            if (!fs::is_directory(_path))
+            boost::system::error_code error;
+            if (!fs::is_directory(_path, error))
             {
-                return fs::create_directories(_path);
+                return core::tools::system::create_directory(_path);
             }
 
             return true;

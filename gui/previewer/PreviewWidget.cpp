@@ -14,7 +14,7 @@ namespace
 namespace Previewer
 {
 
-	PreviewWidget::PreviewWidget(QPixmap& preview)
+	PreviewWidget::PreviewWidget(const QPixmap& preview)
 		: QWidget(nullptr, Qt::Window)
         , SourcePreview_(preview)
 	{

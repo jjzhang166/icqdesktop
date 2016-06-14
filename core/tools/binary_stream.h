@@ -21,7 +21,7 @@ namespace core
 
             binary_stream()
                 :	input_cursor_(0),
-                output_cursor_(0)
+                    output_cursor_(0)
             {
             }
 
@@ -34,6 +34,16 @@ namespace core
             {
                 copy(_stream);
                 return *this;
+            }
+
+            char* get_data()
+            {
+                if (!buffer_.size())
+                {
+                    return nullptr;
+                }
+
+                return &buffer_[0];
             }
 
             void copy(const binary_stream& _stream)
@@ -99,6 +109,9 @@ namespace core
 
             void write(const char* _data, uint32_t _size)
             {
+                if (_size == 0)
+                    return;
+
                 uint32_t size_need = input_cursor_ + _size;
                 if (size_need > buffer_.size())
                     buffer_.resize(size_need*2);
@@ -153,6 +166,7 @@ namespace core
             }
 
             bool save_2_file(const std::wstring& _file_name) const;
+
             bool load_from_file(const std::wstring& _file_name);
         };
 

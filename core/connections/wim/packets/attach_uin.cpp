@@ -3,6 +3,7 @@
 
 #include "../../../http_request.h"
 #include "../../../tools/system.h"
+#include "../../../utils.h"
 
 using namespace core;
 using namespace wim;
@@ -28,7 +29,7 @@ int32_t attach_uin::init_request(std::shared_ptr<core::http_request_simple> _req
     
     std::string from_uin_signed_url = "";
     {
-        core::http_request_simple request_from(_request->get_user_proxy());
+        core::http_request_simple request_from(_request->get_user_proxy(), utils::get_user_agent());
         const std::string host = WIM_API_REPLACE_ACCOUNT_HOST;
         request_from.set_url(host);
         request_from.push_post_parameter("a", escape_symbols(from_params_.a_token_));

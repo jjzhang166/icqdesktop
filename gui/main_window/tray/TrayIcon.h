@@ -38,6 +38,8 @@ namespace Ui
 
 		void Hide();
         void forceUpdateIcon();
+        
+        void setVisible(bool visible);
 
 	private Q_SLOTS:
 		void dlgState(Data::DlgState);

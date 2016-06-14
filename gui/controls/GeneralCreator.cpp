@@ -76,10 +76,11 @@ namespace Ui
         return asws;
     }
 
-    QPushButton* GeneralCreator::addChooser(QWidget* parent, QLayout* layout, const QString& info, const QString& value, std::function< void(QPushButton*) > slot)
+    TextEmojiWidget* GeneralCreator::addChooser(QWidget* parent, QLayout* layout, const QString& info, const QString& value, std::function< void(TextEmojiWidget*) > slot)
     {
         auto f = new QWidget(parent);
         auto l = new QHBoxLayout(f);
+        f->setFixedWidth(Utils::scale_value(400));
         l->setAlignment(Qt::AlignLeft);
         l->setContentsMargins(0, 0, 0, 0);
         l->setSpacing(0);
@@ -95,19 +96,18 @@ namespace Ui
         auto sp = new QWidget(parent);
         auto spl = new QVBoxLayout(sp);
         Utils::grabTouchWidget(sp);
-        sp->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
+        sp->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
         spl->setAlignment(Qt::AlignBottom);
         spl->setContentsMargins(Utils::scale_value(5), 0, 0, 0);
         spl->setSpacing(0);
 
-        auto b = new QPushButton(sp);
+        auto b = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(44));
         {
-            b->setStyleSheet("* { color: #579e1c; }");
-            b->setFlat(true);
-            b->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Fixed);
+            Utils::grabTouchWidget(b);
             b->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+            b->set_ellipsis(true);
             b->setText(value);
-            QObject::connect(b, &QPushButton::pressed, [b, slot]()
+            QObject::connect(b, &TextEmojiWidget::clicked, [b, slot]()
             {
                 slot(b);
             });
@@ -337,5 +337,14 @@ namespace Ui
             event->accept();
         }
 #endif // __APPLE__
+    }
+    
+    void SettingsSlider::wheelEvent(QWheelEvent *e)
+    {
+        // Disable mouse wheel event for sliders
+        if (parent())
+        {
+            parent()->event(e);
+        }
     }
 }

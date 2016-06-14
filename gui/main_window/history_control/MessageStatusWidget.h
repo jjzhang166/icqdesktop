@@ -13,13 +13,9 @@ namespace Ui
     class MessageStatusWidget : public QWidget
     {
     public:
-        static int32_t getMaxWidth(const bool withStatusIcon);
+        static int32_t getMaxWidth();
 
         MessageStatusWidget(HistoryControlPageItem *messageItem);
-
-        void setDeliveredToClient();
-
-        void setDeliveredToServer();
 
         void setTime(const int32_t timestamp);
 

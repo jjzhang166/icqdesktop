@@ -69,7 +69,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntDir>release\</IntDir>
     <OutDir>..\lib\</OutDir>
-    <IncludePath>..\external\windows\boost\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\external\windows\boost\include;..\external\zlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -80,7 +80,7 @@
     <OutDir>..\lib\</OutDir>
     <IntDir>debug\</IntDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>..\external\windows\boost\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\external\windows\boost\include;..\external\zlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>$(ProjectName)d</TargetName>
@@ -129,7 +129,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;CURL_STATICLIB;RAPIDJSON_HAS_STDSTRING=1;_VARIADIC_MAX=6;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../external/openssl;../external/rapidjson-master/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../external/openssl;../external/rapidjson-master/include;../external/zlib/include;</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zm512 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -172,7 +172,9 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common.shared\common_defs.h" />
     <ClInclude Include="..\common.shared\crash_handler.h" />
+    <ClInclude Include="..\common.shared\common_crash_sender.h" />
     <ClInclude Include="..\common.shared\keys.h" />
     <ClInclude Include="archive\opened_dialog.h" />
     <ClInclude Include="configuration\app_config.h" />
@@ -200,20 +202,27 @@
     <ClInclude Include="connections\wim\favorites.h" />
     <ClInclude Include="connections\wim\loader\loader_errors.h" />
     <ClInclude Include="connections\wim\loader\loader_handlers.h" />
+    <ClInclude Include="connections\wim\loader\preview_proxy.h" />
     <ClInclude Include="connections\wim\my_info.h" />
     <ClInclude Include="connections\wim\packets\add_buddy.h" />
     <ClInclude Include="connections\wim\packets\add_chat.h" />
     <ClInclude Include="connections\wim\packets\add_members.h" />
+    <ClInclude Include="connections\wim\packets\block_chat_member.h" />
     <ClInclude Include="connections\wim\packets\del_history.h" />
     <ClInclude Include="connections\wim\packets\del_message.h" />
     <ClInclude Include="connections\wim\packets\attach_phone.h" />
     <ClInclude Include="connections\wim\packets\attach_uin.h" />
     <ClInclude Include="connections\wim\packets\end_session.h" />
+    <ClInclude Include="connections\wim\packets\get_chat_blocked.h" />
+    <ClInclude Include="connections\wim\packets\get_chat_home.h" />
     <ClInclude Include="connections\wim\packets\get_flags.h" />
     <ClInclude Include="connections\wim\packets\get_permit_deny.h" />
     <ClInclude Include="connections\wim\packets\get_themes_index.h" />
     <ClInclude Include="connections\wim\packets\join_chat_alpha.h" />
+    <ClInclude Include="connections\wim\packets\mod_chat_alpha.h" />
+    <ClInclude Include="connections\wim\packets\mod_chat_member_alpha.h" />
     <ClInclude Include="connections\wim\packets\mute_buddy.h" />
+    <ClInclude Include="connections\wim\packets\phoneinfo.h" />
     <ClInclude Include="connections\wim\packets\remove_members.h" />
     <ClInclude Include="connections\wim\packets\client_login.h" />
     <ClInclude Include="connections\wim\packets\fetch.h" />
@@ -238,10 +247,12 @@
     <ClInclude Include="connections\wim\packets\send_imstat.h" />
     <ClInclude Include="connections\wim\packets\send_message.h" />
     <ClInclude Include="connections\wim\packets\send_message_typing.h" />
+    <ClInclude Include="connections\wim\packets\set_avatar.h" />
     <ClInclude Include="connections\wim\packets\set_buddy_attribute.h" />
     <ClInclude Include="connections\wim\packets\set_dlg_state.h" />
     <ClInclude Include="connections\wim\packets\set_permit_deny.h" />
     <ClInclude Include="connections\wim\packets\set_state.h" />
+    <ClInclude Include="connections\wim\packets\set_timezone.h" />
     <ClInclude Include="connections\wim\packets\spam_report.h" />
     <ClInclude Include="connections\wim\packets\speech_to_text.h" />
     <ClInclude Include="connections\wim\packets\start_session.h" />
@@ -277,6 +288,7 @@
     <ClInclude Include="tools\binary_stream_reader.h" />
     <ClInclude Include="tools\coretime.h" />
     <ClInclude Include="crash_sender.h" />
+    <ClInclude Include="tools\file_sharing.h" />
     <ClInclude Include="tools\md5.h" />
     <ClInclude Include="tools\fast_binary_stream.h" />
     <ClInclude Include="gui_settings.h" />
@@ -323,7 +335,9 @@
     <ClInclude Include="connections\wim\loader\web_file_info.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\common.shared\common_defs.cpp" />
     <ClCompile Include="..\common.shared\crash_handler.cpp" />
+    <ClCompile Include="..\common.shared\crash_sender_utils.cpp" />
     <ClCompile Include="configuration\app_config.cpp" />
     <ClCompile Include="connections\wim\active_dialogs.cpp" />
     <ClCompile Include="connections\wim\favorites.cpp" />
@@ -343,19 +357,26 @@
     <ClCompile Include="connections\wim\events\fetch_event_user_added_to_buddy_list.cpp" />
     <ClCompile Include="connections\wim\events\webrtc.cpp" />
     <ClCompile Include="connections\wim\loader\loader_handlers.cpp" />
+    <ClCompile Include="connections\wim\loader\preview_proxy.cpp" />
     <ClCompile Include="connections\wim\packets\add_buddy.cpp" />
     <ClCompile Include="connections\wim\packets\add_chat.cpp" />
     <ClCompile Include="connections\wim\packets\add_members.cpp" />
+    <ClCompile Include="connections\wim\packets\block_chat_member.cpp" />
     <ClCompile Include="connections\wim\packets\del_history.cpp" />
     <ClCompile Include="connections\wim\packets\del_message.cpp" />
     <ClCompile Include="connections\wim\packets\attach_phone.cpp" />
     <ClCompile Include="connections\wim\packets\attach_uin.cpp" />
     <ClCompile Include="connections\wim\packets\end_session.cpp" />
+    <ClCompile Include="connections\wim\packets\get_chat_blocked.cpp" />
+    <ClCompile Include="connections\wim\packets\get_chat_home.cpp" />
     <ClCompile Include="connections\wim\packets\get_flags.cpp" />
     <ClCompile Include="connections\wim\packets\get_themes_index.cpp" />
     <ClCompile Include="connections\wim\packets\get_permit_deny.cpp" />
     <ClCompile Include="connections\wim\packets\join_chat_alpha.cpp" />
     <ClCompile Include="archive\history_patch.cpp" />
+    <ClCompile Include="connections\wim\packets\mod_chat_alpha.cpp" />
+    <ClCompile Include="connections\wim\packets\mod_chat_member_alpha.cpp" />
+    <ClCompile Include="connections\wim\packets\phoneinfo.cpp" />
     <ClCompile Include="connections\wim\packets\remove_members.cpp" />
     <ClCompile Include="connections\wim\packets\client_login.cpp" />
     <ClCompile Include="connections\wim\packets\fetch.cpp" />
@@ -381,10 +402,12 @@
     <ClCompile Include="connections\wim\packets\send_imstat.cpp" />
     <ClCompile Include="connections\wim\packets\send_message.cpp" />
     <ClCompile Include="connections\wim\packets\send_message_typing.cpp" />
+    <ClCompile Include="connections\wim\packets\set_avatar.cpp" />
     <ClCompile Include="connections\wim\packets\set_buddy_attribute.cpp" />
     <ClCompile Include="connections\wim\packets\set_dlg_state.cpp" />
     <ClCompile Include="connections\wim\packets\set_permit_deny.cpp" />
     <ClCompile Include="connections\wim\packets\set_state.cpp" />
+    <ClCompile Include="connections\wim\packets\set_timezone.cpp" />
     <ClCompile Include="connections\wim\packets\spam_report.cpp" />
     <ClCompile Include="connections\wim\packets\speech_to_text.cpp" />
     <ClCompile Include="connections\wim\packets\start_session.cpp" />
@@ -418,6 +441,7 @@
     <ClCompile Include="tools\binary_stream_reader.cpp" />
     <ClCompile Include="tools\coretime.cpp" />
     <ClCompile Include="crash_sender.cpp" />
+    <ClCompile Include="tools\file_sharing.cpp" />
     <ClCompile Include="tools\md5.cpp" />
     <ClCompile Include="tools\fast_binary_stream.cpp" />
     <ClCompile Include="gui_settings.cpp" />

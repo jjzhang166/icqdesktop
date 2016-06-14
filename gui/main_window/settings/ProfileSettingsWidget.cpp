@@ -9,7 +9,6 @@
 #include "../contact_list/SearchMembersModel.h"
 
 #include "../../utils/utils.h"
-#include "../../utils/application.h"
 #include "../../utils/translator.h"
 #include "../../utils/InterConnector.h"
 
@@ -21,6 +20,7 @@
 #include "../../controls/TextEmojiWidget.h"
 #include "../../controls/BackButton.h"
 #include "../../controls/FlatMenu.h"
+#include "../../controls/GeneralDialog.h"
 
 #include "../../gui_settings.h"
 
@@ -327,7 +327,7 @@ namespace Ui
 
             Utils::grabTouchWidget(attach_phone_label);
             attach_phone_label->setCursor(Qt::PointingHandCursor);
-            attach_phone_label->setText(QT_TRANSLATE_NOOP("profile_page", "Attach phone number"));
+            attach_phone_label->setText(QT_TRANSLATE_NOOP("sidebar", "Attach phone"));
             attach_phone_label->setObjectName(QStringLiteral("attach_phone_label"));
             attach_phone_label->set_ellipsis(true);
             infoValuesLayout_->addWidget(attach_phone_label);  
@@ -353,7 +353,7 @@ namespace Ui
             Utils::grabTouchWidget(ignoreListLabel_);
             infoValuesLayout_->addWidget(ignoreListLabel_);
             ignoreListLabel_->setCursor(Qt::PointingHandCursor);
-            ignoreListLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Ignore list"));
+            ignoreListLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Ignored Contacts"));
             ignoreListLabel_->setObjectName(QStringLiteral("ignoreListLabel_"));
             ignoreListLabel_->set_ellipsis(true);
             
@@ -362,7 +362,7 @@ namespace Ui
             Utils::grabTouchWidget(attach_uin_label);
             infoValuesLayout_->addWidget(attach_uin_label);            
             attach_uin_label->setCursor(Qt::PointingHandCursor);
-            attach_uin_label->setText(QT_TRANSLATE_NOOP("profile_page", "Connect to ICQ account"));
+            attach_uin_label->setText(QT_TRANSLATE_NOOP("sidebar", "Connect to ICQ account"));
             attach_uin_label->setObjectName(QStringLiteral("attach_uin_label"));
             attach_uin_label->set_ellipsis(true);
 			
@@ -379,35 +379,35 @@ namespace Ui
         
         void retranslateUi(QWidget *_profileWidget)
         {
-            _profileWidget->setWindowTitle(QT_TRANSLATE_NOOP("profile_page", "Profile"));
+            _profileWidget->setWindowTitle(QT_TRANSLATE_NOOP("sidebar", "Profile"));
             backButton_->setText("");
             messageButton_->setText("");
             voiceButton_->setText("");
             videoButton_->setText("");
-            ignoreButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Ignore"));
-            spamButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Report spam"));
+            ignoreButton_->setText(QT_TRANSLATE_NOOP("sidebar", "Ignore"));
+            spamButton_->setText(QT_TRANSLATE_NOOP("sidebar", "Report spam"));
             fullName_->setText("");
-            optionsButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Edit profile"));
+            optionsButton_->setText(QT_TRANSLATE_NOOP("sidebar", "Edit profile"));
             statusButton_->setText("");
             statusLabel_->setText("");
-            uinHead_->setText(QT_TRANSLATE_NOOP("profile_page", "UIN"));
+            uinHead_->setText(QT_TRANSLATE_NOOP("sidebar", "UIN"));
             uin_->setText("");
-            phoneHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Phone number"));
+            phoneHead_->setText(QT_TRANSLATE_NOOP("sidebar", "Phone number"));
             phone_->setText("");
-            phoneBottom_->setText(QT_TRANSLATE_NOOP("profile_page", "Only visible for those, who has it in the phone book"));
-            firstNameHead_->setText(QT_TRANSLATE_NOOP("profile_page", "First name"));
+            phoneBottom_->setText(QT_TRANSLATE_NOOP("sidebar", "Only visible for those, who has it in the phone book"));
+            firstNameHead_->setText(QT_TRANSLATE_NOOP("sidebar", "First name"));
             firstName_->setText("");
-            lastNameHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Last name"));
+            lastNameHead_->setText(QT_TRANSLATE_NOOP("sidebar", "Last name"));
             lastName_->setText("");
-            birthdateHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Birthdate"));
+            birthdateHead_->setText(QT_TRANSLATE_NOOP("sidebar", "Birthdate"));
             birthdate_->setText("");
-            genderHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Gender"));
+            genderHead_->setText(QT_TRANSLATE_NOOP("sidebar", "Gender"));
             gender_->setText("");
-            countryHead_->setText(QT_TRANSLATE_NOOP("profile_page", "Country"));
+            countryHead_->setText(QT_TRANSLATE_NOOP("sidebar", "Country"));
             country_->setText("");
-            cityHead_->setText(QT_TRANSLATE_NOOP("profile_page", "City"));
+            cityHead_->setText(QT_TRANSLATE_NOOP("sidebar", "City"));
             city_->setText("");
-            aboutHead_->setText(QT_TRANSLATE_NOOP("profile_page", "About me"));
+            aboutHead_->setText(QT_TRANSLATE_NOOP("sidebar", "About me"));
             about_->setText("");
         }
     };
@@ -419,22 +419,23 @@ namespace Ui
         actionButtonState_(EDIT_PROFILE),
         uin_(""),
         needRequestAgain_(false),
+        goneAway_(false),
         disconnector_(new Utils::SignalsDisconnector)
     {
         Ui_->init(this);
         
         connect(Ui_->backButton_, &QPushButton::clicked, [this]() { emit Utils::InterConnector::instance().profileSettingsBack(); });
 
-        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TRANSLATE_NOOP("profile_page", "Online"), this, SLOT(menuStateOnline()));
-        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TRANSLATE_NOOP("profile_page", "Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
-        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TRANSLATE_NOOP("profile_page", "Invisible"), this, SLOT(menuStateInvisible()));
+        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TRANSLATE_NOOP("sidebar", "Online"), this, SLOT(menuStateOnline()));
+        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TRANSLATE_NOOP("sidebar", "Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
+        Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TRANSLATE_NOOP("sidebar", "Invisible"), this, SLOT(menuStateInvisible()));
 
         /*
-        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("profile_page", "Add to Favorites"));
+        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("sidebar", "Add to Favorites"));
         Ui_->optionsMenu_->addSeparator();
         */
-        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("profile_page", "Ignore"), this, SLOT(contactIgnore()));
-        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("profile_page", "Report Spam"), this, SLOT(contactSpam()));
+        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("sidebar", "Ignore"), this, SLOT(contactIgnore()));
+        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("sidebar", "Report spam"), this, SLOT(contactSpam()));
 
         connect(Ui_->ignoreButton_, SIGNAL(clicked()), this, SLOT(contactIgnore()));
         connect(Ui_->spamButton_, SIGNAL(clicked()), this, SLOT(contactSpam()));
@@ -506,12 +507,12 @@ namespace Ui
     
     void ProfileSettingsWidget::myInfo()
     {
-        auto state = MyInfo()->state().toLower();
-        if (state == "invisible")
+        auto currentState_ = MyInfo()->state().toLower();
+        if (currentState_ == "invisible")
             setStateInvisible();
-        else if (state == "dnd")
+        else if (currentState_ == "dnd")
             setStateDoNotDisturb();
-        else if (state == "offline")
+        else if (currentState_ == "offline")
             setStateOffline();
         else
             setStateOnline();
@@ -652,8 +653,8 @@ namespace Ui
             setLastName(_profile->get_last_name());
             setBirthdate(_profile->get_birthdate() ? Utils::GetTranslator()->formatDate(QDateTime::fromMSecsSinceEpoch(_profile->get_birthdate() * 1000, Qt::LocalTime).date(), false) : "");
             setGender(_profile->get_gender());
-            setCountry(_profile->get_origin_address().get_country());
-            setCity(_profile->get_origin_address().get_city());
+            setCountry(_profile->get_home_address().get_country());
+            setCity(_profile->get_home_address().get_city());
             setAbout(_profile->get_about());
         }
         
@@ -671,9 +672,9 @@ namespace Ui
             {
                 //puts(url.toStdString().c_str());
                 
-                ((Utils::Application *)qApp)->unsetUrlHandler();
+                Utils::InterConnector::instance().unsetUrlHandler();
                 QDesktopServices::openUrl(url);
-                ((Utils::Application *)qApp)->setUrlHandler();
+                Utils::InterConnector::instance().setUrlHandler();
             });
             Ui_->optionsButton_->disconnect();
             connect(Ui_->optionsButton_, &QPushButton::clicked, [uin]()
@@ -707,21 +708,21 @@ namespace Ui
                 Ui_->statusButton_->setVisible(contactIsOnline);
                 if (!contact->is_online())
                 {
-                    QString state = QT_TRANSLATE_NOOP("profile_page", "Seen ");
+                    QString state = QT_TRANSLATE_NOOP("sidebar", "Seen ");
                     QDateTime lastSeen = contact->Get()->GetLastSeen();
                     if (lastSeen.isValid())
                     {
                         const auto current = QDateTime::currentDateTime();
                         const auto days = lastSeen.daysTo(current);
                         if (days == 0)
-                            state += QT_TRANSLATE_NOOP("profile_page", "today");
+                            state += QT_TRANSLATE_NOOP("sidebar", "today");
                         else if (days == 1)
-                            state += QT_TRANSLATE_NOOP("profile_page", "yesterday");
+                            state += QT_TRANSLATE_NOOP("sidebar", "yesterday");
                         else
                             state += Utils::GetTranslator()->formatDate(lastSeen.date(), lastSeen.date().year() == current.date().year());
                         if (lastSeen.date().year() == current.date().year())
                         {
-                            state += QT_TRANSLATE_NOOP("profile_page", " at ");
+                            state += QT_TRANSLATE_NOOP("sidebar", " at ");
                             state += lastSeen.time().toString(Qt::SystemLocaleShortDate);
                         }
 
@@ -746,7 +747,7 @@ namespace Ui
                 else
                 {
                     Utils::ApplyPropertyParameter(Ui_->statusLabel_, "green", false);
-                    Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Offline"));
+                    Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Offline"));
                 }
             }
             
@@ -775,7 +776,6 @@ namespace Ui
                         if (result)
                         {
                             Logic::GetContactListModel()->setCurrent(uin, true);
-                            GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::add_user_profile_page);
                             emit Utils::InterConnector::instance().profileSettingsBack();
                         }
                     });
@@ -798,7 +798,6 @@ namespace Ui
                     emit Utils::InterConnector::instance().profileSettingsBack();
                     
                     QTimer::singleShot(500, [uin]() { Ui::GetDispatcher()->getVoipController().setStartA(uin.toUtf8(), false); });
-                    GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::profile_call);
                 });
                 Ui_->videoButton_->disconnect();
                 connect(Ui_->videoButton_, &QPushButton::clicked, [uin]()
@@ -807,7 +806,6 @@ namespace Ui
                     emit Utils::InterConnector::instance().profileSettingsBack();
 
                     QTimer::singleShot(500, [uin]() { Ui::GetDispatcher()->getVoipController().setStartV(uin.toUtf8(), false); });
-                    GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::profile_video_call);
                 });
             }
         }
@@ -817,6 +815,7 @@ namespace Ui
         if (!avatar_)
         {
             avatar_ = new ContactAvatarWidget(Ui_->avatar_, uin, dname, Utils::scale_value(180), true);
+            avatar_->SetIsInMyProfile(actionButtonState_ == EDIT_PROFILE);
             Ui_->avatarLayout_->addWidget(avatar_);
         }
         else
@@ -824,58 +823,81 @@ namespace Ui
             avatar_->UpdateParams(uin_, dname);
         }
     }
+
+    void ProfileSettingsWidget::invokeStateAway()
+    {
+        // dnd or invisible can't swap to away
+        if (MyInfo()->state().toLower() == "online")
+        {
+            goneAway_ = true;
+            setState(core::profile_state::away);
+        }
+    }
+    void ProfileSettingsWidget::invokePreviousState()
+    {
+        if (goneAway_)
+        {
+            goneAway_ = false;
+            menuStateOnline();
+        }
+    }
     
     void ProfileSettingsWidget::menuStateOnline()
     {
-        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_string("state", "online");
-        collection.set_value_as_string("aimid", MyInfo()->aimId().toStdString());
-        Ui::GetDispatcher()->post_message_to_core("set_state", collection.get());
-		GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::myprofile_online);
+        setState(core::profile_state::online);
     }
     void ProfileSettingsWidget::menuStateDoNotDisturb()
     {
-        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_string("state", "dnd");
-        collection.set_value_as_string("aimid", MyInfo()->aimId().toStdString());
-        Ui::GetDispatcher()->post_message_to_core("set_state", collection.get());
-        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::myprofile_dnd);
+        setState(core::profile_state::dnd);
     }
+
     void ProfileSettingsWidget::menuStateInvisible()
     {
+        setState(core::profile_state::invisible);
+    }
+
+    void ProfileSettingsWidget::setState(const core::profile_state _state)
+    {
+        assert(_state > core::profile_state::min);
+        assert(_state < core::profile_state::max);
+
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_string("state", "invisible");
+
+        std::stringstream stream;
+        stream << _state;
+
+        collection.set_value_as_string("state", stream.str());
         collection.set_value_as_string("aimid", MyInfo()->aimId().toStdString());
         Ui::GetDispatcher()->post_message_to_core("set_state", collection.get());
-        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::myprofile_invisible);
+        GetDispatcher()->post_stats_to_core(stateToStatisticsEvent(_state));
     }
 
     void ProfileSettingsWidget::setStateOnline()
     {
         Ui_->statusButton_->setVisible(true);
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_online_200.png"));
-        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Online"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Online"));
     }
     
     void ProfileSettingsWidget::setStateOffline()
     {
         Ui_->statusButton_->setVisible(true);
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_offline_200.png"));
-        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Offline"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Offline"));
     }
     
     void ProfileSettingsWidget::setStateDoNotDisturb()
     {
         Ui_->statusButton_->setVisible(true);
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_dnd_200.png"));
-        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Do not disturb"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Do not disturb"));
     }
     
     void ProfileSettingsWidget::setStateInvisible()
     {
         Ui_->statusButton_->setVisible(true);
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_invisible_200.png"));
-        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("profile_page", "Invisible"));
+        Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Invisible"));
     }
     
     void ProfileSettingsWidget::setFullName(const QString& _val)
@@ -902,11 +924,11 @@ namespace Ui
             QString phone_text = "";
             if (_val.length())
             {
-                phone_text = QT_TRANSLATE_NOOP("profile_page", "Only visible for those, who has it in the phone book");
+                phone_text = QT_TRANSLATE_NOOP("sidebar", "Only visible for those, who has it in the phone book");
             }
             else
             {
-                phone_text = QT_TRANSLATE_NOOP("profile_page", "for safety and spam protection");
+                phone_text = QT_TRANSLATE_NOOP("sidebar", "for safety and spam protection");
             }
 
             Ui_->phoneBottom_->setText(phone_text);
@@ -939,9 +961,9 @@ namespace Ui
     void ProfileSettingsWidget::setGender(const QString& _val)
     {
         if (_val.toLower() == "male")
-            Ui_->gender_->setText(QT_TRANSLATE_NOOP("profile_page", "Male"));
+            Ui_->gender_->setText(QT_TRANSLATE_NOOP("sidebar", "Male"));
         else if (_val.toLower() == "female")
-            Ui_->gender_->setText(QT_TRANSLATE_NOOP("profile_page", "Female"));
+            Ui_->gender_->setText(QT_TRANSLATE_NOOP("sidebar", "Female"));
         else
             Ui_->gender_->setText("");
         Ui_->gender_->setVisible(Ui_->gender_->text().length());
@@ -973,7 +995,7 @@ namespace Ui
     {
         if (actionButtonState_ == EDIT_PROFILE)
         {
-            Ui_->optionsButton_->setText(QT_TRANSLATE_NOOP("profile_page", "Edit profile"));
+            Ui_->optionsButton_->setText(QT_TRANSLATE_NOOP("sidebar", "Edit profile"));
             Ui_->optionsButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
             Ui_->optionsButton_->setMenu(nullptr);
 

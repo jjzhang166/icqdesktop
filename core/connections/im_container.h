@@ -26,7 +26,10 @@ namespace core
 
     typedef std::function<void(int64_t, coll_helper&)> message_function;
 
-#define REGISTER_IM_MESSAGE(_message_string, _callback) messages_map_.emplace(_message_string, std::bind(&im_container::_callback, this, std::placeholders::_1, std::placeholders::_2));
+    #define REGISTER_IM_MESSAGE(_message_string, _callback)                                             \
+        messages_map_.emplace(                                                                          \
+            _message_string,                                                                            \
+            std::bind(&im_container::_callback, this, std::placeholders::_1, std::placeholders::_2));
 
     class im_container : public std::enable_shared_from_this<im_container>
     {
@@ -39,14 +42,18 @@ namespace core
 
         bool create_ims();
         void connect_ims();
-    
-        // gui message handlers 
+
+        // gui message handlers
         void on_login_by_password(int64_t _seq, coll_helper& _params);
+        void on_login_by_password_for_attach_uin(int64_t _seq, coll_helper& _params);
+
         void on_login_get_sms_code(int64_t _seq, coll_helper& _params);
         void on_login_by_phone(int64_t _seq, coll_helper& _params);
         void on_logout(int64_t _seq, coll_helper& _params);
+        void on_phoneinfo(int64_t _seq, coll_helper& _params);
         void on_connect_after_migration(int64_t _seq, coll_helper& _params);
         void on_get_contact_avatar(int64_t _seq, coll_helper& _params);
+        void on_show_contact_avatar(int64_t _seq, coll_helper& _params);
         void on_send_message(int64_t _seq, coll_helper& _params);
         void on_message_typing(int64_t _seq, coll_helper& _params);
         void on_feedback(int64_t _seq, coll_helper& _params);
@@ -66,13 +73,15 @@ namespace core
         void on_upload_file_sharing(int64_t _seq, coll_helper& _params);
         void on_abort_file_sharing_uploading(int64_t _seq, coll_helper& _params);
         void on_download_file(int64_t _seq, coll_helper& _params);
-        void on_download_preview(int64_t _seq, coll_helper& _params);
+        void on_download_image(int64_t _seq, coll_helper& _params);
         void on_abort_file_downloading(int64_t _seq, coll_helper& _params);
         void on_get_stickers_meta(int64_t _seq, coll_helper& _params);
         void on_get_themes_meta(int64_t _seq, coll_helper& _params);
         void on_get_theme(int64_t _seq, coll_helper& _params);
         void on_get_sticker(int64_t _seq, coll_helper& _params);
         void on_get_chat_info(int64_t _seq, coll_helper& _params);
+        void on_get_chat_blocked(int64_t _seq, coll_helper& _params);
+        void on_get_chat_home(int64_t _seq, coll_helper& _params);
         void on_search_contacts(int64_t _seq, coll_helper& _params);
         void on_search_contacts2(int64_t _seq, coll_helper& _params);
         void on_profile(int64_t _seq, coll_helper& _params);
@@ -88,8 +97,16 @@ namespace core
         void on_favorite(int64_t _seq, coll_helper& _params);
         void on_unfavorite(int64_t _seq, coll_helper& _params);
 
+        void on_mod_chat_name(int64_t _seq, coll_helper& _params);
+        void on_mod_chat_about(int64_t _seq, coll_helper& _params);
+        void on_mod_chat_public(int64_t _seq, coll_helper& _params);
+        void on_block_chat_member(int64_t _seq, coll_helper& _params);
+        void on_set_chat_member_role(int64_t _seq, coll_helper& _params);
+
         void on_set_user_proxy(int64_t _seq, coll_helper& _params);
         void on_join_livechat(int64_t _seq, coll_helper& _params);
+        void on_set_locale(int64_t _seq, coll_helper& _params);
+        void on_set_avatar(int64_t _seq, coll_helper& _params);
 
         void on_voip_call_message(int64_t _seq, coll_helper& _params);
         void on_voip_avatar_msg(std::shared_ptr<base_im> im, coll_helper& _params);
@@ -112,11 +129,13 @@ namespace core
 
         void fromInternalProxySettings2Voip(const core::proxy_settings& proxySettings, voip_manager::VoipProxySettings& voipProxySettings);
 
+        void on_close_promo(int64_t _seq, coll_helper& _params);
+
     public:
 
         void on_message_from_gui(const char * _message, int64_t _seq, coll_helper& _params);
         std::shared_ptr<base_im> get_im_by_id(int32_t _id) const;
-        void update_login(im_login_id& _login);
+        bool update_login(im_login_id& _login);
         void replace_uin_in_login(im_login_id& old_login, im_login_id& new_login);
         void logout();
 

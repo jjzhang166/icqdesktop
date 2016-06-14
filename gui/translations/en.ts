@@ -73,13 +73,13 @@
         <source>© ICQ LLC</source>
         <translation>© ICQ LLC</translation>
     </message>
+    <message>
+        <source>Presented by Mail.Ru</source>
+        <translation>Presented by Mail.Ru</translation>
+    </message>
 </context>
 <context>
     <name>auth_widget</name>
-    <message>
-        <source>Add contact</source>
-        <translation>Add contact</translation>
-    </message>
     <message>
         <source>Block</source>
         <translation>Block</translation>
@@ -108,6 +108,73 @@
         <comment>21</comment>
         <translation>years</translation>
     </message>
+    <message>
+        <source>Add</source>
+        <translation>Add</translation>
+    </message>
+</context>
+<context>
+    <name>avatar_upload</name>
+    <message>
+        <source>Back</source>
+        <translation>Back</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Continue</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Preview</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Save</translation>
+    </message>
+    <message>
+        <source>Images (*.jpg *.jpeg *.png *.bmp)</source>
+        <translation>Images (*.jpg *.jpeg *.png *.bmp)</translation>
+    </message>
+    <message>
+        <source>Avatar was not uploaded due to server error</source>
+        <translation>Avatar was not uploaded due to server error</translation>
+    </message>
+    <message>
+        <source>Choose file</source>
+        <translation>Choose file</translation>
+    </message>
+    <message>
+        <source>Image should be at least 600x600 px</source>
+        <translation>Image should be at least 600x600 px</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <translation>Change</translation>
+    </message>
+    <message>
+        <source>Image size should be 8 Mb or less</source>
+        <translation>Image size should be 8 Mb or less</translation>
+    </message>
+    <message>
+        <source>Add
+photo</source>
+        <translation>Add
+photo</translation>
+    </message>
+    <message>
+        <source>Edit
+photo</source>
+        <translation>Edit
+photo</translation>
+    </message>
+    <message>
+        <source>Upload photo</source>
+        <translation>Upload photo</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -132,16 +199,6 @@
         <translation> added you to contacts</translation>
     </message>
     <message>
-        <source> left the chat</source>
-        <comment>many</comment>
-        <translation> left the chat</translation>
-    </message>
-    <message>
-        <source> left the chat</source>
-        <comment>one</comment>
-        <translation> left the chat</translation>
-    </message>
-    <message>
         <source> removed </source>
         <translation> removed </translation>
     </message>
@@ -150,20 +207,8 @@
         <translation>You removed </translation>
     </message>
     <message>
-        <source> invited </source>
-        <translation> invited </translation>
-    </message>
-    <message>
         <source>Your friend is now available for chat and calls. You can say hi now!</source>
         <translation>Your friend is now available for chat and calls. You can say hi now!</translation>
-    </message>
-    <message>
-        <source>Has a birthday today!</source>
-        <translation>Has a birthday today!</translation>
-    </message>
-    <message>
-        <source>You joined the chat</source>
-        <translation>You joined the chat</translation>
     </message>
     <message>
         <source>You</source>
@@ -196,14 +241,6 @@
         <translation>You changed theme to </translation>
     </message>
     <message>
-        <source>You invited </source>
-        <translation>You invited </translation>
-    </message>
-    <message>
-        <source> joined the chat</source>
-        <translation> joined the chat</translation>
-    </message>
-    <message>
         <source>You changed description to &quot;</source>
         <translation>You changed description to &quot;</translation>
     </message>
@@ -212,12 +249,42 @@
         <translation> changed description to &quot;</translation>
     </message>
     <message>
-        <source>You changed picture of chat</source>
-        <translation>You changed picture of chat</translation>
+        <source>Deleted message</source>
+        <translation>Deleted message</translation>
     </message>
     <message>
-        <source> changed picture of chat</source>
-        <translation> changed picture of chat</translation>
+        <source>You changed picture of group</source>
+        <translation>You changed picture of group</translation>
+    </message>
+    <message>
+        <source> changed picture of group</source>
+        <translation> changed picture of group</translation>
+    </message>
+    <message>
+        <source> has joined group</source>
+        <translation> has joined group</translation>
+    </message>
+    <message>
+        <source> have left group</source>
+        <comment>many</comment>
+        <translation>have left group</translation>
+    </message>
+    <message>
+        <source> has left group</source>
+        <comment>one</comment>
+        <translation> has left group</translation>
+    </message>
+    <message>
+        <source> added </source>
+        <translation> added </translation>
+    </message>
+    <message>
+        <source> has birthday!</source>
+        <translation>has birthday!</translation>
+    </message>
+    <message>
+        <source>You have joined group</source>
+        <translation>You have joined group</translation>
     </message>
 </context>
 <context>
@@ -259,14 +326,6 @@
         <translation>members</translation>
     </message>
     <message>
-        <source>Copy</source>
-        <translation>Copy</translation>
-    </message>
-    <message>
-        <source>Quote</source>
-        <translation>Quote</translation>
-    </message>
-    <message>
         <source>new message</source>
         <comment>1</comment>
         <translation>new message</translation>
@@ -297,6 +356,29 @@
     <message>
         <source>New messages</source>
         <translation>New messages</translation>
+    </message>
+    <message>
+        <source>Official account</source>
+        <translation>Official account</translation>
+    </message>
+</context>
+<context>
+    <name>config_dialog</name>
+    <message>
+        <source>Enter</source>
+        <translation>Enter</translation>
+    </message>
+    <message>
+        <source>Cmd+Enter</source>
+        <translation>Cmd+Enter</translation>
+    </message>
+    <message>
+        <source>Ctrl+Enter</source>
+        <translation>Ctrl+Enter</translation>
+    </message>
+    <message>
+        <source>Shift+Enter</source>
+        <translation>Shift+Enter</translation>
     </message>
 </context>
 <context>
@@ -369,10 +451,6 @@
         <translation>Seen </translation>
     </message>
     <message>
-        <source>is typing...</source>
-        <translation>is typing...</translation>
-    </message>
-    <message>
         <source>Sticker</source>
         <translation>Sticker</translation>
     </message>
@@ -383,10 +461,6 @@
     <message>
         <source>New chat</source>
         <translation>New chat</translation>
-    </message>
-    <message>
-        <source>New groupchat</source>
-        <translation>New groupchat</translation>
     </message>
     <message>
         <source>Voice message</source>
@@ -400,20 +474,20 @@
         <source>RECENTS</source>
         <translation>RECENTS</translation>
     </message>
+    <message>
+        <source>typing...</source>
+        <translation>typing...</translation>
+    </message>
+    <message>
+        <source>Create Groupchat</source>
+        <translation>Create Groupchat</translation>
+    </message>
 </context>
 <context>
     <name>contactus_page</name>
     <message>
-        <source>Contact us</source>
-        <translation>Contact us</translation>
-    </message>
-    <message>
         <source>Attachments size exceeds 25 MB</source>
         <translation>Attachments size exceeds 25 MB</translation>
-    </message>
-    <message>
-        <source>Images (*.jpg *.jpeg *.png *.bmp *.gif)</source>
-        <translation>Images (*.jpg *.jpeg *.png *.bmp *.gif)</translation>
     </message>
     <message>
         <source>KB</source>
@@ -424,16 +498,8 @@
         <translation>MB</translation>
     </message>
     <message>
-        <source>Add screenshot</source>
-        <translation>Add screenshot</translation>
-    </message>
-    <message>
         <source>Your Email</source>
         <translation>Your Email</translation>
-    </message>
-    <message>
-        <source>Your comments or suggestions</source>
-        <translation>Your comments or suggestions</translation>
     </message>
     <message>
         <source>Please enter a valid email address</source>
@@ -471,6 +537,22 @@
         <source>File size exceeds 1 MB</source>
         <translation>File size exceeds 1 MB</translation>
     </message>
+    <message>
+        <source>Images (*.jpg *.jpeg *.png *.bmp)</source>
+        <translation>Images (*.jpg *.jpeg *.png *.bmp)</translation>
+    </message>
+    <message>
+        <source>Contact Us</source>
+        <translation>Contact Us</translation>
+    </message>
+    <message>
+        <source>Attach screenshot</source>
+        <translation>Attach screenshot</translation>
+    </message>
+    <message>
+        <source>Your comments or suggestions...</source>
+        <translation>Your comments or suggestions...</translation>
+    </message>
 </context>
 <context>
     <name>context_menu</name>
@@ -489,14 +571,6 @@
     <message>
         <source>Report spam</source>
         <translation>Report spam</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Remove</translation>
-    </message>
-    <message>
-        <source>Quit and delete</source>
-        <translation>Quit and delete</translation>
     </message>
     <message>
         <source>Mark as read</source>
@@ -519,22 +593,6 @@
         <translation>Mark all read</translation>
     </message>
     <message>
-        <source>Add to chat</source>
-        <translation>Add to chat</translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation>Rename</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Delete</translation>
-    </message>
-    <message>
-        <source>Add contact</source>
-        <translation>Add contact</translation>
-    </message>
-    <message>
         <source>Save as...</source>
         <translation>Save as...</translation>
     </message>
@@ -555,18 +613,6 @@
         <translation>Copy link</translation>
     </message>
     <message>
-        <source>Change wallpaper</source>
-        <translation>Change wallpaper</translation>
-    </message>
-    <message>
-        <source>Favorite contact</source>
-        <translation>Favorite contact</translation>
-    </message>
-    <message>
-        <source>Unfavorite contact</source>
-        <translation>Unfavorite contact</translation>
-    </message>
-    <message>
         <source>Delete for me</source>
         <translation>Delete for me</translation>
     </message>
@@ -575,8 +621,16 @@
         <translation>Delete for all</translation>
     </message>
     <message>
-        <source>Erase history</source>
-        <translation>Erase history</translation>
+        <source>Remove from favorites</source>
+        <translation>Remove from favorites</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Leave and delete</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Delete</translation>
     </message>
 </context>
 <context>
@@ -1564,20 +1618,8 @@
 <context>
     <name>groupchat_pages</name>
     <message>
-        <source>Add to groupchat</source>
-        <translation>Add to groupchat</translation>
-    </message>
-    <message>
         <source>Done</source>
         <translation>Done</translation>
-    </message>
-    <message>
-        <source>Create</source>
-        <translation>Create</translation>
-    </message>
-    <message>
-        <source>New groupchat</source>
-        <translation>New groupchat</translation>
     </message>
     <message>
         <source>Next</source>
@@ -1591,13 +1633,17 @@
         <source>View all </source>
         <translation>View all </translation>
     </message>
+    <message>
+        <source>Add to chat</source>
+        <translation>Add to chat</translation>
+    </message>
+    <message>
+        <source>Create Groupchat</source>
+        <translation>Create Groupchat</translation>
+    </message>
 </context>
 <context>
     <name>input_widget</name>
-    <message>
-        <source>Message...</source>
-        <translation>Message...</translation>
-    </message>
     <message>
         <source>EMOJI</source>
         <translation>EMOJI</translation>
@@ -1605,6 +1651,10 @@
     <message>
         <source>RECENTS</source>
         <translation>RECENTS</translation>
+    </message>
+    <message>
+        <source>Message</source>
+        <translation>Message</translation>
     </message>
 </context>
 <context>
@@ -1630,8 +1680,28 @@
         <translation>friends</translation>
     </message>
     <message>
-        <source>Join chat</source>
-        <translation>Join chat</translation>
+        <source>Chat information is unavailable now, please try again later</source>
+        <translation>Chat information is unavailable now, please try again later</translation>
+    </message>
+    <message>
+        <source>Chat does not exist or it is hidden by privacy settings</source>
+        <translation>Chat does not exist or it is hidden by privacy settings</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Live chats</source>
+        <translation>Live chats</translation>
+    </message>
+    <message>
+        <source>Join</source>
+        <translation>Join</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Open</translation>
     </message>
 </context>
 <context>
@@ -1643,10 +1713,6 @@
     <message>
         <source>Edit</source>
         <translation>Edit</translation>
-    </message>
-    <message>
-        <source>Your code</source>
-        <translation>Your code</translation>
     </message>
     <message>
         <source>UIN or Email</source>
@@ -1722,6 +1788,10 @@ your phone number</translation>
         <source>Error occured, try again later</source>
         <translation>Error occured, try again later</translation>
     </message>
+    <message>
+        <source>Code from SMS</source>
+        <translation>Code from SMS</translation>
+    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1765,10 +1835,6 @@ your phone number</translation>
         <translation>You have no opened chats yet</translation>
     </message>
     <message>
-        <source>Introduce yourself</source>
-        <translation>Introduce yourself</translation>
-    </message>
-    <message>
         <source>Continue</source>
         <translation>Continue</translation>
     </message>
@@ -1792,16 +1858,8 @@ your phone number</translation>
 <context>
     <name>popup_window</name>
     <message>
-        <source>Are you sure you want to remove user from this chat?</source>
-        <translation>Are you sure you want to remove user from this chat?</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Cancel</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Remove</translation>
     </message>
     <message>
         <source>Are you sure you want to sign out?</source>
@@ -1810,10 +1868,6 @@ your phone number</translation>
     <message>
         <source>Yes</source>
         <translation>Yes</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to remove user from ignore list?</source>
-        <translation>Are you sure you want to remove user from ignore list?</translation>
     </message>
     <message>
         <source>Are you sure you want to move contact to ignore list?</source>
@@ -1851,134 +1905,100 @@ your phone number</translation>
         <source>Are you sure you want to erase chat history?</source>
         <translation>Are you sure you want to erase chat history?</translation>
     </message>
+    <message>
+        <source>Unfortunately, an error occurred:</source>
+        <translation>Unfortunately, an error occurred:</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete user from this chat?</source>
+        <translation>Are you sure you want to delete user from this chat?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete user from ignore list?</source>
+        <translation>Are you sure you want to delete user from ignore list?</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to block user in this chat?</source>
+        <translation>Are you sure you want to block user in this chat?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to unblock user?</source>
+        <translation>Are you sure you want to unblock user?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to make user admin in this chat?</source>
+        <translation>Are you sure you want to make user admin in this chat?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to revoke admin role?</source>
+        <translation>Are you sure you want to revoke admin role?</translation>
+    </message>
 </context>
 <context>
-    <name>profile_page</name>
+    <name>promo_page</name>
     <message>
-        <source>Ignore list</source>
-        <translation>Ignore list</translation>
+        <source>Contacts</source>
+        <translation>Contacts</translation>
     </message>
     <message>
-        <source>Profile</source>
-        <translation>Profile</translation>
+        <source>The contact list is now</source>
+        <translation>The contact list is now</translation>
     </message>
     <message>
-        <source>Ignore</source>
-        <translation>Ignore</translation>
+        <source>located here</source>
+        <translation>located here</translation>
     </message>
     <message>
-        <source>Report spam</source>
-        <translation>Report spam</translation>
+        <source>Next</source>
+        <translation>Next</translation>
     </message>
     <message>
-        <source>Edit profile</source>
-        <translation>Edit profile</translation>
+        <source>Skip</source>
+        <translation>Skip</translation>
     </message>
     <message>
-        <source>UIN</source>
-        <translation>UIN</translation>
+        <source>Synchronization</source>
+        <translation>Synchronization</translation>
     </message>
     <message>
-        <source>Phone number</source>
-        <translation>Phone number</translation>
+        <source>Stickers</source>
+        <translation>Stickers</translation>
     </message>
     <message>
-        <source>Only visible for those, who has it in the phone book</source>
-        <translation>Only visible for those, who has it in the phone book</translation>
+        <source>Wallpapers</source>
+        <translation>Wallpapers</translation>
     </message>
     <message>
-        <source>First name</source>
-        <translation>First name</translation>
+        <source>Get Started</source>
+        <translation>Get Started</translation>
     </message>
     <message>
-        <source>Last name</source>
-        <translation>Last name</translation>
+        <source>Synchronize your chat history</source>
+        <translation>Synchronize your chat history</translation>
     </message>
     <message>
-        <source>Birthdate</source>
-        <translation>Birthdate</translation>
+        <source>and contact list across all devices</source>
+        <translation>and contact list across all devices</translation>
     </message>
     <message>
-        <source>Gender</source>
-        <translation>Gender</translation>
+        <source>Click here and choose</source>
+        <translation>Click here and choose</translation>
     </message>
     <message>
-        <source>Country</source>
-        <translation>Country</translation>
+        <source>from over 500 bright stickers</source>
+        <translation>from over 500 bright stickers</translation>
     </message>
     <message>
-        <source>City</source>
-        <translation>City</translation>
+        <source>Customize your chats</source>
+        <translation>Customize your chats</translation>
     </message>
     <message>
-        <source>Online</source>
-        <translation>Online</translation>
-    </message>
-    <message>
-        <source>Do not disturb</source>
-        <translation>Do not disturb</translation>
-    </message>
-    <message>
-        <source>Invisible</source>
-        <translation>Invisible</translation>
-    </message>
-    <message>
-        <source>Report Spam</source>
-        <translation>Report Spam</translation>
-    </message>
-    <message>
-        <source>Seen </source>
-        <translation>Seen </translation>
-    </message>
-    <message>
-        <source>today</source>
-        <translation>today</translation>
-    </message>
-    <message>
-        <source>yesterday</source>
-        <translation>yesterday</translation>
-    </message>
-    <message>
-        <source> at </source>
-        <translation> at </translation>
-    </message>
-    <message>
-        <source>Offline</source>
-        <translation>Offline</translation>
-    </message>
-    <message>
-        <source>Male</source>
-        <translation>Male</translation>
-    </message>
-    <message>
-        <source>Female</source>
-        <translation>Female</translation>
-    </message>
-    <message>
-        <source>You have no ignored contacts</source>
-        <translation>You have no ignored contacts</translation>
-    </message>
-    <message>
-        <source>About me</source>
-        <translation>About me</translation>
-    </message>
-    <message>
-        <source>for safety and spam protection</source>
-        <translation>for safety and spam protection</translation>
-    </message>
-    <message>
-        <source>Attach phone number</source>
-        <translation>Attach phone number</translation>
-    </message>
-    <message>
-        <source>Connect to ICQ account</source>
-        <translation>Connect to ICQ account</translation>
-    </message>
-    <message>
-        <source>This phone number is already attached to another account.
-Please edit phone number and try again.</source>
-        <translation>This phone number is already attached to another account.
-Please edit phone number and try again.</translation>
+        <source>Choose a wallpaper from our collection</source>
+        <translation>Choose a wallpaper from our collection</translation>
     </message>
 </context>
 <context>
@@ -1993,10 +2013,6 @@ Please edit phone number and try again.</translation>
     <message>
         <source>Search</source>
         <translation>Search</translation>
-    </message>
-    <message>
-        <source>No contacts found</source>
-        <translation>No contacts found</translation>
     </message>
     <message>
         <source>Add contact</source>
@@ -2033,6 +2049,10 @@ Please edit phone number and try again.</translation>
         <source>years</source>
         <comment>21</comment>
         <translation>years</translation>
+    </message>
+    <message>
+        <source>Nothing found</source>
+        <translation>Nothing found</translation>
     </message>
 </context>
 <context>
@@ -2138,10 +2158,6 @@ Please edit phone number and try again.</translation>
         <translation>About</translation>
     </message>
     <message>
-        <source>Contact us</source>
-        <translation>Contact us</translation>
-    </message>
-    <message>
         <source>Outgoing messages sound</source>
         <translation>Outgoing messages sound</translation>
     </message>
@@ -2160,10 +2176,6 @@ Please edit phone number and try again.</translation>
     <message>
         <source>Show notifications</source>
         <translation>Show notifications</translation>
-    </message>
-    <message>
-        <source>Wallpapers</source>
-        <translation>Wallpapers</translation>
     </message>
     <message>
         <source>ru</source>
@@ -2196,6 +2208,263 @@ Please edit phone number and try again.</translation>
     <message>
         <source>Connection settings</source>
         <translation>Connection settings</translation>
+    </message>
+    <message>
+        <source>Wallpaper</source>
+        <translation>Wallpaper</translation>
+    </message>
+    <message>
+        <source>Contact Us</source>
+        <translation>Contact Us</translation>
+    </message>
+    <message>
+        <source>fr</source>
+        <translation>Français</translation>
+    </message>
+    <message>
+        <source>Show in menu bar</source>
+        <translation>Show in menu bar</translation>
+    </message>
+</context>
+<context>
+    <name>sidebar</name>
+    <message>
+        <source>Add to chat</source>
+        <translation>Add to chat</translation>
+    </message>
+    <message>
+        <source>Remove from favorites</source>
+        <translation>Remove from favorites</translation>
+    </message>
+    <message>
+        <source>Add to favorites</source>
+        <translation>Add to favorites</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <translation>More</translation>
+    </message>
+    <message>
+        <source>Add contact</source>
+        <translation>Add contact</translation>
+    </message>
+    <message>
+        <source>Report spam</source>
+        <translation>Report spam</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Notifications</translation>
+    </message>
+    <message>
+        <source>Wallpaper</source>
+        <translation>Wallpaper</translation>
+    </message>
+    <message>
+        <source>Admins</source>
+        <translation>Admins</translation>
+    </message>
+    <message>
+        <source>All members</source>
+        <translation>All members</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <translation>Ignore</translation>
+    </message>
+    <message>
+        <source>This contact is in the ignore list</source>
+        <translation>This contact is in the ignore list</translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation>nickname</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <source>Seen </source>
+        <translation>Seen </translation>
+    </message>
+    <message>
+        <source>today</source>
+        <translation>today</translation>
+    </message>
+    <message>
+        <source>yesterday</source>
+        <translation>yesterday</translation>
+    </message>
+    <message>
+        <source> at </source>
+        <translation> at </translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Save</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Chat name</translation>
+    </message>
+    <message>
+        <source>Blocked people</source>
+        <translation>Blocked people</translation>
+    </message>
+    <message>
+        <source>UIN</source>
+        <translation>uin</translation>
+    </message>
+    <message>
+        <source>Phone number</source>
+        <translation>phone number</translation>
+    </message>
+    <message>
+        <source>First name</source>
+        <translation>first name</translation>
+    </message>
+    <message>
+        <source>Last name</source>
+        <translation>last name</translation>
+    </message>
+    <message>
+        <source>Online</source>
+        <translation>Online</translation>
+    </message>
+    <message>
+        <source>Clear history</source>
+        <translation>Clear history</translation>
+    </message>
+    <message>
+        <source>Ignored Contacts</source>
+        <translation>Ignored contacts</translation>
+    </message>
+    <message>
+        <source>Connect to ICQ account</source>
+        <translation>Connect to ICQ account</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Profile</translation>
+    </message>
+    <message>
+        <source>Edit profile</source>
+        <translation>Edit profile</translation>
+    </message>
+    <message>
+        <source>Only visible for those, who has it in the phone book</source>
+        <translation>only visible for those, who has it in the phone book</translation>
+    </message>
+    <message>
+        <source>Birthdate</source>
+        <translation>birthdate</translation>
+    </message>
+    <message>
+        <source>Gender</source>
+        <translation>gender</translation>
+    </message>
+    <message>
+        <source>Country</source>
+        <translation>country</translation>
+    </message>
+    <message>
+        <source>City</source>
+        <translation>city</translation>
+    </message>
+    <message>
+        <source>About me</source>
+        <translation>about me</translation>
+    </message>
+    <message>
+        <source>Do not disturb</source>
+        <translation>Do not disturb</translation>
+    </message>
+    <message>
+        <source>Invisible</source>
+        <translation>Invisible</translation>
+    </message>
+    <message>
+        <source>Offline</source>
+        <translation>Offline</translation>
+    </message>
+    <message>
+        <source>for safety and spam protection</source>
+        <translation>for safety and spam protection</translation>
+    </message>
+    <message>
+        <source>Male</source>
+        <translation>Male</translation>
+    </message>
+    <message>
+        <source>Female</source>
+        <translation>Female</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Leave and delete</translation>
+    </message>
+    <message>
+        <source>Contact name</source>
+        <translation>Contact name</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>Edit</translation>
+    </message>
+    <message>
+        <source>Ignored contacts</source>
+        <translation>Ignored contacts</translation>
+    </message>
+    <message>
+        <source>Attach phone</source>
+        <translation>Attach phone</translation>
+    </message>
+    <message>
+        <source>Public chat</source>
+        <translation>Public chat</translation>
+    </message>
+    <message>
+        <source>Chat description</source>
+        <translation>Chat description</translation>
+    </message>
+    <message>
+        <source>Revoke admin role</source>
+        <translation>Revoke admin role</translation>
+    </message>
+    <message>
+        <source>Make admin</source>
+        <translation>Make admin</translation>
+    </message>
+    <message>
+        <source>Block</source>
+        <translation>Block</translation>
+    </message>
+    <message>
+        <source>Delete from chat</source>
+        <translation>Delete from chat</translation>
+    </message>
+    <message>
+        <source>Change chat name</source>
+        <translation>Change chat name</translation>
+    </message>
+    <message>
+        <source>Change chat description</source>
+        <translation>Change chat description</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Rename</translation>
+    </message>
+    <message>
+        <source>You have no ignored contacts</source>
+        <translation>You have no ignored contacts</translation>
+    </message>
+    <message>
+        <source>This phone number is already attached to another account.
+Please edit phone number and try again.</source>
+        <translation>This phone number is already attached to another account.
+Please edit phone number and try again.</translation>
     </message>
 </context>
 <context>
@@ -2236,15 +2505,15 @@ Please edit phone number and try again.</translation>
         <translation>Quit</translation>
     </message>
     <message>
-        <source>Show</source>
-        <translation>Show</translation>
+        <source>Open</source>
+        <translation>Open</translation>
     </message>
 </context>
 <context>
     <name>typing_widget</name>
     <message>
-        <source>is typing</source>
-        <translation>is typing</translation>
+        <source>typing</source>
+        <translation>typing</translation>
     </message>
     <message>
         <source>are typing</source>
@@ -2253,22 +2522,6 @@ Please edit phone number and try again.</translation>
 </context>
 <context>
     <name>voip_pages</name>
-    <message>
-        <source>Turn off microphone</source>
-        <translation>Turn off microphone</translation>
-    </message>
-    <message>
-        <source>Turn on microphone</source>
-        <translation>Turn on microphone</translation>
-    </message>
-    <message>
-        <source>Turn off camera</source>
-        <translation>Turn off camera</translation>
-    </message>
-    <message>
-        <source>Turn on camera</source>
-        <translation>Turn on camera</translation>
-    </message>
     <message>
         <source>and</source>
         <translation>and</translation>
@@ -2294,8 +2547,28 @@ Please edit phone number and try again.</translation>
         <translation>Video</translation>
     </message>
     <message>
-        <source>Outgoing call</source>
-        <translation>Outgoing call</translation>
+        <source>Call is secured</source>
+        <translation>Call is secured</translation>
+    </message>
+    <message>
+        <source>For security check, you can verify your images with your partner</source>
+        <translation>For security check, you can verify your images with your partner</translation>
+    </message>
+    <message>
+        <source>How it works</source>
+        <translation>How it works</translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation>Ok</translation>
+    </message>
+    <message>
+        <source>turned off the camera</source>
+        <translation>turned off the camera</translation>
+    </message>
+    <message>
+        <source>Ringing...</source>
+        <translation>Ringing...</translation>
     </message>
 </context>
 </TS>

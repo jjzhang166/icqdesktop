@@ -40,7 +40,7 @@ namespace core
         im_login_list(const std::wstring& _file_name);
 
         int32_t get_next_id() const;
-        void update(/*in, out*/ im_login_id& _login);
+        bool update(/*in, out*/ im_login_id& _login);
         bool get_first_login(/*out*/ im_login_id& _login);
 
         bool load();

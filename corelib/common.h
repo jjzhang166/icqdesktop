@@ -60,6 +60,10 @@
 #   define __FUNCLINEW__ ""
 #endif
 
+#ifndef _countof
+    #define _countof(array) (sizeof(array) / sizeof(array[0]))
+#endif
+
 namespace core
 {
 	typedef std::map<std::string, std::string> Str2StrMap;
@@ -158,7 +162,8 @@ namespace core
         {
             // XXX : don't change it
             // use /settings/dump_type.txt: 0 for not handle crashes
-            //                              1 for make full dump 
+            //                              1 for make mini dump
+            //                              2 for make full dump
             return true;
         }
     }

@@ -27,7 +27,7 @@ Q_SIGNALS:
             std::unique_ptr<QFutureWatcher<installer::error>> current_task_watcher_;
 
             template <class t_>
-            void run_async_function(t_ (*_function_pointer)(), task_callback _on_complete, int _progress)
+            void run_async_function(std::function<t_()> _function_pointer, task_callback _on_complete, int _progress)
             {
                 QFuture<installer::error> future = QtConcurrent::run(_function_pointer);
                 reset_watcher();
@@ -54,7 +54,7 @@ Q_SIGNALS:
         public:
 
             void install();
-            void final_install();
+            void final_install(bool _is_from_8x);
             void update();
             void update_final(CHandle& _mutex);
             void uninstall();

@@ -34,8 +34,10 @@ namespace Logic
 
     private Q_SLOTS:
         void avatarLoaded(QString);
+        void chatBlocked(QList<Data::ChatMemberInfo>);
 
     public:
+        ChatMembersModel(QObject *parent);
         ChatMembersModel(std::shared_ptr<Data::ChatInfo> &info, QObject *parent);
 
         ~ChatMembersModel();
@@ -43,11 +45,16 @@ namespace Logic
         int rowCount(const QModelIndex &parent = QModelIndex()) const;
         QVariant data(const QModelIndex &index, int role) const;
         Qt::ItemFlags flags(const QModelIndex &index) const;
+        void setSelectEnabled(bool value);
 
         const Data::ChatMemberInfo* getMemberItem(const QString& _aimId) const;
         void remove_contact_from_member_list(const QString& _aimid);
         int get_members_count() const;
         void load_all_members();
+        void load_all_members(const QString& aimId, int count);
+        void init_for_single(const QString& aimId);
+        void admins_only();
+        void load_blocked();
         bool is_full_list_loaded_;
         bool is_short_view_;
 
@@ -59,6 +66,7 @@ namespace Logic
         unsigned get_visible_rows_count() const;
 
         bool is_admin() const;
+        bool is_moder() const;
 
     private:
         mutable std::vector<Data::ChatMemberInfo>   members_;
@@ -67,6 +75,7 @@ namespace Logic
         QString                                     AimId_;
         qint64                                      ChatInfoSequence_;
         QString                                     YourRole_;
+        bool                                        selectEnabled_;
 
         friend class SearchMembersModel;
     };

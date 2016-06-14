@@ -1,7 +1,9 @@
 QPushButton
 {
-    width: 40dip;
-    height: 40dip;
+    min-height: 40dip;
+	max-height: 40dip;
+	min-width: 40dip;
+	max-width: 40dip;
     border: none;
     background-color: transparent;
     border-image: url(:/resources/contr_back_100.png);

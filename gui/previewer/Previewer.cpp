@@ -15,7 +15,7 @@ namespace
 namespace Previewer
 {
 
-	void ShowPreview(QPixmap &preview)
+	void ShowPreview(const QPixmap &preview)
 	{
 		assert(!preview.isNull());
 

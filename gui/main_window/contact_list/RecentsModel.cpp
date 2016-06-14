@@ -187,7 +187,7 @@ namespace Logic
 		}
 
         Ui::MainWindow* w = Utils::InterConnector::instance().getMainWindow();
-		if (dlgState.AimId_ == Logic::GetContactListModel()->selectedContact() && w && w->isActive())
+		if (dlgState.AimId_ == Logic::GetContactListModel()->selectedContact() && w && w->isActive() && w->isMainPage())
 		{
 			sendLastRead(dlgState.AimId_);
 		}
@@ -374,7 +374,7 @@ namespace Logic
 		}
 		return result;
 	}
-
+    
     QString RecentsModel::nextUnreadAimId()
     {
         for (auto iter : Dialogs_)
@@ -421,19 +421,19 @@ namespace Logic
 
     int RecentsModel::correctIndex(int i) const
     {
-        if (FavoritesCount_ == 0)
-            return i;
+        if (FavoritesCount_ != 0)
+        {
+            if (i == 0 || i == favoritesIndent() + 1)
+                return i;
 
-        if (i == 0 || i == favoritesIndent() + 1)
-            return i;
+            --i;
+            if (i < favoritesIndent() +1)
+                return i;
 
-        --i;
-        if (i < favoritesIndent() +1)
-            return i;
-
-        --i;
-        if (!FavoritesVisible_)
-            i += FavoritesCount_;
+            --i;
+            if (!FavoritesVisible_)
+                i += FavoritesCount_;
+        }
 
         return i;
     }

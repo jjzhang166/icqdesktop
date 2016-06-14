@@ -5,6 +5,7 @@
 #include "web_file_info.h"
 #include "../packets/get_gateway.h"
 #include "../packets/send_file.h"
+#include "../../../tools/system.h"
 #include "loader.h"
 
 using namespace core;
@@ -62,7 +63,7 @@ int32_t upload_task::get_gate()
 int32_t upload_task::open_file()
 {
     boost::filesystem::wpath path_for_file(file_name_);
-    if (!boost::filesystem::exists(path_for_file))
+    if (!core::tools::system::is_exist(file_name_))
         return loader_errors::file_not_exits;
 
     file_name_short_ = path_for_file.filename().wstring();

@@ -20,6 +20,8 @@ namespace
         const auto itemPadding = dip(16);
         const auto checkboxWidth = dip(20);
         const auto remove_size = dip(20);
+        const auto role_offset = dip(24);
+        const auto role_ver_offset = dip(4);
 
         const auto itemLeftBorder = itemPadding;
 
@@ -38,23 +40,23 @@ namespace
         const QColor timeFontColor(0x69, 0x69, 0x69);
 
         const auto onlineSignLeftPadding = dip(12);
-        const auto onlineSignSize = dip(8);
+        const auto onlineSignSize = dip(4);
         const auto onlineSignY = dip(18);
         const QColor onlineSignColor("#579e1c");
 
-        DipPixels GetContactNameX(bool _isWithCheckBox)
+        DipPixels GetContactNameX(bool _isWithCheckBox, int margin)
         {
-            return (GetAvatarX(_isWithCheckBox) + avatarW + dip(12));
+            return (GetAvatarX(_isWithCheckBox) + avatarW + dip(12) + DipPixels(Utils::unscale_value(margin)));
         }
 
         const auto contactNameRightPadding = dip(12);
         const auto contactNameFontSize = dip(16);
-        const auto contactNameHeight = dip(22);
+        const auto contactNameHeight = dip(24);
         const auto contactNameCenterY = dip(10);
         const auto contactNameTopY = dip(2);
 
         QString getContactNameStylesheet(const QString& color)
-        { 
+        {
             return QString("font: %1 %2px \"%3\"; color: %4; background-color: transparent")
                 .arg(Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI))
                 .arg(contactNameFontSize.px())
@@ -62,9 +64,9 @@ namespace
                 .arg(color);
         };
 
-        DipPixels GetStatusX(bool _isWithCheckBox)
+        DipPixels GetStatusX(bool _isWithCheckBox, int margin)
         {
-            return GetContactNameX(_isWithCheckBox);
+            return GetContactNameX(_isWithCheckBox, margin);
         }
 
         const auto statusY = dip(21);
@@ -77,9 +79,9 @@ namespace
                 .arg(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
         };
 
-        DipPixels GetAddContactX(bool _isWithCheckBox)
+        DipPixels GetAddContactX(bool _isWithCheckBox, int margin)
         {
-            return GetContactNameX(_isWithCheckBox);
+            return GetContactNameX(_isWithCheckBox, margin);
         }
 
         const auto addContactY = dip(30);
@@ -89,9 +91,9 @@ namespace
         const QColor emptyIgnoreListColor("#000000");
         const QColor addContactColorHovered("#60aa23");
 
-        DipPixels GetGroupX(bool _isWithCheckBox)
+        DipPixels GetGroupX(bool _isWithCheckBox, int margin)
         {
-            return GetAddContactX(_isWithCheckBox);
+            return GetAddContactX(_isWithCheckBox, margin);
         }
         const auto groupY = dip(17);
         const auto groupFont = dif(Utils::FontsFamily::SEGOE_UI, 12);
@@ -103,22 +105,33 @@ namespace
         const auto dragOverlayVerPadding = dip(1);
 
         const auto official_hor_padding = dip(6);
-        const auto official_ver_padding = dip(2);
+        const auto official_ver_padding = dip(4);
     }
 
     void RenderAvatar(QPainter &painter, const ContactListVisualData &visData, bool _isWithCheckBox);
 
     void RenderCheckbox(QPainter &painter, const ContactListVisualData &visData);
 
+    void RenderRole(QPainter &painter, const int y, const int leftMargin, const bool withCheckbox, const QString& role);
+
     void RenderContactName(QPainter &painter, const ContactListVisualData &visData, const int y, const int rightBorderPx, bool _isWithCheckBox);
 
-    int RenderDate(QPainter &painter, const QDateTime &date, int _regim, const ContactListVisualData &item, bool _shortView);
+    int RenderDate(QPainter &painter, const QDateTime &date, int _regim, const ContactListVisualData &item, bool _shortView, int width, int rightMargin);
 
-    void RenderMouseState(QPainter &painter, const bool isHovered, const bool isSelected, bool _isWithCheckBox, bool _shortView);
+    void RenderMouseState(QPainter &painter, const bool isHovered, const bool isSelected, bool _isWithCheckBox, bool _shortView, int width);
 
-    int RenderRemove(QPainter &painter, int _regim, bool _shortView);
+    int RenderRemove(QPainter &painter, int _regim, bool _shortView, int width);
 
-    void RenderStatus(QPainter &painter, const QString &status, const int rightBorderPx, bool _isWithCheckBox);
+    int RenderMore(QPainter &painter, int _regim, bool _shortView, int width);
+
+    void RenderStatus(QPainter &painter, const QString &status, const int rightBorderPx, bool _isWithCheckBox, const int leftMargin);
+
+    struct StringInfo
+    {
+
+    };
+
+    //std::unordered_map<QString, 
 }
 
 namespace ContactList
@@ -136,12 +149,20 @@ namespace ContactList
         const QDateTime &lastSeen,
         bool isWithCheckBox,
         bool isChatMember,
-        bool isOfficial)
-        : VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, isWithCheckBox, isChatMember, isOfficial)
+        bool isOfficial,
+        int width,
+        int leftMargin,
+        int rightMargin,
+        const QString& role)
+        : VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, isWithCheckBox, isChatMember, isOfficial, false, QPixmap())
+        , width_(width)
+        , leftMargin_(leftMargin)
+        , rightMargin_(rightMargin)
+        , role_(role)
     {
     }
 
-    void RenderServiceContact(QPainter &painter, const bool _isHovered, const bool _isActive, int _regim, QString _name, Data::ContactType _type)
+    void RenderServiceContact(QPainter &painter, const bool _isHovered, const bool _isActive, int _regim, QString _name, Data::ContactType _type, int leftMargin)
     {
         bool _isWithCheckBox = _regim == Logic::MembersWidgetRegim::SELECT_MEMBERS;
         painter.save();
@@ -149,11 +170,11 @@ namespace ContactList
         painter.setPen(Qt::NoPen);
         painter.setBrush(Qt::NoBrush);
 
-        RenderMouseState(painter, _isHovered, _isActive, _isWithCheckBox, false);
+        RenderMouseState(painter, _isHovered, _isActive, _isWithCheckBox, false, -1);
         if (_type == Data::VIEW_ALL_MEMBERS)
         {
             auto x = DipPixels(ItemWidth(false, _isWithCheckBox, false) - L::itemPadding);
-            QRect rect(L::GetAvatarX(_isWithCheckBox).px(), L::avatarY.px(), x.px(), Utils::scale_value(1));
+            QRect rect(L::GetAvatarX(_isWithCheckBox).px() + leftMargin, L::avatarY.px(), x.px(), Utils::scale_value(1));
             painter.fillRect(rect, QBrush(QColor("#dadada")));
         }
 
@@ -162,7 +183,7 @@ namespace ContactList
 
         const auto &icon = (_isHovered ? hoveredIcon : plainIcon);
         if (_type == Data::ContactType::ADD_CONTACT)
-            icon->Draw(painter, L::GetAvatarX(_isWithCheckBox).px(), L::avatarY.px(), L::avatarW.px(), L::avatarH.px());
+            icon->Draw(painter, L::GetAvatarX(_isWithCheckBox).px() + leftMargin, L::avatarY.px(), L::avatarW.px(), L::avatarH.px());
 
         if (_type == Data::EMPTY_IGNORE_LIST)
         {
@@ -175,14 +196,14 @@ namespace ContactList
             painter.setFont(L::addContactFont.font());
         }
 
-        painter.translate(L::GetAddContactX(_isWithCheckBox).px(), L::addContactY.px());
+        painter.translate(L::GetAddContactX(_isWithCheckBox, leftMargin).px(), L::addContactY.px());
 
         painter.drawText(0, 0, _name);
 
         painter.restore();
     }
 
-    void RenderContactItem(QPainter &painter, const ContactListVisualData &item, int _regim, bool _shortView)
+    void RenderContactItem(QPainter &painter, ContactListVisualData item, int _regim, bool _shortView)
     {
         bool _isWithCheckBox = _regim == Logic::MembersWidgetRegim::SELECT_MEMBERS;
         painter.save();
@@ -191,7 +212,7 @@ namespace ContactList
         painter.setPen(Qt::NoPen);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        RenderMouseState(painter, item.IsHovered_, item.IsSelected_, _isWithCheckBox, _shortView);
+        RenderMouseState(painter, item.IsHovered_, item.IsSelected_, _isWithCheckBox, _shortView, item.width_);
 
         if (_isWithCheckBox)
         {
@@ -202,34 +223,55 @@ namespace ContactList
 
         auto rightBorderPx = 0;
 
-        if (Logic::is_delete_members_regim(_regim) && item.IsHovered_)
+        if (item.IsHovered_)
         {
-            rightBorderPx = RenderRemove(painter, _regim, _shortView);
+            if (Logic::is_delete_members_regim(_regim))
+            {
+                rightBorderPx = RenderRemove(painter, _regim, _shortView, item.width_);
+            }
+            else if (Logic::is_admin_members_regim(_regim))
+            {
+                rightBorderPx = RenderMore(painter, _regim, _shortView, item.width_);
+            }
         }
+
 
         if (!item.IsOnline())
         {
-            rightBorderPx = RenderDate(painter, item.LastSeen_, _regim, item, _shortView);
+            rightBorderPx = RenderDate(painter, item.LastSeen_, _regim, item, _shortView, item.width_, item.rightMargin_);
         }
         else
         {
-            rightBorderPx = ItemWidth(false, _isWithCheckBox, _shortView).px();
+            rightBorderPx = item.width_ == -1 ? ItemWidth(false, _isWithCheckBox, _shortView).px() : item.width_;
+            rightBorderPx -= item.rightMargin_;
         }
 
         if (item.HasStatus())
         {
+            if (item.role_ == "admin" || item.role_ == "moder")
+            {
+                RenderRole(painter, L::contactNameTopY.px(), item.leftMargin_, _isWithCheckBox, item.role_);
+                item.leftMargin_ += L::role_offset.px();
+            }
+
             RenderContactName(painter, item, L::contactNameTopY.px(), rightBorderPx, _isWithCheckBox);
-            RenderStatus(painter, item.GetStatus(), rightBorderPx, _isWithCheckBox);
+            RenderStatus(painter, item.GetStatus(), rightBorderPx, _isWithCheckBox, item.leftMargin_);
         }
         else
         {
+            if (item.role_ == "admin" || item.role_ == "moder")
+            {
+                RenderRole(painter, L::contactNameCenterY.px(), item.leftMargin_, _isWithCheckBox, item.role_);
+                item.leftMargin_ += L::role_offset.px();
+            }
+
             RenderContactName(painter, item, L::contactNameCenterY.px(), rightBorderPx, _isWithCheckBox);
         }
 
         painter.restore();
     }
 
-    void RenderGroupItem(QPainter &painter, const QString &groupName)
+    void RenderGroupItem(QPainter &painter, const QString &groupName, int leftMargin)
     {
         painter.save();
 
@@ -237,7 +279,7 @@ namespace ContactList
         painter.setBrush(Qt::NoBrush);
         painter.setFont(L::groupFont.font());
 
-        painter.translate(L::GetGroupX(false).px(), L::groupY.px());
+        painter.translate(L::GetGroupX(false, leftMargin).px(), L::groupY.px());
         painter.drawText(0, 0, groupName);
 
         painter.restore();
@@ -268,10 +310,13 @@ namespace ContactList
 
         painter.restore();
     }
-    
-    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView)
+
+    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView, int width)
     {
-        return DipPixels(ItemWidth(false, _isWithCheckBox, _shortView) - L::itemPadding).px() - DipPixels(L::onlineSignSize + L::remove_size).px() / 2;
+        if (width != -1)
+            return DipPixels(DipPixels(Utils::unscale_value(width)) - L::itemPadding).px() - DipPixels(L::onlineSignSize + L::remove_size).px();
+
+        return DipPixels(ItemWidth(false, _isWithCheckBox, _shortView) - L::itemPadding).px() - DipPixels(L::onlineSignSize + L::remove_size).px();
     }
 }
 
@@ -284,19 +329,32 @@ namespace
             return;
         }
 
-        painter.drawPixmap(L::GetAvatarX(_isWithCheckBox).px(), L::avatarY.px(), L::avatarW.px(), L::avatarH.px(), visData.Avatar_);
+        painter.drawPixmap(L::GetAvatarX(_isWithCheckBox).px() + visData.leftMargin_, L::avatarY.px(), L::avatarW.px(), L::avatarH.px(), visData.Avatar_);
     }
 
     void RenderCheckbox(QPainter &painter, const ContactListVisualData &visData)
-    {		
+    {
         QString img = visData.isChatMember_ ?
             ":/resources/dialog_closechat_100.png"
-            : (visData.isCheckedBox_ 
+            : (visData.isCheckedBox_
             ? ":/resources/widgets/content_check_100.png"
             : ":/resources/widgets/content_uncheck_100.png");
         QPixmap checkbox = Utils::parse_image_name(img);
-        
+
         painter.drawPixmap((L::GetAvatarX(true) - L::checkboxWidth - dip(10)).px(), L::avatarH.px() / 2.0 + L::avatarY.px() - L::checkboxWidth.px() / 2, L::checkboxWidth.px(), L::checkboxWidth.px(), checkbox);
+    }
+
+    void RenderRole(QPainter &painter, const int y, const int leftMargin, const bool withCheckbox, const QString& role)
+    {
+        QPixmap rolePixmap;
+        if (role == "admin")
+            rolePixmap = QPixmap(Utils::parse_image_name(":/resources/user_ultraadmin_100.png"));
+        else if (role == "moder")
+            rolePixmap = QPixmap(Utils::parse_image_name(":/resources/user_king_100.png"));
+        else
+            return;
+        Utils::check_pixel_ratio(rolePixmap);
+        painter.drawPixmap(L::GetContactNameX(withCheckbox, leftMargin).px(), y + L::role_ver_offset.px(), rolePixmap);
     }
 
     void RenderContactName(QPainter &painter, const ContactListVisualData &visData, const int y, const int rightBorderPx, bool _isWithCheckBox)
@@ -317,7 +375,7 @@ namespace
             Utils::check_pixel_ratio(official_mark);
         }
 
-        int maxWidth = (rightBorderPx - L::GetContactNameX(_isWithCheckBox).px() - L::contactNameRightPadding.px());
+        int maxWidth = (rightBorderPx - L::GetContactNameX(_isWithCheckBox, visData.leftMargin_).px() - L::contactNameRightPadding.px());
         if (!official_mark.isNull())
             maxWidth -= official_mark.width();
 
@@ -338,23 +396,24 @@ namespace
         if (platform::is_apple())
         {
             qreal realHeight = doc.documentLayout()->documentSize().toSize().height();
-            correction = (realHeight > 20)?0:2;     
-            textControl->render(&painter, QPoint(L::GetContactNameX(_isWithCheckBox).px(), y + correction));
+            correction = (realHeight > 20)?0:2;
+            textControl->render(&painter, QPoint(L::GetContactNameX(_isWithCheckBox, visData.leftMargin_).px(), y + correction));
         }
         else
         {
-            textControl->render(&painter, QPoint(L::GetContactNameX(_isWithCheckBox).px(), y));
+            textControl->render(&painter, QPoint(L::GetContactNameX(_isWithCheckBox, visData.leftMargin_).px(), y));
         }
 
-        int pX = L::GetContactNameX(_isWithCheckBox).px() + m.width(elidedString) + L::official_hor_padding.px();
+        int pX = L::GetContactNameX(_isWithCheckBox, visData.leftMargin_).px() + m.width(elidedString) + L::official_hor_padding.px();
         int pY = y + L::official_ver_padding.px();
         painter.drawPixmap(pX, pY, official_mark);
     }
 
-    int RenderDate(QPainter &painter, const QDateTime &ts, int _regim, const ContactListVisualData &item, bool _shortView)
+    int RenderDate(QPainter &painter, const QDateTime &ts, int _regim, const ContactListVisualData &item, bool _shortView, int width, int rightMargin)
     {
-        bool _isWithCheckBox = _regim == Logic::MembersWidgetRegim::SELECT_MEMBERS; 
-        const auto timeXRight = ItemWidth(false, _isWithCheckBox, _shortView) - L::itemPadding;
+        bool _isWithCheckBox = _regim == Logic::MembersWidgetRegim::SELECT_MEMBERS;
+        auto timeXRight = width == -1 ? ItemWidth(false, _isWithCheckBox, _shortView) - L::itemPadding : DipPixels(Utils::unscale_value(width));
+        timeXRight = timeXRight - DipPixels(Utils::unscale_value(rightMargin));
 
         if (!ts.isValid())
         {
@@ -373,8 +432,9 @@ namespace
         const auto timeWidth = (m.tightBoundingRect(timeStr).width() + leftBearing + rightBearing);
         const auto timeX = (timeXRight.px() - timeWidth);
 
-        if ((!_isWithCheckBox && !Logic::is_delete_members_regim(_regim) )
-            || (Logic::is_delete_members_regim(_regim) && !item.IsHovered_))
+        if ((!_isWithCheckBox && !Logic::is_delete_members_regim(_regim) && !Logic::is_admin_members_regim(_regim))
+            || (Logic::is_delete_members_regim(_regim) && !item.IsHovered_)
+            || (!Logic::is_admin_members_regim(_regim) && !item.IsHovered_))
         {
             painter.save();
             painter.setFont(L::timeFont.font());
@@ -386,7 +446,7 @@ namespace
         return timeX;
     }
 
-    void RenderMouseState(QPainter &painter, const bool isHovered, const bool isSelected, bool _isWithCheckBox, bool _shortView)
+    void RenderMouseState(QPainter &painter, const bool isHovered, const bool isSelected, bool _isWithCheckBox, bool _shortView, int width)
     {
         if (!isHovered && !isSelected)
         {
@@ -406,12 +466,12 @@ namespace
             painter.setBrush(selectedBrush);
         }
 
-        painter.drawRect(0, 0, ItemWidth(false, _isWithCheckBox, _shortView).px(), L::itemH.px());
+        painter.drawRect(0, 0, width == -1 ? ItemWidth(false, _isWithCheckBox, _shortView).px() : width, L::itemH.px());
 
         painter.restore();
     }
 
-    int RenderRemove(QPainter &painter, int, bool _shortView)
+    int RenderRemove(QPainter &painter, int, bool _shortView, int width)
     {
         QPixmap remove_img;
         remove_img = Utils::parse_image_name(":/resources/contr_clear_100.png");
@@ -421,23 +481,43 @@ namespace
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-        painter.drawPixmap(GetXOfRemoveImg(_isWithCheckBox, _shortView), L::onlineSignY.px() + L::onlineSignSize.px() / 2 - L::remove_size.px() / 2,
+        painter.drawPixmap(GetXOfRemoveImg(_isWithCheckBox, _shortView, width), L::onlineSignY.px() + L::onlineSignSize.px() / 2 - L::remove_size.px() / 2,
             L::remove_size.px(), L::remove_size.px(), remove_img);
-        
+
         painter.restore();
 
-        const auto xPos = (DipPixels(ItemWidth(false, _isWithCheckBox, _shortView) - L::itemPadding - L::remove_size).px() - L::onlineSignLeftPadding.px());
+        const auto xPos = (DipPixels((width != -1 ? DipPixels(Utils::unscale_value(width)) : ItemWidth(false, _isWithCheckBox, _shortView)) - L::itemPadding - L::remove_size).px() - L::onlineSignLeftPadding.px());
         assert(xPos > L::itemLeftBorder.px());
         return xPos;
     }
 
-    void RenderStatus(QPainter &painter, const QString &status, const int rightBorderPx, bool _isWithCheckBox)
+    int RenderMore(QPainter &painter, int, bool _shortView, int width)
+    {
+        QPixmap remove_img;
+        remove_img = Utils::parse_image_name(":/resources/contr_options_100.png");
+        bool _isWithCheckBox = false;
+        painter.save();
+
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
+        painter.drawPixmap(GetXOfRemoveImg(_isWithCheckBox, _shortView, width), L::onlineSignY.px() + L::onlineSignSize.px() / 2 - L::remove_size.px() / 2,
+            L::remove_size.px(), L::remove_size.px(), remove_img);
+
+        painter.restore();
+
+        const auto xPos = (DipPixels((width != -1 ? DipPixels(Utils::unscale_value(width)) : ItemWidth(false, _isWithCheckBox, _shortView)) - L::itemPadding - L::remove_size).px() - L::onlineSignLeftPadding.px());
+        assert(xPos > L::itemLeftBorder.px());
+        return xPos;
+    }
+
+    void RenderStatus(QPainter &painter, const QString &status, const int rightBorderPx, bool _isWithCheckBox, const int leftMargin)
     {
         assert(!status.isEmpty());
 
         static auto textControl = CreateTextBrowser("status", L::getStatusStylesheet(), L::statusHeight.px());
 
-        const auto maxWidth = (rightBorderPx - L::GetStatusX(_isWithCheckBox).px());
+        const auto maxWidth = (rightBorderPx - L::GetStatusX(_isWithCheckBox, leftMargin).px());
         textControl->setFixedWidth(maxWidth);
 
         QFontMetrics m(textControl->font());
@@ -449,6 +529,6 @@ namespace
         Logic::Text2Doc(elidedString, cursor, Logic::Text2DocHtmlMode::Pass, false);
         Logic::FormatDocument(doc, L::statusHeight.px());
 
-        textControl->render(&painter, QPoint(L::GetStatusX(_isWithCheckBox).px(), L::statusY.px()));
+        textControl->render(&painter, QPoint(L::GetStatusX(_isWithCheckBox, leftMargin).px(), L::statusY.px()));
     }
 }

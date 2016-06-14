@@ -9,7 +9,7 @@ namespace Ui
 	{
 		QLabel* text = new QLabel(this);
 		text->setObjectName("no_result_label");
-		text->setText(QT_TRANSLATE_NOOP("search_widget", "No contacts found"));
+		text->setText(QT_TRANSLATE_NOOP("search_widget", "Nothing found"));
 		text->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 		root_layout_->addWidget(text);
 

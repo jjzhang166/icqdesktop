@@ -17,6 +17,7 @@ namespace Ui
     const int maxNameTextSize = 40;
     const int maxAboutTextSize = 200;
     const int horMargins = 48;
+    const int textMargin = 4;
 
     LiveChats::LiveChats(QWidget* _parent)
         :   parent_(_parent),
@@ -38,6 +39,7 @@ namespace Ui
         {
             connect(Ui::GetDispatcher(), SIGNAL(chatInfo(qint64, std::shared_ptr<Data::ChatInfo>)), this, SLOT(chatInfo(qint64, std::shared_ptr<Data::ChatInfo>)), Qt::UniqueConnection);
             connect(Ui::GetDispatcher(), SIGNAL(chatInfoFailed(qint64, core::group_chat_info_errors)), this, SLOT(chatInfoFailed(qint64, core::group_chat_info_errors)), Qt::UniqueConnection);
+            connect(Logic::GetContactListModel(), SIGNAL(liveChatJoined(QString)), this, SLOT(liveChatJoined(QString)), Qt::QueuedConnection);
         }
 
         connected_ = true;
@@ -55,10 +57,22 @@ namespace Ui
         }
     }
 
+    void LiveChats::liveChatJoined(QString _aimid)
+    {
+        if (joinedLiveChat_ == _aimid)
+        {
+            Logic::GetContactListModel()->setCurrent(_aimid, true);
+
+            joinedLiveChat_.clear();
+        }
+    }
+
     void LiveChats::chatInfo(qint64 _seq, std::shared_ptr<Data::ChatInfo> _info)
     {
         if (_seq != seq_)
             return;
+
+        joinedLiveChat_.clear();
 
         if (Logic::GetContactListModel()->getContactItem(_info->AimId_))
         {
@@ -76,14 +90,21 @@ namespace Ui
         activeDialog_ = &containerDialog;
 
         containerDialog.addHead();
-        containerDialog.addAcceptButton(QT_TRANSLATE_NOOP("livechats", "Join chat"), Utils::scale_value(20));
+        containerDialog.addAcceptButton(QT_TRANSLATE_NOOP("livechats", "Join"), Utils::scale_value(20));
         containerDialog.setKeepCenter(true);
         
         if (containerDialog.showInPosition(-1, -1))
         {
             Logic::GetContactListModel()->joinLiveChat(_info->Stamp_, true);
+            Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::livechat_join_frompopup);
+            joinedLiveChat_ = _info->AimId_;
+        }
+        else
+        {
+            joinedLiveChat_.clear();
         }
 
+        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::open_popup_livechat);
         activeDialog_ = nullptr;
     }
     
@@ -91,6 +112,8 @@ namespace Ui
     {
         if (_seq != seq_)
             return;
+
+        joinedLiveChat_.clear();
 
         QString errorText;
 
@@ -121,6 +144,7 @@ namespace Ui
         {
         }
 
+        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::open_popup_livechat);
         activeDialog_ = nullptr;
     }
 
@@ -160,11 +184,12 @@ namespace Ui
 
     void LiveChatProfileWidget::requestProfile()
     {
-    }
+
+    }
 
     void LiveChatProfileWidget::viewChat(std::shared_ptr<Data::ChatInfo> _info)
     {
-        int currentWidth = width() - Utils::scale_value(horMargins) * 2;
+        int currentTextWidth = width() - Utils::scale_value(horMargins) * 2 - Utils::scale_value(textMargin) * 2;
 
         int needHeight = 0;
 
@@ -182,11 +207,13 @@ namespace Ui
         QString nameText = ((_info->Name_.length() > maxNameTextSize) ? (_info->Name_.mid(0, maxNameTextSize) + "...") : _info->Name_);
 
         TextEditEx* name = new TextEditEx(this, Utils::FontsFamily::SEGOE_UI_LIGHT, Utils::scale_value(32), QColor(0x28, 0x28, 0x28), false, false);
-        name->setPlainText(nameText, false);
+        name->setPlainText(nameText, false, QTextCharFormat::AlignNormal);
         name->setAlignment(Qt::AlignHCenter);
         name->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         name->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        int height = name->adjustHeight(currentWidth);
+        name->setFrameStyle(QFrame::NoFrame);
+        name->setContentsMargins(0, 0, 0, 0);
+        int height = name->adjustHeight(currentTextWidth);
         needHeight += height;
         rootLayout_->addWidget(name);
 
@@ -195,14 +222,15 @@ namespace Ui
         TextEditEx* about = new TextEditEx(this, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor(0x69, 0x69, 0x69), false, false);
         about->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         about->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        about->setFrameStyle(QFrame::NoFrame);
 
         for (int i = 0; i < maxAboutTextSize; ++i) 
         {
             about->setPlainText(aboutText, false);
             about->setAlignment(Qt::AlignHCenter);
-            height = about->adjustHeight(currentWidth);
+            height = about->adjustHeight(currentTextWidth);
 
-            if (height < 135)
+            if (height < Utils::scale_value(70))
                 break;
 
             int newLength = int(((float) aboutText.length()) * 0.9);
@@ -245,7 +273,8 @@ namespace Ui
             TextEditEx* location = new TextEditEx(this, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor(0, 0, 0), false, false);
             location->setPlainText(location_string, false);
             location->setAlignment(Qt::AlignHCenter);
-            height = location->adjustHeight(currentWidth);
+            location->setFrameStyle(QFrame::NoFrame);
+            height = location->adjustHeight(currentTextWidth);
             needHeight += height;
             rootLayout_->addWidget(location);
         }
@@ -261,20 +290,27 @@ namespace Ui
 
         avatarsLayout->addSpacing(Utils::scale_value(6));
 
-        QLabel* count = new QLabel(QString("+") + QString::number(membersCount_));
+        int realAvatarsCount = members_->getRealCount();
+
+        QLabel* count = new QLabel(QString("+") + QString::number(membersCount_ - realAvatarsCount));
         count->setObjectName("LiveChatMembersCount");
         avatarsLayout->addWidget(count);
+
+        if (realAvatarsCount >= membersCount_)
+            count->hide();
 
         needHeight += members_->height();
 
         rootLayout_->addLayout(avatarsLayout);
 
-
         setFixedHeight(needHeight);
     }
 
 
-
+    void LiveChatProfileWidget::setStamp(const QString& _stamp)
+    {
+        stamp_ = _stamp;
+    }
 
 
 
@@ -303,7 +339,7 @@ namespace Ui
 
         QHBoxLayout* pictureLayout = new QHBoxLayout();
         pictureLayout->setContentsMargins(0, 0, 0, 0);
-        PictureWidget* picture = new PictureWidget(this, ":/resources/livechats/content_illustration_emptylivechat_100.png");
+        PictureWidget* picture = new PictureWidget(this, ":/resources/placeholders/content_illustration_emptylivechat_100.png");
         picture->setFixedWidth(Utils::scale_value(136));
         picture->setFixedHeight(Utils::scale_value(216));
         pictureLayout->addWidget(picture);

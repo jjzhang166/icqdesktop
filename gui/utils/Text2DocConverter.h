@@ -25,13 +25,15 @@ namespace Logic
 
 	void FormatDocument(QTextDocument &doc, const int lineHeight);
 
-	void Text4Edit(const QString& _text,
+	void Text4Edit(
+        const QString& _text,
 		Ui::TextEditEx& _edit,
 		const Text2DocHtmlMode _htmlMode = Text2DocHtmlMode::Escape,
 		const bool _convertLinks = true,
         const bool _breakDocument = false,
 		const Text2HtmlUriCallback _uriCallback = nullptr,
-		const Emoji::EmojiSizePx _emojiSize = Emoji::EmojiSizePx::Auto);
+		const Emoji::EmojiSizePx _emojiSize = Emoji::EmojiSizePx::Auto,
+        const QTextCharFormat::VerticalAlignment _aligment = QTextCharFormat::AlignBaseline);
 
 	void Text2Doc(
 		const QString &text,

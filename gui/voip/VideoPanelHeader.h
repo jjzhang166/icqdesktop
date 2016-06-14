@@ -2,6 +2,7 @@
 #define __VIDEO_PANEL_HEADER_H__
 
 #include "NameAndStatusWidget.h"
+#include "WindowHeaderFormat.h"
 
 namespace voip_manager {
     struct ContactEx;
@@ -11,17 +12,7 @@ namespace voip_manager {
 namespace Ui {
     std::string getFotmatedTime(unsigned ts);
 
-	enum eVideoPanelHeaderItems {
-		kVPH_ShowNone = 0x0000,
-		kVPH_ShowName = 0x0001,
-		kVPH_ShowTime = 0x0002,
-
-		kVPH_ShowMin = 0x0004,
-		kVPH_ShowMax = 0x0008,
-		kVPH_ShowClose = 0x0010,
-
-		kVPH_ShowAll  = 0xffff
-	};
+    class PushButton_t;
 
     class MoveablePanel : public QWidget { Q_OBJECT
     Q_SIGNALS:
@@ -61,11 +52,14 @@ namespace Ui {
         void onClose();
 		void onMouseEnter();
 		void onMouseLeave();
+        void onSecureCallClicked(const QRect& rc);
 
     private Q_SLOTS:
         void _onMinimize();
         void _onMaximize();
         void _onClose();
+
+        void _onSecureCallClicked();
 
     public:
         VideoPanelHeader(QWidget* parent, int items = kVPH_ShowAll);
@@ -75,6 +69,9 @@ namespace Ui {
 		void setTime(unsigned ts, bool have_call);
         void setFullscreenMode(bool en);
 
+        void setSecureWndOpened(const bool opened);
+        void enableSecureCall(bool enable);
+
     private:
         //std::unique_ptr<videoPanelHeader> _ui;
 		int _items_to_show;
@@ -82,7 +79,7 @@ namespace Ui {
         NameWidget*  _callName;
         QSpacerItem* _callNameSpacer;
 
-        QLabel*      _callTime;
+        PushButton_t* _callTime;
         QSpacerItem* _callTimeSpacer;
 
         QPushButton* _btnMin;
@@ -90,6 +87,7 @@ namespace Ui {
         QPushButton* _btnClose;
 
         QWidget*     _lowWidget;
+        bool         _secureCallEnabled;
 
 		void enterEvent(QEvent* e) override;
 		void leaveEvent(QEvent* e) override;

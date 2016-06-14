@@ -6,8 +6,10 @@
 
 namespace Ui
 {
-	SearchWidget::SearchWidget(int _offset, bool _isWithButton, QWidget* _parent)
+	SearchWidget::SearchWidget(bool _isWithButton, QWidget* _parent, int _offset)
         : QWidget(_parent)
+        , is_transparent_(false)
+        , menu_(0)
 	{
         if (this->objectName().isEmpty())
             this->setObjectName(QStringLiteral("search_widget"));
@@ -20,7 +22,7 @@ namespace Ui
         horizontal_search_layout_->setContentsMargins(0, 0, 0, Utils::scale_value(0));
         parent_search_vertical_layout_->addLayout(horizontal_search_layout_);
 
-        horizontal_search_layout_->addSpacing(Utils::scale_value(_offset - 8));
+        horizontal_search_layout_->addSpacing(_offset);
 
         search_icon_ = new Ui::CustomButton(this, ":/resources/contr_search_100.png");
         search_icon_->setOffsets(Utils::scale_value(8), Utils::scale_value(0));
@@ -61,6 +63,7 @@ namespace Ui
         horizontal_line_widget_ = new QWidget(this);
         horizontal_line_widget_->setFixedHeight(Utils::scale_value(1));
         horizontal_line_widget_->setStyleSheet(QString("background-color: #dadada;"));
+        horizontal_line_widget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         parent_search_vertical_layout_->addSpacing(0);
         widget_2_ = new QWidget(this);
         horizontal_layout_2_ = new QHBoxLayout(widget_2_);
@@ -94,6 +97,11 @@ namespace Ui
 		search_edit_icon_->setVisible(is_show_button_);
 	}
 
+    void SearchWidget::setTransparent(bool _isTransparent)
+    {
+        is_transparent_ = _isTransparent;
+    }
+
     void SearchWidget::setFocus()
     {
         search_edit_->setFocus(Qt::MouseFocusReason);
@@ -106,6 +114,15 @@ namespace Ui
 
 	void SearchWidget::setActive(bool active)
 	{
+        if (active && search_edit_icon_->menu())
+        {
+            menu_ = search_edit_icon_->menu();
+            search_edit_icon_->setMenu(0);
+        }
+        
+        if (!active)
+            search_edit_icon_->setMenu(menu_);
+        
 		active_ = active;
         search_icon_->setActive(active);
         search_edit_icon_->setActive(active);
@@ -123,8 +140,11 @@ namespace Ui
     {
         QPainter painter(this);
 		painter.setPen(QPen(QColor("#dadada"), Utils::scale_value(1)));
-        painter.fillRect(rect(), QColor(255, 255, 255, 0.95 * 255));
-		painter.drawLine(geometry().width()-1, geometry().y(), geometry().width()-1, geometry().height());
+        if (!is_transparent_)
+        {
+            painter.fillRect(rect(), QColor(255, 255, 255, 0.95 * 255));
+		    painter.drawLine(geometry().width()-1, geometry().y(), geometry().width()-1, geometry().height());
+        }
     }
 
 	void SearchWidget::searchStarted()

@@ -73,7 +73,8 @@ bool core::tools::system::compare_dirs(const std::wstring& _dir1, const std::wst
 	if (_dir1.empty() || _dir2.empty())
 		return false;
 		
-    return boost::filesystem::equivalent(boost::filesystem::path(_dir1), boost::filesystem::path(_dir2));
+    boost::system::error_code error;
+    return boost::filesystem::equivalent(boost::filesystem::path(_dir1), boost::filesystem::path(_dir2), error);
 }
 
 std::wstring core::tools::system::get_file_directory(const std::wstring& file)

@@ -30,7 +30,7 @@ namespace
 		const auto avatarH = dip(56);
 
 		const auto nameFontSize = dip(17);
-		const auto nameHeight = dip(22);
+		const auto nameHeight = dip(24);
 		const auto nameX = avatarX + avatarW + dip(13);
 		const auto nameY = dip(12);
 		const auto nameRightPadding = dip(12);
@@ -40,6 +40,7 @@ namespace
                 .arg(nameFontSize.px())
                 .arg(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
         };
+
 		const auto messageFontSize = dip(14);
 		const auto messageHeight = dip(24);
 		const auto messageX = nameX;
@@ -70,22 +71,24 @@ namespace
         const auto dragOverlayVerPadding = dip(1);
 
         const auto official_hor_padding = dip(6);
-        const auto official_ver_padding = dip(1);
+        const auto official_ver_padding = dip(4);
+
+        int getLastReadAvatarSize() {return Utils::scale_value(16);}
 	}
 
 	void RenderAvatar(QPainter &painter, const RecentItemVisualData &visData);
 
-	void RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx);
+	int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx);
 
 	void RenderContactName(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx);
-
-	int RenderDeliveryState(QPainter &painter, const DeliveryState state, const int rightBorderPx);
 
 	void RenderMouseState(QPainter &painter, const RecentItemVisualData &visData, bool fromAlert, bool _shortView);
 
 	int RenderTime(QPainter &painter, const QDateTime &time, const DeliveryState state, bool fromAlert, bool _shortView);
 
 	int RenderUnread(QPainter &painter, const int unreads, bool muted);
+
+    void RenderLastReadAvatar(QPainter &painter, const QPixmap& _avatar, const int _xOffset);
 
 }
 
@@ -106,8 +109,10 @@ namespace ContactList
 		const int unreadsCounter,
 		const bool muted,
         const QString &senderNick,
-        const bool isOfficial)
-		: VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, false, false, isOfficial)
+        const bool isOfficial,
+        const bool _drawLastRead,
+        const QPixmap& _lastReadAvatar)
+		: VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, false, false, isOfficial, _drawLastRead, _lastReadAvatar)
 		, DeliveryState_(deliveryState)
 		, UnreadsCounter_(unreadsCounter)
 		, Muted_(muted)
@@ -138,19 +143,29 @@ namespace ContactList
 
 		RenderAvatar(painter, item);
 
-		//auto rightBorderPx = RenderTime(painter, item.LastSeen_, item.DeliveryState_, fromAlert, short_view);
-
-		//if (!fromAlert)
-			//rightBorderPx = RenderDeliveryState(painter, item.DeliveryState_, rightBorderPx);
-
-
         int rightBorderPx = (ItemWidth(fromAlert, false, short_view) - L::itemHorPadding).px();
 		RenderContactName(painter, item, rightBorderPx);
 
 		if (!fromAlert)
-			rightBorderPx = RenderUnread(painter, item.UnreadsCounter_, item.Muted_);
+        {
+            if (!item.drawLastRead_ || item.Muted_)
+            {
+                rightBorderPx = RenderUnread(painter, item.UnreadsCounter_, item.Muted_);
+            }
+        }
 
-		RenderContactMessage(painter, item, rightBorderPx);
+        const int lastReadLeftMargin = Utils::scale_value(4);
+        const int lastReadRightMargin = Utils::scale_value(4);
+        const int lastReadWidth = L::getLastReadAvatarSize() + lastReadRightMargin + lastReadLeftMargin;
+
+        rightBorderPx -= (item.drawLastRead_ ? lastReadWidth : 0);
+
+        const int messageWidth = RenderContactMessage(painter, item, rightBorderPx);
+
+        if (item.drawLastRead_)
+        {
+            RenderLastReadAvatar(painter, item.lastReadAvatar_, L::messageX.px() + messageWidth + lastReadLeftMargin);
+        }
 
 		painter.restore();
 	}
@@ -223,11 +238,11 @@ namespace
 		painter.drawPixmap(L::avatarX.px(), L::avatarY.px(), L::avatarW.px(), L::avatarH.px(), visData.Avatar_);
 	}
 
-	void RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx)
+	int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx)
 	{
 		if (!visData.HasStatus())
 		{
-			return;
+			return 0;
 		}
 
 		static auto textControl = CreateTextBrowser("message", L::getMessageStylesheet(), L::messageHeight.px());
@@ -253,7 +268,8 @@ namespace
 
             QString fixedNick;
             fixedNick.reserve(senderNick.size() + fix.length());
-            fixedNick.append(senderNick);
+            fixedNick.append(senderNick.simplified());
+
             fixedNick.append(fix);
 
             const auto charFormat = cursor.charFormat();
@@ -275,7 +291,8 @@ namespace
             messageTextMaxWidth -= doc.idealWidth();
         }
 
-        const auto text = visData.GetStatus().trimmed().replace("\n", " ").remove("\r");
+        const auto STATUS_LIMIT = 90;
+        const auto text = visData.GetStatus().trimmed().simplified().left(STATUS_LIMIT);
 
         QFontMetrics m(font);
 		const auto elidedText = m.elidedText(text, Qt::ElideRight, messageTextMaxWidth);
@@ -283,6 +300,7 @@ namespace
 		Logic::Text2Doc(elidedText, cursor, Logic::Text2DocHtmlMode::Pass, false);
 
 		Logic::FormatDocument(doc, L::messageHeight.px());
+
 
         if (platform::is_apple())
         {
@@ -295,13 +313,15 @@ namespace
         {
             textControl->render(&painter, QPoint(L::messageX.px(), L::messageY.px()));
         }
+
+        return doc.idealWidth();
 	}
 
 	void RenderContactName(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx)
 	{
 		assert(!visData.ContactName_.isEmpty());
 
-        static auto textControl = CreateTextBrowser("name", L::getNameStylesheet(), L::nameHeight.px() + (platform::is_apple()?1:0) );
+        static auto textControl = CreateTextBrowser("name", L::getNameStylesheet(), L::nameHeight.px() + (platform::is_apple() ? 1 : 0));
 
         QPixmap official_mark;
         if (visData.isOfficial_)
@@ -317,7 +337,7 @@ namespace
 		textControl->setFixedWidth(maxWidth);
 
 		QFontMetrics m(textControl->font());
-		const auto elidedString = m.elidedText(visData.ContactName_, Qt::ElideRight, maxWidth);
+        const auto elidedString = m.elidedText(visData.ContactName_, Qt::ElideRight, maxWidth);
 
 		auto &doc = *textControl->document();
 		doc.clear();
@@ -340,50 +360,6 @@ namespace
         int x = L::nameX.px() + m.width(elidedString) + L::official_hor_padding.px();
         int y = L::nameY.px() + L::official_ver_padding.px();
         painter.drawPixmap(x, y, official_mark);
-	}
-
-	int RenderDeliveryState(QPainter &painter, const DeliveryState state, const int rightBorderPx)
-	{
-		assert(state >= DeliveryState::Min);
-		assert(state <= DeliveryState::Max);
-
-		if (state == DeliveryState::NotDelivered)
-		{
-			return rightBorderPx;
-		}
-
-		Themes::IThemePixmapSptr pixmap;
-
-		if (state == DeliveryState::Sending)
-		{
-			static const auto sendingMark = Themes::GetPixmap(Themes::PixmapResourceId::ContactListSendingMark);
-			pixmap = sendingMark;
-		}
-
-		if (state == DeliveryState::DeliveredToClient)
-		{
-			static const auto readMark = Themes::GetPixmap(Themes::PixmapResourceId::ContactListReadMark);
-			pixmap = readMark;
-		}
-
-		if (state == DeliveryState::DeliveredToServer)
-		{
-			static const auto deliveredMark = Themes::GetPixmap(Themes::PixmapResourceId::ContactListDeliveredMark);
-			pixmap = deliveredMark;
-		}
-
-		if (!pixmap)
-		{
-			assert(!"unexpected delivery state");
-
-			return rightBorderPx;
-		}
-
-		auto macOffset = Utils::scale_bitmap(1) == 2 ? 7 : 0;
-		const auto deliveryStateX = (rightBorderPx - L::deliveryStateRightPadding.px() - pixmap->GetWidth()/Utils::scale_bitmap(1) - macOffset);
-		pixmap->Draw(painter, deliveryStateX, L::deliveryStateY.px());
-
-		return deliveryStateX;
 	}
 
 	void RenderMouseState(QPainter &painter, const RecentItemVisualData &visData, bool fromAlert, bool _shortView)
@@ -442,6 +418,11 @@ namespace
 
 		return timeX;
 	}
+
+    void RenderLastReadAvatar(QPainter &painter, const QPixmap& _avatar, const int _xOffset)
+    {
+        painter.drawPixmap(_xOffset, L::unreadsY.px(), L::getLastReadAvatarSize(), L::getLastReadAvatarSize(), _avatar);
+    }
 
 	int RenderUnread(QPainter &painter, const int unreads, bool muted)
 	{

@@ -17,8 +17,8 @@ namespace Ui
     {
         Q_OBJECT
         
-    public Q_SLOTS:
-
+    private Q_SLOTS:
+        void enterClicked();
 
     public: 
         ConnectionSettingsWidget(QWidget* _parent);

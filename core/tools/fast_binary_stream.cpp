@@ -134,12 +134,11 @@ void fast_binary_stream::clear()
 bool fast_binary_stream::save_2_file(const std::wstring& _file_name) const
 {
     boost::filesystem::wpath path_for_file(_file_name);
-    std::wstring forder_name = path_for_file.parent_path().wstring();
-    boost::filesystem::wpath path_for_folder(forder_name);
+    std::wstring folder_name = path_for_file.parent_path().wstring();
 
-    if (!boost::filesystem::exists(path_for_folder))
+    if (!core::tools::system::is_exist(folder_name))
     {
-        if (!boost::filesystem::create_directories(path_for_folder))
+        if (!core::tools::system::create_directory(folder_name))
             return false;
     }
 
@@ -175,9 +174,7 @@ bool fast_binary_stream::save_2_file(const std::wstring& _file_name) const
 
 bool fast_binary_stream::load_from_file(const std::wstring& _file_name)
 {
-    boost::filesystem::wpath file_path(_file_name);
-
-    if (!boost::filesystem::exists(file_path))
+    if (!core::tools::system::is_exist(_file_name))
         return false;
 
 #ifdef _WIN32

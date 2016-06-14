@@ -117,7 +117,7 @@ namespace core
         return (++max_id);
     }
 
-    void im_login_list::update(/*in, out*/ im_login_id& _login)
+    bool im_login_list::update(/*in, out*/ im_login_id& _login)
     {
         bool found = false;
 
@@ -130,7 +130,7 @@ namespace core
                 _login = *iter;
 
                 if (iter == logins_.begin())
-                    return;
+                    return true;
 
                 logins_.erase(iter);
                 break;
@@ -143,6 +143,7 @@ namespace core
         logins_.push_front(_login);
 
         save();
+        return found;
     }
 
     bool im_login_list::get_first_login(/*out*/ im_login_id& _login)

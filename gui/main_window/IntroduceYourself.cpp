@@ -8,10 +8,11 @@
 #include "../utils/InterConnector.h"
 #include "../core_dispatcher.h"
 #include "../gui_settings.h"
+#include "../controls/ContactAvatarWidget.h"
 
 namespace Ui
 {
-    IntroduceYourself::IntroduceYourself(QWidget* parent)
+    IntroduceYourself::IntroduceYourself(const QString& _aimid, const QString& _display_name, QWidget* parent)
         : QWidget(parent)
     {
         QHBoxLayout *horizontal_layout = new QHBoxLayout(this);
@@ -46,25 +47,13 @@ namespace Ui
                 pl->setContentsMargins(0, 0, 0, 0);
                 pl->setAlignment(Qt::AlignCenter);
                 {
-                    auto w = new QWidget(middle_widget);
+                    auto w = new ContactAvatarWidget(this, _aimid, _display_name, Utils::scale_value(180), true);
+                    w->SetIsInMyProfile(true);
+
                     w->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-                    w->setStyleSheet("image: url(:/resources/main_window/content_logo_200.png);");
-                    w->setFixedSize(Utils::scale_value(64), Utils::scale_value(64));
                     pl->addWidget(w);
+                    QObject::connect(w, &ContactAvatarWidget::afterAvatarChanged, this, &IntroduceYourself::avatarChanged, Qt::QueuedConnection);
                 }
-                middle_layout->addLayout(pl);
-            }
-
-            {
-                auto pl = new QHBoxLayout(middle_widget);
-                pl->setContentsMargins(0, 0, 0, 0);
-                pl->setAlignment(Qt::AlignCenter);
-
-                auto w = new Ui::TextEmojiWidget(middle_widget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(44));
-                w->setSizePolicy(QSizePolicy::Policy::Preferred, w->sizePolicy().verticalPolicy());
-                middle_layout->setAlignment(w, Qt::AlignCenter);
-                w->setText(QT_TRANSLATE_NOOP("placeholders", "Introduce yourself"));
-                pl->addWidget(w);
                 middle_layout->addLayout(pl);
             }
 
@@ -112,7 +101,7 @@ namespace Ui
                 next_button_->setText(QT_TRANSLATE_NOOP("placeholders", "Continue"));
                 next_button_->setCursor(QCursor(Qt::PointingHandCursor));
                 next_button_->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
-                QObject::connect(next_button_, SIGNAL(clicked()), this, SLOT(accept()), Qt::QueuedConnection);
+                connect(next_button_, SIGNAL(clicked()), this, SLOT(accept()), Qt::QueuedConnection);
                 
                 name_edit_->setAlignment(Qt::AlignCenter);
                 pl->addWidget(next_button_);
@@ -208,7 +197,8 @@ namespace Ui
     void IntroduceYourself::Skipped()
     {
         get_gui_settings()->set_value(get_account_setting_name(settings_skip_intro_yourself).c_str(), true);
-        emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_HideIntroduceYourself);
+        emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_SetExistanseOffIntroduceYourself);
+        Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::introduce_skip);
     }
 
     void IntroduceYourself::UpdateProfile()
@@ -218,6 +208,7 @@ namespace Ui
         std::vector<std::pair<std::string, QString>> fields;
         fields.push_back(std::make_pair(std::string("friendlyName"), name_edit_->text()));
         Utils::UpdateProfile(fields);
+        Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::introduce_name_set);
     }
 
     void IntroduceYourself::RecvResponse(int _error)
@@ -232,5 +223,10 @@ namespace Ui
             setButtonActive(true);
             error_label_->setText(QT_TRANSLATE_NOOP("placeholders", "Error occured, try again later"));
         }
+    }
+
+    void IntroduceYourself::avatarChanged()
+    {
+        Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::introduce_avatar_changed);
     }
 }

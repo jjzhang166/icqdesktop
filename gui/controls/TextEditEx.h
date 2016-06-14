@@ -47,7 +47,7 @@ namespace Ui
         TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QColor& color, bool input, bool _isFitToText);
 
         QString getPlainText() const;
-        void setPlainText(const QString& _text, bool _convertLinks = true);
+        void setPlainText(const QString& _text, bool _convertLinks = true, const QTextCharFormat::VerticalAlignment _aligment = QTextCharFormat::AlignBaseline);
 
         void mergeResources(const ResourceMap& _resources);
         void insertEmoji(int _main, int _ext);

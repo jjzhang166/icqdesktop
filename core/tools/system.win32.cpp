@@ -28,7 +28,8 @@ bool is_dir_writable(const std::wstring &_dir_path_str)
 {
     const fs::wpath dir_path(_dir_path_str);
 
-    const auto is_dir = fs::is_directory(dir_path);
+    boost::system::error_code error;
+    const auto is_dir = fs::is_directory(dir_path, error);
     assert(is_dir);
 
     if (!is_dir)
@@ -46,7 +47,7 @@ bool is_dir_writable(const std::wstring &_dir_path_str)
         }
     }
 
-    fs::remove(test_path);
+    fs::remove(test_path, error);
 
     return true;
 }
@@ -66,7 +67,8 @@ bool compare_dirs(const std::wstring& _dir1, const std::wstring& _dir2)
 	if (_dir1.empty() || _dir2.empty())
 		return false;
 
-    return fs::equivalent(fs::path(_dir1), fs::path(_dir2));
+    boost::system::error_code error;
+    return fs::equivalent(fs::path(_dir1), fs::path(_dir2), error);
 }
 
 std::wstring get_file_directory(const std::wstring& file)
@@ -79,19 +81,6 @@ std::wstring get_file_name(const std::wstring& file)
 {
     fs::wpath p(file);
     return p.filename().wstring();
-}
-
-std::wstring get_user_profile()
-{
-	wchar_t buffer[MAX_PATH + 1];
-
-	const auto error = ::SHGetFolderPath( NULL, CSIDL_APPDATA, NULL, 0, buffer);
-	if (FAILED(error))
-	{
-		return std::wstring();
-	}
-
-	return buffer;
 }
 
 std::string generate_guid()
@@ -152,7 +141,8 @@ namespace
 			return std::wstring();
 		}
 
-		assert(fs::is_directory(path));
+        boost::system::error_code e;
+		assert(fs::is_directory(path, e));
 		return path;
 	}
 
@@ -173,7 +163,8 @@ namespace
 		}
 
 		std::wstring result(path);
-		assert(fs::is_directory(result));
+        boost::system::error_code e;
+		assert(fs::is_directory(result, e));
 
 		::CoTaskMemFree(path);
 

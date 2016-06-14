@@ -15,13 +15,16 @@ namespace Ui {
         QMap<int,bool> loaded_themes_;
         QGridLayout *grid_layout_;
         
-        bool firstThemeAdded__;
+        bool firstThemeAdded_;
         void checkFirstTheme_(themes::themePtr theme);
     public:
         ThemesWidget(QWidget* _parent, int _spacing);
+        ~ThemesWidget();
         void onThemeGot(themes::themePtr theme);
         void set_target_contact(QString _aimId);
         void addCaptionLayout(QLayout* _layout);
+    protected:
+        virtual void resizeEvent(QResizeEvent *e) override;
     };
 
 }

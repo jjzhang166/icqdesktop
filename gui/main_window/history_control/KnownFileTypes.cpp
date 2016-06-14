@@ -36,12 +36,55 @@ namespace
 {
 	const Ext2IconMap& GetExt2IconMap()
 	{
+        using namespace Themes;
+
 		static Ext2IconMap map;
 
-		if (map.empty())
+		if (!map.empty())
 		{
+            return map;
+        }
 
-		}
+        map.emplace("exe", PixmapResourceId::FileSharingFileTypeIconExe);
+
+        map.emplace("xls",  PixmapResourceId::FileSharingFileTypeIconExcel);
+        map.emplace("xlsx", PixmapResourceId::FileSharingFileTypeIconExcel);
+        map.emplace("csv",  PixmapResourceId::FileSharingFileTypeIconExcel);
+
+        map.emplace("html", PixmapResourceId::FileSharingFileTypeIconHtml);
+        map.emplace("htm",  PixmapResourceId::FileSharingFileTypeIconHtml);
+
+        map.emplace("png",  PixmapResourceId::FileSharingFileTypeIconImage);
+        map.emplace("jpg",  PixmapResourceId::FileSharingFileTypeIconImage);
+        map.emplace("jpeg", PixmapResourceId::FileSharingFileTypeIconImage);
+        map.emplace("bmp",  PixmapResourceId::FileSharingFileTypeIconImage);
+        map.emplace("gif",  PixmapResourceId::FileSharingFileTypeIconImage);
+        map.emplace("tif",  PixmapResourceId::FileSharingFileTypeIconImage);
+        map.emplace("tiff", PixmapResourceId::FileSharingFileTypeIconImage);
+
+        map.emplace("pdf", PixmapResourceId::FileSharingFileTypeIconPdf);
+
+        map.emplace("ppt", PixmapResourceId::FileSharingFileTypeIconPpt);
+
+        map.emplace("wav", PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("mp3", PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("ogg", PixmapResourceId::FileSharingFileTypeIconSound);
+
+        map.emplace("log", PixmapResourceId::FileSharingFileTypeIconTxt);
+        map.emplace("txt", PixmapResourceId::FileSharingFileTypeIconTxt);
+
+        map.emplace("mp4", PixmapResourceId::FileSharingFileTypeIconVideo);
+        map.emplace("avi", PixmapResourceId::FileSharingFileTypeIconVideo);
+        map.emplace("mkv", PixmapResourceId::FileSharingFileTypeIconVideo);
+        map.emplace("wmv", PixmapResourceId::FileSharingFileTypeIconVideo);
+        map.emplace("flv", PixmapResourceId::FileSharingFileTypeIconVideo);
+
+        map.emplace("doc",  PixmapResourceId::FileSharingFileTypeIconWord);
+        map.emplace("docx", PixmapResourceId::FileSharingFileTypeIconWord);
+        map.emplace("rtf",  PixmapResourceId::FileSharingFileTypeIconWord);
+
+        map.emplace("zip", PixmapResourceId::FileSharingFileTypeIconZip);
+        map.emplace("rar", PixmapResourceId::FileSharingFileTypeIconZip);
 
 		return map;
 	}

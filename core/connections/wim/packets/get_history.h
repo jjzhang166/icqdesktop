@@ -36,13 +36,15 @@ namespace core
             const int64_t		from_msg_id_;
             const int32_t		count_;
             const std::string   patch_version_;
+            bool                init_;
 
             get_history_params(
                 const std::string &_aimid,
                 const int64_t _from_msg_id,
                 const int64_t _till_msg_id,
                 const int32_t _count,
-                const std::string &_patch_version
+                const std::string &_patch_version,
+                bool _init = false
                 );
         };
 

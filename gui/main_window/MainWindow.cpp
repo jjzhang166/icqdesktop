@@ -2,6 +2,7 @@
 #include "MainWindow.h"
 #include "MainPage.h"
 #include "LoginPage.h"
+#include "PromoPage.h"
 #include "tray/TrayIcon.h"
 #include "contact_list/RecentsModel.h"
 #include "../core_dispatcher.h"
@@ -17,15 +18,19 @@
 #include "contact_list/ContactListModel.h"
 #include "history_control/MessagesModel.h"
 #include "history_control/HistoryControlPage.h"
+#include "settings/ProfileSettingsWidget.h"
 #include "../../common.shared/crash_handler.h"
 #include "history_control/MessagesScrollArea.h"
-#include "livechats/LiveChatProfile.h"
 #include "../utils/utils.h"
+#include "livechats/LiveChatsModel.h"
 
 #include "ContactDialog.h"
+#include "../voip/VideoPanelHeader.h"
 
 #ifdef _WIN32
 #include <windowsx.h>
+#include <wtsapi32.h>
+#pragma comment(lib, "wtsapi32.lib")
 #endif //_WIN32
 
 #ifdef __APPLE__
@@ -149,6 +154,12 @@ namespace Ui
 			emit moveRequest(static_cast<QMouseEvent*>(event)->globalPos() - clickPos - QPoint(get_gui_settings()->get_shadow_width(), get_gui_settings()->get_shadow_width()));
 			break;
 
+#ifdef _WIN32
+        case QEvent::MouseButtonRelease:
+            emit checkPosition();
+            break;
+#endif //_WIN32
+
 		default:
 			break;
 		}
@@ -179,26 +190,33 @@ namespace Ui
 #endif //_WIN32
     }
 
+    void MainWindow::showMenuBarIcon(bool show)
+    {
+        tray_icon_->setVisible(show);
+    }
+
     MainWindow::MainWindow(QApplication* app)
 		: main_page_(nullptr)
 		, login_page_(nullptr)
+        , promo_page_(nullptr)
 #ifdef __APPLE__
         , accounts_page_(nullptr)
 #endif //_APPLE__
 		, app_(app)
 		, event_filter_(new TitleWidgetEventFilter(this))
 		, tray_icon_(new TrayIcon(this))
-                , backgroundPixmap_(QPixmap())
+        , backgroundPixmap_(QPixmap())
         , Shadow_(0)
         , SkipRead_(false)
         , TaskBarIconHidden_(false)
-        , liveChats_(new LiveChats(this))
+        , callPanelMainEx(NULL)
 	{
         Utils::InterConnector::instance().setMainWindow(this);
 
 #ifdef _WIN32
         Utils::init_crash_handlers_in_core();
         core::dump::crash_handler chandler;
+        chandler.set_product_bundle("icq.desktop");
         chandler.set_process_exception_handlers();
         chandler.set_thread_exception_handlers();
 #endif //_WIN32
@@ -207,7 +225,24 @@ namespace Ui
 #ifdef __APPLE__
         mac_support_ = new MacSupport(this);
         mac_support_->enableMacCrashReport();
+        mac_support_->listenSleepAwakeEvents();
 #endif
+        {// Call panel main ex
+            CallPanelMainEx::CallPanelMainFormat format;
+            format.topPartHeight         = !platform::is_apple() ? Utils::scale_value(32) : 0;
+            format.topPartFontSize       = Utils::scale_value(14);
+            format.topPartFormat         = kVPH_ShowAll;
+            format.bottomPartHeight      = Utils::scale_value(50);
+            format.bottomPartPanelHeight = Utils::scale_value(42);
+            format.rgba                  = 0xfddc6fff;
+
+            callPanelMainEx = new CallPanelMainEx(this, format);
+            connect(callPanelMainEx, SIGNAL(onMinimize()), this, SLOT(minimize()),   Qt::QueuedConnection);
+		    connect(callPanelMainEx, SIGNAL(onMaximize()), this, SLOT(maximize()),   Qt::QueuedConnection);
+		    connect(callPanelMainEx, SIGNAL(onClose()),    this, SLOT(hideWindow()), Qt::QueuedConnection);
+
+            connect(callPanelMainEx, SIGNAL(onClickOpenChat(const std::string&)),    this, SLOT(onOpenChat(const std::string&)), Qt::DirectConnection);
+        }
 
         app_->installNativeEventFilter(this);
 
@@ -277,6 +312,13 @@ namespace Ui
         stacked_widget_ = new BackgroundWidget(main_widget_, "");
         stacked_widget_->setObjectName(QStringLiteral("stacked_widget"));
 
+        if (callPanelMainEx) {
+            vertical_layout_->addWidget(callPanelMainEx);
+            callPanelMainEx->installEventFilter(event_filter_);
+
+            callPanelMainEx->hide();
+        }
+
         QPixmap p(":/resources/main_window/pat_100.png");
         setBackgroundPixmap(p, true);
 
@@ -293,6 +335,28 @@ namespace Ui
         stacked_widget_->setCurrentIndex(-1);
         QMetaObject::connectSlotsByName(this);
 
+        
+        QFont f = QApplication::font();
+        f.setStyleStrategy(QFont::PreferAntialias);
+        QApplication::setFont(f);
+
+#ifdef _WIN32
+        if (get_gui_settings()->get_value<bool>(settings_need_show_promo, false))
+        {
+            showPromoPage();
+        }
+        else
+        {
+            if (!get_gui_settings()->get_value(settings_keep_logged_in, true))// || !get_gui_settings()->contains_value(settings_keep_logged_in))
+            {
+                showLoginPage();
+            }
+            else
+            {
+                showMainPage();
+            }
+        }
+#else
         if (!get_gui_settings()->get_value(settings_keep_logged_in, true))// || !get_gui_settings()->contains_value(settings_keep_logged_in))
         {
             showLoginPage();
@@ -301,6 +365,7 @@ namespace Ui
         {
             showMainPage();
         }
+#endif // _WIN32
 
 		title_widget_->installEventFilter(event_filter_);
 		title_->setText("ICQ");
@@ -327,6 +392,7 @@ namespace Ui
 
 		connect(event_filter_, SIGNAL(doubleClick()), this, SLOT(maximize()), Qt::QueuedConnection);
 		connect(event_filter_, SIGNAL(moveRequest(QPoint)), this, SLOT(moveRequest(QPoint)), Qt::QueuedConnection);
+        connect(event_filter_, SIGNAL(checkPosition()), this, SLOT(checkPosition()), Qt::QueuedConnection);
 
         connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipResetComplete()), this, SLOT(onVoipResetComplete()), Qt::QueuedConnection);
 
@@ -337,10 +403,6 @@ namespace Ui
 
         connect(get_gui_settings(), SIGNAL(changed(QString)), this, SLOT(guiSettingsChanged(QString)), Qt::QueuedConnection);
 
-		QFont f = QApplication::font();
-		f.setStyleStrategy(QFont::PreferAntialias);
-		QApplication::setFont(f);
-
         if (platform::is_windows())
         {
             int shadowWidth = get_gui_settings()->get_shadow_width();
@@ -350,8 +412,9 @@ namespace Ui
             b.setMatrix(m);
             Shadow_ = new ShadowWindow(b, shadowWidth);
             QPoint pos = mapToGlobal(QPoint(rect().x(), rect().y()));
-            Shadow_->move(pos.x(), pos.y());
-            Shadow_->resize(rect().width(), rect().height());
+            Shadow_->move(pos.x() - shadowWidth, pos.y() - shadowWidth);
+            Shadow_->resize(rect().width() + 2 * shadowWidth, rect().height() + 2 * shadowWidth);
+
             Shadow_->setActive(true);
             Shadow_->show();
         }
@@ -366,9 +429,12 @@ namespace Ui
 
 #ifdef __APPLE__
         mac_support_->enableMacUpdater();
-        mac_support_->enableMacPreview(this->winId());
+        mac_support_->enableMacPreview(winId());
 #endif
 
+        connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallIncomingAccepted(const voip_manager::ContactEx&)), this, SLOT(onVoipCallIncomingAccepted(const voip_manager::ContactEx&)), Qt::DirectConnection);
+        connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallDestroyed(const voip_manager::ContactEx&)), this, SLOT(onVoipCallDestroyed(const voip_manager::ContactEx&)), Qt::DirectConnection);
+        connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallCreated(const voip_manager::ContactEx&)), this, SLOT(onVoipCallCreated(const voip_manager::ContactEx&)), Qt::DirectConnection);
 	}
 
 	MainWindow::~MainWindow()
@@ -378,6 +444,16 @@ namespace Ui
             ::DestroyWindow(fake_parent_window_);
 #endif
 	}
+
+    void MainWindow::onOpenChat(const std::string& contact)
+    {
+        raise();
+        activate();
+
+        if (!contact.empty()) {
+            Logic::GetContactListModel()->setCurrent(contact.c_str(), true);
+        }
+    }
 
 	void MainWindow::activate()
 	{
@@ -408,6 +484,14 @@ namespace Ui
 #endif //_WIN32
     }
 
+    bool MainWindow::isMainPage() const
+    {
+        if (main_page_ == 0)
+            return false;
+        
+        return main_page_->isContactDialog();
+    }
+
     int MainWindow::getScreen() const
     {
         return QApplication::desktop()->screenNumber(this);
@@ -423,16 +507,35 @@ namespace Ui
         return main_page_->getHistoryPage(aimId);
     }
 
-    const QString & MainWindow::activeAimId() const
-    {
-        assert(main_page_);
-        return main_page_->getContactDialog()->currentAimId();
-    }
-
     MainPage* MainWindow::getMainPage() const
     {
         assert(main_page_);
         return main_page_;
+    }
+
+    void MainWindow::insertTopWidget(const QString& aimId, QWidget* widget)
+    {
+        main_page_->insertTopWidget(aimId, widget);
+    }
+
+    void MainWindow::removeTopWidget(const QString& aimId)
+    {
+        main_page_->removeTopWidget(aimId);
+    }
+
+    void MainWindow::showSidebar(const QString& aimId, int page)
+    {
+        main_page_->showSidebar(aimId, page);
+    }
+
+    void MainWindow::setSidebarVisible(bool show)
+    {
+        main_page_->setSidebarVisible(show);
+    }
+
+    bool MainWindow::isSidebarVisible() const
+    {
+        return main_page_->isSidebarVisible();
     }
 
 	bool MainWindow::nativeEventFilter(const QByteArray& data, void *message, long *result)
@@ -493,7 +596,7 @@ namespace Ui
 			setVisible(true);
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
             tray_icon_->Hide();
-            if (!SkipRead_)
+            if (!SkipRead_ && isMainPage())
 			    Logic::GetRecentsModel()->sendLastRead();
             if (!TaskBarIconHidden_)
                 SkipRead_ = false;
@@ -556,6 +659,30 @@ namespace Ui
         {
             GetSoundsManager()->reinit();
         }
+        else if (msg->message == WM_DISPLAYCHANGE)
+        {
+            checkPosition();
+        }
+
+        if (msg->message == WM_POWERBROADCAST) 
+        {
+            if (msg->wParam == PBT_APMSUSPEND) 
+            {
+                gotoSleep();
+            }
+
+            if (msg->wParam == PBT_APMRESUMESUSPEND) 
+            {
+                gotoWake();
+            }
+        }
+        if (msg->message == WM_WTSSESSION_CHANGE)
+        {
+            if (msg->wParam == WTS_SESSION_LOCK)
+                gotoSleep();
+            if (msg->wParam == WTS_SESSION_UNLOCK)
+                gotoWake();
+        }
 #else
 
 #ifdef __APPLE__
@@ -610,6 +737,15 @@ namespace Ui
 			maximize_button_->setProperty("MinimizeButton", isMaximized());
 			maximize_button_->setProperty("MaximizeButton", !isMaximized());
 			maximize_button_->setStyle(QApplication::style());
+
+            if (callPanelMainEx) {
+                if (isMaximized()) {
+                    callPanelMainEx->processOnWindowMaximized();
+                } else {
+                    callPanelMainEx->processOnWindowNormalled();
+                }
+            }
+
 			get_gui_settings()->set_value<bool>(settings_window_maximized, isMaximized());
 		}
         else if (event->type() == QEvent::ActivationChange)
@@ -617,7 +753,7 @@ namespace Ui
             if (isActiveWindow())
             {
                 tray_icon_->Hide();
-                if (!SkipRead_)
+                if (!SkipRead_ && isMainPage())
                     Logic::GetRecentsModel()->sendLastRead();
                 SkipRead_ = false;
             }
@@ -689,32 +825,33 @@ namespace Ui
         stacked_widget_->setImage(_pixmap, _tiling);
     }
 
-	void MainWindow::initSettings()
-	{
-        auto main_rect = Ui::get_gui_settings()->get_value<QRect>(
-            settings_main_window_rect,
-            QRect(0, 0, Utils::scale_value(1000), Utils::scale_value(600)));
-
-		resize(main_rect.width(), main_rect.height());
-		setMinimumHeight(Utils::scale_value(550));
-		setMinimumWidth(Utils::scale_value(700));
-
+    void MainWindow::initSizes()
+    {
+        auto main_rect = Ui::get_gui_settings()->get_value(settings_main_window_rect, QRect(0, 0, Utils::scale_value(1000), Utils::scale_value(600)));
+        
+        resize(main_rect.width(), main_rect.height());
+        setMinimumHeight((qApp->desktop()->screenGeometry().height() >= Utils::scale_value(800)) ? Utils::scale_value(550) : qApp->desktop()->screenGeometry().height() * 0.7);
+        setMinimumWidth(Utils::scale_value(800));
+        
         if (main_rect.left() == 0 && main_rect.top() == 0)
-		{
-			QRect rc = main_rect;
-
+        {
             QRect desktopRect = QDesktopWidget().availableGeometry(this);
-
+            
             QPoint center = desktopRect.center();
-
-			move(center.x() - width()*0.5, center.y()-height()*0.5);
-
+            
+            move(center.x() - width()*0.5, center.y()-height()*0.5);
+            
             get_gui_settings()->set_value(settings_main_window_rect, geometry());
-		}
+        }
         else
         {
             move(main_rect.left(), main_rect.top());
         }
+    }
+
+	void MainWindow::initSettings()
+	{
+        initSizes();
 
         bool isMaximized = get_gui_settings()->get_value<bool>(settings_window_maximized, false);
 		isMaximized ? showMaximized() : show();
@@ -725,8 +862,40 @@ namespace Ui
 #ifdef _WIN32
         if (isMaximized)
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+        
+        WTSRegisterSessionNotification( (HWND)winId(), NOTIFY_FOR_THIS_SESSION);
 #endif //_WIN32
 	}
+
+    void MainWindow::checkPosition()
+    {
+        QRect desktopRect;
+        for (int i = 0; i < QDesktopWidget().screenCount(); ++i)
+            desktopRect |= QDesktopWidget().availableGeometry(i);
+
+        QRect main = rect();
+        QPoint mainP = mapToGlobal(main.topLeft());
+        main.moveTo(mainP);
+        int y = main.y();
+        if (y < desktopRect.y())
+            maximize();
+    }
+    
+    void MainWindow::gotoSleep()
+    {
+        if (main_page_ && main_page_->getProfileSettings())
+        {
+            main_page_->getProfileSettings()->invokeStateAway();
+        }
+    }
+    
+    void MainWindow::gotoWake()
+    {
+        if (main_page_ && main_page_->getProfileSettings())
+        {
+            main_page_->getProfileSettings()->invokePreviousState();
+        }
+    }
 
 	void MainWindow::maximize()
 	{
@@ -738,7 +907,7 @@ namespace Ui
                 QRect(0, 0, Utils::scale_value(1000), Utils::scale_value(600)));
 
 			resize(main_rect.width(), main_rect.height());
-            move(main_rect.x(), main_rect.y());
+            move(main_rect.x(), main_rect.y() < 0 ? 0 : main_rect.y());
 #ifdef _WIN32
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 #endif //_WIN32
@@ -799,6 +968,7 @@ namespace Ui
         Logic::ResetContactListModel();
         Logic::ResetRecentsModel();
         Logic::ResetMessagesModel();
+        Logic::ResetLiveChatsModel();
 
         Ui::stickers::reset_cache();
 
@@ -843,15 +1013,11 @@ namespace Ui
 
         if (!get_gui_settings()->get_value<bool>(settings_mac_accounts_migrated, false))
         {
-            QString accountId = MacMigrationManager::canMigrateAccount();
-
-            if (accountId.length() > 0)
+            if (MacMigrationManager::canMigrateAccount() > 0)
             {
-                // Move it out of ifdef-block if it's needed for other platforms
                 main_page_ = nullptr;
                 MainPage::reset();
-
-                showMigrateAccountPage(accountId);
+                showPromoPage();
                 return;
             }
         }
@@ -885,6 +1051,44 @@ namespace Ui
 #endif
         stacked_widget_->setCurrentWidget(main_page_);
 	}
+
+    void MainWindow::showPromoPage()
+    {
+        initSizes();
+        
+        if (!promo_page_)
+        {
+            promo_page_ = new PromoPage(this);
+            stacked_widget_->addWidget(promo_page_);
+        }
+        
+#ifdef __APPLE__
+        mac_support_->createMenuBar(true);
+#endif
+        stacked_widget_->setCurrentWidget(promo_page_);
+    }
+
+    void MainWindow::closePromoPage()
+    {
+        get_gui_settings()->set_value<bool>(settings_need_show_promo, false);
+
+        GetDispatcher()->post_message_to_core("close_promo", nullptr);
+
+#ifdef __APPLE__
+        showMigrateAccountPage(MacMigrationManager::canMigrateAccount());
+#else
+        // TODO:
+#endif
+        promo_page_ = nullptr;
+        if (!get_gui_settings()->get_value(settings_keep_logged_in, true))// || !get_gui_settings()->contains_value(settings_keep_logged_in))
+        {
+            showLoginPage();
+        }
+        else
+        {
+            showMainPage();
+        }
+    }
 
     void MainWindow::checkForUpdates()
     {
@@ -959,8 +1163,7 @@ namespace Ui
             text += "\n";
         }
 
-        const QString & aimId = activeAimId();
-        HistoryControlPage * page = main_page_->getHistoryPage(aimId);
+        HistoryControlPage * page = main_page_->getHistoryPage(Logic::GetContactListModel()->selectedContact());
         page->quote(text);
     }
 
@@ -1046,16 +1249,14 @@ namespace Ui
     {
         activate();
         main_page_->recentsTabActivate(false);
-        const QString & aimId = activeAimId();
-        main_page_->selectRecentChat(Logic::GetRecentsModel()->nextAimId(aimId));
+        main_page_->selectRecentChat(Logic::GetRecentsModel()->nextAimId(Logic::GetContactListModel()->selectedContact()));
     }
 
     void MainWindow::activatePrevChat()
     {
         activate();
         main_page_->recentsTabActivate(false);
-        const QString & aimId = activeAimId();
-        main_page_->selectRecentChat(Logic::GetRecentsModel()->prevAimId(aimId));
+        main_page_->selectRecentChat(Logic::GetRecentsModel()->prevAimId(Logic::GetContactListModel()->selectedContact()));
     }
 
     void MainWindow::activateContactSearch()
@@ -1079,8 +1280,7 @@ namespace Ui
     void MainWindow::closeCurrent()
     {
         activate();
-        const QString & aimId = activeAimId();
-        Logic::GetRecentsModel()->hideChat(aimId);
+        Logic::GetRecentsModel()->hideChat(Logic::GetContactListModel()->selectedContact());
     }
 
     void MainWindow::toggleFullScreen()
@@ -1128,5 +1328,39 @@ namespace Ui
     void MainWindow::pasteEmoji()
     {
         getMainPage()->getContactDialog()->onSmilesMenu();
+    }
+
+    void MainWindow::onVoipCallIncomingAccepted(const voip_manager::ContactEx& /*contact_ex*/) {
+        assert(callPanelMainEx);
+        if (callPanelMainEx) {
+            callPanelMainEx->show();
+            if (title_widget_) {
+                title_widget_->hide();
+            }
+        }
+    }
+
+    void MainWindow::onVoipCallCreated(const voip_manager::ContactEx& cont) {
+        if (!cont.incoming) {
+            assert(callPanelMainEx);
+            if (callPanelMainEx) {
+                callPanelMainEx->show();
+                if (title_widget_) {
+                    title_widget_->hide();
+                }
+            }
+        }
+    }
+
+    void MainWindow::onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex) {
+        if (contact_ex.call_count <= 1) { // in this moment destroyed call is active, e.a. call_count + 1
+            assert(callPanelMainEx);
+            if (callPanelMainEx) {
+                callPanelMainEx->hide();
+                if (title_widget_ && !platform::is_apple()) {
+                    title_widget_->show();
+                }
+            }
+        }
     }
 }

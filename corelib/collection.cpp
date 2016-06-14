@@ -503,10 +503,16 @@ bool core::collection::is_value_exist(const char* name) const
 
 const char* core::collection::log() const
 {
+    auto iter_val = values_.find("not_log");
+    if (iter_val != values_.end())
+        return "";
+
     std::stringstream ss;
 
     for (auto iter = values_.begin(); iter != values_.end(); iter++)
+    {
         ss << iter->first << "=" << iter->second->log() << "\n";
+    }
 
     std::string s = ss.str();
 

@@ -396,7 +396,7 @@ namespace Ui
         //prev_page_link_->setText(QString());
         welcome_label->setText(QT_TRANSLATE_NOOP("login_page","Welcome to ICQ"));
         edit_phone_button_->setText(QT_TRANSLATE_NOOP("login_page","Edit"));
-        code_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","Your code"));
+        code_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","Code from SMS"));
         uin_login_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","UIN or Email"));
         uin_login_edit_->setAttribute(Qt::WA_MacShowFocusRect, false);
         uin_password_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","Password"));
@@ -632,8 +632,16 @@ namespace Ui
             collection.set_value_as_qstring("login", uin_login_edit_->text());
             collection.set_value_as_qstring("password", uin_password_edit_->text());
             collection.set_value_as_bool("save_auth_data", keep_logged_->isChecked());
-            collection.set_value_as_bool("is_login", is_login_);
-            send_seq_ = GetDispatcher()->post_message_to_core("login_by_password", collection.get());
+            collection.set_value_as_bool("not_log", true);
+
+            if (is_login_)
+            {
+                send_seq_ = GetDispatcher()->post_message_to_core("login_by_password", collection.get());
+            }
+            else
+            {
+                send_seq_ = GetDispatcher()->post_message_to_core("login_by_password_for_attach_uin", collection.get());
+            }
         }
     }
 
@@ -841,7 +849,7 @@ namespace Ui
             error_label_->setText("");
             break;
         case core::le_attach_error_busy_phone:
-            error_label_->setText(QT_TRANSLATE_NOOP("profile_page","This phone number is already attached to another account.\nPlease edit phone number and try again."));
+            error_label_->setText(QT_TRANSLATE_NOOP("sidebar","This phone number is already attached to another account.\nPlease edit phone number and try again."));
             break;
         default:
             error_label_->setText(QT_TRANSLATE_NOOP("login_page","Error occured, try again later"));
@@ -894,5 +902,6 @@ namespace Ui
     {
         auto connection_settings_widget_ = new ConnectionSettingsWidget(this);
         connection_settings_widget_->show();
+        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::proxy_open);
     }
 }

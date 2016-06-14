@@ -59,7 +59,10 @@ bool core::wim::parse_history_messages_json(
             if (iter_official != iter_person->MemberEnd() && iter_official->value.IsUint())
                 p.official_ = iter_official->value.GetUint() == 1;
 
-            _persons.emplace(iter_sn->value.GetString(), p);
+            std::string sn = iter_sn->value.GetString();
+            boost::replace_last(sn, "@uin.icq", std::string());
+
+            _persons.emplace(sn, p);
         }
     }
 

@@ -23,6 +23,8 @@
 #include "../../controls/ConnectionSettingsWidget.h"
 #include "../../controls/GeneralCreator.h"
 
+#include "../../main_window/MainWindow.h"
+
 namespace Ui
 {
     Utils::SignalsDisconnector* GetDisconnector()
@@ -42,6 +44,8 @@ namespace Ui
             slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "de"));
             slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "pt"));
             slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "cs"));
+            slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "fr"));
+            //slist.push_back(QT_TRANSLATE_NOOP("settings_pages", "ar"));
             assert(slist.size() == Utils::GetTranslator()->getLanguages().size());
         }
         return slist;
@@ -109,6 +113,18 @@ namespace Ui
                     return (c ? QT_TRANSLATE_NOOP("settings_pages", "On") : QT_TRANSLATE_NOOP("settings_pages", "Off"));
                 });
             }
+            
+            if (platform::is_apple())
+            {
+                GeneralCreator::addSwitcher(0, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Show in menu bar"), get_gui_settings()->get_value(settings_show_in_menubar, true), [](bool c) -> QString
+                {
+                    if (Utils::InterConnector::instance().getMainWindow())
+                        Utils::InterConnector::instance().getMainWindow()->showMenuBarIcon(c);
+                    if (get_gui_settings()->get_value(settings_show_in_menubar, true) != c)
+                        get_gui_settings()->set_value(settings_show_in_menubar, c);
+                    return (c ? QT_TRANSLATE_NOOP("settings_pages", "On") : QT_TRANSLATE_NOOP("settings_pages", "Off"));
+                });
+            }
 
             GeneralCreator::addSwitcher(&collector, scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Sounds"), get_gui_settings()->get_value<bool>(settings_sounds_enabled, true), [](bool c) -> QString
             {
@@ -131,7 +147,7 @@ namespace Ui
                     get_gui_settings()->set_value(settings_download_directory, Utils::DefaultDownloadsPath()); // workaround for core
 
             }
-            GeneralCreator::addChooser(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Save to:"), QDir::toNativeSeparators(get_gui_settings()->get_value(settings_download_directory, Utils::DefaultDownloadsPath())), [parent](QPushButton* b)
+            GeneralCreator::addChooser(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Save to:"), QDir::toNativeSeparators(get_gui_settings()->get_value(settings_download_directory, Utils::DefaultDownloadsPath())), [parent](TextEmojiWidget* b)
             {
 #ifdef __linux__
                 QWidget* parentForDialog = 0;
@@ -146,21 +162,28 @@ namespace Ui
                     get_gui_settings()->set_value(settings_download_directory, QDir::toNativeSeparators(r));
                 }
             });
-            auto vs = Utils::get_keys_send_by_names();
-            int ki = Utils::get_key_send_by_index();
-            GeneralCreator::addDropper(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Send message by:"), vs, ki, -1, [](QString v, int/* ix*/, TextEmojiWidget*)
+
+            const auto& keysIndex = Utils::getSendKeysIndex();
+
+            std::vector<QString> values;
+
+            for (const auto& key : keysIndex)
+                values.push_back(key.first);
+
+            int currentKey = get_gui_settings()->get_value<int>(settings_key1_to_send_message, KeyToSendMessage::Enter);
+            int selectedIndex = 0;
+
+            for (unsigned int i = 0; i < keysIndex.size(); ++i)
             {
-                auto p = v.split("+");
-                if (p.length() != 2)
-                    get_gui_settings()->set_value<int>(settings_key1_to_send_message, 0);
-                else if (p.length() == 2 && (p[0] == "Ctrl" || p[0] == "Cmd"))
-                    get_gui_settings()->set_value<int>(settings_key1_to_send_message, Qt::Key_Control);
-                else if (p.length() == 2 && p[0] == "Shift")
-                    get_gui_settings()->set_value<int>(settings_key1_to_send_message, Qt::Key_Shift);
-                else if (p.length() == 2)
-                    get_gui_settings()->set_value<int>(settings_key1_to_send_message, Qt::Key_Enter);
-            },
-                false, false, [](bool) -> QString { return ""; });
+                if (currentKey == (int) keysIndex[i].second)
+                    selectedIndex = i;
+            }
+
+            GeneralCreator::addDropper(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Send message by:"), values, selectedIndex, -1, [&keysIndex](QString v, int ix, TextEmojiWidget*)
+            {
+                get_gui_settings()->set_value<int>(settings_key1_to_send_message, keysIndex[ix].second);
+
+            }, false, false, [](bool) -> QString { return ""; });
         }
         {
             GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Privacy"));
@@ -208,6 +231,7 @@ namespace Ui
                 {
                     auto cl = stringToLanguage(v);
                     get_gui_settings()->set_value(settings_language, cl);
+                    Utils::GetTranslator()->updateLocale();
                     if (ad && cl != sl)
                         ad->setText(QT_TRANSLATE_NOOP("settings_pages", "(ICQ restart required)"), QColor("#579e1c"));
                     else if (ad)
@@ -220,15 +244,16 @@ namespace Ui
         {
             GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages","Connection settings"));
             parent->connection_type_chooser_ = GeneralCreator::addChooser(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Connection type:"), "Auto",
-                [parent](QPushButton* b)
+                [parent](TextEmojiWidget* b)
             {
                 auto connection_settings_widget_ = new ConnectionSettingsWidget(parent);
                 connection_settings_widget_->show();
+                GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::proxy_open);
             });
         }
     }
 
-    void GeneralSettingsWidget::Creator::initVoiceVideo(QWidget* parent, VoiceAndVideoOptions& voiceAndVideo, std::map<std::string, Synchronizator> &/*collector*/)
+    void GeneralSettingsWidget::Creator::initVoiceVideo(QWidget* parent, VoiceAndVideoOptions& voiceAndVideo)//, std::map<std::string, Synchronizator> &/*collector*/)
     {
         auto scroll_area = new QScrollArea(parent);
         scroll_area->setWidgetResizable(true);
@@ -350,8 +375,10 @@ namespace Ui
         layout->setContentsMargins(0, 0, 0, 0);
         layout->addWidget(scroll_area);
 
-        GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Wallpapers"));
+        GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("settings_pages", "Wallpaper"));
     }
+
+    namespace { bool initialized_ = false; }
 
     GeneralSettingsWidget::GeneralSettingsWidget(QWidget* parent):
         QStackedWidget(parent),
@@ -360,6 +387,8 @@ namespace Ui
         about_(nullptr),
         contactus_(nullptr)
     {
+        initialized_ = false;
+
         _voiceAndVideo.rootWidget = NULL;
         _voiceAndVideo.audioCaptureDevices = NULL;
         _voiceAndVideo.audioPlaybackDevices = NULL;
@@ -367,59 +396,110 @@ namespace Ui
         _voiceAndVideo.aCapSelected = NULL;
         _voiceAndVideo.aPlaSelected = NULL;
         _voiceAndVideo.vCapSelected = NULL;
+        
+        _voiceAndVideo.rootWidget = new QWidget(this);
+        _voiceAndVideo.rootWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+        Creator::initVoiceVideo(_voiceAndVideo.rootWidget, _voiceAndVideo);//, collector);
+        addWidget(_voiceAndVideo.rootWidget);
 
+        auto setActiveDevice = [] (const voip_proxy::evoip_dev_types& type)
+        {
+            QString settingsName;
+            switch (type)
+            {
+                case voip_proxy::kvoip_dev_type_audio_playback: { settingsName = settings_speakers;   break; }
+                case voip_proxy::kvoip_dev_type_audio_capture:  { settingsName = settings_microphone; break; }
+                case voip_proxy::kvoip_dev_type_video_capture:  { settingsName = settings_webcam;     break; }
+                case voip_proxy::kvoip_dev_type_undefined:
+                default:
+                    assert(!"unexpected device type");
+                    return;
+            };
+            
+            QString val = get_gui_settings()->get_value<QString>(settingsName, "");
+            if (val != "")
+            {
+                voip_proxy::device_desc description;
+                description.uid      = std::string(val.toUtf8());
+                description.dev_type = type;
+                
+                Ui::GetDispatcher()->getVoipController().setActiveDevice(description);
+            }
+        };
+        
+        setActiveDevice(voip_proxy::kvoip_dev_type_audio_playback);
+        setActiveDevice(voip_proxy::kvoip_dev_type_audio_capture);
+        setActiveDevice(voip_proxy::kvoip_dev_type_video_capture);
+        
+        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), this, SLOT(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), Qt::DirectConnection);
+    }
+
+    GeneralSettingsWidget::~GeneralSettingsWidget()
+    {
+        GetDisconnector()->clean();
+    }
+
+    void GeneralSettingsWidget::initialize()
+    {
+        if (initialized_)
+            return;
+        
+        initialized_ = true;
+        
         setStyleSheet(Utils::LoadStyle(":/main_window/settings/general_settings.qss", Utils::get_scale_coefficient(), true));
         setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-
+        
         QHBoxLayout* main_layout;
         main_layout = new QHBoxLayout();
         main_layout->setSpacing(0);
         main_layout->setContentsMargins(0, 0, 0, 0);
-
+        
         std::map<std::string, Synchronizator> collector;
-
+        
         general_ = new GeneralSettings(this);
         general_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initGeneral(general_, collector);
         addWidget(general_);
 
+        /*
         _voiceAndVideo.rootWidget = new QWidget(this);
         _voiceAndVideo.rootWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initVoiceVideo(_voiceAndVideo.rootWidget, _voiceAndVideo, collector);
         addWidget(_voiceAndVideo.rootWidget);
-
+        */
+        
         notifications_ = new QWidget(this);
         notifications_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initNotifications(notifications_, collector);
         addWidget(notifications_);
-
+        
         themes_ = new QWidget(this);
         themes_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-        Creator::initThemes(themes_);
+        //Creator::initThemes(themes_);
         addWidget(themes_);
-
+        
         about_ = new QWidget(this);
         about_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initAbout(about_, collector);
         addWidget(about_);
-
+        
         contactus_ = new QWidget(this);
         contactus_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initContactUs(contactus_, collector);
         addWidget(contactus_);
-
+        
         attachUin_ = new QWidget(this);
         attachUin_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initAttachUin(attachUin_, collector);
         addWidget(attachUin_);
-
+        
         attachPhone_ = new QWidget(this);
         attachPhone_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initAttachPhone(attachPhone_, collector);
         addWidget(attachPhone_);
-
+        
         setCurrentWidget(general_);
-
+        
         for (auto cs: collector)
         {
             auto &s = cs.second;
@@ -428,44 +508,48 @@ namespace Ui
                     connect(s.widgets_[si], s.signal_, s.widgets_[sj], s.slot_),
                     connect(s.widgets_[sj], s.signal_, s.widgets_[si], s.slot_);
         }
-
-        auto setActiveDevice = [] (const voip_proxy::evoip_dev_types& type) {
+        
+        /*
+        auto setActiveDevice = [] (const voip_proxy::evoip_dev_types& type)
+        {
             QString settingsName;
-            switch (type) {
-            case voip_proxy::kvoip_dev_type_audio_playback: { settingsName = settings_speakers;   break; }
-            case voip_proxy::kvoip_dev_type_audio_capture:  { settingsName = settings_microphone; break; }
-            case voip_proxy::kvoip_dev_type_video_capture:  { settingsName = settings_webcam;     break; }
-            case voip_proxy::kvoip_dev_type_undefined:
-            default:
-                assert(!"unexpected device type");
-                return;
+            switch (type)
+            {
+                case voip_proxy::kvoip_dev_type_audio_playback: { settingsName = settings_speakers;   break; }
+                case voip_proxy::kvoip_dev_type_audio_capture:  { settingsName = settings_microphone; break; }
+                case voip_proxy::kvoip_dev_type_video_capture:  { settingsName = settings_webcam;     break; }
+                case voip_proxy::kvoip_dev_type_undefined:
+                default:
+                    assert(!"unexpected device type");
+                    return;
             };
-
+            
             QString val = get_gui_settings()->get_value<QString>(settingsName, "");
-            if (val != "") {
+            if (val != "")
+            {
                 voip_proxy::device_desc description;
                 description.uid      = std::string(val.toUtf8());
                 description.dev_type = type;
-
+                
                 Ui::GetDispatcher()->getVoipController().setActiveDevice(description);
             }
         };
-
+        
         setActiveDevice(voip_proxy::kvoip_dev_type_audio_playback);
         setActiveDevice(voip_proxy::kvoip_dev_type_audio_capture);
         setActiveDevice(voip_proxy::kvoip_dev_type_video_capture);
         
         QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), this, SLOT(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), Qt::DirectConnection);
+        */
+
+        general_->recvUserProxy();
         QObject::connect(Ui::GetDispatcher(), &core_dispatcher::getUserProxy, general_, &GeneralSettings::recvUserProxy, Qt::DirectConnection);
     }
-
-    GeneralSettingsWidget::~GeneralSettingsWidget()
-    {
-        GetDisconnector()->clean();
-    }
-
+    
     void GeneralSettingsWidget::setType(int _type)
     {
+        initialize();
+        
         Utils::CommonSettingsType type = (Utils::CommonSettingsType)_type;
 
         if (type == Utils::CommonSettingsType::CommonSettingsType_General)
@@ -507,7 +591,8 @@ namespace Ui
         }
     }
 
-    void GeneralSettingsWidget::onVoipDeviceListUpdated(const std::vector< voip_proxy::device_desc >& devices) {
+    void GeneralSettingsWidget::onVoipDeviceListUpdated(const std::vector< voip_proxy::device_desc >& devices)
+    {
         devices_ = devices;
 
         bool video_ca_upd = false;
@@ -592,6 +677,12 @@ namespace Ui
         QStackedWidget::hideEvent(e);
     }
 
+    void GeneralSettingsWidget::showEvent(QShowEvent *e)
+    {
+        initialize();
+        QStackedWidget::showEvent(e);
+    }
+    
     void GeneralSettingsWidget::paintEvent(QPaintEvent* event)
     {
         QStackedWidget::paintEvent(event);
@@ -609,7 +700,7 @@ namespace Ui
     void GeneralSettings::recvUserProxy()
     {
         auto user_proxy = Utils::get_proxy_settings();
-        std::wostringstream str;
+        std::ostringstream str;
         if (user_proxy->type > core::proxy_types::min && user_proxy->type < core::proxy_types::max)
             str << user_proxy->type;
         else
@@ -617,6 +708,6 @@ namespace Ui
 
         auto connection_type_name = str.str();
         if (connection_type_chooser_)
-            connection_type_chooser_->setText(Utils::GetQstring(connection_type_name.c_str()));
+            connection_type_chooser_->setText(QString(connection_type_name.c_str()));
     }
 }

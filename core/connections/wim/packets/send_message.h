@@ -37,6 +37,9 @@ namespace core
             std::string wim_msg_id_;
             std::string internal_id_;
 
+            int64_t hist_msg_id_;
+            int64_t before_hist_msg_id;
+
             bool duplicate_;
 
         public:
@@ -46,6 +49,9 @@ namespace core
 
             std::string get_wim_msg_id() const { return wim_msg_id_; }
             std::string get_internal_id() const { return internal_id_; }
+
+            int64_t get_hist_msg_id() const { return hist_msg_id_; }
+            int64_t get_before_hist_msg_id() const { return before_hist_msg_id; }
 
             bool is_duplicate() const { return duplicate_; }
 

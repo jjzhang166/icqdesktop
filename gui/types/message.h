@@ -106,8 +106,6 @@ namespace Data
 
 		bool HasText() const;
 
-		void MarkAsDeliveredToClient();
-
 		void FillFrom(const MessageBuddy &buddy, const bool merge);
 
         void EraseEventData();
