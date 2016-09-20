@@ -1,5 +1,6 @@
 #include "stdafx.h"
 
+#include "exif.h"
 #include "utils.h"
 
 #include "LoadPixmapFromFileTask.h"
@@ -19,9 +20,35 @@ namespace Utils
 
     void LoadPixmapFromFileTask::run()
     {
-        QPixmap preview;
-        Utils::loadPixmap(Path_, Out preview);
+        if (!QFile::exists(Path_))
+        {
+            emit loadedSignal(QPixmap());
+            return;
+        }
 
+        QFile file(Path_);
+        if (!file.open(QIODevice::ReadOnly))
+        {
+            emit loadedSignal(QPixmap());
+            return;
+        }
+
+        const auto data = file.readAll();
+
+        QPixmap preview;
+        Utils::loadPixmap(data, Out preview);
+
+        if (preview.isNull())
+        {
+            emit loadedSignal(QPixmap());
+            return;
+        }
+
+        const auto orientation = Exif::getExifOrientation((char*)data.data(), (size_t)data.size());
+
+        Exif::applyExifOrientation(orientation, InOut preview);
+
+        assert(!preview.isNull());
         emit loadedSignal(preview);
     }
 }

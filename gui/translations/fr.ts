@@ -286,6 +286,14 @@ photo</translation>
         <source>Call back</source>
         <translation>Rappeler</translation>
     </message>
+    <message>
+        <source>You changed chat rules to &quot;</source>
+        <translation>Vous avez modifié les règles du chat pour &quot;</translation>
+    </message>
+    <message>
+        <source> changed chat rules to &quot;</source>
+        <translation> a modifié les règles du chat pour &quot;</translation>
+    </message>
 </context>
 <context>
     <name>chat_page</name>
@@ -360,6 +368,66 @@ photo</translation>
     <message>
         <source>New messages</source>
         <translation>Nouveaux messages</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>Avancer</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Copier</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Aperçu</translation>
+    </message>
+    <message>
+        <source>Set to all</source>
+        <translation>Définir sur tous</translation>
+    </message>
+    <message>
+        <source>Set</source>
+        <translation>Définir</translation>
+    </message>
+    <message>
+        <source> of </source>
+        <translation> sur </translation>
+    </message>
+    <message>
+        <source>Drop files to place</source>
+        <translation>Glisser-déposer les fichiers ici</translation>
+    </message>
+    <message>
+        <source>Show in folder</source>
+        <translation>Afficher dans le dossier</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Fichier</translation>
+    </message>
+    <message>
+        <source>typing</source>
+        <translation>en train d&apos;écrire</translation>
+    </message>
+    <message>
+        <source>are typing</source>
+        <translation>en train d&apos;écrire</translation>
+    </message>
+    <message>
+        <source>Snap expired</source>
+        <translation>Snap a expiré</translation>
+    </message>
+    <message>
+        <source>Not authorized</source>
+        <translation>Non autorisé</translation>
+    </message>
+    <message>
+        <source>forwarded messages</source>
+        <translation>messages transférés</translation>
     </message>
 </context>
 <context>
@@ -481,6 +549,26 @@ photo</translation>
     <message>
         <source>Create Groupchat</source>
         <translation>Créer un chat de groupe</translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation>Vidéo</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Fichier</translation>
+    </message>
+    <message>
+        <source>Unknown contacts</source>
+        <translation>Inconnus</translation>
+    </message>
+    <message>
+        <source>Close All</source>
+        <translation>Fermer tout</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Chercher</translation>
     </message>
 </context>
 <context>
@@ -632,6 +720,10 @@ photo</translation>
         <source>Delete</source>
         <translation>Supprimer</translation>
     </message>
+    <message>
+        <source>Forward</source>
+        <translation>Avancer</translation>
+    </message>
 </context>
 <context>
     <name>countries</name>
@@ -692,20 +784,8 @@ photo</translation>
         <translation>Montserrat</translation>
     </message>
     <message>
-        <source>Nevis</source>
-        <translation>Nevis</translation>
-    </message>
-    <message>
-        <source>St. Kitts</source>
-        <translation>Saint-Kitts</translation>
-    </message>
-    <message>
         <source>Saint Kitts and Nevis</source>
         <translation>Saint-Kitts et Nevis</translation>
-    </message>
-    <message>
-        <source>St. Vincent and the Grenadines</source>
-        <translation>Saint-Vincent-et-les-Grenadines</translation>
     </message>
     <message>
         <source>Trinidad and Tobago</source>
@@ -716,24 +796,8 @@ photo</translation>
         <translation>Îles Turks et Caicos</translation>
     </message>
     <message>
-        <source>Barbuda</source>
-        <translation>Barbuda</translation>
-    </message>
-    <message>
-        <source>Puerto Rico, Common Wealth of</source>
-        <translation>Porto Rico</translation>
-    </message>
-    <message>
         <source>Saint Lucia</source>
         <translation>Sainte-Lucie</translation>
-    </message>
-    <message>
-        <source>Virgin Islands of the United States</source>
-        <translation>Îles Vierges des États-Unis</translation>
-    </message>
-    <message>
-        <source>Canary Islands</source>
-        <translation>Îles Canaries</translation>
     </message>
     <message>
         <source>Egypt</source>
@@ -750,10 +814,6 @@ photo</translation>
     <message>
         <source>Tunisia</source>
         <translation>Tunisie</translation>
-    </message>
-    <message>
-        <source>Libyan Arab Jamahiriya</source>
-        <translation>Libye</translation>
     </message>
     <message>
         <source>Gambia</source>
@@ -834,14 +894,6 @@ photo</translation>
     <message>
         <source>Gabon</source>
         <translation>Gabon</translation>
-    </message>
-    <message>
-        <source>Congo, (Republic of the)</source>
-        <translation>République du Congo</translation>
-    </message>
-    <message>
-        <source>Congo, Democratic Republic of (Zaire)</source>
-        <translation>République démocratique du Congo</translation>
     </message>
     <message>
         <source>Angola</source>
@@ -1072,10 +1124,6 @@ photo</translation>
         <translation>Ukraine</translation>
     </message>
     <message>
-        <source>Yugoslavia</source>
-        <translation>Yougoslavie</translation>
-    </message>
-    <message>
         <source>Croatia</source>
         <translation>Croatie</translation>
     </message>
@@ -1118,14 +1166,6 @@ photo</translation>
     <message>
         <source>United Kingdom</source>
         <translation>Royaume-Uni</translation>
-    </message>
-    <message>
-        <source>Wales</source>
-        <translation>Pays de Galles</translation>
-    </message>
-    <message>
-        <source>Scotland</source>
-        <translation>Écosse</translation>
     </message>
     <message>
         <source>Denmark</source>
@@ -1220,10 +1260,6 @@ photo</translation>
         <translation>Guadeloupe</translation>
     </message>
     <message>
-        <source>French Antilles</source>
-        <translation>Antilles françaises</translation>
-    </message>
-    <message>
         <source>Antilles</source>
         <translation>Antilles</translation>
     </message>
@@ -1272,10 +1308,6 @@ photo</translation>
         <translation>Australie</translation>
     </message>
     <message>
-        <source>Cocos (Keeling) Islands</source>
-        <translation>Îles Cocos (îles Keeling)</translation>
-    </message>
-    <message>
         <source>Indonesia</source>
         <translation>Indonésie</translation>
     </message>
@@ -1294,18 +1326,6 @@ photo</translation>
     <message>
         <source>Thailand</source>
         <translation>Thaïlande</translation>
-    </message>
-    <message>
-        <source>Saipan Island</source>
-        <translation>Île de Saipan</translation>
-    </message>
-    <message>
-        <source>Rota Island</source>
-        <translation>Île de Rota</translation>
-    </message>
-    <message>
-        <source>Tinian Island</source>
-        <translation>Île de Tinian</translation>
     </message>
     <message>
         <source>Guam, US Territory of</source>
@@ -1368,10 +1388,6 @@ photo</translation>
         <translation>Samoa</translation>
     </message>
     <message>
-        <source>Western Samoa</source>
-        <translation>Samoa occidentales</translation>
-    </message>
-    <message>
         <source>Kiribati</source>
         <translation>Kiribati</translation>
     </message>
@@ -1390,10 +1406,6 @@ photo</translation>
     <message>
         <source>Tokelau</source>
         <translation>Îles Tokelau</translation>
-    </message>
-    <message>
-        <source>Micronesia, Federated States of</source>
-        <translation>États fédérés de Micronésie</translation>
     </message>
     <message>
         <source>Marshall Islands</source>
@@ -1426,14 +1438,6 @@ photo</translation>
     <message>
         <source>Japan</source>
         <translation>Japon</translation>
-    </message>
-    <message>
-        <source>Korea (South Korea), Republic of</source>
-        <translation>République de Corée (Corée du Sud)</translation>
-    </message>
-    <message>
-        <source>Viet Nam</source>
-        <translation>Viet Nam</translation>
     </message>
     <message>
         <source>Hong Kong</source>
@@ -1548,10 +1552,6 @@ photo</translation>
         <translation>Népal</translation>
     </message>
     <message>
-        <source>Iran (Islamic Republic of)</source>
-        <translation>Iran</translation>
-    </message>
-    <message>
         <source>Azerbaijan</source>
         <translation>Azerbaïdjan</translation>
     </message>
@@ -1572,55 +1572,92 @@ photo</translation>
         <translation>Guinée-Bissau</translation>
     </message>
     <message>
-        <source>St. Helena</source>
-        <translation>Sainte-Hélène</translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Serbia</source>
-        <translation>Yougoslavie - Serbie</translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Montenegro</source>
-        <translation>Yougoslavie - Monténégro</translation>
-    </message>
-    <message>
         <source>Macedonia (F.Y.R.O.M.)</source>
         <translation>Macédoine (Ancienne République yougoslave de Macédoine)</translation>
-    </message>
-    <message>
-        <source>St. Pierre and Miquelon</source>
-        <translation>Saint-Pierre-et-Miquelon</translation>
-    </message>
-    <message>
-        <source>Korea (North Korea), Democratic People&apos;s Republic of</source>
-        <translation>République populaire démocratique de Corée (Corée du Nord)</translation>
     </message>
     <message>
         <source>Lao People&apos;s Democratic Republic</source>
         <translation>Laos</translation>
     </message>
-</context>
-<context>
-    <name>filesharing_widget</name>
     <message>
-        <source>Drop files to place</source>
-        <translation>Glisser-déposer les fichiers ici</translation>
+        <source>Northern Mariana Islands</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>File</source>
-        <translation>Fichier</translation>
+        <source>Saint Vincent and the Grenadines</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show in folder</source>
-        <translation>Afficher dans le dossier</translation>
+        <source>Puerto Rico</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>US Virgin Islands</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Libya</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Congo, Republic of</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Congo, Democratic Republic of</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cocos Islands</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>East Timor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>American Samoa</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Vietnam</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Iran, Islamic Republic of</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saint Helena</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serbia</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Montenegro</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saint Pierre and Miquelon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>South Korea</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>North Korea (DPRK)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Federated States of Micronesia</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>groupchat_pages</name>
-    <message>
-        <source>View all </source>
-        <translation>Tout afficher </translation>
-    </message>
     <message>
         <source>Create Groupchat</source>
         <translation>Créer un chat de groupe</translation>
@@ -1655,6 +1692,58 @@ photo</translation>
     <message>
         <source>RECENTS</source>
         <translation>RÉCENTS</translation>
+    </message>
+    <message>
+        <source>Send image</source>
+        <translation>Envoyer image</translation>
+    </message>
+    <message>
+        <source>Send file</source>
+        <translation>Envoyer fichier</translation>
+    </message>
+    <message>
+        <source>image</source>
+        <comment>1</comment>
+        <translation>image</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>2</comment>
+        <translation>images</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>5</comment>
+        <translation>images</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>21</comment>
+        <translation>images</translation>
+    </message>
+    <message>
+        <source>file</source>
+        <comment>1</comment>
+        <translation>fichier</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>2</comment>
+        <translation>fichiers</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>5</comment>
+        <translation>fichiers</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>21</comment>
+        <translation>fichiers</translation>
+    </message>
+    <message>
+        <source>Send %1 %2 %3 %4</source>
+        <translation>Envoyer %1 %2 %3 %4</translation>
     </message>
 </context>
 <context>
@@ -1702,6 +1791,10 @@ photo</translation>
     <message>
         <source>Open</source>
         <translation>Ouvrir</translation>
+    </message>
+    <message>
+        <source>Waiting for approval</source>
+        <translation>En attente d&apos;autorisation</translation>
     </message>
 </context>
 <context>
@@ -1792,6 +1885,109 @@ votre numéro de téléphone</translation>
         <source>Code from SMS</source>
         <translation>Code envoyé par SMS</translation>
     </message>
+    <message>
+        <source>Forgot password?</source>
+        <translation>Mot de passe oublié?</translation>
+    </message>
+</context>
+<context>
+    <name>macos_menu</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>Modifier</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation>Rétablir</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation>Couper</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Copier</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Coller</translation>
+    </message>
+    <message>
+        <source>Paste as Quote</source>
+        <translation>Copier comme citation</translation>
+    </message>
+    <message>
+        <source>Contact</source>
+        <translation>Contact</translation>
+    </message>
+    <message>
+        <source>Add Buddy</source>
+        <translation>Ajouter un ami</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Profil</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
+    <message>
+        <source>View</source>
+        <translation>Présentation</translation>
+    </message>
+    <message>
+        <source>Next Unread Message</source>
+        <translation>Message non lu suivant</translation>
+    </message>
+    <message>
+        <source>Enter Full Screen</source>
+        <translation>Activer le mode plein écran</translation>
+    </message>
+    <message>
+        <source>Exit Full Screen</source>
+        <translation>Quitter le mode plein écran</translation>
+    </message>
+    <message>
+        <source>Window</source>
+        <translation>Fenêtre</translation>
+    </message>
+    <message>
+        <source>Select Next Chat</source>
+        <translation>Sélectionner le snap suivant</translation>
+    </message>
+    <message>
+        <source>Select Previous Chat</source>
+        <translation>Sélectionner le snap précédent</translation>
+    </message>
+    <message>
+        <source>Minimize</source>
+        <translation>Placer dans le Dock</translation>
+    </message>
+    <message>
+        <source>Main Window</source>
+        <translation>Fenêtre principale</translation>
+    </message>
+    <message>
+        <source>Check For Updates...</source>
+        <translation>Vérification des mises à jour…</translation>
+    </message>
+    <message>
+        <source>About...</source>
+        <translation>À propos...</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Paramètres</translation>
+    </message>
+    <message>
+        <source>Emoji &amp; Symbols</source>
+        <translation>Emoji et Symboles</translation>
+    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1821,10 +2017,6 @@ votre numéro de téléphone</translation>
     <message>
         <source>Continue</source>
         <translation>Continuer</translation>
-    </message>
-    <message>
-        <source>Skip</source>
-        <translation>Sauter</translation>
     </message>
     <message>
         <source>Your nickname cannot be longer than 20 symbols</source>
@@ -1936,6 +2128,57 @@ votre numéro de téléphone</translation>
     <message>
         <source>Are you sure you want to revoke admin role?</source>
         <translation>Êtes-vous certain(e) de vouloir révoquer le rôle administrateur ?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete message?</source>
+        <translation>Êtes-vous certain(e) de vouloir supprimer le message ?</translation>
+    </message>
+    <message>
+        <source>Delete message</source>
+        <translation>Supprimer le message</translation>
+    </message>
+    <message>
+        <source>Share link</source>
+        <translation>Partager le lien</translation>
+    </message>
+    <message>
+        <source>Copy link and close</source>
+        <translation>Copier le lien et fermer</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>Avancer</translation>
+    </message>
+    <message>
+        <source>Ignored contacts</source>
+        <translation>Contacts ignorés</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Terminé</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirmation</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>previewer</name>
+    <message>
+        <source>Unable to download the image</source>
+        <translation>Impossible de télécharger l&apos;image</translation>
+    </message>
+    <message>
+        <source>%1 of %2</source>
+        <translation>%1 sur %2</translation>
+    </message>
+    <message>
+        <source>Loading...</source>
+        <translation>Chargement...</translation>
     </message>
 </context>
 <context>
@@ -2118,10 +2361,6 @@ votre numéro de téléphone</translation>
         <translation>Český</translation>
     </message>
     <message>
-        <source>General settings</source>
-        <translation>Paramètres généraux</translation>
-    </message>
-    <message>
         <source>Launch ICQ when system starts</source>
         <translation>Lancer ICQ au démarrage du système</translation>
     </message>
@@ -2142,24 +2381,12 @@ votre numéro de téléphone</translation>
         <translation>Sons</translation>
     </message>
     <message>
-        <source>Save to:</source>
-        <translation>Enregistrer dans :</translation>
-    </message>
-    <message>
         <source>Choose new path</source>
         <translation>Choisir un nouveau chemin</translation>
     </message>
     <message>
         <source>Send message by:</source>
         <translation>Envoyer le message via :</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>Protection des données</translation>
-    </message>
-    <message>
-        <source>Show last message in recents</source>
-        <translation>Afficher le dernier message dans récents</translation>
     </message>
     <message>
         <source>Preview images and videos</source>
@@ -2224,6 +2451,26 @@ votre numéro de téléphone</translation>
     <message>
         <source>Show in menu bar</source>
         <translation>Afficher dans la barre de menu</translation>
+    </message>
+    <message>
+        <source>Launch minimized</source>
+        <translation>Lancement réduit</translation>
+    </message>
+    <message>
+        <source>Application</source>
+        <translation>Application</translation>
+    </message>
+    <message>
+        <source>Chat</source>
+        <translation>Chat</translation>
+    </message>
+    <message>
+        <source>Save files to:</source>
+        <translation>Enregistrer les fichiers sous :</translation>
+    </message>
+    <message>
+        <source>Chat list compact mode</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2373,10 +2620,6 @@ votre numéro de téléphone</translation>
         <translation>Administrateurs</translation>
     </message>
     <message>
-        <source>All members</source>
-        <translation>Tous les membres</translation>
-    </message>
-    <message>
         <source>Blocked people</source>
         <translation>Personnes bloquées</translation>
     </message>
@@ -2425,10 +2668,6 @@ votre numéro de téléphone</translation>
         <translation>Obrolan publik</translation>
     </message>
     <message>
-        <source>Chat description</source>
-        <translation>Description du chat</translation>
-    </message>
-    <message>
         <source>Revoke admin role</source>
         <translation>Révoquer le rôle d&apos;administrateur</translation>
     </message>
@@ -2445,14 +2684,6 @@ votre numéro de téléphone</translation>
         <translation>Supprimer du chat</translation>
     </message>
     <message>
-        <source>Change chat name</source>
-        <translation>Modifier le nom du chat</translation>
-    </message>
-    <message>
-        <source>Change chat description</source>
-        <translation>Modifier la description du chat</translation>
-    </message>
-    <message>
         <source>Rename</source>
         <translation>Renommer</translation>
     </message>
@@ -2466,24 +2697,73 @@ Please edit phone number and try again.</source>
         <translation>Ce numéro de téléphone est déjà associé à un autre compte.
 Modifiez le numéro et réessayez.</translation>
     </message>
-</context>
-<context>
-    <name>top_theme_widget</name>
     <message>
-        <source>Preview</source>
-        <translation>Aperçu</translation>
+        <source>Copy link to chat</source>
+        <translation>Copier le lien vers la discussion</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation>Annuler</translation>
+        <source>Approve All</source>
+        <translation>Tout approuver</translation>
     </message>
     <message>
-        <source>Set to all</source>
-        <translation>Définir sur tous</translation>
+        <source>Approve All (</source>
+        <translation>Tout approuver (</translation>
     </message>
     <message>
-        <source>Set</source>
-        <translation>Définir</translation>
+        <source>Waiting for approval</source>
+        <translation>En attente d&apos;autorisation</translation>
+    </message>
+    <message>
+        <source>link copied</source>
+        <translation>Lien copié</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Rejoindre avec autorisation</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>Chat sera visible pour tous</translation>
+    </message>
+    <message>
+        <source>Admin approval required to join</source>
+        <translation>Autorisation de l&apos;admin. nécessaire pour rejoindre</translation>
+    </message>
+    <message>
+        <source>more</source>
+        <translation>plus</translation>
+    </message>
+    <message>
+        <source>edit</source>
+        <translation>modifier</translation>
+    </message>
+    <message>
+        <source>NAME</source>
+        <translation>LE NOM</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION</source>
+        <translation>LA DESCRIPTION</translation>
+    </message>
+    <message>
+        <source>hide</source>
+        <translation>cacher</translation>
+    </message>
+    <message>
+        <source>Add your description</source>
+        <translation>Ajouter une description</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Paramètres du chat</translation>
+    </message>
+    <message>
+        <source>Members</source>
+        <translation>Membres</translation>
+    </message>
+    <message>
+        <source>Birthday</source>
+        <translation>anniversaire</translation>
     </message>
 </context>
 <context>
@@ -2507,17 +2787,6 @@ Modifiez le numéro et réessayez.</translation>
     <message>
         <source>Open</source>
         <translation>Ouvrir</translation>
-    </message>
-</context>
-<context>
-    <name>typing_widget</name>
-    <message>
-        <source>typing</source>
-        <translation>en train d&apos;écrire</translation>
-    </message>
-    <message>
-        <source>are typing</source>
-        <translation>en train d&apos;écrire</translation>
     </message>
 </context>
 <context>
@@ -2569,6 +2838,18 @@ Modifiez le numéro et réessayez.</translation>
     <message>
         <source>Video</source>
         <translation>Vidéo</translation>
+    </message>
+    <message>
+        <source>Return to call</source>
+        <translation>Reprendre l&apos;appel</translation>
+    </message>
+    <message>
+        <source>Data saving enabled</source>
+        <translation>Enregistrement de données activé</translation>
+    </message>
+    <message>
+        <source> enabled data saving</source>
+        <translation> a activé l&apos;enregistrement de données</translation>
     </message>
 </context>
 </TS>

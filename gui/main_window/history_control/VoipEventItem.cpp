@@ -33,7 +33,7 @@ namespace Ui
 
         int32_t getTextBaselineY();
 
-        QColor getTextColor(const bool isHovered);
+        int32_t getTimeLeftMargin(bool isOutgoing);
 
     }
 
@@ -81,8 +81,9 @@ namespace Ui
         Icon_ = eventInfo->loadIcon(false);
         HoverIcon_ = eventInfo->loadIcon(true);
 
+        StatusWidget_->setContact(EventInfo_->getContactAimid());
+        StatusWidget_->setOutgoing(isOutgoing());
         StatusWidget_->setTime(EventInfo_->getTimestamp());
-        StatusWidget_->show();
     }
 
     QString VoipEventItem::formatRecentsText() const
@@ -92,7 +93,7 @@ namespace Ui
 
     void VoipEventItem::updateHeight()
     {
-        int height = MessageStyle::getBubbleHeight() + MessageStyle::getTopPadding(hasTopMargin());
+        int height = MessageStyle::getMinBubbleHeight() + MessageStyle::getTopMargin(hasTopMargin());
 
         if (lastRead_)
         {
@@ -122,10 +123,11 @@ namespace Ui
             Avatar_ = Logic::GetAvatarStorage()->GetRounded(
                 EventInfo_->getContactAimid(),
                 EventInfo_->getContactFriendly(),
-                MessageStyle::getAvatarSize(),
+                Utils::scale_bitmap(MessageStyle::getAvatarSize()),
                 QString(),
                 true,
                 Out isDefault,
+                false,
                 false
             );
 
@@ -211,9 +213,9 @@ namespace Ui
         }
 
         assert(BubbleRect_.width() > 0);
-        
+
         int theme_id = get_qt_theme_settings()->themeIdForContact(EventInfo_->getContactAimid());//theme()->get_id();
-        
+
         const auto bodyBrush = (
             IsBubbleHovered_ ?
                 getBodyHoveredBrush() :
@@ -224,7 +226,7 @@ namespace Ui
 
         const auto baseY = BubbleRect_.top();
 
-        auto cursorX = MessageStyle::getLeftPadding(isOutgoing());
+        auto cursorX = MessageStyle::getLeftMargin(isOutgoing());
 
         if (!isOutgoing())
         {
@@ -255,23 +257,40 @@ namespace Ui
             cursorX += MessageStyle::getBubbleHorPadding();
         }
 
-        const auto eventText = (
-            IsBubbleHovered_ ?
-                QT_TRANSLATE_NOOP("chat_event", "Call back") :
-                EventInfo_->formatEventText()
-        );
+        if (StatusWidgetGeometry_.isValid())
+        {
+            auto eventText = (
+                IsBubbleHovered_ ?
+                    QT_TRANSLATE_NOOP("chat_event", "Call back") :
+                    EventInfo_->formatEventText());
 
-        p.setPen(getTextColor(IsBubbleHovered_));
-        p.setFont(MessageStyle::getTextFont());
-        p.drawText(
-            cursorX,
-            baseY + getTextBaselineY(),
-            eventText
-        );
+            const auto eventTextFont = MessageStyle::getTextFont();
+
+            auto textWidth = (
+                StatusWidgetGeometry_.left() -
+                getIconRightPadding() -
+                cursorX);
+            textWidth = std::max(0, textWidth);
+
+            QFontMetrics fontMetrics(eventTextFont);
+            eventText = fontMetrics.elidedText(eventText, Qt::ElideRight, textWidth);
+
+            p.setPen(getTextColor(IsBubbleHovered_));
+            p.setFont(eventTextFont);
+            p.drawText(
+                cursorX,
+                baseY + getTextBaselineY(),
+                eventText);
+        }
 
         if (lastRead_)
         {
-            drawLastReadAvatar(p, EventInfo_->getContactAimid(), EventInfo_->getContactFriendly(), MessageStyle::getRightPadding(isOutgoing()));
+            drawLastReadAvatar(
+                p,
+                EventInfo_->getContactAimid(),
+                EventInfo_->getContactFriendly(),
+                MessageStyle::getRightMargin(isOutgoing()),
+                MessageStyle::getLastReadAvatarMargin());
         }
     }
 
@@ -280,9 +299,9 @@ namespace Ui
         QRect newBubbleRect(QPoint(0, 0), event->size());
 
         QMargins margins(
-            MessageStyle::getLeftPadding(isOutgoing()),
-            MessageStyle::getTopPadding(hasTopMargin()),
-            MessageStyle::getRightPadding(isOutgoing()),
+            MessageStyle::getLeftMargin(isOutgoing()),
+            MessageStyle::getTopMargin(hasTopMargin()),
+            MessageStyle::getRightMargin(isOutgoing()),
             (lastRead_ ? (MessageStyle::getLastReadAvatarSize() + 2 * MessageStyle::getLastReadAvatarMargin()) : (0) )
         );
 
@@ -304,11 +323,12 @@ namespace Ui
         const auto statusWidgetSize = StatusWidget_->sizeHint();
 
         auto statusX = BubbleRect_.right();
-        statusX -= MessageStyle::getTimeStatusMargin();
+        statusX -= MessageStyle::getTimeMargin();
         statusX -= statusWidgetSize.width();
+        statusX -= getTimeLeftMargin(isOutgoing());
 
         auto statusY = BubbleRect_.bottom();
-        statusY -= MessageStyle::getTimeStatusMargin();
+        statusY -= MessageStyle::getTimeMargin();
         statusY -= statusWidgetSize.height();
 
         QRect statusWidgetGeometry(
@@ -319,6 +339,9 @@ namespace Ui
         );
 
         StatusWidget_->setGeometry(statusWidgetGeometry);
+        StatusWidget_->show();
+
+        StatusWidgetGeometry_ = statusWidgetGeometry;
 
         HistoryControlPageItem::resizeEvent(event);
     }
@@ -329,7 +352,7 @@ namespace Ui
         assert(hasAvatar());
 
         QRect result(
-            MessageStyle::getLeftPadding(isOutgoing()),
+            MessageStyle::getLeftMargin(isOutgoing()),
             BubbleRect_.top(),
             MessageStyle::getAvatarSize(),
             MessageStyle::getAvatarSize()
@@ -356,7 +379,8 @@ namespace Ui
         }
 
         const auto isHovered = (
-            (mousePos.y() > MessageStyle::getTopPadding(hasTopMargin())) &&
+            (mousePos.y() > MessageStyle::getTopMargin(hasTopMargin())) &&
+            (mousePos.y() < height()) &&
             (mousePos.x() > BubbleRect_.left()) &&
             (mousePos.x() < BubbleRect_.right())
         );
@@ -395,6 +419,31 @@ namespace Ui
         return id_;
     }
 
+    void VoipEventItem::updateStyle()
+    {
+        if (StatusWidget_)
+            StatusWidget_->update();
+        update();
+    }
+
+    QColor VoipEventItem::getTextColor(const bool isHovered)
+    {
+        QColor textColor = (isHovered ? 0xffffff : MessageStyle::getTextColor());
+        auto theme = get_qt_theme_settings()->themeForContact(EventInfo_->getContactAimid());
+        if (theme && !isHovered)
+        {
+            if (isOutgoing())
+            {
+                textColor = theme->outgoing_bubble_.text_color_;
+            }
+            else
+            {
+                textColor = theme->incoming_bubble_.text_color_;
+            }
+        }
+        return textColor;
+    }
+
     namespace
     {
 
@@ -431,11 +480,13 @@ namespace Ui
             return Utils::scale_value(21);
         }
 
-        QColor getTextColor(const bool isHovered)
+        int32_t getTimeLeftMargin(bool isOutgoing)
         {
-            return (isHovered ? 0xffffff : 0x282828);
+#ifdef __APPLE__
+            return 0;
+#endif //__APPLE__
+            return isOutgoing ? 4 : 3;
         }
-
     }
 
 }

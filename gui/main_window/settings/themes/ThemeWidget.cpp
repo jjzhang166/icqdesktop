@@ -6,11 +6,11 @@
 
 namespace Ui
 {
-    ThemeWidget::ThemeWidget(QWidget* _parent, QPixmap& _pixmap, ThemesModel* _themesModel, int _theme_id)
+    ThemeWidget::ThemeWidget(QWidget* _parent, QPixmap& _pixmap, ThemesModel* _themesModel, int _themeId)
         : QWidget(_parent)
         , pixmap_(QPixmap(_pixmap))
         , themesModel_(_themesModel)
-        , theme_id_(_theme_id)
+        , themeId_(_themeId)
     {
         CustomButton *themeButton = new CustomButton(this, pixmap_);
         
@@ -25,7 +25,7 @@ namespace Ui
         borderWidget_->setFixedWidth(w);
         borderWidget_->setFixedHeight(h);
         
-        connect(themeButton, SIGNAL(clicked()), this, SLOT(on_theme_pressed()));
+        connect(themeButton, SIGNAL(clicked()), this, SLOT(onThemePressed()));
         Utils::ApplyStyle(borderWidget_, "background-color: transparent; border-style: solid; border-color: #579e1c; border-width: 4dip;");
         
         CustomButton *mark = new CustomButton(this, ":/resources/contr_wallpaper_select_100.png");
@@ -44,17 +44,20 @@ namespace Ui
         hlayout->addWidget(mark);
         borderWidget_->setLayout(vlayout);
         borderWidget_->setAttribute( Qt::WA_TransparentForMouseEvents);
+
+        Utils::grabTouchWidget(themeButton);
+        Utils::grabTouchWidget(mark);
         
         setBorder(false);
     }
     
-    void ThemeWidget::on_theme_pressed()
+    void ThemeWidget::onThemePressed()
     {
-        themesModel_->themeSelected(theme_id_);
+        themesModel_->themeSelected(themeId_);
     }
     
-    void ThemeWidget::setBorder(const bool visible)
+    void ThemeWidget::setBorder(const bool _visible)
     {
-        borderWidget_->setVisible(visible);
+        borderWidget_->setVisible(_visible);
     }
 }

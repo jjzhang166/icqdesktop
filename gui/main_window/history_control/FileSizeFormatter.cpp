@@ -5,7 +5,7 @@
 namespace HistoryControl
 {
 
-	QString FormatFileSize(const int64_t size)
+	QString formatFileSize(const int64_t size)
 	{
 		assert(size >= 0);
 
@@ -36,5 +36,32 @@ namespace HistoryControl
 
 		return QString("%1 B").arg(size);
 	}
+
+    QString formatProgressText(const int64_t bytesTotal, const int64_t bytesTransferred)
+    {
+        using namespace HistoryControl;
+
+        assert(bytesTransferred >= -1);
+
+        const auto isBytesTotalValid = (bytesTotal > 0);
+        if (!isBytesTotalValid)
+        {
+            assert(!"invalid bytes counter");
+            return QString();
+        }
+
+        QString result;
+        result.reserve(128);
+
+        if (bytesTransferred > 0)
+        {
+            result += formatFileSize(bytesTransferred);
+            result += QT_TRANSLATE_NOOP("chat_page", " of ");
+        }
+
+        result += formatFileSize(bytesTotal);
+
+        return result;
+    }
 
 }

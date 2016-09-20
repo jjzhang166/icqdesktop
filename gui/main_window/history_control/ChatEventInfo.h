@@ -18,16 +18,20 @@ namespace HistoryControl
 	{
 	public:
 		static ChatEventInfoSptr Make(
-			const core::coll_helper &info, 
-			const bool isOutgoing,
-			const QString &myAimid);
+			const core::coll_helper& _info,
+			const bool _isOutgoing,
+			const QString& _myAimid);
 
 		const QString& formatEventText() const;
 
-		QImage loadEventIcon(const int32_t sizePx) const;
+		QImage loadEventIcon(const int32_t _sizePx) const;
 
         core::chat_event_type eventType() const;
-        
+
+        const QString& getSenderFriendly() const;
+
+        bool isOutgoing() const;
+
 	private:
 		const core::chat_event_type Type_;
 
@@ -36,6 +40,8 @@ namespace HistoryControl
 		const QString MyAimid_;
 
 		mutable QString FormattedEventText_;
+
+        QString SenderAimid_;
 
 		QString SenderFriendly_;
 
@@ -50,9 +56,10 @@ namespace HistoryControl
 		{
 			QString NewName_;
             QString NewDescription_;
+            QString NewRules_;
 		} Chat_;
 
-		ChatEventInfo(const core::chat_event_type type, const bool isOutgoing, const QString &myAimid);
+		ChatEventInfo(const core::chat_event_type _type, const bool _isOutgoing, const QString& _myAimid);
 
 		QString formatEventTextInternal() const;
 
@@ -76,29 +83,33 @@ namespace HistoryControl
 
         QString formatChatDescriptionModified() const;
 
+        QString formatChatRulesModified() const;
+
 		QString formatMchatInviteText() const;
 
 		QString formatMchatKickedText() const;
 
 		QString formatMchatLeaveText() const;
 
-		QString formatMchatMembersList(const bool activeVoice) const;
+		QString formatMchatMembersList(const bool _activeVoice) const;
 
         QString formatMessageDeletedText() const;
 
-		bool isMyAimid(const QString &aimId) const;
+		bool isMyAimid(const QString& _aimId) const;
 
 		bool hasMultipleMembers() const;
 
-        void setGenericText(const QString &text);
+        void setGenericText(const QString& _text);
 
-        void setNewDescription(const QString &newDescription);
+        void setNewChatRules(const QString& _newChatRules);
 
-		void setNewName(const QString &newName);
+        void setNewDescription(const QString& _newDescription);
 
-		void setSenderFriendly(const QString &friendly);
+		void setNewName(const QString& _newName);
 
-		void setMchatMembers(const core::iarray &members);
+		void setSenderInfo(const QString& _aimid, const QString& _friendly);
+
+		void setMchatMembers(const core::iarray& _members);
 
 	};
 

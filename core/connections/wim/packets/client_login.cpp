@@ -113,7 +113,7 @@ int32_t client_login::init_request(std::shared_ptr<core::http_request_simple> _r
 
         if (cursor >= logdata + sz)
         {
-            assert(false);
+           // assert(false);
             return;
         }
 

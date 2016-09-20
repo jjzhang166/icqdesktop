@@ -16,6 +16,7 @@
 #include "../../my_info.h"
 #include "../../cache/avatars/AvatarStorage.h"
 
+#include "../../controls/CommonStyle.h"
 #include "../../controls/ContactAvatarWidget.h"
 #include "../../controls/TextEmojiWidget.h"
 #include "../../controls/BackButton.h"
@@ -25,16 +26,16 @@
 #include "../../gui_settings.h"
 
 namespace Ui
-{    
+{
     class ProfileSettingsWidget::UI
     {
         QHBoxLayout *mainLayout_;
-        
+
         QWidget *backButtonWidget_;
         QVBoxLayout *backButtonLayout_;
             BackButton *backButton_;
             QSpacerItem *verticalSpacer;
-        
+
         QWidget *avatarWidget_;
         QVBoxLayout *avatarWidgetLayout_;
             QWidget *avatar_;
@@ -47,7 +48,7 @@ namespace Ui
             QPushButton *ignoreButton_;
             QPushButton *spamButton_;
             QSpacerItem *verticalSpacer_2;
-        
+
         QScrollArea *infoScrollArea_;
         QWidget *infoWidget_;
         QVBoxLayout *infoLayout_;
@@ -68,52 +69,52 @@ namespace Ui
 
                 TextEmojiWidget *uinHead_;
                 TextEmojiWidget *uin_;
-            
+
                 TextEmojiWidget *phoneHead_;
                 TextEmojiWidget *phone_;
                 TextEmojiWidget *phoneBottom_;
-            
+
                 TextEmojiWidget *firstNameHead_;
                 TextEmojiWidget *firstName_;
-            
+
                 TextEmojiWidget *lastNameHead_;
                 TextEmojiWidget *lastName_;
-            
+
                 TextEmojiWidget *birthdateHead_;
                 TextEmojiWidget *birthdate_;
-            
+
                 TextEmojiWidget *genderHead_;
                 TextEmojiWidget *gender_;
-            
+
                 TextEmojiWidget *countryHead_;
                 TextEmojiWidget *country_;
-            
+
                 TextEmojiWidget *cityHead_;
                 TextEmojiWidget *city_;
-            
+
                 TextEmojiWidget *aboutHead_;
                 TextEmojiWidget *about_;
 
                 TextEmojiWidget *ignoreListLabel_;
                 TextEmojiWidget *attach_phone_label;
                 TextEmojiWidget *attach_uin_label;
-        
+
         friend class ProfileSettingsWidget;
-        
+
     public:
         void init(QWidget *_profileWidget)
         {
             _profileWidget->setObjectName(QStringLiteral("_profileWidget"));
-            _profileWidget->setStyleSheet(Utils::LoadStyle(":/main_window/settings/profile_settings.qss", Utils::get_scale_coefficient(), true));
+            _profileWidget->setStyleSheet(Utils::LoadStyle(":/main_window/settings/profile_settings.qss"));
             _profileWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
             _profileWidget->setMinimumSize(QSize(0, 0));
             _profileWidget->setBaseSize(QSize(0, 0));
-            
+
             mainLayout_ = new QHBoxLayout(_profileWidget);
             mainLayout_->setSpacing(0);
             mainLayout_->setObjectName(QStringLiteral("mainLayout_"));
             mainLayout_->setContentsMargins(0, 0, 0, 0);
-            
+
             backButtonWidget_ = new QWidget(_profileWidget);
             backButtonWidget_->setObjectName(QStringLiteral("backButtonWidget_"));
             backButtonWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
@@ -128,12 +129,12 @@ namespace Ui
             backButton_->setFocusPolicy(Qt::NoFocus);
             backButton_->setCursor(Qt::CursorShape::PointingHandCursor);
             backButtonLayout_->addWidget(backButton_);
-            
+
             verticalSpacer = new QSpacerItem(Utils::scale_value(15), Utils::scale_value(543), QSizePolicy::Minimum, QSizePolicy::Expanding);
             backButtonLayout_->addItem(verticalSpacer);
-            
+
             mainLayout_->addWidget(backButtonWidget_);
-            
+
             avatarWidget_ = new QWidget(_profileWidget);
             avatarWidget_->setObjectName(QStringLiteral("avatarWidget_"));
             avatarWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
@@ -149,7 +150,7 @@ namespace Ui
             avatarLayout_->setObjectName(QStringLiteral("avatarLayout_"));
             avatarLayout_->setContentsMargins(0, 0, 0, 0);
             avatarWidgetLayout_->addWidget(avatar_);
-            
+
             actionsWidget_ = new QWidget(avatarWidget_);
             actionsWidget_->setObjectName(QStringLiteral("actionsWidget_"));
             actionsWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
@@ -157,7 +158,7 @@ namespace Ui
             actionsLayout_->setObjectName(QStringLiteral("actionsLayout_"));
             actionsLayout_->setSpacing(0);
             actionsLayout_->setContentsMargins(0, 0, 0, 0);
-            
+
             messageButton_ = new QPushButton(actionsWidget_);
             messageButton_->setObjectName(QStringLiteral("messageButton_"));
             messageButton_->setFlat(true);
@@ -165,7 +166,7 @@ namespace Ui
             messageButton_->setFocusPolicy(Qt::NoFocus);
             messageButton_->setCursor(Qt::CursorShape::PointingHandCursor);
             actionsLayout_->addWidget(messageButton_);
-            
+
             voiceButton_ = new QPushButton(actionsWidget_);
             voiceButton_->setObjectName(QStringLiteral("voiceButton_"));
             voiceButton_->setFlat(true);
@@ -173,7 +174,7 @@ namespace Ui
             voiceButton_->setFocusPolicy(Qt::NoFocus);
             voiceButton_->setCursor(Qt::CursorShape::PointingHandCursor);
             actionsLayout_->addWidget(voiceButton_);
-            
+
 #ifdef STRIP_VOIP
             voiceButton_->hide();
             actionsLayout_->setContentsMargins(Utils::scale_value(20), 0, 0, 0);
@@ -190,11 +191,11 @@ namespace Ui
 #ifdef STRIP_VOIP
             videoButton_->hide();
 #endif //STRIP_VOIP
-            
+
             avatarWidgetLayout_->addWidget(actionsWidget_);
             avatarWidgetLayout_->addWidget(ignoreListLabel_);
             avatarWidgetLayout_->addWidget(attach_uin_label);
-			
+
             ignoreButton_ = new QPushButton(avatarWidget_);
             ignoreButton_->setObjectName(QStringLiteral("ignoreButton_"));
             ignoreButton_->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
@@ -202,7 +203,7 @@ namespace Ui
             ignoreButton_->setFocusPolicy(Qt::NoFocus);
             ignoreButton_->setCursor(Qt::CursorShape::PointingHandCursor);
             avatarWidgetLayout_->addWidget(ignoreButton_);
-            
+
             spamButton_ = new QPushButton(avatarWidget_);
             spamButton_->setObjectName(QStringLiteral("spamButton_"));
             spamButton_->setMaximumSize(QSize(16777215, Utils::scale_value(45)));
@@ -210,18 +211,18 @@ namespace Ui
             spamButton_->setFocusPolicy(Qt::NoFocus);
             spamButton_->setCursor(Qt::CursorShape::PointingHandCursor);
             avatarWidgetLayout_->addWidget(spamButton_);
-            
+
             verticalSpacer_2 = new QSpacerItem(Utils::scale_value(20), Utils::scale_value(40), QSizePolicy::Minimum, QSizePolicy::Expanding);
-            
+
             avatarWidgetLayout_->addItem(verticalSpacer_2);
-            
+
             mainLayout_->addWidget(avatarWidget_);
-            
-            infoScrollArea_ = new QScrollArea(_profileWidget);
+
+            infoScrollArea_ = CreateScrollAreaAndSetTrScrollBar(_profileWidget);
             infoScrollArea_->setObjectName(QStringLiteral("infoScrollArea_"));
             infoScrollArea_->setWidgetResizable(true);
             Utils::grabTouchWidget(infoScrollArea_->viewport(), true);
-            
+
             infoWidget_ = new QWidget(infoScrollArea_);
             infoWidget_->setObjectName(QStringLiteral("infoWidget_"));
             infoWidget_->setGeometry(QRect(0, 0, Utils::scale_value(847), Utils::scale_value(707)));
@@ -231,7 +232,7 @@ namespace Ui
             infoLayout_->setSpacing(0);
             infoLayout_->setObjectName(QStringLiteral("infoLayout_"));
             infoLayout_->setContentsMargins(0, Utils::scale_value(19), Utils::scale_value(48), Utils::scale_value(48));
-            
+
             headWidget_ = new QWidget(infoScrollArea_);
             Utils::grabTouchWidget(headWidget_);
             headWidget_->setObjectName(QStringLiteral("headWidget_"));
@@ -241,13 +242,13 @@ namespace Ui
             headLayout_->setSpacing(0);
             headLayout_->setObjectName(QStringLiteral("headLayout_"));
             headLayout_->setContentsMargins(Utils::scale_value(16), 0, 0, Utils::scale_value(10));
-            
-            fullName_ = new TextEmojiWidget(headWidget_, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(44));
+
+            fullName_ = new TextEmojiWidget(headWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(fullName_);
-            fullName_->set_ellipsis(true);
-            fullName_->set_selectable(true);
+            fullName_->setEllipsis(true);
+            fullName_->setSelectable(true);
             headLayout_->addWidget(fullName_);
-            
+
             optionsButton_ = new QPushButton(headWidget_);
             optionsButton_->setObjectName(QStringLiteral("optionsButton_"));
             optionsButton_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
@@ -259,9 +260,9 @@ namespace Ui
             optionsMenu_->setExpandDirection(Qt::AlignLeft);
             optionsMenu_->setObjectName(QStringLiteral("optionsMenu_"));
             headLayout_->addWidget(optionsButton_);
-            
+
             infoLayout_->addWidget(headWidget_);
-            
+
             statusWidget_ = new QWidget(infoScrollArea_);
             Utils::grabTouchWidget(statusWidget_);
             statusWidget_->setObjectName(QStringLiteral("statusWidget_"));
@@ -272,7 +273,7 @@ namespace Ui
             statusLayout_->setSpacing(0);
             statusLayout_->setObjectName(QStringLiteral("info_state_area_ayout"));
             statusLayout_->setContentsMargins(Utils::scale_value(2), 0, 0, 0);
-            
+
             statusButton_ = new QPushButton(statusWidget_);
             statusButton_->setObjectName(QStringLiteral("statusButton_"));
             statusButton_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed));
@@ -285,15 +286,15 @@ namespace Ui
             statusMenu_ = new FlatMenu(statusButton_);
             statusMenu_->setObjectName(QStringLiteral("statusMenu_"));
             statusLayout_->addWidget(statusButton_);
-            
+
             statusLabel_ = new QLabel(statusWidget_);
             Utils::grabTouchWidget(statusLabel_);
             statusLabel_->setObjectName(QStringLiteral("statusLabel_"));
             statusLayout_->addWidget(statusLabel_);
-            
+
             horizontalSpacer = new QSpacerItem(Utils::scale_value(40), Utils::scale_value(20), QSizePolicy::Expanding, QSizePolicy::Minimum);
             statusLayout_->addItem(horizontalSpacer);
-            
+
             infoLayout_->addWidget(statusWidget_);
 
             infoValuesWidget_ = new QWidget(infoScrollArea_);
@@ -308,32 +309,32 @@ namespace Ui
 
             auto fieldRoutine1 = [](QWidget* _parent, QLayout* _parentLayout, TextEmojiWidget*& _fieldHead, TextEmojiWidget*& _field, int _dy)
             {
-                _fieldHead = new TextEmojiWidget(_parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(36 + _dy));
-                _fieldHead->set_ellipsis(true);
+                _fieldHead = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(36 + _dy));
+                _fieldHead->setEllipsis(true);
                 Utils::grabTouchWidget(_fieldHead);
                 _parentLayout->addWidget(_fieldHead);
-                
-                _field = new TextEmojiWidget(_parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), QColor("#282828"), Utils::scale_value(20));
-                _field->set_ellipsis(true);
-                _field->set_selectable(true);
+
+                _field = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), CommonStyle::getTextCommonColor(), Utils::scale_value(20));
+                _field->setEllipsis(true);
+                _field->setSelectable(true);
                 Utils::grabTouchWidget(_field);
                 _parentLayout->addWidget(_field);
             };
 
             fieldRoutine1(infoValuesWidget_, infoValuesLayout_, uinHead_, uin_, -10);
             fieldRoutine1(infoValuesWidget_, infoValuesLayout_, phoneHead_, phone_, 0);
-			
-            attach_phone_label = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(20));
+
+            attach_phone_label = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(20));
 
             Utils::grabTouchWidget(attach_phone_label);
             attach_phone_label->setCursor(Qt::PointingHandCursor);
             attach_phone_label->setText(QT_TRANSLATE_NOOP("sidebar", "Attach phone"));
             attach_phone_label->setObjectName(QStringLiteral("attach_phone_label"));
-            attach_phone_label->set_ellipsis(true);
-            infoValuesLayout_->addWidget(attach_phone_label);  
-			
-            phoneBottom_ = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(18));
-            phoneBottom_->set_ellipsis(true);
+            attach_phone_label->setEllipsis(true);
+            infoValuesLayout_->addWidget(attach_phone_label);
+
+            phoneBottom_ = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(18));
+            phoneBottom_->setEllipsis(true);
             Utils::grabTouchWidget(phoneBottom_);
             infoValuesLayout_->addWidget(phoneBottom_);
 
@@ -345,38 +346,38 @@ namespace Ui
             fieldRoutine1(infoValuesWidget_, infoValuesLayout_, cityHead_, city_, 0);
             fieldRoutine1(infoValuesWidget_, infoValuesLayout_, aboutHead_, about_, 0);
 
-            about_->set_ellipsis(false);
-            about_->set_multiline(true);
-            
-            ignoreListLabel_ = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI,
+            about_->setEllipsis(false);
+            about_->setMultiline(true);
+
+            ignoreListLabel_ = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(),
                 Utils::scale_value(18), QColor("#e30f04"), Utils::scale_value(44 - 18 + 10));
             Utils::grabTouchWidget(ignoreListLabel_);
             infoValuesLayout_->addWidget(ignoreListLabel_);
             ignoreListLabel_->setCursor(Qt::PointingHandCursor);
             ignoreListLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Ignored Contacts"));
             ignoreListLabel_->setObjectName(QStringLiteral("ignoreListLabel_"));
-            ignoreListLabel_->set_ellipsis(true);
-            
-            attach_uin_label = new TextEmojiWidget(infoValuesWidget_, Utils::FontsFamily::SEGOE_UI,
+            ignoreListLabel_->setEllipsis(true);
+
+            attach_uin_label = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(),
             Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(44 - 18 + 10));
             Utils::grabTouchWidget(attach_uin_label);
-            infoValuesLayout_->addWidget(attach_uin_label);            
+            infoValuesLayout_->addWidget(attach_uin_label);
             attach_uin_label->setCursor(Qt::PointingHandCursor);
             attach_uin_label->setText(QT_TRANSLATE_NOOP("sidebar", "Connect to ICQ account"));
             attach_uin_label->setObjectName(QStringLiteral("attach_uin_label"));
-            attach_uin_label->set_ellipsis(true);
-			
+            attach_uin_label->setEllipsis(true);
+
             infoLayout_->addWidget(infoValuesWidget_);
 
             mainLayout_->addWidget(infoScrollArea_);
-            
+
             infoScrollArea_->setWidget(infoWidget_);
-            
+
             retranslateUi(_profileWidget);
-            
+
             QMetaObject::connectSlotsByName(_profileWidget);
         }
-        
+
         void retranslateUi(QWidget *_profileWidget)
         {
             _profileWidget->setWindowTitle(QT_TRANSLATE_NOOP("sidebar", "Profile"));
@@ -411,7 +412,7 @@ namespace Ui
             about_->setText("");
         }
     };
-    
+
     ProfileSettingsWidget::ProfileSettingsWidget(QWidget* _parent):
         QWidget(_parent),
         Ui_(new UI()),
@@ -419,21 +420,16 @@ namespace Ui
         actionButtonState_(EDIT_PROFILE),
         uin_(""),
         needRequestAgain_(false),
-        goneAway_(false),
         disconnector_(new Utils::SignalsDisconnector)
     {
         Ui_->init(this);
-        
+
         connect(Ui_->backButton_, &QPushButton::clicked, [this]() { emit Utils::InterConnector::instance().profileSettingsBack(); });
 
         Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_online_200.png"), QT_TRANSLATE_NOOP("sidebar", "Online"), this, SLOT(menuStateOnline()));
         Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_dnd_200.png"), QT_TRANSLATE_NOOP("sidebar", "Do not disturb"), this, SLOT(menuStateDoNotDisturb()));
         Ui_->statusMenu_->addAction(QIcon(":/resources/content_status_invisible_200.png"), QT_TRANSLATE_NOOP("sidebar", "Invisible"), this, SLOT(menuStateInvisible()));
 
-        /*
-        Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("sidebar", "Add to Favorites"));
-        Ui_->optionsMenu_->addSeparator();
-        */
         Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("sidebar", "Ignore"), this, SLOT(contactIgnore()));
         Ui_->optionsMenu_->addAction(QT_TRANSLATE_NOOP("sidebar", "Report spam"), this, SLOT(contactSpam()));
 
@@ -450,17 +446,17 @@ namespace Ui
         {
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::ignorelist_open);
             QVector<QString> temp;
-            Logic::UpdateIgnoredModel(temp);
-            Logic::GetSearchMemberModel()->SetChatMembersModel(Logic::GetIgnoreModel());
+            Logic::updateIgnoredModel(temp);
+            Logic::getSearchMemberModel()->setChatMembersModel(Logic::getIgnoreModel());
 
-            SelectContactsWidget select_members_dialog_(Logic::GetIgnoreModel(), Logic::MembersWidgetRegim::IGNORE_LIST,
-                "", QT_TRANSLATE_NOOP("groupchat_pages", "Done"), this);
-            auto connectId = connect(GetDispatcher(), SIGNAL(recv_permit_deny(bool)), &select_members_dialog_, SLOT(UpdateViewForIgnoreList(bool)), Qt::QueuedConnection);
+            SelectContactsWidget select_members_dialog_(Logic::getIgnoreModel(), Logic::MembersWidgetRegim::IGNORE_LIST,
+                QString(), QT_TRANSLATE_NOOP("groupchat_pages", "Done"), QString(), this);
+            auto connectId = connect(GetDispatcher(), SIGNAL(recvPermitDeny(bool)), &select_members_dialog_, SLOT(UpdateViewForIgnoreList(bool)), Qt::QueuedConnection);
 
-            Logic::ContactListModel::get_ignore_list();
+            Logic::ContactListModel::getIgnoreList();
             select_members_dialog_.setView(false);
             select_members_dialog_.show(-1, -1);
-            
+
             disconnect(connectId);
         });
 
@@ -474,22 +470,22 @@ namespace Ui
             emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_AttachUin);
         });
 
-        disconnector_->add("login_complete", QWidget::connect(GetDispatcher(), &core_dispatcher::login_complete, [this]
+        disconnector_->add("loginComplete", QWidget::connect(GetDispatcher(), &core_dispatcher::loginComplete, [this]
         {
             if (needRequestAgain_ && isVisible())
                 updateInterface(uin_);
         }));
-        
+
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUpdateInterface, this, &ProfileSettingsWidget::updateProfile, Qt::QueuedConnection);
 
         updateActionButton();
     }
-    
+
     ProfileSettingsWidget::~ProfileSettingsWidget()
     {
         //
     }
-    
+
     void ProfileSettingsWidget::contactAdd()
     {
         //
@@ -504,7 +500,7 @@ namespace Ui
     {
         emit Utils::InterConnector::instance().profileSettingsUnknownSpam(uin_);
     }
-    
+
     void ProfileSettingsWidget::myInfo()
     {
         auto currentState_ = MyInfo()->state().toLower();
@@ -517,7 +513,7 @@ namespace Ui
         else
             setStateOnline();
     }
-    
+
     void ProfileSettingsWidget::updateProfile()
     {
         updateInterface(uin_);
@@ -526,7 +522,7 @@ namespace Ui
     void ProfileSettingsWidget::updateInterface(const QString &_uin)
     {
         needRequestAgain_ = false;
-        
+
         if (_uin.length())
         {
             disconnect(SIGNAL(myInfo()));
@@ -543,7 +539,7 @@ namespace Ui
             connect(GetDispatcher(), SIGNAL(needLogin()), this, SLOT(setStateOffline()));
             connect(GetDispatcher(), SIGNAL(recvFlags(int)), this, SLOT(recvFlags(int)));
         }
-        
+
         uin_ = _uin;
 
         Ui_->backButtonWidget_->setVisible(_uin.length());
@@ -576,7 +572,7 @@ namespace Ui
 
         if (USER_ACTIONS)
         {
-            Logic::GetContactListModel()->get_contact_profile(_uin, [this](Logic::profile_ptr _profile, int32_t /*error*/)
+            Logic::getContactListModel()->getContactProfile(_uin, [this](Logic::profile_ptr _profile, int32_t /*error*/)
             {
                 if (_profile)
                     parse(_profile);
@@ -589,7 +585,7 @@ namespace Ui
     void ProfileSettingsWidget::paintEvent(QPaintEvent* _event)
     {
         QWidget::paintEvent(_event);
-        
+
         QPainter painter(this);
         painter.setBrush(QBrush(QColor("#ffffff")));
         painter.drawRect(geometry().x() - 1, geometry().y() - 1, visibleRegion().boundingRect().width() + 2, visibleRegion().boundingRect().height() + 2);
@@ -614,7 +610,7 @@ namespace Ui
 
     void ProfileSettingsWidget::parse(Logic::profile_ptr _profile)
     {
-        auto contact = Logic::GetContactListModel()->getContactItem(_profile->get_aimid());
+        auto contact = Logic::getContactListModel()->getContactItem(_profile->get_aimid());
 
         auto contactIsSelf = (actionButtonState_ == EDIT_PROFILE);
 
@@ -630,7 +626,7 @@ namespace Ui
                 setFullName(_profile->get_friendly());
             else
                 setFullName(QString("%1%2%3").arg(_profile->get_first_name()).arg(_profile->get_first_name().length() ? " " : "").arg(_profile->get_last_name()));
-            
+
             setICQNumber(_profile->get_aimid());
 
             if (!contactIsSelf)
@@ -657,9 +653,9 @@ namespace Ui
             setCity(_profile->get_home_address().get_city());
             setAbout(_profile->get_about());
         }
-        
+
         auto uin = _profile->get_aimid();
-        
+
         Ui_->statusButton_->setCursor(contactIsSelf ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
 
         if (actionButtonState_ == EDIT_PROFILE)
@@ -670,8 +666,6 @@ namespace Ui
             GetDispatcher()->disconnect(SIGNAL(signedUrl(QString)));
             connect(GetDispatcher(), &core_dispatcher::signedUrl, [](QString url)
             {
-                //puts(url.toStdString().c_str());
-                
                 Utils::InterConnector::instance().unsetUrlHandler();
                 QDesktopServices::openUrl(url);
                 Utils::InterConnector::instance().setUrlHandler();
@@ -688,7 +682,7 @@ namespace Ui
                     GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::myprofile_edit);
                 }
             });
-           
+
             Ui_->messageButton_->disconnect();
             Ui_->voiceButton_->disconnect();
             Ui_->videoButton_->disconnect();
@@ -701,7 +695,7 @@ namespace Ui
             auto contactIsUnknown = ((actionButtonState_ == USER_ACTIONS) && !contactIsSelf && !contactIsFriend);
             auto contactIsOnline = (contact && contact->is_online());
             GetDispatcher()->disconnect(SIGNAL(signedUrl(QString)));
-            
+
             Ui_->statusLabel_->setText("");
             if (contactIsFriend && contact && contact->Get())
             {
@@ -750,9 +744,9 @@ namespace Ui
                     Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Offline"));
                 }
             }
-            
+
             Ui_->statusButton_->setVisible(false);
-            
+
             Ui_->messageButton_->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::PointingHandCursor);
             Utils::ApplyPropertyParameter(Ui_->messageButton_, "known", contactIsFriend);
 
@@ -761,7 +755,7 @@ namespace Ui
 
             Ui_->videoButton_->setCursor(contactIsFriend ? Qt::CursorShape::PointingHandCursor : Qt::CursorShape::ArrowCursor);
             Utils::ApplyPropertyParameter(Ui_->videoButton_, "known", contactIsFriend);
-            
+
             Ui_->ignoreButton_->setVisible(contactIsUnknown);
             Ui_->spamButton_->setVisible(contactIsUnknown);
 
@@ -771,11 +765,11 @@ namespace Ui
                 Ui_->messageButton_->disconnect();
                 connect(Ui_->messageButton_, &QPushButton::clicked, [uin]()
                 {
-                    Logic::GetContactListModel()->add_contact_to_contact_list(uin, [uin](bool result)
+                    Logic::getContactListModel()->addContactToCL(uin, [uin](bool result)
                     {
                         if (result)
                         {
-                            Logic::GetContactListModel()->setCurrent(uin, true);
+                            Logic::getContactListModel()->setCurrent(uin, true);
                             emit Utils::InterConnector::instance().profileSettingsBack();
                         }
                     });
@@ -788,21 +782,21 @@ namespace Ui
                 Ui_->messageButton_->disconnect();
                 connect(Ui_->messageButton_, &QPushButton::clicked, [uin]()
                 {
-                    Logic::GetContactListModel()->setCurrent(uin, true);
+                    Logic::getContactListModel()->setCurrent(uin, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
                 });
                 Ui_->voiceButton_->disconnect();
                 connect(Ui_->voiceButton_, &QPushButton::clicked, [uin]()
                 {
-                    Logic::GetContactListModel()->setCurrent(uin, true);
+                    Logic::getContactListModel()->setCurrent(uin, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
-                    
+
                     QTimer::singleShot(500, [uin]() { Ui::GetDispatcher()->getVoipController().setStartA(uin.toUtf8(), false); });
                 });
                 Ui_->videoButton_->disconnect();
                 connect(Ui_->videoButton_, &QPushButton::clicked, [uin]()
                 {
-                    Logic::GetContactListModel()->setCurrent(uin, true);
+                    Logic::getContactListModel()->setCurrent(uin, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
 
                     QTimer::singleShot(500, [uin]() { Ui::GetDispatcher()->getVoipController().setStartV(uin.toUtf8(), false); });
@@ -824,52 +818,19 @@ namespace Ui
         }
     }
 
-    void ProfileSettingsWidget::invokeStateAway()
-    {
-        // dnd or invisible can't swap to away
-        if (MyInfo()->state().toLower() == "online")
-        {
-            goneAway_ = true;
-            setState(core::profile_state::away);
-        }
-    }
-    void ProfileSettingsWidget::invokePreviousState()
-    {
-        if (goneAway_)
-        {
-            goneAway_ = false;
-            menuStateOnline();
-        }
-    }
-    
     void ProfileSettingsWidget::menuStateOnline()
     {
-        setState(core::profile_state::online);
+        GetDispatcher()->setUserState(core::profile_state::online);
     }
+
     void ProfileSettingsWidget::menuStateDoNotDisturb()
     {
-        setState(core::profile_state::dnd);
+        GetDispatcher()->setUserState(core::profile_state::dnd);
     }
 
     void ProfileSettingsWidget::menuStateInvisible()
     {
-        setState(core::profile_state::invisible);
-    }
-
-    void ProfileSettingsWidget::setState(const core::profile_state _state)
-    {
-        assert(_state > core::profile_state::min);
-        assert(_state < core::profile_state::max);
-
-        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-
-        std::stringstream stream;
-        stream << _state;
-
-        collection.set_value_as_string("state", stream.str());
-        collection.set_value_as_string("aimid", MyInfo()->aimId().toStdString());
-        Ui::GetDispatcher()->post_message_to_core("set_state", collection.get());
-        GetDispatcher()->post_stats_to_core(stateToStatisticsEvent(_state));
+        GetDispatcher()->setUserState(core::profile_state::invisible);
     }
 
     void ProfileSettingsWidget::setStateOnline()
@@ -878,28 +839,28 @@ namespace Ui
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_online_200.png"));
         Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Online"));
     }
-    
+
     void ProfileSettingsWidget::setStateOffline()
     {
         Ui_->statusButton_->setVisible(true);
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_offline_200.png"));
         Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Offline"));
     }
-    
+
     void ProfileSettingsWidget::setStateDoNotDisturb()
     {
         Ui_->statusButton_->setVisible(true);
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_dnd_200.png"));
         Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Do not disturb"));
     }
-    
+
     void ProfileSettingsWidget::setStateInvisible()
     {
         Ui_->statusButton_->setVisible(true);
         Ui_->statusButton_->setIcon(QIcon(":/resources/content_status_invisible_200.png"));
         Ui_->statusLabel_->setText(QT_TRANSLATE_NOOP("sidebar", "Invisible"));
     }
-    
+
     void ProfileSettingsWidget::setFullName(const QString& _val)
     {
         Ui_->fullName_->setText(_val);

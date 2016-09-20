@@ -68,7 +68,7 @@ icollection* core::core_instance::create_collection()
 	return (new core::collection());
 }
 
-void core::core_instance::link(iconnector* _connector)
+void core::core_instance::link(iconnector* _connector, const common::core_gui_settings& _settings)
 {
 	if (gui_connector_)
 		gui_connector_->release();
@@ -76,7 +76,7 @@ void core::core_instance::link(iconnector* _connector)
 	gui_connector_ = _connector;
 	gui_connector_->addref();
 
-	g_core->link_gui(this);
+	g_core->link_gui(this, _settings);
 }
 
 void core::core_instance::unlink()

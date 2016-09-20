@@ -1,5 +1,7 @@
 #pragma once
 
+#include "stdafx.h"
+
 class QPixmap;
 
 namespace core

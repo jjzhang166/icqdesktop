@@ -5,13 +5,16 @@ namespace Logic
 	class LiveChatItemDelegate : public QItemDelegate
 	{
 	public:
-		LiveChatItemDelegate(QWidget* parent);
+		LiveChatItemDelegate(QWidget* _parent);
 
-		void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+		void paint(QPainter* _painter, const QStyleOptionViewItem& _option, const QModelIndex& _index) const;
 
-		QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+		QSize sizeHint(const QStyleOptionViewItem& _option, const QModelIndex& _index) const;
+
+        void blockState(bool _value);
 
 	private:
+        bool stateBlocked_;
         QWidget* parent_;
         mutable QMap<int, int> height_;
 	};

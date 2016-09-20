@@ -86,6 +86,10 @@ namespace Logic
                     birthdate_ = QDateTime(d).toMSecsSinceEpoch();
                 }
             }
+            else
+            {
+                birthdate_ = 0; // otherwise there'll be a garbage
+            }
         }
         gender_ = _coll.get_value_as_string("gender");
         home_address_ = address(_coll.get_value_as_string("city"), _coll.get_value_as_string("state"), _coll.get_value_as_string("country"));

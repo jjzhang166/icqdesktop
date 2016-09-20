@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../contact_list/contact_profile.h"
-#include "../../../corelib/enumerations.h"
 
 namespace Utils
 {
@@ -45,16 +44,12 @@ namespace Ui
         QString uin_;
         bool needRequestAgain_;
         std::unique_ptr<Utils::SignalsDisconnector> disconnector_;
-        bool goneAway_;
 
     public:
         ProfileSettingsWidget(QWidget* _parent);
         virtual ~ProfileSettingsWidget();
       
         void updateInterface(const QString &uin);
-
-        void invokeStateAway();
-        void invokePreviousState();
 
     private:
         virtual void paintEvent(QPaintEvent *e) override;
@@ -77,7 +72,6 @@ namespace Ui
         void setStateOffline();
         void setStateDoNotDisturb();
         void setStateInvisible();
-        void setState(const core::profile_state _state);
 
         void updateActionButton();
     };

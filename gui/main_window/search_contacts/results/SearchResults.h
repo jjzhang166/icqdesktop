@@ -18,36 +18,36 @@ namespace Ui
 
 	Q_SIGNALS:
 
-		void need_more(int _skip_count);
-		void add_contact(QString _contact);
-		void msg_contact(QString _contact);
-		void call_contact(QString _contact);
-        void contact_info(QString _contact);
+		void needMore(int _skipCount);
+		void addContact(QString _contact);
+		void msgContact(QString _contact);
+		void callContact(QString _contact);
+        void contactInfo(QString _contact);
         
 	private Q_SLOTS:
 
-		void on_add_contact(QString _contact);
-		void on_msg_contact(QString _contact);
-		void on_call_contact(QString _contact);
-        void on_contact_info(QString _contact);
-		void on_need_more(int _skip_count);
+		void onAddContact(QString _contact);
+		void onMsgContact(QString _contact);
+		void onCallContact(QString _contact);
+        void onContactInfo(QString _contact);
+		void onNeedMore(int _skip_count);
 
 	private:
 
 		QStackedWidget*							pages_;
 		
-		QVBoxLayout*							root_layout_;
+		QVBoxLayout*							rootLayout_;
 
-		NoResultsWidget*						no_results_widget_;
-		FoundContacts*							contacts_widget_;
+		NoResultsWidget*						noResultsWidget_;
+		FoundContacts*							contactsWidget_;
 									
 	public:
 
 		SearchResults(QWidget* _parent);
 		virtual ~SearchResults();
 
-		void insert_items(const profiles_list& profiles);
-		void contact_add_result(const QString& _contact, bool _res);
+		int insertItems(const profiles_list& _profiles);
+		void contactAddResult(const QString& _contact, bool _res);
 		void clear();
 	};
 

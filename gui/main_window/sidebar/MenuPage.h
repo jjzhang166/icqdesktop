@@ -46,7 +46,6 @@ Q_SIGNALS:
         Q_OBJECT
     Q_SIGNALS:
         void updateMembers();
-        void needUpdate();
 
     public:
         MenuPage(QWidget* parent);
@@ -57,36 +56,43 @@ Q_SIGNALS:
 
     protected:
         virtual void paintEvent(QPaintEvent* e);
-        virtual void resizeEvent(QResizeEvent* e);
+        virtual void resizeEvent(QResizeEvent *e);
         virtual void updateWidth();
 
     private Q_SLOTS:
         void contactChanged(QString);
         void favoritesClicked();
+        void copyLinkClicked();
         void themesClicked();
+        void privacyClicked();
         void eraseHistoryClicked();
         void ignoreClicked();
         void quitClicked();
         void notificationsChecked(int);
-        void scrollChaged(int, int);
-        void updateSize();
         void addToChatClicked();
         void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
         void chatBlocked(QList<Data::ChatMemberInfo>);
+        void chatPending(QList<Data::ChatMemberInfo>);
         void spamClicked();
         void addContactClicked();
         void contactClicked(QString);
         void searchBegin();
         void searchEnd();
         void backButtonClicked();
-        void membersClicked(const QModelIndex &);
         void moreClicked();
         void adminsClicked();
         void blockedClicked();
+        void pendingClicked();
         void avatarClicked();
         void chatEvent(QString);
         void menu(QAction*);
         void actionResult(int);
+        void approveAllClicked();
+        void publicChanged(int);
+        void approvedChanged(int);
+        void spam();
+        void remove();
+        void touchScrollStateChanged(QScroller::State);
 
     private:
         void init();
@@ -100,17 +106,22 @@ Q_SIGNALS:
         void initDescription(const QString& description, bool full = false);
         void blockUser(const QString& aimId, bool block);
         void changeRole(const QString& aimId, bool moder);
+        void approve(const QString& aimId, bool approve);
+        void changeTab(int tab);
 
     private:
         QString currentAimId_;
+        QScrollArea* area_;
         ContactAvatarWidget* avatar_;
         TextEditEx* name_;
         TextEditEx* description_;
         LineWidget* firstLine_;
         LineWidget* secondLine_;
         LineWidget* thirdLine_;
+        LineWidget* approveAllLine_;
         QWidget* adminsSpacer_;
         QWidget* blockSpacer_;
+        QWidget* pendingSpacer_;
         QWidget* addContactSpacerTop_;
         QWidget* addContactSpacer_;
         QWidget* labelsSpacer_;
@@ -118,35 +129,53 @@ Q_SIGNALS:
         QWidget* listWidget_;
         QWidget* textTopSpace_;
         CustomButton* notificationsButton_;
+        QCheckBox* notificationsCheckbox_;
+        CustomButton* publicButton_;
+        QCheckBox* publicCheckBox_;
+        CustomButton* approvedButton_;
+        QCheckBox* approvedCheckBox_;
         ActionButton* favoriteButton_;
+        ActionButton* copyLink_;
         ActionButton* themesButton_;
+        ActionButton* privacyButton_;
         ActionButton* eraseHistoryButton_;
         ActionButton* ignoreButton_;
         ActionButton* quitAndDeleteButton_;
         CustomButton* addContact_;
         ActionButton* spamButton_;
+        ActionButton* spamButtonAuth_;
+        ActionButton* deleteButton_;
         CustomButton* backButton_;
-        QCheckBox* notificationsCheckbox_;
         ClickedWidget* allMembers_;
         ClickedWidget* admins_;
         ClickedWidget* blockList_;
         ClickedWidget* avatarName_;
+        ClickedWidget* pendingList_;
         QLabel* allMembersCount_;
         QLabel* blockCount_;
+        QLabel* pendingCount_;
         QLabel* blockLabel_;
+        QLabel* pendingLabel_;
         QLabel* listLabel_;
         QLabel* allMembersLabel_;
-        FocusableListView* members_;
         Logic::ChatMembersModel* chatMembersModel_;
         Logic::ContactListItemDelegate* delegate_;
         QSpacerItem* bottomSpacer_;
         AddToChat* addToChat_;
         std::shared_ptr<Data::ChatInfo> info_;
         LabelEx* moreLabel_;
+        LabelEx* approveAll_;
+        LabelEx* publicAbout_;
+        LabelEx* approvalAbout_;
+        QWidget* approveAllWidget_;
+        QWidget* contactListWidget_;
+        QWidget* privacyWidget_;
+        QWidget* publicBottomSpace_;
         ContactList* cl_;
         SearchWidget* searchWidget_;
         QStackedWidget* stackedWidget_;
         QVBoxLayout* rootLayot_;
+        QVBoxLayout* nameLayout_;
         int currentTab_;
     };
 }

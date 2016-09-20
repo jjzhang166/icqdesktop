@@ -6,53 +6,50 @@ namespace Ui
 	search_params::search_params(void)
 		:	gender_(Gender::unknown),
 			age_(-1, -1),
-			count_(20),
-			skip_count_(0),
-			online_only_(false)
+			onlineOnly_(false)
 	{
 	}
-
 
 	search_params::~search_params(void)
 	{
 	}
 
-	const QString& search_params::get_keyword() const
+	const QString& search_params::getKeyword() const
 	{
 		return keyword_;
 	}
 
-	void search_params::set_keyword(const QString& _val)
+	void search_params::setKeyword(const QString& _val)
 	{
 		keyword_ = _val;
 	}
 
-	Gender search_params::get_gender() const
+	Gender search_params::getGender() const
 	{
 		return gender_;
 	}
 
-	void search_params::set_gender(Gender _val)
+	void search_params::setGender(Gender _val)
 	{
 		gender_ = _val;
 	}
 
-	const QString& search_params::get_country() const
+	const QString& search_params::getCountry() const
 	{
 		return country_;
 	}
 
-	void search_params::set_country(const QString& _val)
+	void search_params::setCountry(const QString& _val)
 	{
 		country_ = _val;
 	}
 
-	const std::pair<int32_t, int32_t>& search_params::get_age() const
+	const std::pair<int32_t, int32_t>& search_params::getAge() const
 	{
 		return age_;
 	}
 
-	void search_params::set_age(const std::pair<int32_t, int32_t>& _age)
+	void search_params::setAge(const std::pair<int32_t, int32_t>& _age)
 	{
 		age_ = _age;
 	}
@@ -69,39 +66,18 @@ namespace Ui
 		_coll.set_value_as_qstring("country", country_);
 		_coll.set_value_as_int("age_from", age_.first);
 		_coll.set_value_as_int("age_to", age_.second);
-		_coll.set_value_as_int("count", count_);
-		_coll.set_value_as_int("skip_count", skip_count_);
-		_coll.set_value_as_bool("online_only", online_only_);
+		_coll.set_value_as_qstring("next_tag", nextTag_);
+		_coll.set_value_as_bool("online_only", onlineOnly_);
 	}
 
-	int32_t search_params::get_skip_count() const
+	bool search_params::getOnlineOnly() const
 	{
-		return skip_count_;
+		return onlineOnly_;
 	}
 
-	void search_params::set_skip_count(int32_t _val)
+	void search_params::setOnlineOnly(bool _val)
 	{
-		skip_count_ = _val;
-	}
-
-	int32_t search_params::get_count() const
-	{
-		return count_;
-	}
-
-	void search_params::set_count(int32_t _val)
-	{
-		count_ = _val;
-	}
-
-	bool search_params::get_online_only() const
-	{
-		return online_only_;
-	}
-
-	void search_params::set_online_only(bool _val)
-	{
-		online_only_ = _val;
+        onlineOnly_ = _val;
 	}
     
 }

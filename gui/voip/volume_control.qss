@@ -1,0 +1,72 @@
+QWidget[VolumeControlHor="true"]
+{
+	max-width: 130dip;
+	min-width: 130dip;
+	max-height: 56dip;
+	min-height: 56dip;
+}
+
+QWidget[VolumeControlVert="true"]
+{
+	max-width: 52dip;
+	min-width: 52dip;
+	max-height: 148dip;
+	min-height: 148dip;
+}
+
+QSlider[VolumeSliderHor="true"]:groove:horizontal
+{
+	background: #d7d7d7;
+	height: 2dip;
+}
+
+QSlider[VolumeSliderHor="true"]:sub-page:horizontal
+{
+	background: solid #579e1c;
+	height: 2dip;
+}
+QSlider[VolumeSliderHor="true"]:sub-page:horizontal:disabled
+{
+	background: solid #992117;
+	height: 2dip;
+}
+
+QSlider[VolumeSliderHor="true"]:add-page:horizontal
+{
+	background: #d7d7d7;
+	height: 2dip;
+}
+QSlider[VolumeSliderHor="true"]:add-page:horizontal:disabled
+{
+	background: #d7d7d7;
+	height: 2dip;
+}
+
+
+QSlider[VolumeSliderVert="true"]:groove:vertical
+{
+	background: rgba(255,255,255,80%);
+	width: 2dip;
+}
+
+QSlider[VolumeSliderVert="true"]:sub-page:vertical
+{
+	background: #d7d7d7;
+	width: 2dip;
+}
+QSlider[VolumeSliderVert="true"]:sub-page:vertical:disabled
+{
+	background: #d7d7d7;
+	width: 2dip;
+}
+
+QSlider[VolumeSliderVert="true"]:add-page:vertical
+{
+	background: solid #579e1c;
+	width: 2dip;
+}
+QSlider[VolumeSliderVert="true"]:add-page:vertical:disabled
+{
+	background: solid #992117;
+	width: 2dip;
+}

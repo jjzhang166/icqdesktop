@@ -11,9 +11,9 @@ namespace Logic
 	{
 	public:
 
-		explicit ContactItem(Data::Contact *contact);
+		explicit ContactItem(Data::Contact* _contact);
 
-		bool operator== (const ContactItem& other) const;
+		bool operator== (const ContactItem& _other) const;
 
 		Data::Contact* Get() const;
 
@@ -31,16 +31,16 @@ namespace Logic
 		void reset_not_auth();
 
 		bool is_checked() const;
-		void set_checked(bool _is_checked);
+		void set_checked(bool _isChecked);
 
-        void set_chat_admin(bool value);
+        void set_chat_admin(bool _value);
         bool is_you_admin() const;
 		
-		void set_input_text(const QString& _input_text);
+		void set_input_text(const QString& _inputText);
 		QString get_input_text() const;
 
 		void set_contact_profile(profile_ptr _profile);
-		profile_ptr get_contact_profile() const;
+		profile_ptr getContactProfile() const;
 		QString get_aimid() const;
 
 	private:

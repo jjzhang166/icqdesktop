@@ -22,9 +22,9 @@ namespace Ui
         Q_OBJECT
 
     public:
-        VoipEventItem(const HistoryControl::VoipEventInfoSptr& eventInfo);
+        VoipEventItem(const ::HistoryControl::VoipEventInfoSptr& eventInfo);
 
-        VoipEventItem(QWidget *parent, const HistoryControl::VoipEventInfoSptr& eventInfo);
+        VoipEventItem(QWidget *parent, const ::HistoryControl::VoipEventInfoSptr& eventInfo);
 
         virtual QString formatRecentsText() const override;
 
@@ -39,6 +39,8 @@ namespace Ui
         virtual qint64 getId() const override;
 
         void setId(const qint64 _id);
+
+        void updateStyle();
 
     protected:
         virtual void mouseMoveEvent(QMouseEvent *) override;
@@ -58,7 +60,7 @@ namespace Ui
 
         QRect BubbleRect_;
 
-        HistoryControl::VoipEventInfoSptr EventInfo_;
+        ::HistoryControl::VoipEventInfoSptr EventInfo_;
 
         Themes::IThemePixmapSptr HoverIcon_;
 
@@ -72,6 +74,8 @@ namespace Ui
 
         MessageStatusWidget *StatusWidget_;
 
+        QRect StatusWidgetGeometry_;
+
         bool lastRead_;
 
         qint64 id_;
@@ -83,6 +87,8 @@ namespace Ui
         bool isBubbleHovered(const QPoint &mousePos) const;
 
         void updateHeight();
+
+        QColor getTextColor(const bool isHovered);
 
     };
 

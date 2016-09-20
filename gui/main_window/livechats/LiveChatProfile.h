@@ -15,6 +15,7 @@ namespace Ui
     class ContactAvatarWidget;
     class LiveChatMembersControl;
     class GeneralDialog;
+    class TextEditEx;
 
     class LiveChats : public QObject
     {
@@ -50,16 +51,14 @@ namespace Ui
         QVBoxLayout* rootLayout_;
         ContactAvatarWidget* avatar_;
         LiveChatMembersControl* members_;
+        TextEditEx* name_;
         int membersCount_;
+        int initialiNameHeight_;
 
         void requestProfile();
 
     private Q_SLOTS:
-
-
-Q_SIGNALS:
-
-        void resizeChild(int _deltaW, int _deltaH);
+        void nameResized(int, int);
 
     protected:
 

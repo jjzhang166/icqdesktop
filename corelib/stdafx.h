@@ -32,8 +32,9 @@
 #include <set>
 #include <mutex>
 #include <thread>
+#include <string.h>
 
-#include "common.h"
+#include "../common.shared/common.h"
 
 #ifndef _WIN32
 #ifdef __APPLE__

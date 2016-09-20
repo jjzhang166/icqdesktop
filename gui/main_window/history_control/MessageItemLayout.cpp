@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#include "../../utils/profiling/auto_stop_watch.h"
-
 #include "MessageItem.h"
 
 #include "MessageItemLayout.h"

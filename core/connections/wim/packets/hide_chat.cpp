@@ -26,7 +26,7 @@ int32_t hide_chat::init_request(std::shared_ptr<core::http_request_simple> _requ
     std::string method;
 
     std::stringstream ss_url;
-    ss_url << c_wim_host << "buddylist/hideChat" << method << "?f=json" << "&aimsid=" << get_params().aimsid_ << 
+    ss_url << c_wim_host << "buddylist/hideChat" << method << "?f=json" << "&aimsid=" << escape_symbols(get_params().aimsid_) << 
         "&buddy=" << escape_symbols(aimid_) <<
         "&r=" << core::tools::system::generate_guid() <<
         "&lastMsgId=" << last_msg_id_;

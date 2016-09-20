@@ -1,20 +1,17 @@
 #include "stdafx.h"
-
-#include "../../../corelib/enumerations.h"
-
-#include "../../main_window/MainWindow.h"
 #include "SmilesMenu.h"
+
+#include "toolbar.h"
 #include "../../core_dispatcher.h"
 #include "../../gui_settings.h"
-#include "../../utils/utils.h"
 #include "../../cache/emoji/Emoji.h"
 #include "../../cache/emoji/EmojiDb.h"
 #include "../../cache/stickers/stickers.h"
-#include "toolbar.h"
-#include "../../utils/gui_coll_helper.h"
-
+#include "../../controls/TransparentScrollBar.h"
 #include "../../themes/ResourceIds.h"
 #include "../../themes/ThemePixmap.h"
+#include "../../utils/gui_coll_helper.h"
+#include "../../utils/utils.h"
 
 namespace Ui
 {
@@ -31,44 +28,44 @@ namespace Ui
 
     using namespace Smiles;
 
-    Emoji::EmojiSizePx get_picker_emoji_size()
+    Emoji::EmojiSizePx getPickerEmojiSize()
     {
-        Emoji::EmojiSizePx emoji_size = Emoji::EmojiSizePx::_32;
-        int scale = (int) (Utils::get_scale_coefficient() * 100.0);
+        Emoji::EmojiSizePx emojiSize = Emoji::EmojiSizePx::_32;
+        int scale = (int) (Utils::getScaleCoefficient() * 100.0);
         scale = Utils::scale_bitmap(scale);
         switch (scale)
         {
         case 100:
-            emoji_size = Emoji::EmojiSizePx::_32;
+            emojiSize = Emoji::EmojiSizePx::_32;
             break;
         case 125:
-            emoji_size = Emoji::EmojiSizePx::_40;
+            emojiSize = Emoji::EmojiSizePx::_40;
             break;
         case 150:
-            emoji_size = Emoji::EmojiSizePx::_48;
+            emojiSize = Emoji::EmojiSizePx::_48;
             break;
         case 200:
-            emoji_size = Emoji::EmojiSizePx::_64;
+            emojiSize = Emoji::EmojiSizePx::_64;
             break;
         default:
             assert(!"invalid scale");
         }
 
-        return emoji_size;
+        return emojiSize;
     }
 
 
     //////////////////////////////////////////////////////////////////////////
     // class ViewItemModel
     //////////////////////////////////////////////////////////////////////////
-    EmojiViewItemModel::EmojiViewItemModel(QWidget* _parent, bool _single_line)
+    EmojiViewItemModel::EmojiViewItemModel(QWidget* _parent, bool _singleLine)
         :	QStandardItemModel(_parent),
-        emojis_count_(0),
-        need_height_(0),
-        single_line_(_single_line),
+        emojisCount_(0),
+        needHeight_(0),
+        singleLine_(_singleLine),
         spacing_(12)
     {
-        emoji_categories_.reserve(10);
+        emojiCategories_.reserve(10);
     }
 
     EmojiViewItemModel::~EmojiViewItemModel()
@@ -85,23 +82,23 @@ namespace Ui
         spacing_ = _spacing;
     }
 
-    Emoji::EmojiRecordSptr EmojiViewItemModel::get_emoji(int _col, int _row) const
+    Emoji::EmojiRecordSptr EmojiViewItemModel::getEmoji(int _col, int _row) const
     {
         int index = _row * columnCount() + _col;
 
-        if (index < get_emojis_count())
+        if (index < getEmojisCount())
         {
             int count = 0;
-            for (const auto& category : emoji_categories_)
+            for (const auto& category : emojiCategories_)
             {
                 if ((count + (int) category.emojis_.size()) > index)
                 {
-                    int index_in_category = index - count;
+                    int indexInCategory = index - count;
 
-                    assert(index_in_category >= 0);
-                    assert(index_in_category < (int) category.emojis_.size());
+                    assert(indexInCategory >= 0);
+                    assert(indexInCategory < (int) category.emojis_.size());
 
-                    return category.emojis_[index_in_category];
+                    return category.emojis_[indexInCategory];
                 }
 
                 count += category.emojis_.size();
@@ -118,12 +115,12 @@ namespace Ui
         if (_role == Qt::DecorationRole)
         {
             int index = _idx.row() * columnCount() + _idx.column();
-            if (index < get_emojis_count())
+            if (index < getEmojisCount())
             {
-                auto emoji = get_emoji(_idx.column(), _idx.row());
+                auto emoji = getEmoji(_idx.column(), _idx.row());
                 if (emoji)
                 {
-                    auto emoji_ = Emoji::GetEmoji(emoji->Codepoint_, emoji->ExtendedCodepoint_, get_picker_emoji_size());
+                    auto emoji_ = Emoji::GetEmoji(emoji->Codepoint_, emoji->ExtendedCodepoint_, getPickerEmojiSize());
                     QPixmap emojiPixmap = QPixmap::fromImage(emoji_);
                     Utils::check_pixel_ratio(emojiPixmap);
                     return emojiPixmap;
@@ -134,99 +131,99 @@ namespace Ui
         return QVariant();
     }
 
-    int EmojiViewItemModel::add_category(const QString& _category)
+    int EmojiViewItemModel::addCategory(const QString& _category)
     {
-        const Emoji::EmojiRecordSptrVec& emojis_vector = Emoji::GetEmojiInfoByCategory(_category);
-        emoji_categories_.emplace_back(_category, emojis_vector);
+        const Emoji::EmojiRecordSptrVec& emojisVector = Emoji::GetEmojiInfoByCategory(_category);
+        emojiCategories_.emplace_back(_category, emojisVector);
 
-        emojis_count_ += emojis_vector.size();
+        emojisCount_ += emojisVector.size();
 
-        resize(prev_size_);
+        resize(prevSize_);
 
-        return ((int)emoji_categories_.size() - 1);
+        return ((int)emojiCategories_.size() - 1);
     }
 
-    int EmojiViewItemModel::add_category(const emoji_category& _category)
+    int EmojiViewItemModel::addCategory(const emoji_category& _category)
     {
-        emoji_categories_.push_back(_category);
+        emojiCategories_.push_back(_category);
 
-        emojis_count_ += _category.emojis_.size();
+        emojisCount_ += _category.emojis_.size();
 
-        return ((int)emoji_categories_.size() - 1);
+        return ((int)emojiCategories_.size() - 1);
     }
 
-    int EmojiViewItemModel::get_emojis_count() const
+    int EmojiViewItemModel::getEmojisCount() const
     {
-        return emojis_count_;
+        return emojisCount_;
     }
 
-    int EmojiViewItemModel::get_need_height() const
+    int EmojiViewItemModel::getNeedHeight() const
     {
-        return need_height_;
+        return needHeight_;
     }
 
-    int EmojiViewItemModel::get_category_pos(int _index)
+    int EmojiViewItemModel::getCategoryPos(int _index)
     {
-        const int column_width = getEmojiItemSize();
-        int columnCount = prev_size_.width() / column_width;
+        const int columnWidth = getEmojiItemSize();
+        int columnCount = prevSize_.width() / columnWidth;
 
-        int emoji_count_before = 0;
+        int emojiCountBefore = 0;
 
         for (int i = 0; i < _index; i++)
-            emoji_count_before += emoji_categories_[i].emojis_.size();
+            emojiCountBefore += emojiCategories_[i].emojis_.size();
 
         if (columnCount == 0)
             return 0;
 
-        int rowCount = (emoji_count_before / columnCount) + (((emoji_count_before % columnCount) > 0) ? 1 : 0);
+        int rowCount = (emojiCountBefore / columnCount) + (((emojiCountBefore % columnCount) > 0) ? 1 : 0);
 
         return (((rowCount == 0) ? 0 : (rowCount - 1)) * getEmojiItemSize());
     }
 
-    const std::vector<emoji_category>& EmojiViewItemModel::get_categories() const
+    const std::vector<emoji_category>& EmojiViewItemModel::getCategories() const
     {
-        return emoji_categories_;
+        return emojiCategories_;
     }
 
     bool EmojiViewItemModel::resize(const QSize& _size, bool _force)
     {
-        const int column_width = getEmojiItemSize();
-        int emoji_count = get_emojis_count();
+        const int columnWidth = getEmojiItemSize();
+        int emojiCount = getEmojisCount();
 
         bool resized = false;
 
-        if ((prev_size_.width() != _size.width() && _size.width() > column_width) || _force)
+        if ((prevSize_.width() != _size.width() && _size.width() > columnWidth) || _force)
         {
-            int columnCount = _size.width()/column_width;
-            if (columnCount > emoji_count)
-                columnCount = emoji_count;
+            int columnCount = _size.width()/ columnWidth;
+            if (columnCount > emojiCount)
+                columnCount = emojiCount;
 
             int rowCount  = 0;
             if (columnCount > 0)
             {
-                rowCount = (emoji_count / columnCount) + (((emoji_count % columnCount) > 0) ? 1 : 0);
-                if (single_line_ && rowCount > 1)
+                rowCount = (emojiCount / columnCount) + (((emojiCount % columnCount) > 0) ? 1 : 0);
+                if (singleLine_ && rowCount > 1)
                     rowCount = 1;
             }
 
             setColumnCount(columnCount);
             setRowCount(rowCount);
 
-            need_height_ = getEmojiItemSize() * rowCount;
+            needHeight_ = getEmojiItemSize() * rowCount;
 
             resized = true;
         }
 
-        prev_size_ = _size;
+        prevSize_ = _size;
 
         return resized;
     }
 
-    void EmojiViewItemModel::on_emoji_added()
+    void EmojiViewItemModel::onEmojiAdded()
     {
-        emojis_count_ = 0;
-        for (uint32_t i = 0; i < emoji_categories_.size(); i++)
-            emojis_count_ += emoji_categories_[i].emojis_.size();
+        emojisCount_ = 0;
+        for (uint32_t i = 0; i < emojiCategories_.size(); i++)
+            emojisCount_ += emojiCategories_[i].emojis_.size();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -256,63 +253,63 @@ namespace Ui
     void EmojiTableView::resizeEvent(QResizeEvent * _e)
     {
         if (model_->resize(_e->size()))
-            setFixedHeight(model_->get_need_height());
+            setFixedHeight(model_->getNeedHeight());
 
         QTableView::resizeEvent(_e);
     }
 
-    int EmojiTableView::add_category(const QString& _category)
+    int EmojiTableView::addCategory(const QString& _category)
     {
-        return model_->add_category(_category);
+        return model_->addCategory(_category);
     }
 
-    int EmojiTableView::add_category(const emoji_category& _category)
+    int EmojiTableView::addCategory(const emoji_category& _category)
     {
-        return model_->add_category(_category);
+        return model_->addCategory(_category);
     }
 
-    int EmojiTableView::get_category_pos(int _index)
+    int EmojiTableView::getCategoryPos(int _index)
     {
-        return model_->get_category_pos(_index);
+        return model_->getCategoryPos(_index);
     }
 
-    const std::vector<emoji_category>& EmojiTableView::get_categories() const
+    const std::vector<emoji_category>& EmojiTableView::getCategories() const
     {
-        return model_->get_categories();
+        return model_->getCategories();
     }
 
-    Emoji::EmojiRecordSptr EmojiTableView::get_emoji(int _col, int _row) const
+    Emoji::EmojiRecordSptr EmojiTableView::getEmoji(int _col, int _row) const
     {
-        return model_->get_emoji(_col, _row);
+        return model_->getEmoji(_col, _row);
     }
 
-    void EmojiTableView::on_emoji_added()
+    void EmojiTableView::onEmojiAdded()
     {
-        model_->on_emoji_added();
+        model_->onEmojiAdded();
 
         QRect rect = geometry();
 
         if (model_->resize(QSize(rect.width(), rect.height()), true))
-            setFixedHeight(model_->get_need_height());
+            setFixedHeight(model_->getNeedHeight());
     }
 
     //////////////////////////////////////////////////////////////////////////
     // EmojiTableItemDelegate
     //////////////////////////////////////////////////////////////////////////
-    void EmojiTableItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem&, const QModelIndex &index) const
+    void EmojiTableItemDelegate::paint(QPainter* _painter, const QStyleOptionViewItem&, const QModelIndex& _index) const
     {
-        const EmojiViewItemModel *itemModel = (EmojiViewItemModel *)index.model();
-        QPixmap data = index.data(Qt::DecorationRole).value<QPixmap>();
-        int col = index.column();
-        int row = index.row();
+        const EmojiViewItemModel *itemModel = (EmojiViewItemModel *)_index.model();
+        QPixmap data = _index.data(Qt::DecorationRole).value<QPixmap>();
+        int col = _index.column();
+        int row = _index.row();
         int spacing = itemModel->spacing();
-        int size = (int)get_picker_emoji_size() / Utils::scale_bitmap(1);
-        painter->drawPixmap(col * (size + Utils::scale_value(spacing)), row * (size + Utils::scale_value(spacing)), size, size, data);
+        int size = (int)getPickerEmojiSize() / Utils::scale_bitmap(1);
+        _painter->drawPixmap(col * (size + Utils::scale_value(spacing)), row * (size + Utils::scale_value(spacing)), size, size, data);
     }
 
     QSize EmojiTableItemDelegate::sizeHint(const QStyleOptionViewItem&, const QModelIndex&) const
     {
-        int size = (int)get_picker_emoji_size() / Utils::scale_bitmap(1);
+        int size = (int)getPickerEmojiSize() / Utils::scale_bitmap(1);
         return QSize(size, size);
     }
 
@@ -322,14 +319,14 @@ namespace Ui
     EmojisWidget::EmojisWidget(QWidget* _parent)
         :	QWidget(_parent)
     {
-        QVBoxLayout* v_layout = new QVBoxLayout();
-        v_layout->setContentsMargins(0, 0, 0, 0);
-        setLayout(v_layout);
+        QVBoxLayout* vLayout = new QVBoxLayout();
+        vLayout->setContentsMargins(0, 0, 0, 0);
+        setLayout(vLayout);
 
-        QLabel* set_header = new QLabel(this);
-        set_header->setObjectName("set_header");
-        set_header->setText(QT_TRANSLATE_NOOP("input_widget", "EMOJI"));
-        v_layout->addWidget(set_header);
+        QLabel* setHeader = new QLabel(this);
+        setHeader->setObjectName("set_header");
+        setHeader->setText(QT_TRANSLATE_NOOP("input_widget", "EMOJI"));
+        vLayout->addWidget(setHeader);
 
         view_ = new EmojiTableView(this, new EmojiViewItemModel(this));
         view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -340,47 +337,47 @@ namespace Ui
         toolbar_->setFixedHeight(Utils::scale_value(48));
         toolbar_->setObjectName("smiles_cat_selector");
 
-        TabButton* first_button = nullptr;
+        TabButton* firstButton = nullptr;
 
-        QStringList emoji_categories = Emoji::GetEmojiCategories();
+        QStringList emojiCategories = Emoji::GetEmojiCategories();
 
-        buttons_.reserve(emoji_categories.size());
+        buttons_.reserve(emojiCategories.size());
 
-        for (auto category : emoji_categories)
+        for (auto category : emojiCategories)
         {
-            QString resource_string = QString(":/resources/smiles_menu/picker_emojitab_") + category + "_100.png";
-            TabButton* button = toolbar_->addButton(resource_string);
+            QString resourceString = QString(":/resources/smiles_menu/picker_emojitab_") + category + "_100.png";
+            TabButton* button = toolbar_->addButton(resourceString);
             button->setProperty("underline", false);
             buttons_.push_back(button);
 
-            int category_index = view_->add_category(category);
+            int categoryIndex = view_->addCategory(category);
 
-            if (!first_button)
-                first_button = button;
+            if (!firstButton)
+                firstButton = button;
 
-            connect(button, &TabButton::clicked, [this, category_index]()
+            connect(button, &TabButton::clicked, [this, categoryIndex]()
             {
                 GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::picker_cathegory_click);
-                emit scroll_to_group(view_->geometry().top() + view_->get_category_pos(category_index));
+                emit scrollToGroup(view_->geometry().top() + view_->getCategoryPos(categoryIndex));
             });
         }
 
-        v_layout->addWidget(view_);
+        vLayout->addWidget(view_);
 
-        QWidget* toolbar_place = new QWidget(this);
-        toolbar_place->setObjectName("red_marker");
-        toolbar_place->setFixedHeight(toolbar_->height());
-        v_layout->addWidget(toolbar_place);
+        QWidget* toolbarPlace = new QWidget(this);
+        toolbarPlace->setObjectName("red_marker");
+        toolbarPlace->setFixedHeight(toolbar_->height());
+        vLayout->addWidget(toolbarPlace);
 
-        if (first_button)
-            first_button->toggle();
+        if (firstButton)
+            firstButton->toggle();
 
         connect(view_, &EmojiTableView::clicked, [this](const QModelIndex & _index)
         {
-            auto emoji = view_->get_emoji(_index.column(), _index.row());
+            auto emoji = view_->getEmoji(_index.column(), _index.row());
             if (emoji)
             {
-                emit emoji_selected(emoji);
+                emit emojiSelected(emoji);
                 GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::smile_sent_picker);
             }
         });
@@ -392,16 +389,16 @@ namespace Ui
     {
     }
 
-    void EmojisWidget::on_viewport_changed(const QRect& _view_rect, bool _block_toolbar_switch)
+    void EmojisWidget::onViewportChanged(const QRect& _viewRect, bool _blockToolbarSwitch)
     {
-        if (!_block_toolbar_switch)
+        if (!_blockToolbarSwitch)
         {
-            auto categories = view_->get_categories();
+            auto categories = view_->getCategories();
             for (uint32_t i = 0; i < categories.size(); i++)
             {
-                int pos = view_->get_category_pos(i);
+                int pos = view_->getCategoryPos(i);
 
-                if (_view_rect.top() < pos && pos < (_view_rect.top() + _view_rect.width()/2))
+                if (_viewRect.top() < pos && pos < (_viewRect.top() + _viewRect.width()/2))
                 {
                     buttons_[i]->setChecked(true);
                     break;
@@ -409,23 +406,23 @@ namespace Ui
             }
         }
 
-        place_toolbar(_view_rect);
+        placeToolbar(_viewRect);
     }
 
-    void EmojisWidget::place_toolbar(const QRect& _view_rect)
+    void EmojisWidget::placeToolbar(const QRect& _viewRect)
     {
         int h = toolbar_->height();
 
-        QRect this_rect = rect();
+        QRect thisRect = rect();
 
-        int y = _view_rect.bottom() - h;
-        if (_view_rect.bottom() > this_rect.bottom() || ((-1 *(_view_rect.top()) > (_view_rect.height() / 2))))
-            y = this_rect.bottom() - h;
+        int y = _viewRect.bottom() - h;
+        if (_viewRect.bottom() > thisRect.bottom() || ((-1 *(_viewRect.top()) > (_viewRect.height() / 2))))
+            y = thisRect.bottom() - h;
 
-        toolbar_->setGeometry(0, y, this_rect.width(), h);
+        toolbar_->setGeometry(0, y, thisRect.width(), h);
     }
 
-    void EmojisWidget::select_first_button()
+    void EmojisWidget::selectFirstButton()
     {
         if (buttons_.size() > 0)
         {
@@ -441,12 +438,12 @@ namespace Ui
 
 
 
-    StickersTable::StickersTable(QWidget* _parent, int32_t _stickers_set_id)
+    StickersTable::StickersTable(QWidget* _parent, int32_t _stickersSetId)
         :	QWidget(_parent),
-        need_height_(0),
-        stickers_set_id_(_stickers_set_id),
-        column_count_(0),
-        row_count_(0)
+        needHeight_(0),
+        stickersSetId_(_stickersSetId),
+        columnCount_(0),
+        rowCount_(0)
     {
         setCursor(QCursor(Qt::PointingHandCursor));
 
@@ -461,79 +458,79 @@ namespace Ui
     void StickersTable::resizeEvent(QResizeEvent * _e)
     {
         if (resize(_e->size()))
-            setFixedHeight(get_need_height());
+            setFixedHeight(getNeedHeight());
 
         QWidget::resizeEvent(_e);
     }
 
-    void StickersTable::on_sticker_added()
+    void StickersTable::onStickerAdded()
     {
         QRect rect = geometry();
 
         if (resize(QSize(rect.width(), rect.height()), true))
-            setFixedHeight(get_need_height());
+            setFixedHeight(getNeedHeight());
     }
 
     bool StickersTable::resize(const QSize& _size, bool _force)
     {
-        const int column_width = getStickerItemSize();
+        const int columnWidth = getStickerItemSize();
         
-        int stickers_count = (int) stickers::get_set_stickers_count(stickers_set_id_);
+        int stickersCount = (int) Stickers::getSetStickersCount(stickersSetId_);
 
         bool resized = false;
 
-        if ((prev_size_.width() != _size.width() && _size.width() > column_width) || _force)
+        if ((prevSize_.width() != _size.width() && _size.width() > columnWidth) || _force)
         {
-            column_count_ = _size.width()/column_width;
-            if (column_count_ > stickers_count)
-                column_count_ = stickers_count;
+            columnCount_ = _size.width()/ columnWidth;
+            if (columnCount_ > stickersCount)
+                columnCount_ = stickersCount;
 
-            row_count_ = 0;
-            if (stickers_count > 0 && column_count_ > 0)
+            rowCount_ = 0;
+            if (stickersCount > 0 && columnCount_ > 0)
             {
-                row_count_ = (stickers_count / column_count_) + (((stickers_count % column_count_) > 0) ? 1 : 0);
+                rowCount_ = (stickersCount / columnCount_) + (((stickersCount % columnCount_) > 0) ? 1 : 0);
             }
 
-            need_height_ = getStickerItemSize() * row_count_;
+            needHeight_ = getStickerItemSize() * rowCount_;
 
             resized = true;
         }
 
-        prev_size_ = _size;
+        prevSize_ = _size;
 
         return resized;
     }
 
-    int StickersTable::get_need_height() const
+    int StickersTable::getNeedHeight() const
     {
-        return need_height_;
+        return needHeight_;
     }
 
-    void StickersTable::on_sticker_updated(int32_t _set_id, int32_t _sticker_id)
+    void StickersTable::onStickerUpdated(int32_t _setId, int32_t _stickerId)
     {
-        auto sticker_pos_in_set = stickers::get_sticker_pos_in_set(_set_id, _sticker_id);
-        if (sticker_pos_in_set >= 0)
-            update(get_sticker_rect(sticker_pos_in_set));
+        auto stickerPosInSet = Stickers::getStickerPosInSet(_setId, _stickerId);
+        if (stickerPosInSet >= 0)
+            update(getStickerRect(stickerPosInSet));
     }
 
-    QRect& StickersTable::get_sticker_rect(int _index)
+    QRect& StickersTable::getStickerRect(int _index)
     {
         static QRect rect;
 
-        if (column_count_ > 0 && row_count_ > 0)
+        if (columnCount_ > 0 && rowCount_ > 0)
         {
-            int item_y = _index / column_count_;
-            int item_x = _index % column_count_;
+            int itemY = _index / columnCount_;
+            int itemX = _index % columnCount_;
 
-            int item_size = getStickerItemSize();
-            int stick_size = getStickerSize();
+            int itemSize = getStickerItemSize();
+            int stickSize = getStickerSize();
 
-            int x = item_size * item_x;
-            int y = item_size * item_y;
+            int x = itemSize * itemX;
+            int y = itemSize * itemY;
 
             int space = ((getStickerItemSize() - getStickerSize()) / 2);
 
-            rect.setRect(x + space, y + space, stick_size, stick_size);
+            rect.setRect(x + space, y + space, stickSize, stickSize);
         }
         else
         {
@@ -547,21 +544,21 @@ namespace Ui
     {
         QPainter p(this);
 
-        const auto& stickers_list = stickers::get_stickers(stickers_set_id_);
+        const auto& stickersList = Stickers::getStickers(stickersSetId_);
 
-        for (uint32_t i = 0; i < stickers_list.size(); ++i)
+        for (uint32_t i = 0; i < stickersList.size(); ++i)
         {
-            const auto& sticker_rect = get_sticker_rect(i);
-            if (!_e->rect().intersects(sticker_rect))
+            const auto& stickerRect = getStickerRect(i);
+            if (!_e->rect().intersects(stickerRect))
             {
                 continue;
             }
 
-            auto image = stickers::get_sticker_image(stickers_set_id_, stickers_list[i], core::sticker_size::small);
+            auto image = Stickers::getStickerImage(stickersSetId_, stickersList[i], core::sticker_size::small);
             if (image.isNull())
             {
                 assert(preloader_);
-                preloader_->Draw(p, sticker_rect);
+                preloader_->Draw(p, stickerRect);
 
                 continue;
             }
@@ -570,37 +567,37 @@ namespace Ui
             {
                 QSize newSize = image.size() / 2;
 
-                if (newSize.width() > sticker_rect.size().width() ||
-                    newSize.height() > sticker_rect.size().height())
+                if (newSize.width() > stickerRect.size().width() ||
+                    newSize.height() > stickerRect.size().height())
                 {
-                    newSize = image.size().scaled(sticker_rect.size(), Qt::KeepAspectRatio);
+                    newSize = image.size().scaled(stickerRect.size(), Qt::KeepAspectRatio);
                 }
 
-                QRect target_rect(
-                                  sticker_rect.left(),
-                                  sticker_rect.top(),
-                                  newSize.width(),
-                                  newSize.height()
-                                  );
+                QRect targetRect(
+                    stickerRect.left(),
+                    stickerRect.top(),
+                    newSize.width(),
+                    newSize.height()
+                );
 
-                target_rect.moveCenter(sticker_rect.center());
+                targetRect.moveCenter(stickerRect.center());
 
-                p.drawImage(target_rect, image, image.rect());
+                p.drawImage(targetRect, image, image.rect());
             }
             else
             {
                 auto pixmap = QPixmap::fromImage(image);
-                pixmap = pixmap.scaled(sticker_rect.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                pixmap = pixmap.scaled(stickerRect.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                QRect target_rect(
-                    sticker_rect.left(),
-                    sticker_rect.top(),
+                QRect targetRect(
+                    stickerRect.left(),
+                    stickerRect.top(),
                     pixmap.width(),
                     pixmap.height()
                 );
 
-                target_rect.moveCenter(sticker_rect.center());
-                p.drawPixmap(target_rect, pixmap);
+                targetRect.moveCenter(stickerRect.center());
+                p.drawPixmap(targetRect, pixmap);
             }
         }
 
@@ -609,13 +606,13 @@ namespace Ui
 
     void StickersTable::mousePressEvent(QMouseEvent* _e)
     {
-        const auto& stickers_list = stickers::get_stickers(stickers_set_id_);
+        const auto& stickersList = Stickers::getStickers(stickersSetId_);
 
-        for (uint32_t i = 0; i < stickers_list.size(); ++i)
+        for (uint32_t i = 0; i < stickersList.size(); ++i)
         {
-            if (get_sticker_rect(i).contains(_e->pos()))
+            if (getStickerRect(i).contains(_e->pos()))
             {
-                emit sticker_selected(stickers_set_id_, stickers_list[i]);
+                emit stickerSelected(stickersSetId_, stickersList[i]);
             }
         }
 
@@ -628,7 +625,7 @@ namespace Ui
     //////////////////////////////////////////////////////////////////////////
     RecentsStickersTable::RecentsStickersTable(QWidget* _parent)
         :   StickersTable(_parent, -1),
-            max_row_count_(-1)
+            maxRowCount_(-1)
     {
 
     }
@@ -638,39 +635,39 @@ namespace Ui
 
     }
 
-    void RecentsStickersTable::set_max_row_count(int _val)
+    void RecentsStickersTable::setMaxRowCount(int _val)
     {
-        max_row_count_ = _val;
+        maxRowCount_ = _val;
     }
 
     bool RecentsStickersTable::resize(const QSize& _size, bool _force)
     {
-        const int column_width = getStickerItemSize();
+        const int columnWidth = getStickerItemSize();
 
-        int stickers_count = (int) recent_stickers_array_.size();
+        int stickersCount = (int) recentStickersArray_.size();
 
         bool resized = false;
 
-        if ((prev_size_.width() != _size.width() && _size.width() > column_width) || _force)
+        if ((prevSize_.width() != _size.width() && _size.width() > columnWidth) || _force)
         {
-            column_count_ = _size.width()/column_width;
-            if (column_count_ > stickers_count)
-                column_count_ = stickers_count;
+            columnCount_ = _size.width()/ columnWidth;
+            if (columnCount_ > stickersCount)
+                columnCount_ = stickersCount;
 
-            row_count_ = 0;
-            if (stickers_count > 0 && column_count_ > 0)
+            rowCount_ = 0;
+            if (stickersCount > 0 && columnCount_ > 0)
             {
-                row_count_ = (stickers_count / column_count_) + (((stickers_count % column_count_) > 0) ? 1 : 0);
-                if (max_row_count_ > 0 && row_count_ > max_row_count_)
-                    row_count_ = max_row_count_;
+                rowCount_ = (stickersCount / columnCount_) + (((stickersCount % columnCount_) > 0) ? 1 : 0);
+                if (maxRowCount_ > 0 && rowCount_ > maxRowCount_)
+                    rowCount_ = maxRowCount_;
             }
 
-            need_height_ = getStickerItemSize() * row_count_;
+            needHeight_ = getStickerItemSize() * rowCount_;
 
             resized = true;
         }
 
-        prev_size_ = _size;
+        prevSize_ = _size;
 
         return resized;
     }
@@ -679,19 +676,19 @@ namespace Ui
     {
         QPainter p(this);
 
-        for (uint32_t i = 0; i < recent_stickers_array_.size(); ++i)
+        for (uint32_t i = 0; i < recentStickersArray_.size(); ++i)
         {
-            const auto& sticker_rect = get_sticker_rect(i);
-            if (!_e->rect().intersects(sticker_rect))
+            const auto& stickerRect = getStickerRect(i);
+            if (!_e->rect().intersects(stickerRect))
             {
                 continue;
             }
 
-            auto image = stickers::get_sticker_image(recent_stickers_array_[i].first, recent_stickers_array_[i].second, core::sticker_size::small);
+            auto image = Stickers::getStickerImage(recentStickersArray_[i].first, recentStickersArray_[i].second, core::sticker_size::small);
             if (image.isNull())
             {
                 assert(preloader_);
-                preloader_->Draw(p, sticker_rect);
+                preloader_->Draw(p, stickerRect);
 
                 continue;
             }
@@ -700,72 +697,72 @@ namespace Ui
             {
                 QSize newSize = image.size() / 2;
 
-                if (newSize.width() > sticker_rect.size().width() ||
-                    newSize.height() > sticker_rect.size().height())
+                if (newSize.width() > stickerRect.size().width() ||
+                    newSize.height() > stickerRect.size().height())
                 {
-                    newSize = image.size().scaled(sticker_rect.size(), Qt::KeepAspectRatio);
+                    newSize = image.size().scaled(stickerRect.size(), Qt::KeepAspectRatio);
                 }
 
-                QRect target_rect(
-                    sticker_rect.left(),
-                    sticker_rect.top(),
+                QRect targetRect(
+                    stickerRect.left(),
+                    stickerRect.top(),
                     newSize.width(),
                     newSize.height()
                     );
 
-                target_rect.moveCenter(sticker_rect.center());
+                targetRect.moveCenter(stickerRect.center());
 
-                p.drawImage(target_rect, image, image.rect());
+                p.drawImage(targetRect, image, image.rect());
             }
             else
             {
                 auto pixmap = QPixmap::fromImage(image);
-                pixmap = pixmap.scaled(sticker_rect.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                pixmap = pixmap.scaled(stickerRect.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-                QRect target_rect(
-                    sticker_rect.left(),
-                    sticker_rect.top(),
+                QRect targetRect(
+                    stickerRect.left(),
+                    stickerRect.top(),
                     pixmap.width(),
                     pixmap.height()
                     );
 
-                target_rect.moveCenter(sticker_rect.center());
-                p.drawPixmap(target_rect, pixmap);
+                targetRect.moveCenter(stickerRect.center());
+                p.drawPixmap(targetRect, pixmap);
             }
         }
 
         return QWidget::paintEvent(_e);
     }
 
-    bool RecentsStickersTable::add_sticker(int32_t _set_id, int32_t _sticker_id)
+    bool RecentsStickersTable::addSticker(int32_t _setId, int32_t _stickerId)
     {
-        for (auto iter = recent_stickers_array_.begin(); iter != recent_stickers_array_.end(); ++iter)
+        for (auto iter = recentStickersArray_.begin(); iter != recentStickersArray_.end(); ++iter)
         {
-            if (iter->first == _set_id && iter->second == _sticker_id)
+            if (iter->first == _setId && iter->second == _stickerId)
             {
-                if (iter == recent_stickers_array_.begin())
+                if (iter == recentStickersArray_.begin())
                     return false;
 
-                recent_stickers_array_.erase(iter);
+                recentStickersArray_.erase(iter);
                 break;
             }
         }
 
-        recent_stickers_array_.emplace(recent_stickers_array_.begin(), _set_id, _sticker_id);
+        recentStickersArray_.emplace(recentStickersArray_.begin(), _setId, _stickerId);
 
-        if ((int32_t) recent_stickers_array_.size() > max_stickers_count)
-            recent_stickers_array_.pop_back();
+        if ((int32_t)recentStickersArray_.size() > max_stickers_count)
+            recentStickersArray_.pop_back();
 
         return true;
     }
 
-    void RecentsStickersTable::on_sticker_updated(int32_t _set_id, int32_t _sticker_id)
+    void RecentsStickersTable::onStickerUpdated(int32_t _setId, int32_t _stickerId)
     {
-        for (uint32_t i = 0; i < recent_stickers_array_.size(); ++i)
+        for (uint32_t i = 0; i < recentStickersArray_.size(); ++i)
         {
-            if (recent_stickers_array_[i].first == _set_id && recent_stickers_array_[i].second == _sticker_id)
+            if (recentStickersArray_[i].first == _setId && recentStickersArray_[i].second == _stickerId)
             {
-                update(get_sticker_rect(i));
+                update(getStickerRect(i));
                 break;
             }
         }
@@ -773,11 +770,11 @@ namespace Ui
 
     void RecentsStickersTable::mousePressEvent(QMouseEvent* _e)
     {
-        for (uint32_t i = 0; i < recent_stickers_array_.size(); ++i)
+        for (uint32_t i = 0; i < recentStickersArray_.size(); ++i)
         {
-            if (get_sticker_rect(i).contains(_e->pos()))
+            if (getStickerRect(i).contains(_e->pos()))
             {
-                emit sticker_selected(recent_stickers_array_[i].first, recent_stickers_array_[i].second);
+                emit stickerSelected(recentStickersArray_[i].first, recentStickersArray_[i].second);
                 break;
             }
         }
@@ -785,9 +782,9 @@ namespace Ui
         return QWidget::mousePressEvent(_e);
     }
 
-    const recent_stickers_array& RecentsStickersTable::get_stckers() const
+    const recentStickersArray& RecentsStickersTable::getStickers() const
     {
-        return recent_stickers_array_;
+        return recentStickersArray_;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -804,33 +801,33 @@ namespace Ui
     {
     }
 
-    void StickersWidget::insert_next_set(int32_t _set_id)
+    void StickersWidget::insertNextSet(int32_t _setId)
     {
-        if (set_tables_.find(_set_id) != set_tables_.end())
+        if (setTables_.find(_setId) != setTables_.end())
             return;
 
-        auto stickers_view = new StickersTable(this, _set_id);
-        auto button = toolbar_->addButton(stickers::get_set_icon(_set_id));
-        button->AttachView(AttachedView(stickers_view, this));
+        auto stickersView = new StickersTable(this, _setId);
+        auto button = toolbar_->addButton(Stickers::getSetIcon(_setId));
+        button->AttachView(AttachedView(stickersView, this));
 
-        connect(button, &TabButton::clicked, [this, _set_id]()
+        connect(button, &TabButton::clicked, [this, _setId]()
         {
-            emit scroll_to_set(set_tables_[_set_id]->geometry().top());
+            emit scrollToSet(setTables_[_setId]->geometry().top());
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::picker_tab_click);
         });
 
-        QLabel* set_header = new QLabel(this);
-        set_header->setObjectName("set_header");
-        set_header->setText(stickers::get_set_name(_set_id));
-        v_layout_->addWidget(set_header);
+        QLabel* setHeader = new QLabel(this);
+        setHeader->setObjectName("set_header");
+        setHeader->setText(Stickers::getSetName(_setId));
+        vLayout_->addWidget(setHeader);
 
-        v_layout_->addWidget(stickers_view);
-        set_tables_[_set_id] = stickers_view;
-        Utils::grabTouchWidget(stickers_view);
+        vLayout_->addWidget(stickersView);
+        setTables_[_setId] = stickersView;
+        Utils::grabTouchWidget(stickersView);
 
-        connect(stickers_view, &StickersTable::sticker_selected, [this, stickers_view](int32_t _set_id, int32_t _sticker_id)
+        connect(stickersView, &StickersTable::stickerSelected, [this, stickersView](int32_t _setId, int32_t _stickerId)
         {
-            emit sticker_selected(_set_id, _sticker_id);
+            emit stickerSelected(_setId, _stickerId);
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::sticker_sent_from_picker);
         });
     }
@@ -839,32 +836,32 @@ namespace Ui
     {
         if (!initialized_)
         {
-            v_layout_ = new QVBoxLayout();
-            v_layout_->setContentsMargins(0, 0, 0, 0);
+            vLayout_ = new QVBoxLayout();
+            vLayout_->setContentsMargins(0, 0, 0, 0);
         }
         
-        for (auto stickers_set_id : stickers::get_stickers_sets())
+        for (auto stickersSetId : Stickers::getStickersSets())
         {
-            insert_next_set(stickers_set_id);
+            insertNextSet(stickersSetId);
         }
 
         if (!initialized_)
         {
-            setLayout(v_layout_);
+            setLayout(vLayout_);
         }
 
         initialized_ = true;
     }
 
-    void StickersWidget::on_sticker_updated(int32_t _set_id, int32_t _sticker_id)
+    void StickersWidget::onStickerUpdated(int32_t _setId, int32_t _stickerId)
     {
-        auto iter_set = set_tables_.find(_set_id);
-        if (iter_set == set_tables_.end())
+        auto iterSet = setTables_.find(_setId);
+        if (iterSet == setTables_.end())
         {
             return;
         }
 
-        iter_set->second->on_sticker_updated(_set_id, _sticker_id);
+        iterSet->second->onStickerUpdated(_setId, _stickerId);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -872,13 +869,13 @@ namespace Ui
     //////////////////////////////////////////////////////////////////////////
     RecentsWidget::RecentsWidget(QWidget* _parent)
         :	QWidget(_parent),
-        v_layout_(nullptr),
-        emoji_view_(nullptr),
-        stickers_view_(nullptr)
+        vLayout_(nullptr),
+        emojiView_(nullptr),
+        stickersView_(nullptr)
     {
-        init_emojis_from_settings();
+        initEmojisFromSettings();
 
-        connect(Ui::GetDispatcher(), SIGNAL(on_stickers()), this, SLOT(stickers_event()));
+        connect(Ui::GetDispatcher(), SIGNAL(onStickers()), this, SLOT(stickers_event()));
     }
 
     RecentsWidget::~RecentsWidget()
@@ -887,76 +884,76 @@ namespace Ui
 
     void RecentsWidget::stickers_event()
     {
-        init_stickers_from_settings();
+        initStickersFromSettings();
     }
 
     void RecentsWidget::init()
     {
-        if (v_layout_)
+        if (vLayout_)
             return;
 
-        v_layout_ = new QVBoxLayout();
-        v_layout_->setContentsMargins(0, 0, 0, 0);
+        vLayout_ = new QVBoxLayout();
+        vLayout_->setContentsMargins(0, 0, 0, 0);
 
-        QLabel* set_header = new QLabel(this);
-        set_header->setObjectName("set_header");
-        set_header->setText(QT_TRANSLATE_NOOP("input_widget", "RECENTS"));
-        v_layout_->addWidget(set_header);
+        QLabel* setHeader = new QLabel(this);
+        setHeader->setObjectName("set_header");
+        setHeader->setText(QT_TRANSLATE_NOOP("input_widget", "RECENTS"));
+        vLayout_->addWidget(setHeader);
+        
+        stickersView_ = new RecentsStickersTable(this);
+        stickersView_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        stickersView_->setMaxRowCount(2);
+        vLayout_->addWidget(stickersView_);
+        Utils::grabTouchWidget(stickersView_);
 
-         stickers_view_ = new RecentsStickersTable(this);
-         stickers_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-         stickers_view_->set_max_row_count(2);
-         v_layout_->addWidget(stickers_view_);
-         Utils::grabTouchWidget(stickers_view_);
+        emojiView_ = new EmojiTableView(this, new EmojiViewItemModel(this, true));
+        emojiView_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        emojiView_->addCategory(emoji_category("recents", emojis_));
+        vLayout_->addWidget(emojiView_);
+        Utils::grabTouchWidget(emojiView_);
 
-        emoji_view_ = new EmojiTableView(this, new EmojiViewItemModel(this, true));
-        emoji_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        emoji_view_->add_category(emoji_category("recents", emojis_));
-        v_layout_->addWidget(emoji_view_);
-        Utils::grabTouchWidget(emoji_view_);
+        setLayout(vLayout_);
 
-        setLayout(v_layout_);
-
-        connect(emoji_view_, &EmojiTableView::clicked, [this](const QModelIndex & _index)
+        connect(emojiView_, &EmojiTableView::clicked, [this](const QModelIndex & _index)
         {
-            auto emoji = emoji_view_->get_emoji(_index.column(), _index.row());
+            auto emoji = emojiView_->getEmoji(_index.column(), _index.row());
             if (emoji)
             {
-                emit emoji_selected(emoji);
+                emit emojiSelected(emoji);
                 GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::smile_sent_from_recents);
             }
         });
 
-        connect(stickers_view_, &RecentsStickersTable::sticker_selected, [this](qint32 _set_id, qint32 _sticker_id)
+        connect(stickersView_, &RecentsStickersTable::stickerSelected, [this](qint32 _setId, qint32 _stickerId)
         {
-            emit sticker_selected(_set_id, _sticker_id);
+            emit stickerSelected(_setId, _stickerId);
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::sticker_sent_from_recents);
         });
     }
 
-    void RecentsWidget::add_sticker(int32_t _set_id, int32_t _sticker_id)
+    void RecentsWidget::addSticker(int32_t _setId, int32_t _stickerId)
     {
         init();
 
-        if (stickers_view_->add_sticker(_set_id, _sticker_id))
+        if (stickersView_->addSticker(_setId, _stickerId))
         {
-            stickers_view_->on_sticker_added();
+            stickersView_->onStickerAdded();
 
-            const auto& recents_stickers = stickers_view_->get_stckers();
+            const auto& recentsStickers = stickersView_->getStickers();
 
-            std::vector<int32_t> v_stickers;
-            v_stickers.reserve(recents_stickers.size());
-            for (uint32_t i = 0; i < recents_stickers.size(); ++i)
+            std::vector<int32_t> vStickers;
+            vStickers.reserve(recentsStickers.size());
+            for (uint32_t i = 0; i < recentsStickers.size(); ++i)
             {
-                v_stickers.push_back(recents_stickers[i].first);
-                v_stickers.push_back(recents_stickers[i].second);
+                vStickers.push_back(recentsStickers[i].first);
+                vStickers.push_back(recentsStickers[i].second);
             }
 
-            get_gui_settings()->set_value<std::vector<int32_t>>(settings_recents_stickers, v_stickers);
+            get_gui_settings()->set_value<std::vector<int32_t>>(settings_recents_stickers, vStickers);
         }
     }
 
-    void RecentsWidget::init_stickers_from_settings()
+    void RecentsWidget::initStickersFromSettings()
     {
         static int count = 0;
 
@@ -970,18 +967,18 @@ namespace Ui
 
         for (uint32_t i = 0; i < sticks.size();)
         {
-            int32_t set_id = sticks[i];
-            int32_t sticker_id = sticks[++i];
+            int32_t setId = sticks[i];
+            int32_t stickerId = sticks[++i];
 
             ++i;
 
-            stickers_view_->add_sticker(set_id, sticker_id);
+            stickersView_->addSticker(setId, stickerId);
         }
 
-        stickers_view_->on_sticker_added();
+        stickersView_->onStickerAdded();
     }
 
-    void RecentsWidget::add_emoji(Emoji::EmojiRecordSptr _emoji)
+    void RecentsWidget::addEmoji(Emoji::EmojiRecordSptr _emoji)
     {
         init();
 
@@ -1001,20 +998,20 @@ namespace Ui
         if (emojis_.size() > 20)
             emojis_.pop_back();
 
-        emoji_view_->on_emoji_added();
+        emojiView_->onEmojiAdded();
 
-        std::vector<int32_t> v_emojis;
-        v_emojis.reserve(emojis_.size() * 2);
+        std::vector<int32_t> vEmojis;
+        vEmojis.reserve(emojis_.size() * 2);
         for (uint32_t i = 0; i < emojis_.size(); i++)
         {
-            v_emojis.push_back(emojis_[i]->Codepoint_);
-            v_emojis.push_back(emojis_[i]->ExtendedCodepoint_);
+            vEmojis.push_back(emojis_[i]->Codepoint_);
+            vEmojis.push_back(emojis_[i]->ExtendedCodepoint_);
         }
 
-        get_gui_settings()->set_value<std::vector<int32_t>>(settings_recents_emojis, v_emojis);
+        get_gui_settings()->set_value<std::vector<int32_t>>(settings_recents_emojis, vEmojis);
     }
 
-    void RecentsWidget::init_emojis_from_settings()
+    void RecentsWidget::initEmojisFromSettings()
     {
         auto emojis = get_gui_settings()->get_value<std::vector<int32_t>>(settings_recents_emojis, std::vector<int32_t>());
         if (emojis.size() == 0 || (emojis.size() % 2 != 0))
@@ -1027,11 +1024,11 @@ namespace Ui
         for (uint32_t i = 0; i < emojis.size();)
         {
             int32_t codepoint = emojis[i];
-            int32_t ext_codepoint = emojis[++i];
+            int32_t extCodepoint = emojis[++i];
 
             ++i;
 
-            auto emoji = Emoji::GetEmojiInfoByCodepoint(codepoint, ext_codepoint);
+            auto emoji = Emoji::GetEmojiInfoByCodepoint(codepoint, extCodepoint);
             if (!emoji)
             {
                 assert(false);
@@ -1041,14 +1038,14 @@ namespace Ui
             emojis_.push_back(emoji);
         }
 
-        emoji_view_->on_emoji_added();
+        emojiView_->onEmojiAdded();
     }
 
-    void RecentsWidget::on_sticker_updated(int32_t _set_id, int32_t _sticker_id)
+    void RecentsWidget::onStickerUpdated(int32_t _setId, int32_t _stickerId)
     {
-        if (stickers_view_)
+        if (stickersView_)
         {
-            stickers_view_->on_sticker_updated(_set_id, _sticker_id);
+            stickersView_->onStickerUpdated(_setId, _stickerId);
         }
     }
 
@@ -1058,30 +1055,30 @@ namespace Ui
 
     SmilesMenu::SmilesMenu(QWidget* _parent)
         : QFrame(_parent)
-        , is_visible_(false)
-        , current_height_(0)
-        , top_toolbar_(0)
-        , bottom_toolbar_(0)
-        , view_area_(0)
-        , recents_view_(0)
-        , emoji_view_(0)
-        , stickers_view_(0)
-        , anim_height_(0)
-        , anim_scroll_(0)
-        , block_toolbar_switch_(false)
-        , sticker_meta_requested_(false)
+        , isVisible_(false)
+        , currentHeight_(0)
+        , topToolbar_(0)
+        , bottomToolbar_(0)
+        , viewArea_(0)
+        , recentsView_(0)
+        , emojiView_(0)
+        , stickersView_(0)
+        , animHeight_(0)
+        , animScroll_(0)
+        , blockToolbarSwitch_(false)
+        , stickerMetaRequested_(false)
     {
         rootVerticalLayout_ = new QVBoxLayout(this);
         rootVerticalLayout_->setContentsMargins(0, 0, 0, 0);
         setLayout(rootVerticalLayout_);
 
-        setStyleSheet(Utils::LoadStyle(":/main_window/smiles_menu/smiles_menu.qss", Utils::get_scale_coefficient(), true));
+        setStyleSheet(Utils::LoadStyle(":/main_window/smiles_menu/smiles_menu.qss"));
 
         InitSelector();
         InitStickers();
         InitResents();
 
-        if (Ui::GetDispatcher()->is_im_created())
+        if (Ui::GetDispatcher()->isImCreated())
         {
             im_created();
         }
@@ -1095,7 +1092,7 @@ namespace Ui
 
     void SmilesMenu::im_created()
     {
-        int scale = (int) (Utils::get_scale_coefficient() * 100.0);
+        int scale = (int) (Utils::getScaleCoefficient() * 100.0);
         scale = Utils::scale_bitmap(scale);
         std::string size = "small";
 
@@ -1109,7 +1106,7 @@ namespace Ui
             break;
         }
 
-        sticker_meta_requested_ = true;
+        stickerMetaRequested_ = true;
 
         gui_coll_helper collection(GetDispatcher()->create_collection(), true);
         collection.set_value_as_string("size", size);
@@ -1118,9 +1115,9 @@ namespace Ui
 
     void SmilesMenu::touchScrollStateChanged(QScroller::State state)
     {
-        recents_view_->blockSignals(state != QScroller::Inactive);
-        emoji_view_->blockSignals(state != QScroller::Inactive);
-        stickers_view_->blockSignals(state != QScroller::Inactive);
+        recentsView_->blockSignals(state != QScroller::Inactive);
+        emojiView_->blockSignals(state != QScroller::Inactive);
+        stickersView_->blockSignals(state != QScroller::Inactive);
     }
 
     void SmilesMenu::paintEvent(QPaintEvent* _e)
@@ -1151,7 +1148,7 @@ namespace Ui
 
     void SmilesMenu::Show()
     {
-        if (is_visible_)
+        if (isVisible_)
             return;
 
         ShowHide();
@@ -1159,7 +1156,7 @@ namespace Ui
 
     void SmilesMenu::Hide()
     {
-        if (!is_visible_)
+        if (!isVisible_)
             return;
 
         ShowHide();
@@ -1167,40 +1164,40 @@ namespace Ui
 
     void SmilesMenu::ShowHide()
     {
-        is_visible_ = !is_visible_;
+        isVisible_ = !isVisible_;
 
-        int start_value = is_visible_ ? 0 : Utils::scale_value(320);
-        int end_value = is_visible_ ? Utils::scale_value(320) : 0;
+        int start_value = isVisible_ ? 0 : Utils::scale_value(320);
+        int end_value = isVisible_ ? Utils::scale_value(320) : 0;
 
         QEasingCurve easing_curve = QEasingCurve::InQuad;
         int duration = 200;
 
-        if (!anim_height_)
+        if (!animHeight_)
         {
-            anim_height_ = new QPropertyAnimation(this, "current_height");
+            animHeight_ = new QPropertyAnimation(this, "currentHeight");
 
-            connect(anim_height_, &QPropertyAnimation::finished, [this]()
+            connect(animHeight_, &QPropertyAnimation::finished, [this]()
             {
-                if (!is_visible_)
-                    Ui::stickers::clear_cache();
+                if (!isVisible_)
+                    Ui::Stickers::clearCache();
             });
         }
 
-        if (is_visible_)
-            top_toolbar_->updateArrowButtonsVisibility();
+        if (isVisible_)
+            topToolbar_->updateArrowButtonsVisibility();
 
-        anim_height_->stop();
-        anim_height_->setDuration(duration);
-        anim_height_->setStartValue(start_value);
-        anim_height_->setEndValue(end_value);
-        anim_height_->setEasingCurve(easing_curve);
-        anim_height_->start();
+        animHeight_->stop();
+        animHeight_->setDuration(duration);
+        animHeight_->setStartValue(start_value);
+        animHeight_->setEndValue(end_value);
+        animHeight_->setEasingCurve(easing_curve);
+        animHeight_->start();
     }
 
     bool SmilesMenu::IsHidden() const
     {
-        assert(current_height_ >= 0);
-        return (current_height_ == 0);
+        assert(currentHeight_ >= 0);
+        return (currentHeight_ == 0);
     }
 
     void SmilesMenu::ScrollTo(int _pos)
@@ -1208,136 +1205,136 @@ namespace Ui
         QEasingCurve easing_curve = QEasingCurve::InQuad;
         int duration = 200;
 
-        if (!anim_scroll_)
-            anim_scroll_ = new QPropertyAnimation(view_area_->verticalScrollBar(), "value");
+        if (!animScroll_)
+            animScroll_ = new QPropertyAnimation(viewArea_->verticalScrollBar(), "value");
 
-        block_toolbar_switch_ = true;
-        anim_scroll_->stop();
-        anim_scroll_->setDuration(duration);
-        anim_scroll_->setStartValue(view_area_->verticalScrollBar()->value());
-        anim_scroll_->setEndValue(_pos);
-        anim_scroll_->setEasingCurve(easing_curve);
-        anim_scroll_->start();
+        blockToolbarSwitch_ = true;
+        animScroll_->stop();
+        animScroll_->setDuration(duration);
+        animScroll_->setStartValue(viewArea_->verticalScrollBar()->value());
+        animScroll_->setEndValue(_pos);
+        animScroll_->setEasingCurve(easing_curve);
+        animScroll_->start();
 
-        connect(anim_scroll_, &QPropertyAnimation::finished, [this]()
+        connect(animScroll_, &QPropertyAnimation::finished, [this]()
         {
-            block_toolbar_switch_ = false;
+            blockToolbarSwitch_ = false;
         });
     }
 
     void SmilesMenu::InitResents()
     {
-        connect(recents_view_, &RecentsWidget::emoji_selected, [this](Emoji::EmojiRecordSptr _emoji)
+        connect(recentsView_, &RecentsWidget::emojiSelected, [this](Emoji::EmojiRecordSptr _emoji)
         {
-            emit emoji_selected(_emoji->Codepoint_, _emoji->ExtendedCodepoint_);
+            emit emojiSelected(_emoji->Codepoint_, _emoji->ExtendedCodepoint_);
         });
 
-        connect(recents_view_, &RecentsWidget::sticker_selected, [this](qint32 _set_id, qint32 _sticker_id)
+        connect(recentsView_, &RecentsWidget::stickerSelected, [this](qint32 _setId, qint32 _stickerId)
         {
-            emit sticker_selected(_set_id, _sticker_id);
+            emit stickerSelected(_setId, _stickerId);
         });
     }
 
-    void SmilesMenu::stickers_meta_event()
+    void SmilesMenu::stickersMetaEvent()
     {
-        sticker_meta_requested_ = false;
-        stickers_view_->init();
+        stickerMetaRequested_ = false;
+        stickersView_->init();
     }
 
-    void SmilesMenu::sticker_event(qint32 _set_id, qint32 _sticker_id)
+    void SmilesMenu::stickerEvent(qint32 _setId, qint32 _stickerId)
     {
-        stickers_view_->on_sticker_updated(_set_id, _sticker_id);
-        recents_view_->on_sticker_updated(_set_id, _sticker_id);
+        stickersView_->onStickerUpdated(_setId, _stickerId);
+        recentsView_->onStickerUpdated(_setId, _stickerId);
     }
 
     void SmilesMenu::InitStickers()
     {
-        connect(Ui::GetDispatcher(), SIGNAL(on_stickers()), this, SLOT(stickers_meta_event()));
-        connect(Ui::GetDispatcher(), SIGNAL(on_sticker(qint32, qint32)), this, SLOT(sticker_event(qint32, qint32)));
+        connect(Ui::GetDispatcher(), SIGNAL(onStickers()), this, SLOT(stickersMetaEvent()));
+        connect(Ui::GetDispatcher(), SIGNAL(onSticker(qint32, qint32)), this, SLOT(stickerEvent(qint32, qint32)));
 
-        connect(stickers_view_, &StickersWidget::sticker_selected, [this](qint32 _set_id, qint32 _sticker_id)
+        connect(stickersView_, &StickersWidget::stickerSelected, [this](qint32 _setId, qint32 _stickerId)
         {
-            emit sticker_selected(_set_id, _sticker_id);
+            emit stickerSelected(_setId, _stickerId);
 
-            recents_view_->add_sticker(_set_id, _sticker_id);
+            recentsView_->addSticker(_setId, _stickerId);
         });
 
-        connect(stickers_view_, &StickersWidget::scroll_to_set, [this](int _pos)
+        connect(stickersView_, &StickersWidget::scrollToSet, [this](int _pos)
         {
-            ScrollTo(stickers_view_->geometry().top() + _pos);
+            ScrollTo(stickersView_->geometry().top() + _pos);
         });
     }
 
 
     void SmilesMenu::InitSelector()
     {
-        top_toolbar_ = new Toolbar(this, buttons_align::left);
-        recents_view_ = new RecentsWidget(this);
-        emoji_view_ = new EmojisWidget(this);
+        topToolbar_ = new Toolbar(this, buttons_align::left);
+        recentsView_ = new RecentsWidget(this);
+        emojiView_ = new EmojisWidget(this);
 
-        top_toolbar_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        top_toolbar_->setFixedHeight(Utils::scale_value(49));
+        topToolbar_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        topToolbar_->setFixedHeight(Utils::scale_value(49));
 
-        auto resents_button = top_toolbar_->addButton(":/resources/smiles_menu/picker_tab_recents_100.png");
-        resents_button->AttachView(recents_view_);
+        auto resents_button = topToolbar_->addButton(":/resources/smiles_menu/picker_tab_recents_100.png");
+        resents_button->AttachView(recentsView_);
         connect(resents_button, &TabButton::clicked, [this]()
         {
-            ScrollTo(recents_view_->geometry().top());
-            emoji_view_->select_first_button();
+            ScrollTo(recentsView_->geometry().top());
+            emojiView_->selectFirstButton();
         });
 
-        auto emoji_button = top_toolbar_->addButton(":/resources/smiles_menu/picker_tab_emoji_100.png");
-        emoji_button->AttachView(AttachedView(emoji_view_));
-        connect(emoji_button, &TabButton::clicked, [this]()
+        auto emojiButton = topToolbar_->addButton(":/resources/smiles_menu/picker_tab_emoji_100.png");
+        emojiButton->AttachView(AttachedView(emojiView_));
+        connect(emojiButton, &TabButton::clicked, [this]()
         {
-            ScrollTo(emoji_view_->geometry().top());
-            emoji_view_->select_first_button();
+            ScrollTo(emojiView_->geometry().top());
+            emojiView_->selectFirstButton();
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::picker_tab_click);
         });
 
-        rootVerticalLayout_->addWidget(top_toolbar_);
+        rootVerticalLayout_->addWidget(topToolbar_);
 
-        view_area_ = new QScrollArea(this);
-        view_area_->setFocusPolicy(Qt::NoFocus);
-        Utils::grabTouchWidget(view_area_->viewport(), true);
-        connect(QScroller::scroller(view_area_->viewport()), SIGNAL(stateChanged(QScroller::State)), this, SLOT(touchScrollStateChanged(QScroller::State)), Qt::QueuedConnection);
+        viewArea_ = CreateScrollAreaAndSetTrScrollBar(this);
+        viewArea_->setFocusPolicy(Qt::NoFocus);
+        Utils::grabTouchWidget(viewArea_->viewport(), true);
+        connect(QScroller::scroller(viewArea_->viewport()), SIGNAL(stateChanged(QScroller::State)), this, SLOT(touchScrollStateChanged(QScroller::State)), Qt::QueuedConnection);
 
-        QWidget* scroll_area_widget = new QWidget(view_area_);
+        QWidget* scroll_area_widget = new QWidget(viewArea_);
         scroll_area_widget->setObjectName("scroll_area_widget");
-        view_area_->setWidget(scroll_area_widget);
-        view_area_->setWidgetResizable(true);
-        rootVerticalLayout_->addWidget(view_area_);
+        viewArea_->setWidget(scroll_area_widget);
+        viewArea_->setWidgetResizable(true);
+        rootVerticalLayout_->addWidget(viewArea_);
 
 
-        QVBoxLayout* sa_widget_layout = new QVBoxLayout();
-        sa_widget_layout->setContentsMargins(Utils::scale_value(10), 0, Utils::scale_value(10), 0);
-        scroll_area_widget->setLayout(sa_widget_layout);
+        QVBoxLayout* sa_widgetLayout = new QVBoxLayout();
+        sa_widgetLayout->setContentsMargins(Utils::scale_value(10), 0, Utils::scale_value(10), 0);
+        scroll_area_widget->setLayout(sa_widgetLayout);
 
-        recents_view_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        sa_widget_layout->addWidget(recents_view_);
-        Utils::grabTouchWidget(recents_view_);
+        recentsView_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        sa_widgetLayout->addWidget(recentsView_);
+        Utils::grabTouchWidget(recentsView_);
 
-        emoji_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-        sa_widget_layout->addWidget(emoji_view_);
-        Utils::grabTouchWidget(emoji_view_);
+        emojiView_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        sa_widgetLayout->addWidget(emojiView_);
+        Utils::grabTouchWidget(emojiView_);
 
-        stickers_view_ = new StickersWidget(this, top_toolbar_);
-        stickers_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-        sa_widget_layout->addWidget(stickers_view_);
-        Utils::grabTouchWidget(stickers_view_);
+        stickersView_ = new StickersWidget(this, topToolbar_);
+        stickersView_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        sa_widgetLayout->addWidget(stickersView_);
+        Utils::grabTouchWidget(stickersView_);
 
-        emoji_button->toggle();
+        emojiButton->toggle();
 
-        connect(emoji_view_, &EmojisWidget::emoji_selected, [this](Emoji::EmojiRecordSptr _emoji)
+        connect(emojiView_, &EmojisWidget::emojiSelected, [this](Emoji::EmojiRecordSptr _emoji)
         {
-            emit emoji_selected(_emoji->Codepoint_, _emoji->ExtendedCodepoint_);
+            emit emojiSelected(_emoji->Codepoint_, _emoji->ExtendedCodepoint_);
 
-            recents_view_->add_emoji(_emoji);
+            recentsView_->addEmoji(_emoji);
         });
 
-        connect(emoji_view_, &EmojisWidget::scroll_to_group, [this](int _pos)
+        connect(emojiView_, &EmojisWidget::scrollToGroup, [this](int _pos)
         {
-            ScrollTo(emoji_view_->geometry().top() + _pos);
+            ScrollTo(emojiView_->geometry().top() + _pos);
         });
 
         HookScroll();
@@ -1345,38 +1342,38 @@ namespace Ui
 
     void SmilesMenu::HookScroll()
     {
-        connect(view_area_->verticalScrollBar(), &QAbstractSlider::valueChanged, [this](int _value)
+        connect(viewArea_->verticalScrollBar(), &QAbstractSlider::valueChanged, [this](int _value)
         {
-            QRect view_port_rect = view_area_->viewport()->geometry();
-            QRect emoji_rect = emoji_view_->geometry();
-            QRect view_port_rect_for_emoji(0, _value - emoji_rect.top(), view_port_rect.width(), view_port_rect.height() + 1);
+            QRect viewPortRect = viewArea_->viewport()->geometry();
+            QRect emojiRect = emojiView_->geometry();
+            QRect viewPortRectForEmoji(0, _value - emojiRect.top(), viewPortRect.width(), viewPortRect.height() + 1);
 
-            emoji_view_->on_viewport_changed(view_port_rect_for_emoji, block_toolbar_switch_);
+            emojiView_->onViewportChanged(viewPortRectForEmoji, blockToolbarSwitch_);
 
-            view_port_rect.adjust(0, _value, 0, _value);
+            viewPortRect.adjust(0, _value, 0, _value);
 
-            if (block_toolbar_switch_)
+            if (blockToolbarSwitch_)
                 return;
 
-            for (TabButton* button : top_toolbar_->GetButtons())
+            for (TabButton* button : topToolbar_->GetButtons())
             {
                 auto view = button->GetAttachedView();
                 if (view.get_view())
                 {
-                    QRect rc_view = view.get_view()->geometry();
+                    QRect rcView = view.get_view()->geometry();
 
                     if (view.get_view_parent())
                     {
-                        QRect rc_view_parent = view.get_view_parent()->geometry();
-                        rc_view.adjust(0, rc_view_parent.top(), 0, rc_view_parent.top());
+                        QRect rcViewParent = view.get_view_parent()->geometry();
+                        rcView.adjust(0, rcViewParent.top(), 0, rcViewParent.top());
                     }
 
-                    QRect intersected_rect = rc_view.intersected(view_port_rect);
+                    QRect intersectedRect = rcView.intersected(viewPortRect);
 
-                    if (intersected_rect.height() > (view_port_rect.height() / 2))
+                    if (intersectedRect.height() > (viewPortRect.height() / 2))
                     {
                         button->setChecked(true);
-                        top_toolbar_->scrollToButton(button);
+                        topToolbar_->scrollToButton(button);
                         break;
                     }
                 }
@@ -1389,27 +1386,27 @@ namespace Ui
     {
         QWidget::resizeEvent(_e);
 
-        if (!view_area_ || !emoji_view_)
+        if (!viewArea_ || !emojiView_)
             return;
 
-        QRect view_port_rect = view_area_->viewport()->geometry();
-        QRect emoji_rect = emoji_view_->geometry();
+        QRect viewPortRect = viewArea_->viewport()->geometry();
+        QRect emojiRect = emojiView_->geometry();
 
-        emoji_view_->on_viewport_changed(QRect(0, view_area_->verticalScrollBar()->value() - emoji_rect.top(), view_port_rect.width(), view_port_rect.height() + 1),
-            block_toolbar_switch_);
+        emojiView_->onViewportChanged(QRect(0, viewArea_->verticalScrollBar()->value() - emojiRect.top(), viewPortRect.width(), viewPortRect.height() + 1),
+            blockToolbarSwitch_);
     }
 
-    void SmilesMenu::set_current_height(int _val)
+    void SmilesMenu::setCurrentHeight(int _val)
     {
         setMaximumHeight(_val);
         setMinimumHeight(_val);
 
-        current_height_ = _val;
+        currentHeight_ = _val;
     }
 
-    int SmilesMenu::get_current_height() const
+    int SmilesMenu::getCurrentHeight() const
     {
-        return current_height_;
+        return currentHeight_;
     }
 
     namespace

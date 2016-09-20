@@ -6,35 +6,37 @@
 
 namespace Logic
 {
-	class SearchModel : public AbstractSearchModel
-	{
-		Q_OBJECT
-	Q_SIGNALS:
-		void results();
+    class SearchModel : public AbstractSearchModel
+    {
+        Q_OBJECT
+    Q_SIGNALS:
+        void results();
 
-	public Q_SLOTS:
-		void searchPatternChanged(QString) override;
-		void searchResult(QStringList);
+    public Q_SLOTS:
+        void searchPatternChanged(QString) override;
+        void searchResult(QStringList);
 
     private Q_SLOTS:
         void avatarLoaded(QString);
-        void contactRemoved(QString contact);
+        void contactRemoved(QString _contact);
 
-	public:
-		explicit SearchModel(QObject *parent);
+    public:
+        explicit SearchModel(QObject* _parent);
 
-		int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-		QVariant data(const QModelIndex &index, int role) const override;
-		Qt::ItemFlags flags(const QModelIndex &index) const override;
-		void setFocus() override;
-		const QStringList& GetPattern() const;
-		void emitChanged(int first, int last) override;
+        int rowCount(const QModelIndex& _parent = QModelIndex()) const override;
+        QVariant data(const QModelIndex& _index, int _role) const override;
+        Qt::ItemFlags flags(const QModelIndex& _index) const override;
+        void setFocus() override;
+        const QStringList& getPattern() const;
+        void emitChanged(int _first, int _last) override;
 
-	private:
-		std::vector<ContactItem> Match_;
-		QStringList SearchPatterns_;
-		bool SearchRequested_;
-	};
+    private:
+        bool less(const ContactItem& _first, const ContactItem& _second);
 
-	SearchModel* GetSearchModel();
+        std::vector<ContactItem> match_;
+        QStringList searchPatterns_;
+        bool searchRequested_;
+    };
+
+    SearchModel* getSearchModel();
 }

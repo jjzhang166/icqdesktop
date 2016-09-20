@@ -34,6 +34,13 @@ bool core::tools::system::is_dir_writable(const std::wstring &_dir_path_str)
     return [[NSFileManager defaultManager] isWritableFileAtPath:@""];
 }
 
+bool core::tools::system::delete_file(const std::wstring& _file_name)
+{
+    boost::system::error_code error;
+    boost::filesystem::remove(_file_name, error);
+    return !error;
+}
+
 bool core::tools::system::move_file(const std::wstring& _old_file, const std::wstring& _new_file)
 {
 	boost::filesystem::path from(_old_file);

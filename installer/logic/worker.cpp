@@ -225,7 +225,6 @@ namespace installer
 
                 run_async_function<installer::error>(write_update_version, [this](const installer::error&)
                 {
-
                     emit finish();
                 }, 100);
 

@@ -46,6 +46,8 @@ namespace Ui
         void preparePage(const QString& aimId, SidebarPages page);
         virtual void setSidebarWidth(int width);
         void showAllMembers();
+        int currentPage() const;
+        QString currentAimId() const;
 
     protected:
         virtual void updateWidth() {}

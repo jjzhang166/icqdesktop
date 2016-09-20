@@ -1,0 +1,242 @@
+QWidget[TransparentWidget="true"]
+{
+	background: rgba(0,0,0,80%);
+}
+
+Ui--VideoPlayer
+{
+	background: black;
+	border: none;
+}
+
+QWidget#VideoView
+{
+	background: black;
+	border: none;
+}
+
+Ui--VideoPlayerControlPanel
+{
+	background: rgba(0,0,0,35%);
+	border: none;
+}
+
+Ui--VideoPlayerHeader
+{
+	background: rgba(0,0,0,35%);
+	border: none;
+}
+
+QLabel#VideoPlayerCaption
+{
+	color: white;	
+	font-size: 14dip;
+}
+
+
+QWidget#VideoTimeProgress
+{
+	color: white;	
+	font-size: 12dip;
+}
+
+
+QSlider#VideoProgressSlider::groove:horizontal 
+{
+	background: transparent;
+	height: 24dip;
+}
+
+QSlider#VideoProgressSlider::sub-page:horizontal
+{
+	border-image: url(:/resources/videoplayer/content_timebar_100_active.png);
+	margin-right: 11dip;
+	border: none;
+	height: 24dip;
+}
+
+QSlider#VideoProgressSlider::add-page:horizontal 
+{
+	border-image: url(:/resources/videoplayer/content_timebar_100.png);
+	margin-left: 10dip;
+	border: none;
+	height: 24dip;
+}
+
+QSlider#VideoProgressSlider::handle:horizontal
+{
+	image: url(:/resources/videoplayer/contr_player_selectbar_100.png);
+	width: 24dip;
+	height: 24dip;
+	margin-top: -12dip;
+	margin-bottom: -12dip;
+}
+
+QSlider#VideoProgressSlider::handle:horizontal:hover
+{
+	image: url(:/resources/videoplayer/contr_player_selectbar_100_hover.png);
+}
+
+QSlider#VideoProgressSlider::handle:horizontal:pressed
+{
+	image: url(:/resources/videoplayer/contr_player_selectbar_100_pressed.png);
+}
+
+
+
+
+
+QSlider#VideoVolumeSlider::groove:horizontal 
+{
+	background: transparent;
+	height: 24dip;
+}
+
+QSlider#VideoVolumeSlider::sub-page:horizontal
+{
+	border-image: url(:/resources/videoplayer/content_timebar_100_active.png);
+	border: none;
+	height: 24dip;
+}
+
+QSlider#VideoVolumeSlider::add-page:horizontal 
+{
+	border-image: url(:/resources/videoplayer/content_timebar_100.png);
+	border: none;
+	height: 24dip;
+}
+
+QSlider#VideoVolumeSlider::handle:horizontal
+{
+	image: url(:/resources/videoplayer/content_selectbar_100.png);
+	width: 8dip;
+	height: 24dip;
+	margin-top: -12dip;
+	margin-bottom: -12dip;
+}
+
+QSlider#VideoVolumeSlider::handle:horizontal:hover
+{
+	image: url(:/resources/videoplayer/content_selectbar_100_hover.png);
+}
+
+QSlider#VideoVolumeSlider::handle:horizontal:pressed
+{
+	image: url(:/resources/videoplayer/content_selectbar_100_active.png);
+}
+
+
+
+
+
+
+QPushButton#VideoPlayerPlayButton:checked
+{
+	border-image: url(:/resources/videoplayer/videoctrl_play_100.png);
+}
+
+QPushButton#VideoPlayerPlayButton:checked:hover
+{
+	border-image: url(:/resources/videoplayer/videoctrl_play_100_hover.png);
+}
+
+QPushButton#VideoPlayerPlayButton:checked:pressed
+{
+	border-image: url(:/resources/videoplayer/videoctrl_play_100_active.png);
+}
+
+QPushButton#VideoPlayerPlayButton
+{
+	border-image: url(:/resources/videoplayer/videoctrl_pause_100.png);
+}
+
+QPushButton#VideoPlayerPlayButton:hover
+{
+	border-image: url(:/resources/videoplayer/videoctrl_pause_100_hover.png);
+}
+
+QPushButton#VideoPlayerPlayButton:pressed
+{
+	border-image: url(:/resources/videoplayer/videoctrl_pause_100_active.png);
+}
+
+
+
+QPushButton#VideoPlayerSoundButton
+{
+	border-image: url(:/resources/videoplayer/videoctrl_volume_off_100.png);
+}
+
+QPushButton#VideoPlayerSoundButton:hover
+{
+	border-image: url(:/resources/videoplayer/videoctrl_volume_off_100_hover.png);
+}
+
+QPushButton#VideoPlayerSoundButton:pressed
+{
+	border-image: url(:/resources/videoplayer/videoctrl_volume_off_100_active.png);
+}
+
+QPushButton#VideoPlayerSoundButton:checked
+{
+	border-image: url(:/resources/videoplayer/videoctrl_volume_100.png);
+}
+
+QPushButton#VideoPlayerSoundButton:checked:hover
+{
+	border-image: url(:/resources/videoplayer/videoctrl_volume_100_hover.png);
+}
+
+QPushButton#VideoPlayerSoundButton:checked:pressed
+{
+	border-image: url(:/resources/videoplayer/videoctrl_volume_100_active.png);
+}
+
+
+
+QPushButton#VideoPlayerCloseButton
+{
+	border-image: url(:/resources/videoplayer/videoctrl_close_100.png);
+}
+
+QPushButton#VideoPlayerCloseButton:hover
+{
+	border-image: url(:/resources/videoplayer/videoctrl_close_100_hover.png);
+}
+
+QPushButton#VideoPlayerCloseButton:pressed
+{
+	border-image: url(:/resources/videoplayer/videoctrl_close_100_active.png);
+}
+
+
+QPushButton#VideoPlayerFullscreenButton
+{
+	border-image: url(:/resources/videoplayer/videoctrl_fullscreen_100.png);
+}
+
+QPushButton#VideoPlayerFullscreenButton:hover
+{
+	border-image: url(:/resources/videoplayer/videoctrl_fullscreen_100_active.png);
+}
+
+QPushButton#VideoPlayerFullscreenButton:pressed
+{
+	border-image: url(:/resources/videoplayer/videoctrl_fullscreen_100_hover.png);
+}
+
+
+QPushButton#VideoPlayerFullscreenButton:checked
+{
+	border-image: url(:/resources/videoplayer/videoctrl_decrease_100.png);
+}
+
+QPushButton#VideoPlayerFullscreenButton:checked:hover
+{
+	border-image: url(:/resources/videoplayer/videoctrl_decrease_100_active.png);
+}
+
+QPushButton#VideoPlayerFullscreenButton:checked:pressed
+{
+	border-image: url(:/resources/videoplayer/videoctrl_decrease_100_hover.png);
+}

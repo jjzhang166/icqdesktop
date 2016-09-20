@@ -1,61 +1,48 @@
 #include "stdafx.h"
-
 #include "MessagesModel.h"
-#include "../../cache/avatars/AvatarStorage.h"
-#include "../contact_list/ContactListModel.h"
-#include "../contact_list/RecentsModel.h"
-#include "../../utils/Text2DocConverter.h"
 
+#include "ChatEventItem.h"
+#include "DeletedMessageItem.h"
 #include "MessageItem.h"
 #include "MessageStyle.h"
 #include "ServiceMessageItem.h"
-#include "ChatEventItem.h"
-#include "DeletedMessageItem.h"
-
-#include "../../core_dispatcher.h"
-#include "../../../corelib/core_face.h"
-#include "../../../corelib/enumerations.h"
-
-#include "../history_control/ChatEventInfo.h"
 #include "ContentWidgets/FileSharingWidget.h"
-#include "../history_control/FileSharingInfo.h"
-#include "ContentWidgets/ImagePreviewWidget.h"
-#include "ContentWidgets/StickerWidget.h"
-#include "../history_control/VoipEventInfo.h"
-#include "../history_control/VoipEventItem.h"
 #include "ContentWidgets/PttAudioWidget.h"
 
+#include "../contact_list/ContactListModel.h"
+#include "../contact_list/RecentsModel.h"
+#include "../contact_list/UnknownsModel.h"
+#include "../history_control/ChatEventInfo.h"
+#include "../history_control/FileSharingInfo.h"
+#include "../history_control/VoipEventInfo.h"
+#include "../history_control/VoipEventItem.h"
+#include "../history_control/complex_message/ComplexMessageItem.h"
+#include "../history_control/complex_message/ComplexMessageItemBuilder.h"
+
+#include "../../core_dispatcher.h"
+#include "../../gui_settings.h"
+#include "../../my_info.h"
 #include "../../utils/log/log.h"
-#include "../../utils/profiling/auto_stop_watch.h"
 #include "../../cache/emoji/Emoji.h"
 #include "../../utils/utils.h"
 #include "../../utils/gui_coll_helper.h"
-
-#include "../../gui_settings.h"
+#include "../../utils/InterConnector.h"
 
 namespace
 {
-    static const auto PRELOAD_COUNT = 30;
-    static const auto MORE_COUNT = 30;
-
-    Logic::MessageInternal internal(const Logic::MessageKey& key)
+    QString NormalizeAimId(const QString& _aimId)
     {
-        return Logic::MessageInternal(key);
+        int pos = _aimId.indexOf("@uin.icq");
+        return pos == -1 ? _aimId : _aimId.left(pos);
     }
 
-    QString NormalizeAimId(const QString& aimId)
+    QString GetChatFriendly(const QString& _aimId, const QString& _chatFriendly)
     {
-        int pos = aimId.indexOf("@uin.icq");
-        return pos == -1 ? aimId : aimId.left(pos);
-    }
-
-    QString GetChatFriendly(const QString& aimdId, const QString& chatFriendly)
-    {
-        QString normalized = NormalizeAimId(aimdId);
-        QString clFriendly = Logic::GetContactListModel()->getDisplayName(normalized);
+        QString normalized = NormalizeAimId(_aimId);
+        QString clFriendly = Logic::getContactListModel()->getDisplayName(normalized);
         if (clFriendly == normalized)
         {
-            return chatFriendly.isEmpty() ? aimdId : chatFriendly;
+            return _chatFriendly.isEmpty() ? _aimId : _chatFriendly;
         }
 
         return clFriendly;
@@ -64,70 +51,84 @@ namespace
 
 namespace Logic
 {
-    const MessageKey MessageKey::MAX(INT64_MAX, INT64_MAX - 1, QString(), -1, 0, core::message_type::base, false, false, false, control_type::ct_message);
-    const MessageKey MessageKey::MIN(2, 1, QString(), -1, 0, core::message_type::base, false, false, false, control_type::ct_message);
+    const MessageKey MessageKey::MAX(INT64_MAX, INT64_MAX - 1, QString(), -1, 0, core::message_type::base, false, preview_type::none, control_type::ct_message);
+    const MessageKey MessageKey::MIN(2, 1, QString(), -1, 0, core::message_type::base, false, preview_type::none, control_type::ct_message);
 
     MessageKey::MessageKey()
-        : Id_(-1)
-        , Prev_(-1)
-        , Type_(core::message_type::base)
-        , Outgoing_(false)
-        , PendingId_(-1)
-        , Time_(-1)
-        , IsPreview_(false)
-        , IsDeleted_(false)
-        , control_type_(control_type::ct_message)
+        : id_(-1)
+        , prev_(-1)
+        , type_(core::message_type::base)
+        , outgoing_(false)
+        , pendingId_(-1)
+        , time_(-1)
+        , previewType_(preview_type::none)
+        , controlType_(control_type::ct_message)
     {
     }
 
     MessageKey::MessageKey(
-        qint64 id,
-        qint64 prev,
-        const QString& internalId,
-        int pendingId,
-        qint32 time,
-        core::message_type type,
-        bool outgoing,
-        bool isPreview,
-        bool isDeleted,
-        control_type _control_type)
-        : Id_(id)
-        , InternalId_(internalId)
-        , Type_(type)
-        , Prev_(prev)
-        , Outgoing_(outgoing)
-        , PendingId_(pendingId)
-        , Time_(time)
-        , IsPreview_(isPreview)
-        , IsDeleted_(isDeleted)
-        , control_type_(_control_type)
+        const qint64 _id,
+        const control_type _control_type)
+            : id_(_id)
+            , controlType_(_control_type)
+            , prev_(-1)
+            , type_(core::message_type::base)
+            , outgoing_(false)
+            , pendingId_(-1)
+            , time_(-1)
+            , previewType_(preview_type::none)
+
     {
-        assert(Type_ > core::message_type::min);
-        assert(Type_ < core::message_type::max);
     }
 
-    bool MessageKey::operator<(const MessageKey& other) const
+    MessageKey::MessageKey(
+        const qint64 _id,
+        const qint64 _prev,
+        const QString& _internalId,
+        const int _pendingId,
+        const qint32 _time,
+        const core::message_type _type,
+        const bool _outgoing,
+        const preview_type _previewType,
+        const control_type _control_type)
+        : id_(_id)
+        , internalId_(_internalId)
+        , type_(_type)
+        , prev_(_prev)
+        , outgoing_(_outgoing)
+        , pendingId_(_pendingId)
+        , time_(_time)
+        , previewType_(_previewType)
+        , controlType_(_control_type)
     {
-        return compare(other);
+        assert(type_ > core::message_type::min);
+        assert(type_ < core::message_type::max);
+        assert(previewType_ > preview_type::min);
+        assert(previewType_ < preview_type::max);
+    }
+
+    bool MessageKey::operator<(const MessageKey& _other) const
+    {
+        return compare(_other);
     }
 
     bool MessageKey::hasId() const
     {
-        return (Id_ != -1);
+        return (id_ != -1);
     }
 
     bool MessageKey::checkInvariant() const
     {
-        if (Outgoing_)
+        if (outgoing_)
         {
-            if (!hasId() && InternalId_.isEmpty())
+            if (!hasId() && internalId_.isEmpty())
             {
                 return false;
             }
         }
         else
         {
-            if (!InternalId_.isEmpty())
+            if (!internalId_.isEmpty())
             {
                 return false;
             }
@@ -138,42 +139,42 @@ namespace Logic
 
     bool MessageKey::isChatEvent() const
     {
-        assert(Type_ >= core::message_type::min);
-        assert(Type_ <= core::message_type::max);
+        assert(type_ >= core::message_type::min);
+        assert(type_ <= core::message_type::max);
 
-        return (Type_ == core::message_type::chat_event);
-    }
-
-    bool MessageKey::isDeleted() const
-    {
-        return IsDeleted_;
+        return (type_ == core::message_type::chat_event);
     }
 
     bool MessageKey::isOutgoing() const
     {
-        return Outgoing_;
+        return outgoing_;
     }
 
-    void MessageKey::setDeleted(const bool isDeleted)
+    void MessageKey::setId(const int64_t _id)
     {
-        IsDeleted_ = isDeleted;
+        assert(_id >= -1);
+
+        id_ = _id;
     }
 
-    void MessageKey::setId(const int64_t id)
+    qint64 MessageKey::getId() const
     {
-        assert(id >= -1);
-
-        Id_ = id;
+        return id_;
     }
 
-    void MessageKey::setOutgoing(const bool isOutgoing)
+    void MessageKey::setOutgoing(const bool _isOutgoing)
     {
-        Outgoing_ = isOutgoing;
+        outgoing_ = _isOutgoing;
 
-        if (!hasId() && Outgoing_)
+        if (!hasId() && outgoing_)
         {
-            assert(!InternalId_.isEmpty());
+            assert(!internalId_.isEmpty());
         }
+    }
+
+    void MessageKey::setControlType(const control_type _controlType)
+    {
+        controlType_ = _controlType;
     }
 
     QString MessageKey::toLogStringShort() const
@@ -183,361 +184,578 @@ namespace Logic
 
         QTextStream fmt(&logStr);
 
-        fmt << "id=" << Id_ << ";"
-            "prev=" << Prev_;
+        fmt << "id=" << id_ << ";"
+            "prev=" << prev_;
 
         return logStr;
     }
 
     bool MessageKey::isFileSharing() const
     {
-        assert(Type_ >= core::message_type::min);
-        assert(Type_ <= core::message_type::max);
+        assert(type_ >= core::message_type::min);
+        assert(type_ <= core::message_type::max);
 
-        return (Type_ == core::message_type::file_sharing);
+        return (type_ == core::message_type::file_sharing);
+    }
+
+    bool MessageKey::isVoipEvent() const
+    {
+        assert(type_ >= core::message_type::min);
+        assert(type_ <= core::message_type::max);
+
+        return (type_ == core::message_type::voip_event);
     }
 
     bool MessageKey::isDate() const
     {
-        return (control_type_ == control_type::ct_date);
+        return (controlType_ == control_type::ct_date);
     }
 
     bool MessageKey::isSticker() const
     {
-        assert(Type_ >= core::message_type::min);
-        assert(Type_ <= core::message_type::max);
+        assert(type_ >= core::message_type::min);
+        assert(type_ <= core::message_type::max);
 
-        return (Type_ == core::message_type::sticker);
+        return (type_ == core::message_type::sticker);
     }
 
-    bool MessageKey::compare(const MessageKey& rhs) const
+    control_type MessageKey::getControlType() const
     {
-        if (!InternalId_.isEmpty() && InternalId_ == rhs.InternalId_)
+        return controlType_;
+    }
+
+    core::message_type MessageKey::getType() const
+    {
+        return type_;
+    }
+
+    void MessageKey::setType(core::message_type _type)
+    {
+        type_ = _type;
+    }
+
+    preview_type MessageKey::getPreviewType() const
+    {
+        return previewType_;
+    }
+
+    qint64 MessageKey::getPrev() const
+    {
+        return prev_;
+    }
+
+    QString MessageKey::getInternalId() const
+    {
+        return internalId_;
+    }
+
+    bool MessageKey::compare(const MessageKey& _rhs) const
+    {
+        if (!internalId_.isEmpty() && internalId_ == _rhs.internalId_)
         {
-            return control_type_ < rhs.control_type_;
+            return controlType_ < _rhs.controlType_;
         }
 
-        if (PendingId_ != -1 && rhs.PendingId_ == -1)
+        if (pendingId_ != -1 && _rhs.pendingId_ == -1)
         {
-            if (control_type_ != rhs.control_type_)
-                return control_type_ < rhs.control_type_;
+            if (controlType_ != _rhs.controlType_)
+                return controlType_ < _rhs.controlType_;
 
-            if (control_type_ == rhs.control_type_)
+            if (controlType_ == _rhs.controlType_)
                 return false;
 
-            return Time_ == rhs.Time_ ? false : Time_ < rhs.Time_;
+            return time_ == _rhs.time_ ? false : time_ < _rhs.time_;
         }
 
-        if (PendingId_ == -1 && rhs.PendingId_ != -1)
+        if (pendingId_ == -1 && _rhs.pendingId_ != -1)
         {
-            if (control_type_ != rhs.control_type_)
-                return control_type_ < rhs.control_type_;
+            if (controlType_ != _rhs.controlType_)
+                return controlType_ < _rhs.controlType_;
 
-            if (control_type_ == rhs.control_type_)
+            if (controlType_ == _rhs.controlType_)
                 return true;
 
-            return Time_ == rhs.Time_ ? true : Time_ < rhs.Time_;
+            return time_ == _rhs.time_ ? true : time_ < _rhs.time_;
         }
 
-        if ((Id_ != -1) && (rhs.Id_ != -1))
+        if ((id_ != -1) && (_rhs.id_ != -1))
         {
-            if (Id_ != rhs.Id_)
+            if (id_ != _rhs.id_)
             {
-                return (Id_ < rhs.Id_);
+                return (id_ < _rhs.id_);
             }
         }
 
-        if (PendingId_ != -1 && rhs.PendingId_ != -1)
+        if (pendingId_ != -1 && _rhs.pendingId_ != -1)
         {
-            if (PendingId_ != rhs.PendingId_)
+            if (pendingId_ != _rhs.pendingId_)
             {
-                return (PendingId_ < rhs.PendingId_);
+                return (pendingId_ < _rhs.pendingId_);
             }
-            else if (InternalId_ != rhs.InternalId_)
+            else if (internalId_ != _rhs.internalId_)
             {
-                return Time_ < rhs.Time_;
+                return time_ < _rhs.time_;
             }
         }
 
-        return (control_type_ < rhs.control_type_);
+        return (controlType_ < _rhs.controlType_);
     }
 
-    bool InternalIndex::ContainsId(const int64_t id) const
+    bool Message::isBase() const
     {
-        assert(id >= -1);
+        assert(key_.getType() > core::message_type::min);
+        assert(key_.getType() < core::message_type::max);
 
-        if (Key_.Id_ == id)
+        return (key_.getType() == core::message_type::base);
+    }
+
+    bool Message::isChatEvent() const
+    {
+        assert(key_.getType() > core::message_type::min);
+        assert(key_.getType() < core::message_type::max);
+
+        assert(!buddy_ || key_.getType() == getBuddy()->GetType());
+        return (key_.getType() == core::message_type::chat_event);
+    }
+
+    bool Message::isDate() const
+    {
+        return (key_.isDate());
+    }
+
+    bool Message::isDeleted() const
+    {
+        return deleted_;
+    }
+
+    void Message::setDeleted(const bool _deleted)
+    {
+        deleted_ = _deleted;
+
+        if (buddy_)
         {
-            return true;
+            buddy_->SetDeleted(_deleted);
         }
-
-        return std::any_of(
-            MsgKeys_.cbegin(),
-            MsgKeys_.cend(),
-            [id](const Logic::MessageKey &key)
-            {
-                return (key.Id_ == id);
-            });
     }
 
-    bool InternalIndex::ContainsKey(const MessageKey &needle) const
+    bool Message::isFileSharing() const
     {
-        assert(!needle.isEmpty());
+        assert(key_.getType() > core::message_type::min);
+        assert(key_.getType() < core::message_type::max);
+        assert((key_.getType() != core::message_type::file_sharing) || fileSharing_);
+        assert(!buddy_ || key_.getType() == buddy_->GetType());
 
-        return std::any_of(
-            MsgKeys_.cbegin(),
-            MsgKeys_.cend(),
-            [&needle](const Logic::MessageKey &key)
-            {
-                return ((key.Id_ == needle.Id_) && (key.control_type_ == needle.control_type_));
-            });
+        return (key_.getType() == core::message_type::file_sharing);
     }
 
-    bool InternalIndex::IsBase() const
+    bool Message::isOutgoing() const
     {
-        assert(Key_.Type_ > core::message_type::min);
-        assert(Key_.Type_ < core::message_type::max);
-
-        return (Key_.Type_ == core::message_type::base);
+        assert(!buddy_ || key_.isOutgoing() == getBuddy()->IsOutgoing());
+        return key_.isOutgoing();
     }
 
-    bool InternalIndex::IsChatEvent() const
+    bool Message::isPending() const
     {
-        assert(Key_.Type_ > core::message_type::min);
-        assert(Key_.Type_ < core::message_type::max);
-
-        return (Key_.Type_ == core::message_type::chat_event);
+        return (!key_.hasId() && !key_.getInternalId().isEmpty());
     }
 
-    bool InternalIndex::IsDate() const
-    {
-        return (Key_.isDate());
-    }
-
-    bool InternalIndex::IsDeleted() const
-    {
-        return Deleted_;
-    }
-
-    bool InternalIndex::IsFileSharing() const
-    {
-        assert(Key_.Type_ > core::message_type::min);
-        assert(Key_.Type_ < core::message_type::max);
-        assert((Key_.Type_ != core::message_type::file_sharing) || FileSharing_);
-
-        return (Key_.Type_ == core::message_type::file_sharing);
-    }
-
-    bool InternalIndex::IsOutgoing() const
-    {
-        return Key_.isOutgoing();
-    }
-
-    bool InternalIndex::IsPending() const
-    {
-        return (!Key_.hasId() && !Key_.InternalId_.isEmpty());
-    }
-
-    bool InternalIndex::IsStandalone() const
+    bool Message::isStandalone() const
     {
         return true;
         //return (IsFileSharing() || IsSticker() || IsChatEvent() || IsVoipEvent() || IsPreview() || IsDeleted() || IsPending());
     }
 
-    bool InternalIndex::IsSticker() const
+    bool Message::isSticker() const
     {
-        assert(Key_.Type_ > core::message_type::min);
-        assert(Key_.Type_ < core::message_type::max);
-        assert((Key_.Type_ != core::message_type::sticker) || Sticker_);
+        assert(key_.getType() > core::message_type::min);
+        assert(key_.getType() < core::message_type::max);
+        assert((key_.getType() != core::message_type::sticker) || sticker_);
 
-        return (Key_.Type_ == core::message_type::sticker);
+        return (key_.getType() == core::message_type::sticker);
     }
 
-    bool InternalIndex::IsVoipEvent() const
+    bool Message::isVoipEvent() const
     {
-        assert(Key_.Type_ > core::message_type::min);
-        assert(Key_.Type_ < core::message_type::max);
-        assert((Key_.Type_ != core::message_type::voip_event) || VoipEvent_);
+        assert(key_.getType() > core::message_type::min);
+        assert(key_.getType() < core::message_type::max);
+        assert((key_.getType() != core::message_type::voip_event) || voipEvent_);
 
-        return (Key_.Type_ == core::message_type::voip_event);
+        return (key_.getType() == core::message_type::voip_event);
     }
 
-    bool InternalIndex::IsPreview() const
+    bool Message::isPreview() const
     {
-        return Key_.IsPreview_;
+        return (key_.getPreviewType() != preview_type::none);
     }
 
-    const HistoryControl::ChatEventInfoSptr& InternalIndex::GetChatEvent() const
+    const HistoryControl::ChatEventInfoSptr& Message::getChatEvent() const
     {
-        assert(!ChatEvent_ || IsChatEvent());
+        assert(!chatEvent_ || isChatEvent());
 
-        return ChatEvent_;
+        return chatEvent_;
     }
 
-    const QString& InternalIndex::GetChatSender() const
+    const QString& Message::getChatSender() const
     {
-        return ChatSender_;
+        return chatSender_;
     }
 
-    const HistoryControl::FileSharingInfoSptr& InternalIndex::GetFileSharing() const
+    const HistoryControl::FileSharingInfoSptr& Message::getFileSharing() const
     {
-        assert(!FileSharing_ || IsFileSharing());
+        assert(!fileSharing_ || isFileSharing());
 
-        return FileSharing_;
+        return fileSharing_;
     }
 
-    const MessageKey& InternalIndex::GetFirstMessageKey() const
-    {
-        assert(!MsgKeys_.empty());
 
-        const auto &firstKey = *MsgKeys_.cbegin();
-        return firstKey;
+    const HistoryControl::StickerInfoSptr& Message::getSticker() const
+    {
+        assert(!sticker_ || isSticker());
+
+        return sticker_;
     }
 
-    MessageKey InternalIndex::GetKeyById(const int64_t id) const
+    const HistoryControl::VoipEventInfoSptr& Message::getVoipEvent() const
     {
-        for (const auto &key : MsgKeys_)
-        {
-            if (key.Id_ == id)
-            {
-                return key;
-            }
-        }
+        assert(!voipEvent_ || isVoipEvent());
 
-        return MessageKey();
+        return voipEvent_;
     }
 
-    const MessageKey& InternalIndex::GetLastMessageKey() const
+    void Message::setChatEvent(const HistoryControl::ChatEventInfoSptr& _info)
     {
-        assert(!MsgKeys_.empty());
+        assert(!chatEvent_);
+        assert(!_info || (key_.getType() == core::message_type::chat_event));
 
-        const auto &lastKey = *MsgKeys_.crbegin();
-        return lastKey;
+        chatEvent_ = _info;
     }
 
-    const HistoryControl::StickerInfoSptr& InternalIndex::GetSticker() const
+    void Message::setChatSender(const QString& _chatSender)
     {
-        assert(!Sticker_ || IsSticker());
-
-        return Sticker_;
+        chatSender_ = _chatSender;
     }
 
-    const HistoryControl::VoipEventInfoSptr& InternalIndex::GetVoipEvent() const
+    void Message::setFileSharing(const HistoryControl::FileSharingInfoSptr& _info)
     {
-        assert(!VoipEvent_ || IsVoipEvent());
+        assert(!fileSharing_);
+        assert(!_info || (key_.getType() == core::message_type::file_sharing));
 
-        return VoipEvent_;
+        fileSharing_ = _info;
     }
 
-    void InternalIndex::SetChatEvent(const HistoryControl::ChatEventInfoSptr& info)
+    void Message::setSticker(const HistoryControl::StickerInfoSptr& _info)
     {
-        assert(!ChatEvent_);
-        assert(!info || (Key_.Type_ == core::message_type::chat_event));
+        assert(!sticker_);
+        assert(!_info || (key_.getType() == core::message_type::sticker));
 
-        ChatEvent_ = info;
+        sticker_ = _info;
     }
 
-    void InternalIndex::SetChatSender(const QString& chatSender)
+    void Message::setVoipEvent(const HistoryControl::VoipEventInfoSptr& _info)
     {
-        ChatSender_ = chatSender;
+        assert(!voipEvent_);
+        assert(!_info || (key_.getType() == core::message_type::voip_event));
+
+        voipEvent_ = _info;
     }
 
-    void InternalIndex::SetDeleted(const bool deleted)
+    void Message::applyModification(const Data::MessageBuddy& _modification)
     {
-        Deleted_ = deleted;
-        Key_.setDeleted(deleted);
-    }
-
-    void InternalIndex::SetFileSharing(const HistoryControl::FileSharingInfoSptr& info)
-    {
-        assert(!FileSharing_);
-        assert(!info || (Key_.Type_ == core::message_type::file_sharing));
-
-        FileSharing_ = info;
-    }
-
-    void InternalIndex::SetSticker(const HistoryControl::StickerInfoSptr& info)
-    {
-        assert(!Sticker_);
-        assert(!info || (Key_.Type_ == core::message_type::sticker));
-
-        Sticker_ = info;
-    }
-
-    void InternalIndex::SetVoipEvent(const HistoryControl::VoipEventInfoSptr& info)
-    {
-        assert(!VoipEvent_);
-        assert(!info || (Key_.Type_ == core::message_type::voip_event));
-
-        VoipEvent_ = info;
-    }
-
-    void InternalIndex::InsertMessageKey(const MessageKey& key) const
-    {
-        assert(
-            !std::any_of(
-                MsgKeys_.begin(),
-                MsgKeys_.end(),
-                [](const MessageKey& key)
-                {
-                    return (key.isFileSharing() || key.isSticker() || key.isChatEvent());
-                }));
-
-        assert(MsgKeys_.empty() || (!key.isFileSharing() && !key.isSticker() && !key.isChatEvent()));
-
-        MsgKeys_.insert(key);
-    }
-
-    void InternalIndex::InsertMessageKeys(const MessageKeySet& keys) const
-    {
-        MsgKeys_.insert(keys.begin(), keys.end());
-    }
-
-    const MessageKeySet& InternalIndex::GetMessageKeys() const
-    {
-        return MsgKeys_;
-    }
-
-    void InternalIndex::RemoveMessageKey(MessageKey key) const
-    {
-        MsgKeys_.erase(key);
-    }
-
-    void InternalIndex::ApplyModification(const Data::MessageBuddy &modification)
-    {
-        assert(ContainsId(modification.Id_));
+        assert(key_.getId() == _modification.Id_);
 
         EraseEventData();
 
-        if (modification.IsBase())
+        if (_modification.IsBase())
         {
-            Key_.Type_ = core::message_type::base;
+            key_.setType(core::message_type::base);
 
             return;
         }
 
-        if (modification.IsChatEvent())
+        if (_modification.IsChatEvent())
         {
-            Key_.Type_ = core::message_type::base;
+            key_.setType(core::message_type::base);
+
+            auto key = getKey();
+            key.setType(core::message_type::chat_event);
+            setKey(key);
+            setChatEvent(_modification.GetChatEvent());
+            getBuddy()->SetType(core::message_type::chat_event);
 
             return;
         }
+
+        buddy_->ApplyModification(_modification);
     }
 
-    void InternalIndex::EraseEventData()
+    void Message::EraseEventData()
     {
-        FileSharing_.reset();
-        Sticker_.reset();
-        ChatEvent_.reset();
-        VoipEvent_.reset();
+        fileSharing_.reset();
+        sticker_.reset();
+        chatEvent_.reset();
+        voipEvent_.reset();
     }
 
+    void Message::setBuddy(std::shared_ptr<Data::MessageBuddy> _buddy)
+    {
+        buddy_ = _buddy;
+    }
+
+    std::shared_ptr<Data::MessageBuddy> Message::getBuddy() const
+    {
+        return buddy_;
+    }
+
+    const QString& Message::getAimId() const
+    {
+        return aimId_;
+    }
+
+    void Message::setKey(const MessageKey& _key)
+    {
+        key_ = _key;
+    }
+
+    const MessageKey& Message::getKey() const
+    {
+        return key_;
+    }
+
+    const QDate& Message::getDate()
+    {
+        return date_;
+    }
+
+    void Message::setDate(const QDate& _date)
+    {
+        date_ = _date;
+    }
+
+    void Message::setChatFriendly(const QString& _friendly)
+    {
+        chatFriendly_ = _friendly;
+    }
+
+    const QString& Message::getChatFriendly()
+    {
+        return chatFriendly_;
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // ContactDialog
+    //////////////////////////////////////////////////////////////////////////
+
+    void ContactDialog::setLastRequestedMessage(const qint64 _message)
+    {
+        if (!lastRequestedMessage_)
+        {
+            lastRequestedMessage_.reset(new qint64(_message));
+
+            return;
+        }
+
+        *lastRequestedMessage_ = _message;
+    }
+
+    qint64 ContactDialog::getLastRequestedMessage() const
+    {
+        if (!lastRequestedMessage_)
+        {
+            return -1;
+        }
+
+        return *lastRequestedMessage_;
+    }
+
+    bool ContactDialog::isLastRequestedMessageEmpty() const
+    {
+        return !lastRequestedMessage_;
+    }
+
+
+
+    MessagesMap& ContactDialog::getMessages()
+    {
+        if (!messages_)
+            messages_.reset(new MessagesMap());
+
+        return *messages_;
+    }
+
+    MessagesMap& ContactDialog::getPendingMessages()
+    {
+        if (!pendingMessages_)
+            pendingMessages_.reset(new MessagesMap());
+
+        return *pendingMessages_;
+    }
+
+    DatesMap& ContactDialog::getDatesMap()
+    {
+        if (!dateItems_)
+            dateItems_.reset(new DatesMap());
+
+        return *dateItems_;
+    }
+
+    const MessageKey& ContactDialog::getLastKey() const
+    {
+        return lastKey_;
+    }
+
+    void ContactDialog::setLastKey(const MessageKey& _key)
+    {
+        lastKey_ = _key;
+    }
+
+    bool ContactDialog::hasItemsInBetween(const MessageKey& _l, const MessageKey& _r) const
+    {
+        if (!messages_)
+            return false;
+
+        const auto iterL = messages_->upper_bound(_l);
+        const auto iterR = messages_->lower_bound(_r);
+
+        for (auto iter = iterL; iter != iterR; ++iter)
+        {
+            if (!iter->second.isDeleted())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    std::shared_ptr<Data::MessageBuddy> ContactDialog::addDateItem(const QString& _aimId, const MessageKey& _key, const QDate& _date)
+    {
+        assert(_date.isValid());
+        assert(_key.hasId());
+        assert(_key.getControlType() == control_type::ct_date);
+
+        auto message = std::make_shared<Data::MessageBuddy>();
+        message->Id_ = _key.getId();
+        message->Prev_ = _key.getPrev();
+        message->AimId_ = _aimId;
+        message->SetTime(0);
+        message->SetDate(_date);
+        message->SetType(core::message_type::undefined);
+
+        Message dateMessage(_aimId);
+        dateMessage.setKey(_key);
+        dateMessage.setDate(_date);
+        getDatesMap().emplace(_date, dateMessage);
+
+        __INFO(
+            "gui_dates",
+            "added gui date item\n"
+            "    contact=<" << _aimId << ">\n"
+            "    id=<" << _key.getId() << ">\n"
+            "    prev=<" << _key.getPrev() << ">"
+            );
+
+        return message;
+    }
+
+    bool ContactDialog::hasDate(const QDate& _date) const
+    {
+        if (!dateItems_)
+            return false;
+
+        return (dateItems_->count(_date) > 0);
+    }
+
+    void ContactDialog::removeDateItem(const QDate& _date)
+    {
+        getDatesMap().erase(_date);
+    }
+
+    void ContactDialog::removeDateItems()
+    {
+        dateItems_.reset();
+    }
+
+    Logic::MessageKey ContactDialog::findFirstKeyAfter(const Logic::MessageKey& _key) const
+    {
+        assert(!_key.isEmpty());
+
+        if (!messages_)
+        {
+            return Logic::MessageKey();
+        }
+
+        auto messageIter = messages_->upper_bound(_key);
+        if ((messageIter == messages_->begin()) ||
+            (messageIter == messages_->end()))
+        {
+            return Logic::MessageKey();
+        }
+
+        return messageIter->first;
+    }
+
+    int64_t ContactDialog::getLastMessageId() const
+    {
+        if (!messages_)
+        {
+            return -1;
+        }
+
+        if (!messages_->empty())
+        {
+            return messages_->crbegin()->first.getId();
+        }
+
+        return -1;
+    }
+
+    bool ContactDialog::isHasPending() const
+    {
+        if (!pendingMessages_)
+        {
+            return false;
+        }
+
+        return !pendingMessages_->empty();
+    }
+
+    void ContactDialog::setNewKey(const MessageKey& _key)
+    {
+        if (!newKey_)
+        {
+            newKey_.reset(new MessageKey(_key));
+        }
+
+        *newKey_ = _key;
+    }
+
+    const MessageKey* ContactDialog::getNewKey() const
+    {
+        if (!newKey_)
+        {
+            return nullptr;
+        }
+
+        return newKey_.get();
+    }
+
+    void ContactDialog::resetNewKey()
+    {
+        newKey_.reset();
+    }
+
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // MessagesModel
+    //////////////////////////////////////////////////////////////////////////
     std::unique_ptr<MessagesModel> g_messages_model;
+
 
     MessagesModel::MessagesModel(QObject *parent)
         : QObject(parent)
-        , ItemWidth_(0)
-        , DomUid_(1)
+        , itemWidth_(0)
     {
         connect(
             Ui::GetDispatcher(),
@@ -582,493 +800,401 @@ namespace Logic
             Qt::DirectConnection);
     }
 
-    int MessagesModel::generatedDomUid()
+    void MessagesModel::dlgState(Data::DlgState _state)
     {
-        return DomUid_++;
+        emit readByClient(_state.AimId_, _state.TheirsLastRead_);
     }
 
-    void MessagesModel::dlgState(Data::DlgState state)
+    void MessagesModel::fileSharingUploadingResult(
+        QString _seq, bool /*success*/, QString /*localPath*/, QString /*uri*/, int /*contentType*/, bool _isFileTooBig)
     {
-        emit readByClient(state.AimId_, state.TheirsLastRead_);
+        if (_isFileTooBig)
+            failedUploads_ << _seq;
     }
 
-    void MessagesModel::fileSharingUploadingResult(QString id, bool, QString, bool too_large_files)
+    void traceBuddies(std::shared_ptr<Data::MessageBuddies> _buddies, qint64 _seq)
     {
-        if (too_large_files)
-            FailedUploads_ << id;
+        for (const auto &buddy : *_buddies)
+        {
+            if (!buddy->IsFileSharing())
+            {
+                continue;
+            }
+
+            __TRACE(
+                "fs",
+                "incoming file sharing message in model\n" <<
+                "    seq=<" << _seq << ">\n" <<
+                buddy->GetFileSharing()->ToLogString());
+        }
     }
 
-    void MessagesModel::messageBuddies(std::shared_ptr<Data::MessageBuddies> msgs, QString aimId, Ui::MessagesBuddiesOpt option, bool havePending, qint64 seq)
+    void MessagesModel::messageBuddiesUnloadUnusedMessages(std::shared_ptr<Data::MessageBuddies> _buddies, const QString& _aimId, bool& _hole)
     {
-        assert(option > Ui::MessagesBuddiesOpt::Min);
-        assert(option < Ui::MessagesBuddiesOpt::Max);
-        assert(msgs);
+        auto& dialog = getContactDialog(_aimId);
+        auto& dialogMessages = dialog.getMessages();
 
-        const auto isDlgState = (option == Ui::MessagesBuddiesOpt::DlgState || option == Ui::MessagesBuddiesOpt::Init || option == Ui::MessagesBuddiesOpt::MessageStatus);
-        const auto isPending = (option == Ui::MessagesBuddiesOpt::Pending);
+        auto idFirst = _buddies->first()->Id_;
+
+        QList<MessageKey> deletedValues;
+
+        auto iter = dialogMessages.begin();
+        while(iter != dialogMessages.end())
+        {
+            if (iter->first.isPending())
+            {
+                ++iter;
+                continue;
+            }
+
+            if (iter->first.getId() < idFirst)
+            {
+                deletedValues << iter->first;
+
+                if (iter->first.isDate())
+                {
+                    dialog.removeDateItem(iter->second.getDate());
+                }
+
+                if (iter->first.getId() <= dialog.getLastRequestedMessage())
+                {
+                    dialog.setLastRequestedMessage(-1);
+                }
+
+                iter = dialogMessages.erase(iter);
+
+                continue;
+            }
+
+            if (iter->first.isDate() && (iter->second.getDate() == _buddies->first()->GetDate()))
+            {
+                deletedValues << iter->first;
+
+                dialog.removeDateItem(iter->second.getDate());
+
+                iter = dialogMessages.erase(iter);
+
+                continue;
+            }
+
+            ++iter;
+        }
+
+        MessageKey key = ( dialogMessages.empty() ? _buddies->first()->ToKey() : dialogMessages.begin()->first);
+
+        if (dialog.getLastKey() < key)
+            dialog.setLastKey(key);
+
+        sequences_.clear();
+        dialog.setLastRequestedMessage(-1);
+
+        _hole = !deletedValues.isEmpty();
+
+        if (_hole)
+        {
+            emitDeleted(deletedValues, _aimId);
+        }
+    }
+
+    void MessagesModel::messageBuddiesInsertMessages(
+        std::shared_ptr<Data::MessageBuddies> _buddies,
+        const QString& _aimId,
+        const qint64 _modelFirst,
+        const Ui::MessagesBuddiesOpt _option,
+        const qint64 _seq,
+        const bool _hole)
+    {
+        auto& dialog = getContactDialog(_aimId);
+        auto& dialogMessages = dialog.getMessages();
+
+        const auto isMultichat = Logic::getContactListModel()->isChat(_aimId);
+
+        QList<MessageKey> updatedValues;
+
+        std::list<MessagesMapIter> insertedMessages;
+
+        for (auto msg : *_buddies)
+        {
+            const auto key = msg->ToKey();
+
+            const auto messageAlreadyInserted = (std::find_if(dialogMessages.begin(), dialogMessages.end(), [&key](const std::pair<MessageKey, Message>& _msg)->bool
+            {
+                return (_msg.first == key);
+
+            }) != dialogMessages.end());
+
+            if (messageAlreadyInserted)
+            {
+                continue;
+            }
+
+
+            Message newMessage(_aimId);
+            newMessage.setKey(key);
+            newMessage.setChatSender(msg->GetChatSender());
+            newMessage.setChatFriendly(msg->ChatFriendly_);
+            newMessage.setFileSharing(msg->GetFileSharing());
+            newMessage.setSticker(msg->GetSticker());
+            newMessage.setChatEvent(msg->GetChatEvent());
+            newMessage.setVoipEvent(msg->GetVoipEvent());
+            newMessage.setDeleted(msg->IsDeleted());
+            newMessage.setBuddy(msg);
+
+            auto insertPos = dialogMessages.emplace(newMessage.getKey(), newMessage);
+            if (insertPos.second)
+            {
+                insertedMessages.push_back(insertPos.first);
+            }
+        }
+
+        for (auto iter : insertedMessages)
+        {
+            if (!updatedValues.contains(iter->first))
+                updatedValues << iter->first;
+
+            const auto &msgBuddy = iter->second.getBuddy();
+
+            auto prevMsg = previousMessage(dialogMessages, iter);
+            const auto havePrevMsg = (prevMsg != dialogMessages.end());
+
+            auto nextMsg = nextMessage(dialogMessages, iter);
+            const auto haveNextMsg = (nextMsg != dialogMessages.end());
+
+            bool hasAvatar = iter->first.isVoipEvent() ? (!msgBuddy->IsOutgoingVoip()) : (!iter->first.isOutgoing());
+
+            if (hasAvatar && havePrevMsg)
+            {
+                hasAvatar = msgBuddy->hasAvatarWith(*prevMsg->second.getBuddy(), isMultichat);
+            }
+            msgBuddy->SetHasAvatar(hasAvatar);
+
+            if (haveNextMsg)
+            {
+                hasAvatar = !nextMsg->first.isOutgoing() && nextMsg->second.getBuddy()->hasAvatarWith(*msgBuddy, isMultichat);
+                if (nextMsg->second.getBuddy()->HasAvatar() != hasAvatar)
+                {
+                    nextMsg->second.getBuddy()->SetHasAvatar(hasAvatar);
+                    emit hasAvatarChanged(nextMsg->first, hasAvatar);
+                }
+            }
+
+
+            removeDateItemIfOutdated(_aimId, *msgBuddy);
+
+            const auto dateItemAlreadyExists = dialog.hasDate(msgBuddy->GetDate());
+            const auto scheduleForDatesProcessing = (!dateItemAlreadyExists && !msgBuddy->IsDeleted());
+            if (scheduleForDatesProcessing)
+            {
+                auto dateKey = msgBuddy->ToKey();
+                dateKey.setType(core::message_type::undefined);
+                dateKey.setControlType(control_type::ct_date);
+
+                Message newMessage(_aimId);
+                newMessage.setDate(msgBuddy->GetDate());
+                newMessage.setKey(dateKey);
+                newMessage.setDeleted(msgBuddy->IsDeleted());
+
+                const auto isDateDiffer = (havePrevMsg && (msgBuddy->GetDate() != prevMsg->second.getBuddy()->GetDate()));
+                const auto insertDateTablet = (!havePrevMsg || isDateDiffer);
+
+                if (insertDateTablet)
+                {
+                    newMessage.setBuddy(dialog.addDateItem(_aimId, newMessage.getKey(), newMessage.getDate()));
+                    auto insertPos = dialogMessages.emplace(newMessage.getKey(), newMessage);
+                    hasAvatar = iter->first.isVoipEvent() ? (!msgBuddy->IsOutgoingVoip()) : (!iter->first.isOutgoing());
+                    msgBuddy->SetHasAvatar(hasAvatar);
+                    updatedValues << newMessage.getKey();
+                }
+            }
+        }
+
+        updateMessagesMarginsAndAvatars(_aimId);
+
+        if (_modelFirst == -2 && sequences_.contains(_seq))
+            emit ready(_aimId);
+
+        if (_option != Ui::MessagesBuddiesOpt::Requested)
+        {
+            emitUpdated(updatedValues, _aimId, _hole ? HOLE : BASE);
+        }
+        else
+        {
+            if (subscribed_.contains(_aimId))
+            {
+                subscribed_.removeAll(_aimId);
+                emit canFetchMore(_aimId);
+            }
+        }
+    }
+
+    void MessagesModel::messageBuddies(std::shared_ptr<Data::MessageBuddies> _buddies, QString _aimId, Ui::MessagesBuddiesOpt _option, bool _havePending, qint64 _seq)
+    {
+        assert(_option > Ui::MessagesBuddiesOpt::Min);
+        assert(_option < Ui::MessagesBuddiesOpt::Max);
+        assert(_buddies);
+
+        const auto isDlgState = (_option == Ui::MessagesBuddiesOpt::DlgState || _option == Ui::MessagesBuddiesOpt::Init || _option == Ui::MessagesBuddiesOpt::MessageStatus);
+        const auto isPending = (_option == Ui::MessagesBuddiesOpt::Pending);
+
+        auto& dialog = getContactDialog(_aimId);
+        auto& dialogMessages = dialog.getMessages();
 
         if (build::is_debug())
         {
-            for (const auto &buddy : *msgs)
+            traceBuddies(_buddies, _seq);
+        }
+
+        if (isDlgState && !_buddies->empty())
+        {
+            sendDeliveryNotifications(*_buddies);
+        }
+
+        qint64 modelFirst = (dialogMessages.empty()) ? -2 : dialogMessages.begin()->first.getPrev();
+
+        if (_havePending || isDlgState || isPending)
+        {
+            processPendingMessage(*_buddies, _aimId, _option);
+        }
+
+        if (_buddies->isEmpty())
+        {
+            if (sequences_.contains(_seq))
             {
-                if (!buddy->IsFileSharing())
-                {
-                    continue;
-                }
-
-                __TRACE(
-                    "fs",
-                    "incoming file sharing message in model\n" <<
-                    "    seq=<" << seq << ">\n" <<
-                    buddy->GetFileSharing()->ToLogString());
+                getContactDialog(_aimId).setLastRequestedMessage(-1);
             }
-        }
 
-        if (isDlgState && !msgs->empty())
-        {
-            sendDeliveryNotifications(*msgs);
-        }
-
-        if (isPending && tryInsertPendingMessageToLast(msgs, aimId))
-        {
-            updateMessagesMargins(aimId);
+            updateMessagesMarginsAndAvatars(_aimId);
 
             return;
         }
 
-        if (msgs->isEmpty())
+        if ((!sequences_.contains(_seq) && _buddies->last()->Id_ < modelFirst) || !requestedContact_.contains(_aimId))
         {
-            if (Sequences_.contains(seq))
-            {
-                LastRequested_[aimId] = -1;
-            }
-
-            updateMessagesMargins(aimId);
-
-            return;
-        }
-
-        qint64 modelFirst = (Messages_[aimId].empty() || Indexes_[aimId].empty()) ? -2 : Messages_[aimId].begin()->Key_.Prev_;
-
-        if (havePending || isDlgState || isPending)
-        {
-            processPendingMessage(*msgs, aimId, option);
-        }
-
-        if (msgs->isEmpty())
-        {
-            if (Sequences_.contains(seq))
-            {
-                LastRequested_[aimId] = -1;
-            }
-
-            updateMessagesMargins(aimId);
-
-            return;
-        }
-
-        if ((!Sequences_.contains(seq) && msgs->last()->Id_ < modelFirst) || !Requested_.contains(aimId))
-        {
-            updateMessagesMargins(aimId);
+            updateMessagesMarginsAndAvatars(_aimId);
 
             return;
         }
 
         bool hole = false;
 
-        if (msgs->size() > PRELOAD_COUNT || option == Ui::MessagesBuddiesOpt::FromServer)
+        if (_option == Ui::MessagesBuddiesOpt::FromServer)
         {
-            Data::MessageBuddies tmpMsgs;
-            for (int i = 0; i < PRELOAD_COUNT; ++i)
-            {
-                if (msgs->empty())
-                    break;
-
-                tmpMsgs.push_front(msgs->last());
-                msgs->pop_back();
-            }
-            *msgs = std::move(tmpMsgs);
-            auto idFirst = msgs->first()->Id_;
-
-            if (!isDlgState)
-            {
-                QList<MessageKey> deletedValues;
-
-                auto &indexRecords = Indexes_[aimId];
-
-                auto iter = indexRecords.begin();
-                while(iter != indexRecords.end())
-                {
-                    if (iter->IsPending())
-                    {
-                        continue;
-                    }
-
-                    if (iter->Key_.Id_ < idFirst)
-                    {
-                        deletedValues << iter->Key_;
-
-                        for (auto id : iter->GetMessageKeys())
-                        {
-                            Messages_[aimId].erase(internal(iter->Key_));
-                        }
-
-                        if (iter->IsDate())
-                        {
-                            removeDateItem(aimId, iter->Date_);
-                        }
-
-                        if (iter->Key_.Id_ <= LastRequested_[aimId])
-                        {
-                            LastRequested_[aimId] = -1;
-                        }
-
-                        iter = Indexes_[aimId].erase(iter);
-
-                        continue;
-                    }
-
-                    if (iter->IsDate() && (iter->Date_ == msgs->first()->GetDate()))
-                    {
-                        deletedValues << iter->Key_;
-
-                        removeDateItem(aimId, iter->Date_);
-
-                        iter = Indexes_[aimId].erase(iter);
-
-                        continue;
-                    }
-
-                    ++iter;
-                }
-
-                std::set<MessageInternal>::iterator iterMsg = Messages_[aimId].begin();
-                while (iterMsg != Messages_[aimId].end())
-                {
-                    if (iterMsg->Key_.Id_ != -1 && iterMsg->Key_.Id_ < idFirst)
-                        iterMsg = Messages_[aimId].erase(iterMsg);
-                    else
-                        ++iterMsg;
-                }
-
-                MessageKey key;
-                if (!Indexes_[aimId].empty())
-                {
-                    key = Indexes_[aimId].begin()->Key_;
-                }
-                else
-                {
-                    key = msgs->first()->ToKey();
-                }
-                if (LastKey_[aimId] < key)
-                    LastKey_[aimId] = key;
-
-                Sequences_.clear();
-                LastRequested_[aimId] = -1;
-
-                hole = !deletedValues.isEmpty();
-                if (hole)
-                {
-                    emitDeleted(deletedValues, aimId);
-                }
-            }
+            messageBuddiesUnloadUnusedMessages(_buddies, _aimId, hole);
         }
 
-        QList<MessageKey> updatedValues;
-        std::set<InternalIndex> indexes;
+        messageBuddiesInsertMessages(_buddies, _aimId, modelFirst, _option, _seq, hole);
 
-        for (auto msg : *msgs)
-        {
-            auto &messages = Messages_[aimId];
+        const auto isFromServer = (_option == Ui::MessagesBuddiesOpt::FromServer);
+        const auto isRequested = (_option == Ui::MessagesBuddiesOpt::Requested);
+        const auto isInit = (_option == Ui::MessagesBuddiesOpt::Init);
 
-            const auto key = msg->ToKey();
-            const auto messageAlreadyInserted = (std::find(messages.begin(), messages.end(), internal(key)) != messages.end());
-            if (messageAlreadyInserted)
-            {
-                continue;
-            }
-
-            auto prevMsg = previousMsg(aimId, msg->Prev_);
-            const auto havePrevMsg = (prevMsg != messages.end());
-
-            if (havePrevMsg)
-            {
-                const auto &prevMsgBuddy = prevMsg->Buddy_;
-                msg->SetHasAvatar(msg->IsOutgoing() ? false : msg->GetIndentWith(*prevMsgBuddy));
-            }
-            else
-            {
-                msg->SetHasAvatar(!msg->IsOutgoing());
-            }
-
-            auto merged = false;
-            if (!msg->IsStandalone())
-            {
-                for (auto &index : indexes)
-                {
-                    if (msg->GetTime() >= (index.MinTime_ - 120)
-                        && msg->GetTime() <= (index.MaxTime_ + 120)
-                        && index.Key_.isOutgoing() == msg->IsOutgoing()
-                        && index.GetChatSender() == msg->GetChatSender()
-                        && !index.IsDate() && !index.IsStandalone()
-                        && (index.ContainsId(msg->Id_) || index.ContainsId(msg->Prev_)))
-                    {
-                        index.InsertMessageKey(key);
-                        index.MaxTime_ = std::max(msg->GetTime(), index.MaxTime_);
-                        index.MinTime_ = std::min(msg->GetTime(), index.MinTime_);
-                        merged = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!merged)
-            {
-                removeDateItemIfOutdated(aimId, *msg);
-
-                const auto dateItemAlreadyExists = hasDate(aimId, msg->GetDate());
-                const auto scheduleForDatesProcessing = (!dateItemAlreadyExists && !msg->IsDeleted());
-                if (scheduleForDatesProcessing)
-                {
-                    auto dateKey = msg->ToKey();
-                    dateKey.Type_ = core::message_type::undefined;
-                    dateKey.control_type_ = control_type::ct_date;
-
-                    InternalIndex newIndex;
-                    newIndex.AimId_ = aimId;
-                    newIndex.MaxTime_ = 0;
-                    newIndex.MinTime_ = 0;
-                    newIndex.Date_ = msg->GetDate();
-                    newIndex.InsertMessageKey(dateKey);
-                    newIndex.Key_ = dateKey;
-                    newIndex.SetDeleted(msg->IsDeleted());
-
-                    const auto isFirstMessage = !havePrevMsg;
-                    const auto isDateDiffer = (havePrevMsg && (msg->GetDate() != prevMsg->Buddy_->GetDate()));
-                    const auto insertDateTablet = (isFirstMessage || isDateDiffer);
-                    if (insertDateTablet)
-                    {
-                        addDateItem(aimId, newIndex.Key_, newIndex.Date_);
-                        indexes.insert(newIndex);
-                        msg->SetHasAvatar(!msg->IsOutgoing());
-                    }
-                }
-
-                InternalIndex newIndex;
-                newIndex.AimId_ = aimId;
-                newIndex.MaxTime_ = msg->GetTime();
-                newIndex.MinTime_ = msg->GetTime();
-                newIndex.InsertMessageKey(key);
-                newIndex.Key_ = key;
-                newIndex.SetChatSender(msg->GetChatSender());
-                newIndex.ChatFriendly_ = msg->ChatFriendly_;
-                newIndex.SetFileSharing(msg->GetFileSharing());
-                newIndex.SetSticker(msg->GetSticker());
-                newIndex.SetChatEvent(msg->GetChatEvent());
-                newIndex.SetVoipEvent(msg->GetVoipEvent());
-                newIndex.SetDeleted(msg->IsDeleted());
-                indexes.insert(newIndex);
-            }
-
-            messages.emplace(MessageInternal(msg));
-        }
-
-        auto &indexesByAimId = Indexes_[aimId];
-
-        QList<MessageKey> updatedIndexes;
-        for (auto iter : indexes)
-        {
-            bool inserted = false;
-            if (!iter.IsDate() && !iter.IsStandalone())
-            {
-                for (auto ind = indexesByAimId.begin(); ind != indexesByAimId.end(); ++ind)
-                {
-                    if (!PendingMessages_[aimId].empty() && ind->Key_.Id_ <= PendingMessages_[aimId].rbegin()->LastIndex_)
-                        continue;
-
-                    if (ind->Key_.isOutgoing() == iter.Key_.isOutgoing()
-                        && ind->GetChatSender() == iter.GetChatSender()
-                        && !ind->IsDate() && !ind->IsStandalone())
-                    {
-                        if (((iter.ContainsId(ind->Key_.Prev_) || iter.ContainsId(ind->Key_.Id_)) && ind->MinTime_ - iter.MaxTime_ <= 120)
-                            || ((ind->ContainsId(iter.Key_.Prev_) || ind->ContainsId(iter.Key_.Id_)) && iter.MinTime_ - ind->MaxTime_ <= 120))
-                        {
-                            ind->MaxTime_ = std::max(iter.MaxTime_, ind->MaxTime_);
-                            ind->MinTime_ = std::min(iter.MinTime_, ind->MinTime_);
-                            ind->InsertMessageKeys(iter.GetMessageKeys());
-                            inserted = true;
-                            if (!updatedIndexes.contains(ind->Key_))
-                                updatedIndexes << ind->Key_;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (!inserted)
-            {
-                indexesByAimId.insert(iter);
-                if (!updatedValues.contains(iter.Key_))
-                    updatedValues << iter.Key_;
-            }
-        }
-
-        updateMessagesMargins(aimId);
-
-        if (modelFirst == -2 && Sequences_.contains(seq))
-            emit ready(aimId);
-
-        if (option != Ui::MessagesBuddiesOpt::Requested)
-        {
-            for (auto iter : updatedIndexes)
-            {
-                updatedValues.append(iter);
-            }
-            emitUpdated(updatedValues, aimId, hole ? HOLE : BASE);
-        }
-        else
-        {
-            if (!updatedIndexes.empty())
-                emitUpdated(updatedIndexes, aimId, REQUESTED);
-
-            if (Subscribed_.contains(aimId))
-            {
-                Subscribed_.removeAll(aimId);
-                emit canFetchMore(aimId);
-            }
-        }
-
-        const auto isFromServer = (option == Ui::MessagesBuddiesOpt::FromServer);
-        const auto isRequested = (option == Ui::MessagesBuddiesOpt::Requested);
-        const auto isInit = (option == Ui::MessagesBuddiesOpt::Init);
         if (isFromServer || isRequested || isInit)
         {
-            if ((int32_t)indexesByAimId.size() >= preloadCount())
+            if ((int32_t)dialogMessages.size() >= preloadCount())
             {
                 setFirstMessage(
-                    aimId,
-                    indexesByAimId.begin()->Key_.Id_
+                    _aimId,
+                    dialogMessages.begin()->first.getId()
                     );
             }
         }
+
+        if (isInit)
+        {
+            updateLastSeen(_aimId);
+        }
     }
 
-    void MessagesModel::messagesDeleted(QString aimId, QList<int64_t> deletedIds)
+    void MessagesModel::updateLastSeen(const QString& _aimid)
     {
-        assert(!aimId.isEmpty());
-        assert(!deletedIds.isEmpty());
+        auto dlgState = Logic::getRecentsModel()->getDlgState(_aimid);
+        if (dlgState.AimId_ != _aimid)
+            dlgState = Logic::getUnknownsModel()->getDlgState(_aimid);
 
-        auto &index = Indexes_[aimId];
-        auto &messages = Messages_[aimId];
+        emit readByClient(dlgState.AimId_, dlgState.TheirsLastRead_);
+    }
+
+    void MessagesModel::messagesDeleted(QString _aimId, QList<int64_t> _deletedIds)
+    {
+        assert(!_aimId.isEmpty());
+        assert(!_deletedIds.isEmpty());
+
+        auto &dialogMessages = getContactDialog(_aimId).getMessages();
 
         QList<Logic::MessageKey> messageKeys;
 
-        for (const auto id : deletedIds)
+        for (const auto id : _deletedIds)
         {
             assert(id > 0);
 
-            InternalIndex searchIndexRec;
-            searchIndexRec.Key_.Id_ = id;
+            MessageKey newKey;
+            newKey.setId(id);
 
-            // find and mark the message as deleted
-
-            auto messageIter = messages.find(internal(searchIndexRec.Key_));
-            if (messageIter != messages.end())
-            {
-                auto patchedMessageRec = *messageIter;
-
-                patchedMessageRec.Key_.setDeleted(true);
-                patchedMessageRec.Buddy_->SetDeleted(true);
-
-                auto insertionIter = messageIter;
-                ++insertionIter;
-
-                messages.erase(messageIter);
-
-                messages.emplace_hint(insertionIter, std::move(patchedMessageRec));
-            }
 
             // find the deleted index record
 
-            const auto indexRecIter = index.find(searchIndexRec);
-            if (indexRecIter == index.end())
+            auto msgsRecIter = dialogMessages.find(newKey);
+            if (msgsRecIter == dialogMessages.end())
             {
                 continue;
             }
 
-            // patch the index record found
+            msgsRecIter->second.setDeleted(true);
 
-            auto patchedIndexRec = *indexRecIter;
-
-            const auto &key = patchedIndexRec.Key_;
-
-            patchedIndexRec.SetDeleted(true);
-
-            auto insertionIter = indexRecIter;
-            ++insertionIter;
-
-            index.erase(indexRecIter);
-
-            index.emplace_hint(insertionIter, std::move(patchedIndexRec));
+            auto key = msgsRecIter->first;
 
             messageKeys.push_back(key);
-
-            __INFO(
-                "delete_history",
-                "sending delete request to the history page\n"
-                "    message-id=<" << key.Id_ << ">"
-                );
         }
 
         if (!messageKeys.empty())
         {
-            emitDeleted(messageKeys, aimId);
+            emitDeleted(messageKeys, _aimId);
         }
 
-        updateMessagesMargins(aimId);
+        updateMessagesMarginsAndAvatars(_aimId);
 
-        updateDateItems(aimId);
+        updateDateItems(_aimId);
     }
 
-    void MessagesModel::messagesDeletedUpTo(QString aimId, int64_t id)
+    void MessagesModel::messagesDeletedUpTo(QString _aimId, int64_t _id)
     {
-        assert(!aimId.isEmpty());
-        assert(id > -1);
+        assert(!_aimId.isEmpty());
+        assert(_id > -1);
 
-        auto &index = Indexes_[aimId];
+        auto &dialogMessages = getContactDialog(_aimId).getMessages();
 
         QList<Logic::MessageKey> messageKeys;
 
-        auto iter = index.cbegin();
-        for (; iter != index.cend(); ++iter)
+        auto iter = dialogMessages.cbegin();
+        for (; iter != dialogMessages.cend(); ++iter)
         {
-            const auto currentId = iter->Key_.Id_;
-            if (currentId > id)
+            const auto currentId = iter->first.getId();
+            if (currentId > _id)
             {
                 break;
             }
 
-            const Logic::MessageKey key(currentId, -1, QString(), -1, 0, core::message_type::base, false, false, true, Logic::control_type::ct_message);
+            const Logic::MessageKey key(currentId, -1, QString(), -1, 0, core::message_type::base, false, Logic::preview_type::none, Logic::control_type::ct_message);
 
             messageKeys.push_back(key);
         }
 
-        emitDeleted(messageKeys, aimId);
+        emitDeleted(messageKeys, _aimId);
 
-        index.erase(index.begin(), iter);
+        dialogMessages.erase(dialogMessages.begin(), iter);
 
-        updateDateItems(aimId);
+        updateDateItems(_aimId);
     }
 
-    void MessagesModel::messagesModified(QString aimId, std::shared_ptr<Data::MessageBuddies> modifications)
+    void MessagesModel::messagesModified(QString _aimId, std::shared_ptr<Data::MessageBuddies> _modifications)
     {
-        assert(!aimId.isEmpty());
-        assert(modifications);
-        assert(!modifications->empty());
+        assert(!_aimId.isEmpty());
+        assert(_modifications);
+        assert(!_modifications->empty());
 
         QList<Logic::MessageKey> messageKeys;
 
-        for (const auto &modification : *modifications)
+        for (const auto &modification : *_modifications)
         {
             if (!modification->HasText() &&
                 !modification->IsChatEvent())
@@ -1077,7 +1203,7 @@ namespace Logic
                 continue;
             }
 
-            const auto key = applyMessageModification(aimId, *modification);
+            const auto key = applyMessageModification(_aimId, *modification);
             if (!key.hasId())
             {
                 continue;
@@ -1088,24 +1214,29 @@ namespace Logic
             __INFO(
                 "delete_history",
                 "sending update request to the history page\n"
-                "    message-id=<" << key.Id_ << ">");
+                "    message-id=<" << key.getId() << ">");
         }
 
-        emitUpdated(messageKeys, aimId, MODIFIED);
+        emitUpdated(messageKeys, _aimId, MODIFIED);
     }
 
-    void MessagesModel::processPendingMessage(InOut Data::MessageBuddies& msgs, const QString& aimId, const Ui::MessagesBuddiesOpt state)
+    void MessagesModel::processPendingMessage(InOut Data::MessageBuddies& _msgs, const QString& _aimId, const Ui::MessagesBuddiesOpt _state)
     {
-        assert(state > Ui::MessagesBuddiesOpt::Min);
-        assert(state < Ui::MessagesBuddiesOpt::Max);
+        assert(_state > Ui::MessagesBuddiesOpt::Min);
+        assert(_state < Ui::MessagesBuddiesOpt::Max);
 
-        if (msgs.empty())
+        if (_msgs.empty())
         {
             return;
         }
 
-        std::set<InternalIndex> indexes;
-        for (Data::MessageBuddies::iterator iter = msgs.begin(); iter != msgs.end();)
+        QList<MessageKey> updatedValues;
+
+        auto& dialog = getContactDialog(_aimId);
+        auto& pendingMessages = dialog.getPendingMessages();
+        auto& dialogMessages = dialog.getMessages();
+
+        for (Data::MessageBuddies::iterator iter = _msgs.begin(); iter != _msgs.end();)
         {
             auto msg = *iter;
 
@@ -1114,120 +1245,50 @@ namespace Logic
             {
                 msg->SetHasAvatar(!msg->IsOutgoing());
 
-                bool inserted = false;
-                for (auto &index : indexes)
-                {
-                    if (msg->GetTime() >= (index.MinTime_ - 120)
-                        && msg->GetTime() <= (index.MaxTime_ + 120)
-                        && index.Key_.isOutgoing() == msg->IsOutgoing()
-                        && index.GetChatSender() == msg->GetChatSender()
-                        && !index.IsStandalone())
-                    {
-                        index.InsertMessageKey(key);
-                        index.MaxTime_ = std::max(msg->GetTime(), index.MaxTime_);
-                        index.MinTime_ = std::min(msg->GetTime(), index.MinTime_);
-                        inserted = true;
-                        break;
-                    }
-                }
+                Message newMessage(_aimId);
+                newMessage.setKey(key);
+                newMessage.setChatSender(msg->GetChatSender());
+                newMessage.setChatFriendly(msg->ChatFriendly_);
+                newMessage.setFileSharing(msg->GetFileSharing());
+                newMessage.setSticker(msg->GetSticker());
+                newMessage.setChatEvent(msg->GetChatEvent());
+                newMessage.setVoipEvent(msg->GetVoipEvent());
+                newMessage.setDeleted(msg->IsDeleted());
+                newMessage.setBuddy(msg);
 
-                if (!inserted)
-                {
+                iter = _msgs.erase(iter);
 
-                    InternalIndex newIndex;
-                    newIndex.AimId_ = aimId;
-                    newIndex.MaxTime_ = msg->GetTime();
-                    newIndex.MinTime_ = msg->GetTime();
-                    newIndex.InsertMessageKey(key);
-                    newIndex.Key_ = key;
-                    newIndex.SetChatSender(msg->GetChatSender());
-                    newIndex.ChatFriendly_ = msg->ChatFriendly_;
-                    newIndex.SetFileSharing(msg->GetFileSharing());
-                    newIndex.SetSticker(msg->GetSticker());
-                    newIndex.SetChatEvent(msg->GetChatEvent());
-                    newIndex.SetVoipEvent(msg->GetVoipEvent());
-                    newIndex.SetDeleted(msg->IsDeleted());
-                    if (!Indexes_[aimId].empty())
-                        newIndex.LastIndex_ = Indexes_[aimId].rbegin()->Key_.Id_;
-                    indexes.insert(newIndex);
-                }
-                MessageInternal message(msg);
-                Messages_[aimId].emplace(message);
-                iter = msgs.erase(iter);
+                pendingMessages.emplace(newMessage.getKey(), newMessage);
+                dialogMessages.emplace(newMessage.getKey(), newMessage);
+
+                updatedValues << newMessage.getKey();
             }
             else if (key.isOutgoing())
             {
-                InternalIndex newIndex;
-                newIndex.Key_ = key;
-                std::set<InternalIndex>::iterator exist = std::find(PendingMessages_[aimId].begin(), PendingMessages_[aimId].end(), newIndex);
-                if (exist != PendingMessages_[aimId].end())
+                auto exist_pending = std::find_if(pendingMessages.begin(), pendingMessages.end(), [key](const std::pair<MessageKey, Message>& _pair)->bool
+                {
+                    return (key == _pair.first);
+                });
+
+                if (exist_pending != pendingMessages.end())
                 {
                     assert(key.hasId());
-                    assert(!key.InternalId_.isEmpty());
-                    emit messageIdFetched(aimId, key);
+                    assert(!key.getInternalId().isEmpty());
+                    emit messageIdFetched(_aimId, key);
 
-                    const auto &existingKeys = exist->GetMessageKeys();
-                    for (auto iter : existingKeys)
+                    auto exist_message = std::find_if(dialogMessages.begin(), dialogMessages.end(), [key](const std::pair<MessageKey, Message>& _pair)->bool
                     {
-                        Messages_[aimId].erase(internal(iter));
+                        return (key == _pair.first);
+                    });
+
+                    if (exist_message != dialogMessages.end())
+                    {
+                        dialogMessages.erase(exist_message);
                     }
 
-                    PendingMessages_[aimId].erase(*exist);
+                    pendingMessages.erase(exist_pending);
                 }
-                else
-                {
-                    if (!PendingMessages_[aimId].empty())
-                    {
-                        std::set<InternalIndex>::reverse_iterator last = PendingMessages_[aimId].rbegin();
-                        while (last != PendingMessages_[aimId].rend())
-                        {
-                            const auto &existingKeys = last->GetMessageKeys();
 
-                            std::set<MessageKey>::iterator existKey = std::find(existingKeys.begin(), existingKeys.end(), key);
-                            if (existKey != existingKeys.end())
-                            {
-                                Messages_[aimId].erase(internal(*existKey));
-                                last->RemoveMessageKey(*existKey);
-                                if (existingKeys.empty())
-                                {
-                                    PendingMessages_[aimId].erase(last.base());
-                                }
-                                else
-                                {
-                                    QList<MessageKey> updatedValues;
-                                    updatedValues << last->Key_;
-                                    emitUpdated(updatedValues, aimId, PENDING);
-                                }
-                                break;
-                            }
-                            ++last;
-                        }
-                    }
-
-                    if (!Indexes_[aimId].empty())
-                    {
-                        std::set<InternalIndex>::reverse_iterator last = Indexes_[aimId].rbegin();
-                        while (last != Indexes_[aimId].rend())
-                        {
-                            if (last->Key_.isOutgoing())
-                            {
-                                const auto &existingKeys = last->GetMessageKeys();
-
-                                std::set<MessageKey>::iterator existKey = std::find(existingKeys.begin(), existingKeys.end(), key);
-                                if (existKey != existingKeys.end() && existKey->isPending())
-                                {
-                                    Messages_[aimId].erase(internal(*existKey));
-                                    last->RemoveMessageKey(*existKey);
-                                    QList<MessageKey> updatedValues;
-                                    updatedValues << last->Key_;
-                                    emitUpdated(updatedValues, aimId, PENDING);
-                                    break;
-                                }
-                            }
-                            ++last;
-                        }
-                    }
-                }
                 ++iter;
             }
             else
@@ -1237,157 +1298,66 @@ namespace Logic
         }
 
 
-        QList<MessageKey> updatedValues;
-        for (auto iter : indexes)
-        {
-            PendingMessages_[aimId].emplace(iter);
-            updatedValues << iter.Key_;
-        }
-
-        if (state != Ui::MessagesBuddiesOpt::Requested)
-            emitUpdated(updatedValues, aimId, BASE);
+        if (_state != Ui::MessagesBuddiesOpt::Requested)
+            emitUpdated(updatedValues, _aimId, BASE);
     }
 
-    Data::MessageBuddy MessagesModel::item(const InternalIndex& index)
+    Data::MessageBuddy MessagesModel::item(const Message& _message)
     {
         Data::MessageBuddy result;
 
-        result.Id_ = index.Key_.Id_;
-        result.Prev_ = index.Key_.Prev_;
-        result.InternalId_ = index.Key_.InternalId_;
+        result.Id_ = _message.getKey().getId();
+        result.Prev_ = _message.getKey().getPrev();
+        result.InternalId_ = _message.getKey().getInternalId();
 
-        auto first = true;
-        for (const auto& id : index.GetMessageKeys())
+        const auto &dialogMessages = getContactDialog(_message.getAimId()).getMessages();
+
+        auto iterMsg = dialogMessages.find(_message.getKey());
+
+        if (iterMsg != dialogMessages.end())
         {
-            const auto &messages = Messages_[index.AimId_];
+            result.SetType(_message.getKey().getType());
+            result.AimId_ = _message.getAimId();
+            result.SetOutgoing(iterMsg->second.getBuddy()->IsOutgoing());
+            result.Chat_ = iterMsg->second.getBuddy()->Chat_;
+            result.SetChatSender(iterMsg->second.getBuddy()->GetChatSender());
+            result.ChatFriendly_ = iterMsg->second.getBuddy()->ChatFriendly_;
+            result.SetHasAvatar(iterMsg->second.getBuddy()->HasAvatar());
+            result.SetIndentBefore(iterMsg->second.getBuddy()->GetIndentBefore());
 
-            auto msg = messages.find(internal(id));
-            if (msg == messages.end())
-            {
-                continue;
-            }
+            result.FillFrom(*iterMsg->second.getBuddy());
 
-            if (first)
-            {
-                result.SetType(index.Key_.Type_);
-                result.AimId_ = index.AimId_;
-                result.SetOutgoing(msg->Buddy_->IsOutgoing());
-                result.Chat_ = msg->Buddy_->Chat_;
-                result.SetChatSender(msg->Buddy_->GetChatSender());
-                result.ChatFriendly_ = msg->Buddy_->ChatFriendly_;
-                result.SetHasAvatar(msg->Buddy_->HasAvatar());
-                result.SetIndentBefore(msg->Buddy_->GetIndentBefore());
-            }
+            result.SetTime(iterMsg->second.getBuddy()->GetTime());
 
-            result.FillFrom(*msg->Buddy_, !first);
+            result.SetFileSharing(_message.getFileSharing());
+            result.SetSticker(_message.getSticker());
+            result.SetChatEvent(_message.getChatEvent());
+            result.SetVoipEvent(_message.getVoipEvent());
+            result.Quotes_ = _message.getBuddy()->Quotes_;
 
-            first = false;
-
-            result.SetTime(index.MaxTime_);
-
-            result.SetFileSharing(index.GetFileSharing());
-            result.SetSticker(index.GetSticker());
-            result.SetChatEvent(index.GetChatEvent());
-            result.SetVoipEvent(index.GetVoipEvent());
-
-            if (id.Id_ == -1)
+            if (_message.getKey().getId() == -1)
             {
                 result.Id_ = -1;
             }
         }
-
-        if (first)
+        else
         {
             result.Id_ = -1;
-            result.InternalId_.clear();
         }
 
         return result;
     }
 
-    bool MessagesModel::tryInsertPendingMessageToLast(std::shared_ptr<Data::MessageBuddies> msgs, const QString& aimId)
+    void MessagesModel::sendDeliveryNotifications(const Data::MessageBuddies& _msgs)
     {
-        QList<MessageKey> updatedValues;
-
-        auto inserted = false;
-
-        auto &pendingMessages = PendingMessages_[aimId];
-        auto &indexes = Indexes_[aimId];
-        auto &messages = Messages_[aimId];
-
-        for (auto msg : *msgs)
-        {
-            if (!pendingMessages.empty())
-            {
-                auto last = pendingMessages.rbegin();
-
-                const auto messageTimeGreaterThanMergeRangeStart = ((last->MinTime_ - 120) <= msg->GetTime());
-                const auto messageTimeLesserThanMergeRangeEnd = ((last->MaxTime_ + 120) >= msg->GetTime());
-                const auto messageTimeIsInMergeRage = (messageTimeGreaterThanMergeRangeStart && messageTimeLesserThanMergeRangeEnd);
-                const auto mergeMessages = (messageTimeIsInMergeRage && !last->IsStandalone() && !msg->IsStandalone());
-
-                if (mergeMessages)
-                {
-                    MessageInternal message(msg);
-                    messages.insert(message);
-
-                    last->MaxTime_ = std::max(last->MaxTime_, msg->GetTime());
-                    last->MinTime_ = std::min(last->MinTime_, msg->GetTime());
-                    last->InsertMessageKey(message.Key_);
-                    inserted = true;
-                    if (!updatedValues.contains(last->Key_))
-                        updatedValues << last->Key_;
-                }
-            }
-
-            if (!inserted && !indexes.empty())
-            {
-                auto &last = *indexes.rbegin();
-
-                const auto messageTimeGreaterThanMergeRangeStart = ((last.MinTime_ - 120) <= msg->GetTime());
-                const auto messageTimeLesserThanMergeRangeEnd = ((last.MaxTime_ + 120) >= msg->GetTime());
-                const auto messageTimeIsInMergeRage = (messageTimeGreaterThanMergeRangeStart && messageTimeLesserThanMergeRangeEnd);
-                const auto mergeMessages = (last.Key_.isOutgoing() && messageTimeIsInMergeRage && !last.IsStandalone() && !msg->IsStandalone());
-
-                if (!PendingMessages_[aimId].empty() && last.Key_.Id_ <= PendingMessages_[aimId].rbegin()->LastIndex_)
-                    continue;
-
-                if (mergeMessages)
-                {
-                    MessageInternal message(msg);
-                    messages.insert(message);
-
-                    last.MaxTime_ = std::max(last.MaxTime_, msg->GetTime());
-                    last.MinTime_ = std::min(last.MinTime_, msg->GetTime());
-
-                    const auto &existingKeys = last.GetMessageKeys();
-                    if (std::find(existingKeys.begin(), existingKeys.end(), message.Key_) == existingKeys.end())
-                    {
-                        last.InsertMessageKey(message.Key_);
-                        inserted = true;
-                        if (!updatedValues.contains(last.Key_))
-                            updatedValues << last.Key_;
-                    }
-                }
-            }
-        }
-
-        if (inserted)
-            emitUpdated(updatedValues, aimId, BASE);
-
-        return inserted;
-    }
-
-    void MessagesModel::sendDeliveryNotifications(const Data::MessageBuddies &msgs)
-    {
-        assert(!msgs.empty());
+        assert(!_msgs.empty());
 
         __INFO(
             "delivery",
             "sending delivery notifications to widgets\n" <<
-            "	count=<" << msgs.size() << ">");
+            "	count=<" << _msgs.size() << ">");
 
-        for (const auto &msg : msgs)
+        for (const auto& msg : _msgs)
         {
             assert(msg->CheckInvariant());
 
@@ -1428,10 +1398,48 @@ namespace Logic
         }
     }
 
-    void MessagesModel::emitUpdated(const QList<Logic::MessageKey>& list, const QString& aimId, unsigned mode)
+    void MessagesModel::removeDateItemIfOutdated(const QString& _aimId, const Data::MessageBuddy& _msg)
+    {
+        assert(_msg.HasId());
+
+        const auto msgKey = _msg.ToKey();
+
+        const auto &date = _msg.GetDate();
+
+        auto& dialog = getContactDialog(_aimId);
+
+        auto& dateItems = dialog.getDatesMap();
+
+        auto dateItemIter = dateItems.find(date);
+        if (dateItemIter == dateItems.end())
+        {
+            return;
+        }
+
+        auto &indexRecord = dateItemIter->second;
+
+        const auto isOutdated = (msgKey < indexRecord.getKey());
+        if (!isOutdated)
+        {
+            return;
+        }
+
+        dialog.getMessages().erase(indexRecord.getKey());
+
+        QList<Logic::MessageKey> toRemove;
+        toRemove << indexRecord.getKey();
+
+        emitDeleted(toRemove, _aimId);
+
+        dateItems.erase(dateItemIter);
+    }
+
+
+
+    void MessagesModel::emitUpdated(const QList<Logic::MessageKey>& _list, const QString& _aimId, unsigned _mode)
     {
         bool containsChatEvent = false;
-        for (auto iter : list)
+        for (auto iter : _list)
         {
             if (iter.isChatEvent())
             {
@@ -1440,18 +1448,18 @@ namespace Logic
             }
         }
 
-        if (containsChatEvent)
-            emit chatEvent(aimId);
+        if (containsChatEvent && Logic::getContactListModel()->isChat(_aimId))
+            emit chatEvent(_aimId);
 
-        if (list.size() <= moreCount())
+        if (_list.size() <= moreCount())
         {
-            emit updated(list, aimId, mode);
+            emit updated(_list, _aimId, _mode);
             return;
         }
 
         int i = 0;
         QList<Logic::MessageKey> updatedList;
-        for (auto iter : list)
+        for (auto iter : _list)
         {
             if (++i < moreCount())
             {
@@ -1462,25 +1470,27 @@ namespace Logic
             updatedList.push_back(iter);
 
             i = 0;
-            emit updated(updatedList, aimId, mode);
+            emit updated(updatedList, _aimId, _mode);
             updatedList.clear();
         }
 
         if (!updatedList.isEmpty())
-            emit updated(updatedList, aimId, mode);
+            emit updated(updatedList, _aimId, _mode);
     }
 
-    void MessagesModel::emitDeleted(const QList<Logic::MessageKey>& list, const QString& aimId)
+    void MessagesModel::emitDeleted(const QList<Logic::MessageKey>& _list, const QString& _aimId)
     {
-        emit deleted(list, aimId);
+        emit deleted(_list, _aimId);
     }
 
-    void MessagesModel::createFileSharingWidget(Ui::MessageItem &messageItem, QWidget* parent, const Data::MessageBuddy& messageBuddy) const
+    void MessagesModel::createFileSharingWidget(Ui::MessageItem& _messageItem, const Data::MessageBuddy& _messageBuddy) const
     {
+        auto parent = &_messageItem;
+
         std::unique_ptr<HistoryControl::MessageContentWidget> item;
-        if (messageBuddy.ContainsPttAudio())
+        if (_messageBuddy.ContainsPttAudio())
         {
-            item.reset(new HistoryControl::PttAudioWidget(parent, messageBuddy.AimId_, messageBuddy.IsOutgoing(), messageBuddy.GetText(), messageBuddy.GetPttDuration(), messageBuddy.Id_, messageBuddy.Prev_));
+            item.reset(new HistoryControl::PttAudioWidget(parent, _messageBuddy.AimId_, _messageBuddy.IsOutgoing(), _messageBuddy.GetText(), _messageBuddy.GetPttDuration(), _messageBuddy.Id_, _messageBuddy.Prev_));
         }
         else
         {
@@ -1489,138 +1499,86 @@ namespace Logic
             item.reset(
                 new HistoryControl::FileSharingWidget(
                     parent,
-                    messageBuddy.IsOutgoing(),
-                    messageBuddy.AimId_,
-                    messageBuddy.GetFileSharing(),
+                    _messageBuddy.IsOutgoing(),
+                    _messageBuddy.AimId_,
+                    _messageBuddy.GetFileSharing(),
                     previewsEnabled));
+
+            item->setFixedWidth(itemWidth_);
 
             connect(
                 item.get(),
                 &HistoryControl::MessageContentWidget::removeMe,
-                [messageBuddy]
+                [_messageBuddy]
                 {
                     QList<MessageKey> keys;
-                    keys << messageBuddy.ToKey();
-                    emit GetMessagesModel()->deleted(keys, messageBuddy.AimId_);
+                    keys << _messageBuddy.ToKey();
+                    emit GetMessagesModel()->deleted(keys, _messageBuddy.AimId_);
                 });
         }
 
-        messageItem.setContentWidget(item.release());
+        _messageItem.setContentWidget(item.release());
     }
 
-    void MessagesModel::createImagePreviewWidget(Ui::MessageItem &messageItem, QWidget* parent, const Data::MessageBuddy& messageBuddy) const
+    MessageKey MessagesModel::applyMessageModification(const QString& _aimId, Data::MessageBuddy& _modification)
     {
-        const auto uri = messageBuddy.GetFirstUriFromText();
-        const auto &fullText = messageBuddy.GetText();
-        const auto previewsEnabled = Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true);
+        assert(_modification.AimId_ == _aimId);
 
-        auto item = new HistoryControl::ImagePreviewWidget(parent, messageBuddy.IsOutgoing(), uri.toString(), fullText, previewsEnabled, messageItem.getContact());
-        item->setMaximumWidth(ItemWidth_);
+        auto &dialogMessages = getContactDialog(_aimId).getMessages();
 
-        messageItem.setContentWidget(item);
-    }
-
-    void MessagesModel::createStickerWidget(Ui::MessageItem &messageItem, QWidget* parent, const Data::MessageBuddy& messageBuddy) const
-    {
-        auto item = new HistoryControl::StickerWidget(parent, messageBuddy.GetSticker(), messageBuddy.IsOutgoing(), messageItem.getContact());
-        item->setFixedWidth(ItemWidth_);
-
-        messageItem.setContentWidget(item);
-        messageItem.setStickerText(messageBuddy.GetText());
-    }
-
-    MessageKey MessagesModel::applyMessageModification(const QString& aimId, Data::MessageBuddy& modification)
-    {
-        assert(modification.AimId_ == aimId);
-
-        const auto &messages = Messages_[aimId];
-        auto &index = Indexes_[aimId];
-
-        auto key = modification.ToKey();
+        auto key = _modification.ToKey();
         assert(key.hasId());
 
         // find index
 
-        const auto existingIndexIter = findIndexRecord(index, key);
-        const auto isIndexMissing = (existingIndexIter == index.end());
+        const auto existingIndexIter = findIndexRecord(dialogMessages, key);
+        const auto isIndexMissing = (existingIndexIter == dialogMessages.end());
         if (isIndexMissing)
         {
             __INFO(
                 "delete_history",
                 "modification patch skipped\n"
                 "    reason=<no-index>\n"
-                "    message-id=<" << key.Id_ << ">");
+                "    message-id=<" << key.getId() << ">");
 
             return MessageKey();
         }
 
         // apply modification to the index record
 
-        const auto &existingIndex = *existingIndexIter;
-        assert(!existingIndex.IsDeleted());
+        auto existingIndex = existingIndexIter->second;
+        assert(!existingIndex.isDeleted());
 
-        key = existingIndex.GetKeyById(key.Id_);
-        assert(!key.isEmpty());
-
-        auto modifiedIndex = existingIndex;
-        modifiedIndex.ApplyModification(modification);
+        existingIndex.applyModification(_modification);
+        existingIndex.getBuddy()->ApplyModification(_modification);
+        key = existingIndex.getKey();
 
         auto insertionIter = existingIndexIter;
         ++insertionIter;
 
-        index.erase(existingIndexIter);
+        dialogMessages.erase(existingIndexIter);
 
-        index.emplace_hint(insertionIter, modifiedIndex);
-
-        // find message
-
-        const auto existingMessageIter = messages.find(internal(key));
-        const auto isMessageMissing = (existingMessageIter == messages.end());
-        if (isMessageMissing)
-        {
-            __INFO(
-                "delete_history",
-                "modification patch skipped\n"
-                "    reason=<no-message>\n"
-                "    message-id=<" << key.Id_ << ">");
-
-            return key;
-        }
-
-        // apply modification to the message
-
-        auto &existingMessage = *existingMessageIter->Buddy_;
-        existingMessage.ApplyModification(modification);
+        dialogMessages.emplace_hint(insertionIter, std::make_pair(key, existingIndex));
 
         return key;
     }
 
-    bool MessagesModel::hasItemsInBetween(const QString &aimId, const InternalIndex &l, const InternalIndex &r) const
+    bool MessagesModel::hasItemsInBetween(const QString& _aimId, const Message& _l, const Message& _r) const
     {
-        assert(!aimId.isEmpty());
-        assert(l < r);
+        assert(!_aimId.isEmpty());
 
-        const auto &indexRecords = Indexes_[aimId];
+        const ContactDialog* dialog = getContactDialogConst(_aimId);
+        if (!dialog)
+            return false;
 
-        const auto iterL = indexRecords.upper_bound(l);
-        const auto iterR = indexRecords.lower_bound(r);
-
-        for (auto iter = iterL; iter != iterR; ++iter)
-        {
-            if (!iter->IsDeleted())
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return dialog->hasItemsInBetween(_l.getKey(), _r.getKey());
     }
 
-    void MessagesModel::updateDateItems(const QString& aimId)
+    void MessagesModel::updateDateItems(const QString& _aimId)
     {
-        assert(!aimId.isEmpty());
+        assert(!_aimId.isEmpty());
 
-        auto &dateRecords = DateItems_[aimId];
+        auto &dateRecords = getContactDialog(_aimId).getDatesMap();
 
         QList<MessageKey> toRemove;
         toRemove.reserve(dateRecords.size());
@@ -1632,7 +1590,7 @@ namespace Logic
         {
             const auto &dateIndexRecord = dateRecordsIter->second;
 
-            InternalIndex nextDateIndexRecord;
+            Message nextDateIndexRecord(_aimId);
 
             auto nextDateRecordsIter = dateRecordsIter;
             ++nextDateRecordsIter;
@@ -1640,44 +1598,47 @@ namespace Logic
             const auto isLastDateRecord = (nextDateRecordsIter == dateRecords.cend());
             if (isLastDateRecord)
             {
-                nextDateIndexRecord.Key_ = MessageKey::MAX;
+                nextDateIndexRecord.setKey(MessageKey::MAX);
             }
             else
             {
                 nextDateIndexRecord = nextDateRecordsIter->second;
             }
 
-            const auto hasItemsBetweenDates = hasItemsInBetween(aimId, dateIndexRecord, nextDateIndexRecord);
+            const auto hasItemsBetweenDates = hasItemsInBetween(_aimId, dateIndexRecord, nextDateIndexRecord);
             if (!hasItemsBetweenDates)
             {
-                toRemove << dateIndexRecord.Key_;
+                toRemove << dateIndexRecord.getKey();
                 dateRecords.erase(dateRecordsIter);
             }
 
             dateRecordsIter = nextDateRecordsIter;
         }
 
-        emitDeleted(toRemove, aimId);
+        emitDeleted(toRemove, _aimId);
     }
 
-    void MessagesModel::updateMessagesMargins(const QString& aimId)
+    void MessagesModel::updateMessagesMarginsAndAvatars(const QString& _aimId)
     {
-        assert(!aimId.isEmpty());
+        assert(!_aimId.isEmpty());
 
-        const auto &messages = Messages_[aimId];
+        const auto isMultichat = Logic::getContactListModel()->isChat(_aimId);
 
-        auto messagesIter = messages.crbegin();
+        const auto &dialogMessages = getContactDialog(_aimId).getMessages();
+
+        auto messagesIter = dialogMessages.crbegin();
+
         for(;;)
         {
             for (;;)
             {
-                const auto isFirstElementReached = (messagesIter == messages.crend());
+                const auto isFirstElementReached = (messagesIter == dialogMessages.crend());
                 if (isFirstElementReached)
                 {
                     return;
                 }
 
-                if (!messagesIter->Buddy_->IsDeleted())
+                if (!messagesIter->second.getBuddy()->IsDeleted())
                 {
                     break;
                 }
@@ -1685,14 +1646,15 @@ namespace Logic
                 ++messagesIter;
             }
 
-            auto &message = *messagesIter->Buddy_;
-            const auto &messageKey = messagesIter->Key_;
+            auto &message = *messagesIter->second.getBuddy();
+
+            const auto &messageKey = messagesIter->first;
 
             for (;;)
             {
                 ++messagesIter;
 
-                const auto isFirstElementReached = (messagesIter == messages.crend());
+                const auto isFirstElementReached = (messagesIter == dialogMessages.crend());
                 if (isFirstElementReached)
                 {
                     if (message.GetIndentBefore())
@@ -1701,503 +1663,302 @@ namespace Logic
                         emit indentChanged(messageKey, false);
                     }
 
+                    const auto hasAvatar = (message.IsVoipEvent() ? !message.IsOutgoingVoip() : !message.IsOutgoing());
+                    if (hasAvatar != message.HasAvatar())
+                    {
+                        message.SetHasAvatar(hasAvatar);
+                        emit hasAvatarChanged(messageKey, hasAvatar);
+                    }
+
                     return;
                 }
 
-                if (!messagesIter->Buddy_->IsDeleted())
+                if (!messagesIter->second.getBuddy()->IsDeleted())
                 {
                     break;
                 }
             }
 
-            const auto &prevMessage = *messagesIter->Buddy_;
+            const auto &prevMessage = *messagesIter->second.getBuddy();
 
             const auto oldMessageIndent = message.GetIndentBefore();
             const auto newMessageIndent = message.GetIndentWith(prevMessage);
 
-            if (newMessageIndent == oldMessageIndent)
+            if (newMessageIndent != oldMessageIndent)
             {
-                continue;
+                message.SetIndentBefore(newMessageIndent);
+                emit indentChanged(messageKey, newMessageIndent);
             }
 
-            message.SetIndentBefore(newMessageIndent);
-
-            emit indentChanged(messageKey, newMessageIndent);
-        }
-    }
-
-    void MessagesModel::addDateItem(const QString &aimId, const MessageKey &key, const QDate &date)
-    {
-        assert(!aimId.isEmpty());
-        assert(date.isValid());
-        assert(key.hasId());
-        assert(key.control_type_ == control_type::ct_date);
-
-        auto message = std::make_shared<Data::MessageBuddy>();
-        message->Id_ = key.Id_;
-        message->Prev_ = key.Prev_;
-        message->AimId_ = aimId;
-        message->SetTime(0);
-        message->SetDate(date);
-        message->SetType(core::message_type::undefined);
-
-        MessageInternal messageInternal(message);
-        messageInternal.Key_ = key;
-        messageInternal.Key_.control_type_ = control_type::ct_date;
-
-        Messages_[aimId].emplace(messageInternal);
-
-        InternalIndex dateIndex;
-        dateIndex.Key_ = key;
-        dateIndex.Date_ = date;
-        DateItems_[aimId].emplace(date, dateIndex);
-
-        __INFO(
-            "gui_dates",
-            "added gui date item\n"
-            "    contact=<" << aimId << ">\n"
-            "    id=<" << key.Id_ << ">\n"
-            "    prev=<" << key.Prev_ << ">"
-            );
-    }
-
-    bool MessagesModel::hasDate(const QString &aimId, const QDate &date) const
-    {
-        assert(!aimId.isEmpty());
-
-        return (DateItems_[aimId].count(date) > 0);
-    }
-
-    void MessagesModel::removeDateItem(const QString &aimId, const QDate &date)
-    {
-        assert(!aimId.isEmpty());
-
-        DateItems_[aimId].erase(date);
-    }
-
-    void MessagesModel::removeDateItems(const QString &aimId)
-    {
-        assert(!aimId.isEmpty());
-
-        DateItems_.remove(aimId);
-    }
-
-    void MessagesModel::removeDateItemIfOutdated(const QString &aimId, const Data::MessageBuddy &msg)
-    {
-        assert(!aimId.isEmpty());
-        assert(msg.HasId());
-
-        const auto msgKey = msg.ToKey();
-
-        const auto &date = msg.GetDate();
-
-        auto &dateItems = DateItems_[aimId];
-
-        auto dateItemIter = dateItems.find(date);
-        if (dateItemIter == dateItems.end())
-        {
-            return;
-        }
-
-        auto &indexRecord = dateItemIter->second;
-
-        const auto isOutdated = (msgKey < indexRecord.Key_);
-        if (!isOutdated)
-        {
-            return;
-        }
-
-        auto &index = Indexes_[aimId];
-        index.erase(indexRecord);
-
-        auto &messages = Messages_[aimId];
-        messages.erase(internal(indexRecord.Key_));
-
-        QList<Logic::MessageKey> toRemove;
-        toRemove << indexRecord.Key_;
-
-        emitDeleted(toRemove, aimId);
-
-        dateItems.erase(dateItemIter);
-    }
-
-    InternalIndexSetIter MessagesModel::findIndexRecord(InternalIndexSet &indexRecords, const Logic::MessageKey &key) const
-    {
-        assert(!key.isEmpty());
-
-        return std::find_if(
-            indexRecords.begin(),
-            indexRecords.end(),
-            [&key](const InternalIndex &index)
+            auto hasAvatar = (message.IsVoipEvent() ? !message.IsOutgoingVoip() : !message.IsOutgoing());
+            if (hasAvatar)
             {
-                return index.ContainsKey(key);
-            });
+                hasAvatar = message.hasAvatarWith(prevMessage, isMultichat);
+            }
+
+            if (hasAvatar != message.HasAvatar())
+            {
+                message.SetHasAvatar(hasAvatar);
+                emit hasAvatarChanged(messageKey, hasAvatar);
+            }
+        }
     }
 
-    Logic::MessageKey MessagesModel::findFirstKeyAfter(const QString &aimId, const Logic::MessageKey &key) const
+    MessagesMapIter MessagesModel::findIndexRecord(MessagesMap& _indexRecords, const Logic::MessageKey& _key) const
     {
-        assert(!aimId.isEmpty());
-        assert(!key.isEmpty());
+        assert(!_key.isEmpty());
 
-        const auto &messages = Messages_[aimId];
+        return std::find_if(_indexRecords.begin(), _indexRecords.end(), [&_key](const std::pair<MessageKey, Message>& _pair)
+        {
+            return (_pair.first == _key);
+        });
+    }
 
-        auto messageIter = messages.upper_bound(internal(key));
-        if ((messageIter == messages.begin()) ||
-            (messageIter == messages.end()))
+    Logic::MessageKey MessagesModel::findFirstKeyAfter(const QString& _aimId, const Logic::MessageKey& _key) const
+    {
+        assert(!_aimId.isEmpty());
+        assert(!_key.isEmpty());
+
+        const ContactDialog* dialog = getContactDialogConst(_aimId);
+        if (!dialog)
         {
             return Logic::MessageKey();
         }
 
-        return messageIter->Key_;
+        return dialog->findFirstKeyAfter(_key);
     }
 
-    void MessagesModel::requestMessages(const QString& aimId)
+    void MessagesModel::requestMessages(const QString& _aimId)
     {
-        assert(!aimId.isEmpty());
+        assert(!_aimId.isEmpty());
 
-        if (!Requested_.contains(aimId))
-            Requested_.append(aimId);
+        if (!requestedContact_.contains(_aimId))
+            requestedContact_.append(_aimId);
 
-        qint64 lastId = Messages_[aimId].empty() ? -1 : Messages_[aimId].begin()->Buddy_->Id_;
-        qint64 lastPrev = Messages_[aimId].empty() ? -1 : Messages_[aimId].begin()->Buddy_->Prev_;
+        auto& dialog = getContactDialog(_aimId);
+        auto& dialogMessages = dialog.getMessages();
 
-        if (LastRequested_.contains(aimId) && LastRequested_[aimId] == lastId)
+        qint64 lastId = dialogMessages.empty() ? -1 : dialogMessages.begin()->second.getBuddy()->Id_;
+        qint64 lastPrev = dialogMessages.empty() ? -1 : dialogMessages.begin()->second.getBuddy()->Prev_;
+
+        if (!dialog.isLastRequestedMessageEmpty() && dialog.getLastRequestedMessage() == lastId)
             return;
 
         if (lastId != -1 && lastPrev == -1)
             return;
 
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_qstring("contact", aimId);
+        collection.set_value_as_qstring("contact", _aimId);
         collection.set_value_as_int64("from", lastId);
-        collection.set_value_as_int64("count", PRELOAD_COUNT);
-        Sequences_ << Ui::GetDispatcher()->post_message_to_core("archive/messages/get", collection.get());
-        LastRequested_[aimId] = lastId;
+        collection.set_value_as_int64("count", Data::PRELOAD_MESSAGES_COUNT);
+        sequences_ << Ui::GetDispatcher()->post_message_to_core("archive/messages/get", collection.get());
+
+        dialog.setLastRequestedMessage(lastId);
     }
 
-    Ui::HistoryControlPageItem* MessagesModel::fill(const Data::MessageBuddy& msg, QWidget* parent) const
+    Ui::HistoryControlPageItem* MessagesModel::makePageItem(const Data::MessageBuddy& _msg, QWidget* _parent) const
     {
-        if (msg.IsEmpty())
+        if (_msg.IsEmpty())
             return 0;
 
-        auto dlgState = Logic::GetRecentsModel()->getDlgState(msg.AimId_);
-
-        qint64 lastReadId = dlgState.TheirsLastRead_;
-
-        if (!dlgState.Outgoing_)
-        {
-            lastReadId = dlgState.LastMsgId_;
-        }
-        
-        bool isLastRead = (!msg.Chat_ && msg.Id_ != -1 && msg.Id_ == lastReadId);
-
-        const auto isServiceMessage = (!msg.IsBase() && !msg.IsFileSharing() && !msg.IsSticker() && !msg.IsChatEvent() && !msg.IsVoipEvent());
+        const auto isServiceMessage = (!_msg.IsBase() && !_msg.IsFileSharing() && !_msg.IsSticker() && !_msg.IsChatEvent() && !_msg.IsVoipEvent());
         if (isServiceMessage)
         {
-            std::unique_ptr<Ui::ServiceMessageItem> serviceMessageItem(new Ui::ServiceMessageItem(parent));
+            std::unique_ptr<Ui::ServiceMessageItem> serviceMessageItem(new Ui::ServiceMessageItem(_parent));
 
-            serviceMessageItem->setDate(msg.GetDate());
-            serviceMessageItem->setWidth(ItemWidth_);
-            serviceMessageItem->setContact(msg.AimId_);
+            serviceMessageItem->setDate(_msg.GetDate());
+            serviceMessageItem->setWidth(itemWidth_);
+            serviceMessageItem->setContact(_msg.AimId_);
             serviceMessageItem->updateStyle();
+            serviceMessageItem->setDeleted(_msg.IsDeleted());
 
             return serviceMessageItem.release();
         }
 
-        if (msg.IsChatEvent())
+        if (_msg.IsChatEvent())
         {
-            std::unique_ptr<Ui::ChatEventItem> item(new Ui::ChatEventItem(parent, msg.GetChatEvent()));
-            item->setContact(msg.AimId_);
-            item->setHasAvatar(msg.HasAvatar());
-            item->setFixedWidth(ItemWidth_);
+            std::unique_ptr<Ui::ChatEventItem> item(new Ui::ChatEventItem(_parent, _msg.GetChatEvent(), _msg.Id_));
+            item->setContact(_msg.AimId_);
+            item->setHasAvatar(_msg.HasAvatar());
+            item->setFixedWidth(itemWidth_);
+            item->setDeleted(_msg.IsDeleted());
             return item.release();
         }
 
-        if (msg.IsVoipEvent())
+        if (_msg.IsVoipEvent())
         {
-            const auto &voipEvent = msg.GetVoipEvent();
+            const auto &voipEvent = _msg.GetVoipEvent();
 
-            std::unique_ptr<Ui::VoipEventItem> item(new Ui::VoipEventItem(parent, voipEvent));
-            item->setTopMargin(msg.GetIndentBefore());
-            item->setFixedWidth(ItemWidth_);
-            item->setHasAvatar(voipEvent->isIncomingCall());
-            item->setId(msg.Id_);
-            item->setLastRead(isLastRead);
+            std::unique_ptr<Ui::VoipEventItem> item(new Ui::VoipEventItem(_parent, voipEvent));
+            item->setTopMargin(_msg.GetIndentBefore());
+            item->setFixedWidth(itemWidth_);
+            item->setHasAvatar(_msg.HasAvatar());
+            item->setId(_msg.Id_);
+            item->setDeleted(_msg.IsDeleted());
             return item.release();
         }
 
-        if (msg.IsDeleted())
+        if (_msg.IsDeleted())
         {
-            std::unique_ptr<Ui::DeletedMessageItem> deletedItem(new Ui::DeletedMessageItem(parent));
+            std::unique_ptr<Ui::DeletedMessageItem> deletedItem(new Ui::DeletedMessageItem(_parent));
+            deletedItem->setDeleted(true);
             return deletedItem.release();
         }
 
-        std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem(parent));
-        messageItem->setContact(msg.AimId_);
-        messageItem->setId(msg.Id_, msg.AimId_);
-        messageItem->setNotificationKeys(msg.GetNotificationKeys());
-
         const auto sender =
-            (msg.Chat_ && msg.HasChatSender()) ?
-            NormalizeAimId(msg.GetChatSender()) :
-            msg.AimId_;
+            (_msg.Chat_ && _msg.HasChatSender()) ?
+                NormalizeAimId(_msg.GetChatSender()) :
+                _msg.AimId_;
 
+        const auto previewsEnabled = Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true);
+        const auto isSitePreview = (
+            previewsEnabled &&
+            (_msg.GetPreviewableLinkType() == preview_type::site));
+        if (isSitePreview || !_msg.Quotes_.isEmpty() || _msg.IsSticker())
+        {
+            QString senderFriendly;
+
+            if (_msg.IsOutgoing())
+            {
+                senderFriendly = Ui::MyInfo()->friendlyName();
+            }
+            else if (_msg.Chat_)
+            {
+                senderFriendly = GetChatFriendly(_msg.GetChatSender(), _msg.ChatFriendly_);
+            }
+            else
+            {
+                senderFriendly = Logic::getContactListModel()->getDisplayName(_msg.AimId_);
+            }
+
+            std::unique_ptr<Ui::ComplexMessage::ComplexMessageItem> item(
+                Ui::ComplexMessage::ComplexMessageItemBuilder::makeComplexItem(
+                    _parent,
+                    _msg.Id_,
+                    _msg.GetDate(),
+                    _msg.Prev_,
+                    _msg.GetText(),
+                    _msg.AimId_,
+                    sender,
+                    senderFriendly,
+                    _msg.Quotes_,
+                    _msg.GetSticker(),
+                    _msg.IsOutgoing()));
+
+            item->setContact(_msg.AimId_);
+            item->setTime(_msg.GetTime());
+            item->setHasAvatar(_msg.HasAvatar());
+            item->setTopMargin(_msg.GetIndentBefore());
+
+            if (_msg.Chat_ && !senderFriendly.isEmpty())
+            {
+                item->setMchatSender(senderFriendly);
+            }
+
+            item->setFixedWidth(itemWidth_);
+
+            return item.release();
+        }
+
+        std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem(_parent));
+        messageItem->setContact(_msg.AimId_);
+        messageItem->setId(_msg.Id_, _msg.AimId_);
+        messageItem->setNotificationKeys(_msg.GetNotificationKeys());
         messageItem->setSender(sender);
-
-        if (msg.HasAvatar())
+        messageItem->setHasAvatar(_msg.HasAvatar());
+        if (_msg.HasAvatar())
         {
             messageItem->loadAvatar(Utils::scale_bitmap(Ui::MessageStyle::getAvatarSize()));
         }
-        else
-        {
-            messageItem->setAvatarVisible(false);
-        }
 
-        messageItem->setTopMargin(msg.GetIndentBefore());
-        messageItem->setOutgoing(msg.IsOutgoing(), msg.IsDeliveredToServer(), msg.Chat_, true);
-        messageItem->setLastRead(isLastRead);
-        messageItem->setMchatSender(GetChatFriendly(msg.GetChatSender(), msg.ChatFriendly_));
-        messageItem->setMchatSenderAimId(msg.HasChatSender() ? msg.GetChatSender(): msg.AimId_);
-        messageItem->setTime(msg.GetTime());
-        messageItem->setDate(msg.GetDate());
+        messageItem->setTopMargin(_msg.GetIndentBefore());
+        messageItem->setOutgoing(_msg.IsOutgoing(), _msg.IsDeliveredToServer(), _msg.Chat_, true);
+        messageItem->setMchatSender(GetChatFriendly(_msg.GetChatSender(), _msg.ChatFriendly_));
+        messageItem->setMchatSenderAimId(_msg.HasChatSender() ? _msg.GetChatSender(): _msg.AimId_);
+        messageItem->setTime(_msg.GetTime());
+        messageItem->setDate(_msg.GetDate());
+        messageItem->setDeleted(_msg.IsDeleted());
 
-        if (msg.IsFileSharing())
+        if (_msg.IsFileSharing())
         {
-            createFileSharingWidget(*messageItem, messageItem.get(), msg);
-        }
-        else if (msg.IsSticker())
-        {
-            createStickerWidget(*messageItem, messageItem.get(), msg);
-        }
-        else if (msg.ContainsPreviewableLink())
-        {
-            createImagePreviewWidget(*messageItem, messageItem.get(), msg);
+            createFileSharingWidget(*messageItem, _msg);
         }
         else
         {
-            messageItem->setMessage(msg.GetText());
+            messageItem->setMessage(_msg.GetText());
         }
 
         return messageItem.release();
     }
 
-    QWidget* MessagesModel::fillNew(const InternalIndex& index, QWidget* parent, qint64 newId)
+
+    Ui::HistoryControlPageItem* MessagesModel::fillItemById(const QString& _aimId, const MessageKey& _key,  QWidget* _parent)
     {
-        assert(parent);
+        assert(!_aimId.isEmpty());
 
-        std::unique_ptr<QWidget> result(new QWidget(parent));
-        QVBoxLayout* layout = new QVBoxLayout(result.get());
-        result->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
-        layout->setDirection(QBoxLayout::TopToBottom);
-        layout->setContentsMargins(0, 0, 0, 0);
-        layout->setSpacing(0);
-        result->setLayout(layout);
-
-        auto buddy = std::make_shared<Data::MessageBuddy>();
-        buddy->Id_ = index.Key_.Id_;
-        bool first = true;
-        for (auto id : index.GetMessageKeys())
+        if (_key.getControlType() == control_type::ct_new_messages)
         {
-            std::set<MessageInternal>::const_iterator msg = Messages_[index.AimId_].find(internal(id));
-            if (msg == Messages_[index.AimId_].end())
-                continue;
-
-            auto dlgState = Logic::GetRecentsModel()->getDlgState(buddy->AimId_);
-
-            qint64 lastReadId = dlgState.TheirsLastRead_;
-
-            if (!dlgState.Outgoing_)
-            {
-                lastReadId = dlgState.LastMsgId_;
-            }
-
-            bool isLastRead = (!buddy->Chat_ && buddy->Id_ != -1 && buddy->Id_ == lastReadId);
-
-            if (first)
-            {
-                buddy->SetType(index.Key_.Type_);
-                buddy->AimId_ = index.AimId_;
-                buddy->SetOutgoing(msg->Buddy_->IsOutgoing());
-                buddy->Chat_ = msg->Buddy_->Chat_;
-                buddy->SetChatSender(msg->Buddy_->GetChatSender());
-                buddy->ChatFriendly_ = msg->Buddy_->ChatFriendly_;
-                buddy->SetHasAvatar(msg->Buddy_->HasAvatar());
-                buddy->SetIndentBefore(msg->Buddy_->GetIndentBefore());
-            }
-
-            buddy->FillFrom(*msg->Buddy_, !first);
-
-            first = false;
-
-            buddy->SetTime(index.MaxTime_);
-
-            if (id.Id_ != newId)
-            {
-                continue;
-            }
-
-            if (index.IsChatEvent())
-            {
-                std::unique_ptr<Ui::ChatEventItem> item(new Ui::ChatEventItem(parent, buddy->GetChatEvent()));
-                item->setContact(buddy->AimId_);
-                item->setHasAvatar(buddy->HasAvatar());
-                item->setFixedWidth(ItemWidth_);
-                result->layout()->addWidget(item.release());
-            }
-            else if (index.IsVoipEvent())
-            {
-                std::unique_ptr<Ui::VoipEventItem> item(new Ui::VoipEventItem(parent, buddy->GetVoipEvent()));
-                item->setMaximumWidth(ItemWidth_);
-                item->setHasAvatar(buddy->HasAvatar());
-                item->setTopMargin(buddy->GetIndentBefore());
-                item->setId(buddy->Id_);
-                item->setLastRead(isLastRead);
-                result->layout()->addWidget(item.release());
-            }
-            else
-            {
-                std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem(result.get()));
-                messageItem->setId(buddy->Id_, buddy->AimId_);
-                messageItem->setNotificationKeys(buddy->GetNotificationKeys());
-                messageItem->setSender(buddy->Chat_ ? NormalizeAimId(buddy->GetChatSender()) : buddy->AimId_);
-
-                if (buddy->HasAvatar())
-                {
-                    messageItem->loadAvatar(Utils::scale_bitmap(Ui::MessageStyle::getAvatarSize()));
-                }
-                else
-                {
-                    messageItem->setAvatarVisible(false);
-                }
-                messageItem->setMchatSender(GetChatFriendly(buddy->GetChatSender(), buddy->ChatFriendly_));
-                messageItem->setTopMargin(buddy->GetIndentBefore());
-                messageItem->setOutgoing(buddy->IsOutgoing(), buddy->IsDeliveredToServer(), buddy->Chat_);
-                messageItem->setLastRead(isLastRead);
-                messageItem->setContact(buddy->AimId_);
-                messageItem->setTime(buddy->GetTime());
-                messageItem->setDate(buddy->GetDate());
-
-                if (!buddy->IsDeleted())
-                {
-                    if (buddy->IsFileSharing())
-                    {
-                        createFileSharingWidget(*messageItem, parent, *buddy);
-                    }
-                    else if (buddy->IsSticker())
-                    {
-                        createStickerWidget(*messageItem, parent, *buddy);
-                    }
-                    else if (buddy->ContainsPreviewableLink())
-                    {
-                        createImagePreviewWidget(*messageItem, messageItem.get(), *buddy);
-                    }
-                    else
-                    {
-                        messageItem->setMessage(buddy->GetText());
-                    }
-                }
-
-                result->layout()->addWidget(messageItem.release());
-                buddy->SetText("");
-            }
-
-            std::unique_ptr<Ui::ServiceMessageItem> newPlate(
-                new Ui::ServiceMessageItem(result.get())
-                );
-            newPlate->setWidth(ItemWidth_);
-            newPlate->setNew();
-            newPlate->setContact(buddy->AimId_);
-            newPlate->updateStyle();
-            result->layout()->addWidget(newPlate.release());
+            return createNew(_aimId, _key, _parent);
         }
 
-        if (buddy->HasText() && buddy->IsBase())
+        if (failedUploads_.contains(_key.getInternalId()))
         {
-            std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem(result.get()));
-            messageItem->setId(buddy->Id_, buddy->AimId_);
-            messageItem->setNotificationKeys(buddy->GetNotificationKeys());
-            messageItem->loadAvatar(Utils::scale_bitmap(Ui::MessageStyle::getAvatarSize()));
-            messageItem->setTopMargin(false);
-            messageItem->setOutgoing(buddy->IsOutgoing(), buddy->IsDeliveredToServer(), buddy->Chat_);
-            messageItem->setMchatSender(GetChatFriendly(buddy->GetChatSender(), buddy->ChatFriendly_));
-            messageItem->setTime(buddy->GetTime());
-            messageItem->setDate(buddy->GetDate());
-            messageItem->setMessage(buddy->GetText());
-            result->layout()->addWidget(messageItem.release());
-        }
-
-        result->setFixedWidth(ItemWidth_);
-        result->setProperty("New", true);
-        return first ?  0 : result.release();
-    }
-
-    QWidget* MessagesModel::fillItemById(const QString& aimId, const MessageKey& key,  QWidget* parent, qint64 newId)
-    {
-        assert(!aimId.isEmpty());
-
-        if (FailedUploads_.contains(key.InternalId_))
-        {
-            FailedUploads_.removeAll(key.InternalId_);
+            failedUploads_.removeAll(_key.getInternalId());
             return nullptr;
         }
 
-        const auto &pendingMessages = PendingMessages_[aimId];
-        auto current = pendingMessages.crbegin();
-        while (current != pendingMessages.crend())
+        auto& dialog = getContactDialog(_aimId);
+
+        auto &pendingMessages = dialog.getPendingMessages();
+
+        auto current_pending = pendingMessages.crbegin();
+
+        while (current_pending != pendingMessages.crend())
         {
-            if (current->Key_ == key)
+            if (current_pending->first == _key)
             {
                 break;
             }
 
-            ++current;
+            ++current_pending;
         }
 
 
-        if (current != pendingMessages.crend())
+        if (current_pending != pendingMessages.crend())
         {
             // merge message widgets
-            auto result = item(*current);
-            return fill(result, parent);
+            auto result = item(current_pending->second);
+
+            return makePageItem(result, _parent);
         }
 
-        const auto &indexes = Indexes_[aimId];
+        auto &dialogMessages = dialog.getMessages();
 
         auto haveIncoming = false;
-        current = indexes.crbegin();
-        while (current != indexes.crend())
-        {
-            haveIncoming |= !current->Key_.isOutgoing();
 
-            if (current->Key_ == key)
+        auto currentMessage = dialogMessages.crbegin();
+
+        while (currentMessage != dialogMessages.crend())
+        {
+            haveIncoming |= !currentMessage->first.isOutgoing();
+
+            if (currentMessage->first == _key)
             {
                 break;
             }
 
-            ++current;
+            ++currentMessage;
         }
 
-        if (current == indexes.crend())
+        if (currentMessage == dialogMessages.crend())
         {
             return nullptr;
-        }
-
-        if (newId != -1)
-        {
-            const auto releaseVoodoo = ((current != indexes.rbegin() && current->ContainsId(newId)) || current->containsNotLast(newId));
-            const auto createNew = (
-                haveIncoming && !current->IsPending() &&
-                (current->IsBase() || current->IsFileSharing() || current->IsSticker() || current->IsChatEvent() || current->IsVoipEvent())
-                && releaseVoodoo);
-            if (createNew)
-            {
-                return fillNew(*current, parent, newId);
-            }
         }
 
         // merge message widgets
-        auto result = item(*current);
-        return fill(result, parent);
+        auto result = item(currentMessage->second);
+
+        return makePageItem(result, _parent);
     }
 
     void MessagesModel::setFirstMessage(const QString& aimId, qint64 msgId)
@@ -2208,42 +1969,56 @@ namespace Logic
         Ui::GetDispatcher()->post_message_to_core("dialogs/set_first_message", collection.get());
     }
 
-    std::set<MessageInternal>::iterator MessagesModel::previousMsg(const QString& aimId, const qint64 id)
+    MessagesMapIter MessagesModel::previousMessage(MessagesMap& _map, MessagesMapIter _iter) const
     {
-        assert(!aimId.isEmpty());
-        assert(id >= -1);
+        MessagesMapIter result = _map.end();
 
-        const auto &messages = Messages_[aimId];
-
-        const auto firstMessage = (id == -1);
-        if (firstMessage)
+        while (_iter != _map.begin())
         {
-            return messages.end();
-        }
+            --_iter;
 
-        for (auto iter = messages.begin(); iter != messages.end(); ++iter)
-        {
-            const auto &key = iter->Key_;
-
-            if (key.Id_ != id)
+            if (_iter->first.isDate() || _iter->second.isDeleted())
             {
                 continue;
             }
 
-            if (key.isDate() || key.isDeleted())
+            result = _iter;
+
+            break;
+        }
+
+        return result;
+    }
+
+    MessagesMapIter MessagesModel::nextMessage(MessagesMap& _map, MessagesMapIter _iter) const
+    {
+        auto iter = _iter;
+
+        while (++iter != _map.end())
+        {
+            if (iter->first.isDate() || iter->second.isDeleted())
             {
                 continue;
             }
 
-            return iter;
+            break;
         }
 
-        return messages.end();
+        return iter;
     }
 
     void MessagesModel::contactChanged(QString contact)
     {
-        if (contact.isEmpty() || LastRequested_.contains(contact))
+        if (contact.isEmpty())
+        {
+            return;
+        }
+
+        Ui::GetDispatcher()->raiseContactDownloadsPriority(contact);
+
+        const ContactDialog* dialog = getContactDialogConst(contact);
+
+        if (dialog && !dialog->isLastRequestedMessageEmpty())
         {
             return;
         }
@@ -2253,159 +2028,151 @@ namespace Logic
 
     void MessagesModel::setItemWidth(int width)
     {
-        ItemWidth_ = width;
+        itemWidth_ = width;
     }
 
-    QMap<MessageKey, QWidget*> MessagesModel::tail(const QString& aimId, QWidget* parent, qint64 newId)
+    QMap<MessageKey, Ui::HistoryControlPageItem*> MessagesModel::tail(const QString& aimId, QWidget* parent)
     {
-        QMap<MessageKey, QWidget*> result;
-        if (Indexes_[aimId].empty() && PendingMessages_[aimId].empty())
+        QMap<MessageKey, Ui::HistoryControlPageItem*> result;
+
+        auto& dialog = getContactDialog(aimId);
+        auto& dialogMessages = dialog.getMessages();
+        auto& pendingMessages = dialog.getPendingMessages();
+
+        if (dialogMessages.empty() && pendingMessages.empty())
             return result;
 
         int i = 0;
         MessageKey key;
 
-        std::set<InternalIndex>::reverse_iterator iter = PendingMessages_[aimId].rbegin();
-        while (iter != PendingMessages_[aimId].rend())
-        {
-            assert(!iter->IsDeleted());
+        MessagesMap::reverse_iterator iterPending = pendingMessages.rbegin();
 
-            key = iter->Key_;
-            Data::MessageBuddy buddy = item(*iter);
-            result.insert(key, fill(buddy, parent));
+        while (iterPending != pendingMessages.rend())
+        {
+            assert(!iterPending->second.isDeleted());
+
+            key = iterPending->first;
+
+            Data::MessageBuddy buddy = item(iterPending->second);
+
+            result.insert(key, makePageItem(buddy, parent));
+
             if (++i == moreCount())
             {
                 break;
             }
 
-            ++iter;
+            ++iterPending;
         }
 
         if (i < moreCount())
         {
-            const auto &indexesByAimid = Indexes_[aimId];
-
             bool haveImcoming = false;
-            iter = indexesByAimid.rbegin();
-            while (iter != indexesByAimid.rend())
+            auto iterIndex = dialogMessages.rbegin();
+            while (iterIndex != dialogMessages.rend())
             {
-                haveImcoming |= !iter->Key_.isOutgoing();
-                key = iter->Key_;
+                haveImcoming |= !iterIndex->first.isOutgoing();
+                key = iterIndex->first;
 
-                if (newId != -1 &&
-                    haveImcoming &&
-                    !iter->IsPending() &&
-                    (iter->IsBase() || iter->IsFileSharing() || iter->IsSticker() || iter->IsChatEvent() || iter->IsVoipEvent()) &&
-                    ((iter != indexesByAimid.rbegin() && iter->ContainsId(newId)) || iter->containsNotLast(newId)))
-                {
-                    result.insert(key, fillNew(*iter, parent, newId));
-                }
-                else
-                {
-                    auto buddy = item(*iter);
-                    result.insert(key, fill(buddy, parent));
-                }
+                auto buddy = item(iterIndex->second);
+
+                result.insert(key, makePageItem(buddy, parent));
 
                 if (++i == moreCount())
                 {
                     break;
                 }
 
-                ++iter;
+                ++iterIndex;
             }
         }
 
-        LastKey_[aimId] = key;
+        dialog.setLastKey(key);
 
-        if (LastKey_[aimId].isEmpty() || LastKey_[aimId].isPending() || (LastKey_[aimId].Prev_ != -1 && Indexes_[aimId].begin()->ContainsId(LastKey_[aimId].Id_)))
+        if (dialog.getLastKey().isEmpty() || dialog.getLastKey().isPending()
+            || (dialog.getLastKey().getPrev() != -1 && dialogMessages.begin()->first.getId() == dialog.getLastKey().getId()))
             requestMessages(aimId);
 
         if (result.isEmpty())
-            Subscribed_ << aimId;
+            subscribed_ << aimId;
 
         return result;
     }
 
-    QMap<MessageKey, QWidget*> MessagesModel::more(const QString& aimId, QWidget* parent, qint64 newId)
+    QMap<MessageKey, Ui::HistoryControlPageItem*> MessagesModel::more(const QString& aimId, QWidget* parent)
     {
-        if (LastKey_[aimId].isEmpty())
-            return tail(aimId, parent, newId);
+        auto& dialog = getContactDialog(aimId);
+        auto& dialogMessages = dialog.getMessages();
+        auto& pendingMessages = dialog.getPendingMessages();
 
-        QMap<MessageKey, QWidget*> result;
-        if (Indexes_[aimId].empty())
+        if (dialog.getLastKey().isEmpty())
+            return tail(aimId, parent);
+
+        QMap<MessageKey, Ui::HistoryControlPageItem*> result;
+        if (dialogMessages.empty())
             return result;
 
-        bool haveIncoming = false;
         auto i = 0;
-        MessageKey key = LastKey_[aimId];
+        MessageKey key = dialog.getLastKey();
 
-        std::set<InternalIndex>::const_reverse_iterator iter = PendingMessages_[aimId].rbegin();
-        while (iter != PendingMessages_[aimId].rend())
+        MessagesMap::const_reverse_iterator iterPending = pendingMessages.rbegin();
+
+        while (iterPending != pendingMessages.rend())
         {
-            assert(!iter->IsDeleted());
+            assert(!iterPending->second.isDeleted());
 
-            if (!(iter->Key_ < key))
+            if (!(iterPending->first < key))
             {
-                ++iter;
+                ++iterPending;
                 continue;
             }
 
-            haveIncoming |= !iter->Key_.isOutgoing();
-            key = iter->Key_;
-            Data::MessageBuddy buddy = item(*iter);
-            result.insert(key, fill(buddy, parent));
+            key = iterPending->first;
+            Data::MessageBuddy buddy = item(iterPending->second);
+
+            result.insert(key, makePageItem(buddy, parent));
 
             if (++i == moreCount())
             {
                 break;
             }
 
-            ++iter;
+            ++iterPending;
         }
 
         if (i < moreCount())
         {
-            iter = Indexes_[aimId].rbegin();
-            while (iter != Indexes_[aimId].rend())
+            auto iterIndex = dialogMessages.rbegin();
+            while (iterIndex != dialogMessages.rend())
             {
-                haveIncoming |= !iter->Key_.isOutgoing();
-                if (!(iter->Key_ < key))
+                if (!(iterIndex->first < key))
                 {
-                    ++iter;
+                    ++iterIndex;
                     continue;
                 }
 
-                key = iter->Key_;
+                key = iterIndex->first;
 
-                if (newId != -1 && haveIncoming && !iter->IsPending() &&
-                    (iter->IsBase() || iter->IsFileSharing() || iter->IsSticker() || iter->IsChatEvent() || iter->IsVoipEvent()) &&
-                    ((iter != Indexes_[aimId].rbegin() && iter->ContainsId(newId)) || iter->containsNotLast(newId)))
-                {
-                    result.insert(key, fillNew(*iter, parent, newId));
-                }
-                else
-                {
-                    Data::MessageBuddy buddy = item(*iter);
-                    result.insert(key, fill(buddy, parent));
-                }
+                Data::MessageBuddy buddy = item(iterIndex->second);
+                result.insert(key, makePageItem(buddy, parent));
 
                 if (++i == moreCount())
                 {
                     break;
                 }
 
-                ++iter;
+                ++iterIndex;
             }
         }
 
-        LastKey_[aimId] = key;
+        dialog.setLastKey(key);
 
         if (
-            LastKey_[aimId].isEmpty() ||
-            LastKey_[aimId].isPending() ||
+            dialog.getLastKey().isEmpty() ||
+            dialog.getLastKey().isPending() ||
             (
-                (LastKey_[aimId].Prev_ != -1) &&
-                Indexes_[aimId].begin()->ContainsId(LastKey_[aimId].Id_)
+                (dialog.getLastKey().getPrev() != -1) &&
+                dialogMessages.begin()->first.getId() == dialog.getLastKey().getId()
             )
         )
         {
@@ -2418,25 +2185,25 @@ namespace Logic
         }
         else
         {
-            Subscribed_ << aimId;
+            subscribed_ << aimId;
         }
 
         return result;
     }
 
-    QWidget* MessagesModel::getById(const QString& aimId, const MessageKey& key, QWidget* parent, qint64 newId)
+    Ui::HistoryControlPageItem* MessagesModel::getById(const QString& aimId, const MessageKey& key, QWidget* parent)
     {
-        return fillItemById(aimId, key, parent, newId);
+        return fillItemById(aimId, key, parent);
     }
 
     int32_t MessagesModel::preloadCount() const
     {
-        return PRELOAD_COUNT;
+        return Data::PRELOAD_MESSAGES_COUNT;
     }
 
     int32_t MessagesModel::moreCount() const
     {
-        return MORE_COUNT;
+        return Data::MORE_MESSAGES_COUNT;
     }
 
     void MessagesModel::setLastKey(const MessageKey& key, const QString& aimId)
@@ -2450,29 +2217,25 @@ namespace Logic
             "	contact=<" << aimId << ">"
             "	key=<" << key.toLogStringShort() << ">");
 
-        LastKey_[aimId] = key;
+        auto& dialog = getContactDialog(aimId);
+        auto& dialogMessages = dialog.getMessages();
 
-        auto &indexesByAimid = Indexes_[aimId];
+        dialog.setLastKey(key);
 
-        auto iter = indexesByAimid.begin();
-        while(iter != indexesByAimid.end())
+        auto iter = dialogMessages.begin();
+        while(iter != dialogMessages.end())
         {
-            if (iter->Key_ < key)
+            if (iter->first < key)
             {
-                for (auto id : iter->GetMessageKeys())
+                if (iter->second.isDate())
                 {
-                    Messages_[aimId].erase(internal(id));
+                    dialog.removeDateItem(iter->second.getDate());
                 }
 
-                if (iter->IsDate())
-                {
-                    removeDateItem(aimId, iter->Date_);
-                }
+                if (iter->first.getId() <= dialog.getLastRequestedMessage())
+                    dialog.setLastRequestedMessage(-1);
 
-                if (iter->Key_.Id_ <= LastRequested_[aimId])
-                    LastRequested_[aimId] = -1;
-
-                iter = indexesByAimid.erase(iter);
+                iter = dialogMessages.erase(iter);
             }
             else
             {
@@ -2480,57 +2243,124 @@ namespace Logic
             }
         }
 
-        if ((int32_t)indexesByAimid.size() >= preloadCount())
+        if ((int32_t)dialogMessages.size() >= preloadCount())
         {
-            setFirstMessage(aimId, indexesByAimid.begin()->Key_.Id_);
+            setFirstMessage(aimId, dialogMessages.begin()->first.getId());
         }
     }
 
-    void MessagesModel::removeDialog(const QString& aimId)
+    void MessagesModel::removeDialog(const QString& _aimId)
     {
-        Messages_.remove(aimId);
-        Indexes_.remove(aimId);
-        LastKey_.remove(aimId);
-        LastRequested_.remove(aimId);
-        Requested_.removeAll(aimId);
+        dialogs_.remove(_aimId);
 
-        removeDateItems(aimId);
+        requestedContact_.removeAll(_aimId);
     }
 
-    void MessagesModel::updateNew(const QString& aimId, qint64 newId, bool hide)
+    Ui::ServiceMessageItem* MessagesModel::createNew(const QString& _aimId, const MessageKey& /*_key*/, QWidget* _parent) const
     {
-        std::set<InternalIndex>::const_reverse_iterator iter = Indexes_[aimId].rbegin();
-        while (iter != Indexes_[aimId].rend())
+        assert(_parent);
+
+        std::unique_ptr<Ui::ServiceMessageItem> newPlate(new Ui::ServiceMessageItem(_parent));
+
+        newPlate->setWidth(itemWidth_);
+        newPlate->setNew();
+        newPlate->setContact(_aimId);
+        newPlate->updateStyle();
+
+        return newPlate.release();
+    }
+
+    void MessagesModel::hideNew(const QString& _aimId)
+    {
+        auto& dialog = getContactDialog(_aimId);
+        auto& dialogMessages = dialog.getMessages();
+
+        if (!dialog.getNewKey())
+            return;
+
+        const auto isMultichat = Logic::getContactListModel()->isChat(_aimId);
+
+        const Logic::MessageKey& key = *dialog.getNewKey();
+
+        QList<Logic::MessageKey> keyslist;
+        keyslist.push_back(key);
+        MessagesModel::emitDeleted(keyslist, _aimId);
+
+        auto iter_message_after_new = dialogMessages.rend();
+
+        for (auto iterMessage = dialogMessages.rbegin(); iterMessage != dialogMessages.rend(); ++iterMessage)
         {
-            if (iter->ContainsId(newId))
-            {
-                QList<MessageKey> updatedValues;
-                updatedValues << iter->Key_;
-
-                bool outgoing = iter->Key_.isOutgoing();
-                const auto &chatSender = iter->GetChatSender();
-                bool chatEvent = iter->Key_.isChatEvent();
-                if (iter != Indexes_[aimId].rbegin())
-                {
-                    --iter;
-                    const auto &messages = Messages_[aimId];
-                    auto msg = messages.find(internal(iter->Key_));
-                    if (msg != messages.end() && !msg->Buddy_->IsOutgoing())
-                    {
-                        if (hide)
-                            msg->Buddy_->SetHasAvatar(msg->Buddy_->Chat_ ? msg->Buddy_->GetChatSender() != chatSender  : outgoing);
-                        else
-                            msg->Buddy_->SetHasAvatar(true);
-
-                        msg->Buddy_->SetHasAvatar(msg->Buddy_->HasAvatar() || chatEvent);
-                        updatedValues << iter->Key_;
-                    }
-                }
-
-                emitUpdated(updatedValues, aimId, NEW_PLATE);
+            if (iterMessage->first.getId() <= key.getId())
                 break;
+
+            if (!iterMessage->first.isOutgoing() && !iterMessage->second.isDeleted() && iterMessage->first.getControlType() == control_type::ct_message)
+            {
+                iter_message_after_new = iterMessage;
+                continue;
             }
-            ++iter;
+
+            iter_message_after_new = dialogMessages.rend();
+        }
+
+        if (iter_message_after_new != dialogMessages.rend())
+        {
+            auto iter_prev_message = iter_message_after_new;
+            ++iter_prev_message;
+
+            bool hasAvatar = false;
+            if (iter_prev_message == dialogMessages.rend() || iter_message_after_new->second.getBuddy()->hasAvatarWith(*iter_prev_message->second.getBuddy(), isMultichat))
+                hasAvatar = true;
+
+            if (!hasAvatar)
+                emit hasAvatarChanged(iter_message_after_new->first, false);
+        }
+
+        dialog.resetNewKey();
+    }
+
+    void MessagesModel::updateNew(const QString& _aimId, const qint64 _newId, const bool _hide)
+    {
+        hideNew(_aimId);
+
+        if (_hide || _newId <= 0)
+            return;
+
+        auto& dialog = getContactDialog(_aimId);
+        auto& dialogMessages = dialog.getMessages();
+
+        bool isShow = false;
+
+        auto iter_prev_message = dialogMessages.rend();
+
+        for (auto iterMessage = dialogMessages.rbegin(); iterMessage != dialogMessages.rend(); ++iterMessage)
+        {
+            if (iterMessage->first.getId() <= _newId)
+                break;
+
+            if (!iterMessage->first.isOutgoing() && !iterMessage->second.isDeleted() && iterMessage->first.getControlType() == control_type::ct_message)
+            {
+                isShow = true;
+                iter_prev_message = iterMessage;
+
+                continue;
+            }
+
+            iter_prev_message = dialogMessages.rend();
+        }
+
+        if (!isShow)
+            return;
+
+        dialog.setNewKey(MessageKey(_newId, control_type::ct_new_messages));
+
+        QList<MessageKey> updatedValues;
+        updatedValues << *dialog.getNewKey();
+
+        emitUpdated(updatedValues, _aimId, NEW_PLATE);
+
+        if (iter_prev_message != dialogMessages.rend())
+        {
+            emit hasAvatarChanged(iter_prev_message->first, true);
         }
     }
 
@@ -2543,7 +2373,7 @@ namespace Logic
 
         if (buddy.IsChatEvent())
         {
-            std::unique_ptr<Ui::ChatEventItem> item(new Ui::ChatEventItem(buddy.GetChatEvent()));
+            std::unique_ptr<Ui::ChatEventItem> item(new Ui::ChatEventItem(buddy.GetChatEvent(), buddy.Id_));
             item->setContact(buddy.AimId_);
             return item->formatRecentsText();
         }
@@ -2554,26 +2384,45 @@ namespace Logic
             return item->formatRecentsText();
         }
 
-        QString photoStr = QT_TRANSLATE_NOOP("contact_list", "Photo");
+        if (buddy.ContainsPreviewableSiteLink() || !buddy.Quotes_.isEmpty() || buddy.IsSticker())
+        {
+            std::unique_ptr<Ui::ComplexMessage::ComplexMessageItem> item(
+                Ui::ComplexMessage::ComplexMessageItemBuilder::makeComplexItem(
+                    nullptr,
+                    0,
+                    QDate::currentDate(),
+                    0,
+                    buddy.GetText(),
+                    buddy.AimId_,
+                    buddy.AimId_,
+                    buddy.AimId_,
+                    buddy.Quotes_,
+                    buddy.GetSticker(),
+                    false));
+
+            return item->formatRecentsText();
+        }
+
         std::unique_ptr<Ui::MessageItem> messageItem(new Ui::MessageItem());
         messageItem->setContact(buddy.AimId_);
         if (buddy.IsFileSharing())
         {
             if (buddy.ContainsPttAudio())
+            {
                 return QT_TRANSLATE_NOOP("contact_list", "Voice message");
-            else if (buddy.ContainsImage())
-                return photoStr;
+            }
+
+            if (buddy.ContainsImage())
+            {
+                return QT_TRANSLATE_NOOP("contact_list", "Photo");
+            }
+
+            if (buddy.ContainsVideo())
+            {
+                return QT_TRANSLATE_NOOP("contact_list", "Video");
+            }
 
             auto item = new HistoryControl::FileSharingWidget(buddy.GetFileSharing(), buddy.AimId_);
-            messageItem->setContentWidget(item);
-        }
-        else if (buddy.ContainsPreviewableLink())
-        {
-            return photoStr;
-        }
-        else if (buddy.IsSticker())
-        {
-            auto item = new HistoryControl::StickerWidget(buddy.AimId_);
             messageItem->setContentWidget(item);
         }
         else
@@ -2588,94 +2437,83 @@ namespace Logic
     {
         assert(!aimId.isEmpty());
 
-        const auto &index = Indexes_[aimId];
+        auto dialog = getContactDialogConst(aimId);
+        if (!dialog)
+            return -1;
 
-        for (auto iterIndex = index.crbegin(); iterIndex != index.crend(); ++iterIndex)
-        {
-            const auto &keys = iterIndex->GetMessageKeys();
-            assert(!keys.empty());
-
-            for (auto iterKey = keys.crbegin(); iterKey != keys.crend(); ++iterKey)
-            {
-                const auto id = iterKey->Id_;
-                assert(id >= -1);
-
-                if (id > 0)
-                {
-                    return id;
-                }
-            }
-        }
-
-        return -1;
+        return dialog->getLastMessageId();
     }
 
-    std::vector<int64_t> MessagesModel::getBubbleMessageIds(const QString &aimId, const int64_t messageId) const
+    qint64 MessagesModel::normalizeNewMessagesId(const QString& _aimid, qint64 _id)
     {
-        assert(!aimId.isEmpty());
-        assert(messageId > 0);
+        if (_id == -1)
+            return _id;
 
-        const MessageKey key(messageId, -1, QString(), -1, 0, core::message_type::base, false, false, false, control_type::ct_message);
-
-        InternalIndex keyIndex;
-        keyIndex.Key_ = key;
-
-        const auto &index = Indexes_[aimId];
-        const auto indexIter = index.find(keyIndex);
-
-        assert(indexIter != index.end());
-        if (indexIter == index.end())
-        {
-            return std::vector<int64_t>();
-        }
-
-        const auto &indexEntry = *indexIter;
-
-        const auto &messageKeys = indexEntry.GetMessageKeys();
-        assert(!messageKeys.empty());
-
-        std::vector<int64_t> ids;
-        ids.reserve(messageKeys.size());
-
-        for (const auto &key : messageKeys)
-        {
-            ids.push_back(key.Id_);
-        }
-
-        return ids;
-    }
-
-    qint64 MessagesModel::normalizeNewMessagesId(const QString& aimid, qint64 id)
-    {
-        if (id == -1)
-            return id;
+        auto& dialog = getContactDialog(_aimid);
+        auto& dialogMessages = dialog.getMessages();
 
         qint64 newId = -1;
-        std::set<MessageInternal>::reverse_iterator iter = Messages_[aimid].rbegin();
-        while (iter != Messages_[aimid].rend() && iter->Key_.Id_ >= id)
+
+        MessagesMap::reverse_iterator iter = dialogMessages.rbegin();
+
+        while (iter != dialogMessages.rend() && iter->first.getId() >= _id)
         {
-            if (iter->Key_.isOutgoing())
+            if (iter->first.isOutgoing())
             {
-                newId = iter->Key_.Id_;
+                newId = iter->first.getId();
                 break;
             }
 
-            newId = iter->Key_.Id_;
+            newId = iter->first.getId();
             ++iter;
         }
 
-        return newId == -1 ? id : newId;
+        return newId == -1 ? _id : newId;
     }
 
-    bool MessagesModel::isHasPending(const QString &aimId) const
+    bool MessagesModel::isHasPending(const QString& _aimId) const
     {
-        auto iter = PendingMessages_.find(aimId);
-        if (iter == PendingMessages_.end())
+        const ContactDialog* dialog = getContactDialogConst(_aimId);
+        if (!dialog)
         {
             return false;
         }
 
-        return !iter.value().empty();
+        return dialog->isHasPending();
+    }
+
+    void MessagesModel::eraseHistory(const QString& _aimid)
+    {
+        const auto lastMessageId = getLastMessageId(_aimid);
+
+        if (lastMessageId > 0)
+        {
+            Ui::GetDispatcher()->deleteMessagesFrom(_aimid, lastMessageId);
+
+            Utils::InterConnector::instance().setSidebarVisible(false);
+        }
+
+        Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::history_delete);
+    }
+
+    ContactDialog& MessagesModel::getContactDialog(const QString& _aimid)
+    {
+        auto iter = dialogs_.find(_aimid);
+        if (iter == dialogs_.end())
+        {
+            iter = dialogs_.insert(_aimid, std::make_shared<ContactDialog>());
+        }
+
+        return *iter.value();
+    }
+
+    const ContactDialog* MessagesModel::getContactDialogConst(const QString& _aimid) const
+    {
+        const auto iter = dialogs_.find(_aimid);
+        if (iter == dialogs_.end())
+            return nullptr;
+
+        return iter.value().get();
     }
 
     MessagesModel* GetMessagesModel()
@@ -2685,6 +2523,8 @@ namespace Logic
 
         return g_messages_model.get();
     }
+
+
 
     void ResetMessagesModel()
     {

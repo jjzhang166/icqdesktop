@@ -1,151 +1,159 @@
 #include "stdafx.h"
-
 #include "GeneralCreator.h"
-#include "../utils/utils.h"
+
+#include "BackButton.h"
+#include "CommonStyle.h"
+#include "FlatMenu.h"
 #include "TextEmojiWidget.h"
 #include "../core_dispatcher.h"
-#include "FlatMenu.h"
-#include "BackButton.h"
+#include "../utils/utils.h"
+
+namespace
+{
+    const QString DROPDOWN_STYLE =
+        "border-width: 1dip; border-bottom-style: solid; border-color: #d7d7d7; ";
+}
 
 namespace Ui
 {
-    void GeneralCreator::addHeader(QWidget* parent, QLayout* layout, const QString& text)
+    void GeneralCreator::addHeader(QWidget* _parent, QLayout* _layout, const QString& _text)
     {
-        auto w = new TextEmojiWidget(parent, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(50));
-        w->setText(text);
-        layout->addWidget(w);
-        Utils::grabTouchWidget(w);
+        auto title = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(50));
+        title->setText(_text);
+        _layout->addWidget(title);
+        Utils::grabTouchWidget(title);
     }
 
-    GeneralCreator::addSwitcherWidgets GeneralCreator::addSwitcher(std::map<std::string, Synchronizator> *collector, QWidget* parent, QLayout* layout, const QString& text, bool switched, std::function< QString(bool) > slot)
+    GeneralCreator::addSwitcherWidgets GeneralCreator::addSwitcher(std::map<std::string, Synchronizator>* _collector, QWidget* _parent, QLayout* _layout, const QString& _text, bool _switched, std::function< QString(bool) > _slot)
     {
-        addSwitcherWidgets asws;
+        addSwitcherWidgets switcherWidget;
 
-        auto f = new QWidget(parent);
-        auto l = new QHBoxLayout(f);
-        l->setAlignment(Qt::AlignLeft);
-        l->setContentsMargins(0, 0, 0, 0);
-        l->setSpacing(0);
+        auto mainWidget = new QWidget(_parent);
+        auto mainLayout = new QHBoxLayout(mainWidget);
+        mainLayout->setAlignment(Qt::AlignLeft);
+        mainLayout->setContentsMargins(0, 0, 0, 0);
+        mainLayout->setSpacing(0);
 
-        Utils::grabTouchWidget(f);
+        Utils::grabTouchWidget(mainWidget);
 
-        auto w = new TextEmojiWidget(f, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
-        asws.text_ = w;
-        Utils::grabTouchWidget(w);
-        w->setFixedWidth(Utils::scale_value(312));
-        w->setText(text);
-        w->set_multiline(true);
-        l->addWidget(w);
+        auto text = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+        switcherWidget.text_ = text;
+        Utils::grabTouchWidget(text);
+        text->setFixedWidth(Utils::scale_value(312));
+        text->setText(_text);
+        text->setMultiline(true);
+        mainLayout->addWidget(text);
 
-        auto sp = new QWidget(parent);
-        Utils::grabTouchWidget(sp);
-        auto spl = new QVBoxLayout(sp);
-        sp->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
-        spl->setAlignment(Qt::AlignBottom);
-        spl->setContentsMargins(0, 0, 0, 0);
-        spl->setSpacing(0);
+        auto checkboxWidget = new QWidget(_parent);
+        Utils::grabTouchWidget(checkboxWidget);
+        auto checkboxLayout = new QVBoxLayout(checkboxWidget);
+        checkboxWidget->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
+        checkboxLayout->setAlignment(Qt::AlignBottom);
+        checkboxLayout->setContentsMargins(0, 0, 0, 0);
+        checkboxLayout->setSpacing(0);
         {
-            auto s = new QCheckBox(sp);
-            asws.check_ = s;
-            s->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-            s->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-            s->setChecked(switched);
+            auto checkbox = new QCheckBox(checkboxWidget);
+            switcherWidget.check_ = checkbox;
+            checkbox->setObjectName("greenSwitcher");
+            checkbox->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
+            checkbox->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+            checkbox->setChecked(_switched);
 
             GetDispatcher()->set_enabled_stats_post(false);
-            s->setText(slot(s->isChecked()));
+            checkbox->setText(_slot(checkbox->isChecked()));
             GetDispatcher()->set_enabled_stats_post(true);
 
-            if (collector)
+            if (_collector)
             {
-                auto it = collector->find("switcher/switch");
-                if (it != collector->end())
-                    it->second.widgets_.push_back(s);
+                auto it = _collector->find("switcher/switch");
+                if (it != _collector->end())
+                    it->second.widgets_.push_back(checkbox);
                 else
-                    collector->insert(std::make_pair("switcher/switch", Synchronizator(s, SIGNAL(pressed()), SLOT(toggle()))));
+                    _collector->insert(std::make_pair("switcher/switch", Synchronizator(checkbox, SIGNAL(pressed()), SLOT(toggle()))));
             }
-            QObject::connect(s, &QCheckBox::toggled, [s, slot]()
+            QObject::connect(checkbox, &QCheckBox::toggled, [checkbox, _slot]()
             {
-                s->setText(slot(s->isChecked()));
+                checkbox->setText(_slot(checkbox->isChecked()));
             });
-            spl->addWidget(s);
+            checkboxLayout->addWidget(checkbox);
         }
-        l->addWidget(sp);
+        mainLayout->addWidget(checkboxWidget);
 
-        layout->addWidget(f);
+        _layout->addWidget(mainWidget);
 
-        return asws;
+        return switcherWidget;
     }
 
-    TextEmojiWidget* GeneralCreator::addChooser(QWidget* parent, QLayout* layout, const QString& info, const QString& value, std::function< void(TextEmojiWidget*) > slot)
+    TextEmojiWidget* GeneralCreator::addChooser(QWidget* _parent, QLayout* _layout, const QString& _info, const QString& _value, std::function< void(TextEmojiWidget*) > _slot)
     {
-        auto f = new QWidget(parent);
-        auto l = new QHBoxLayout(f);
-        f->setFixedWidth(Utils::scale_value(400));
-        l->setAlignment(Qt::AlignLeft);
-        l->setContentsMargins(0, 0, 0, 0);
-        l->setSpacing(0);
+        auto mainWidget = new QWidget(_parent);
+        auto mainLayout = new QHBoxLayout(mainWidget);
+        mainWidget->setFixedWidth(Utils::scale_value(400));
+        mainLayout->setAlignment(Qt::AlignLeft);
+        mainLayout->setContentsMargins(0, 0, 0, 0);
+        mainLayout->setSpacing(0);
 
-        Utils::grabTouchWidget(f);
+        Utils::grabTouchWidget(mainWidget);
 
-        auto w = new TextEmojiWidget(f, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
-        Utils::grabTouchWidget(w);
-        w->setSizePolicy(QSizePolicy::Policy::Preferred, w->sizePolicy().verticalPolicy());
-        w->setText(info);
-        l->addWidget(w);
+        auto info = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+        Utils::grabTouchWidget(info);
+        info->setSizePolicy(QSizePolicy::Policy::Preferred, info->sizePolicy().verticalPolicy());
+        info->setText(_info);
+        mainLayout->addWidget(info);
 
-        auto sp = new QWidget(parent);
-        auto spl = new QVBoxLayout(sp);
-        Utils::grabTouchWidget(sp);
-        sp->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
-        spl->setAlignment(Qt::AlignBottom);
-        spl->setContentsMargins(Utils::scale_value(5), 0, 0, 0);
-        spl->setSpacing(0);
+        auto valueWidget = new QWidget(_parent);
+        auto valueLayout = new QVBoxLayout(valueWidget);
+        Utils::grabTouchWidget(valueWidget);
+        valueWidget->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
+        valueLayout->setAlignment(Qt::AlignBottom);
+        valueLayout->setContentsMargins(Utils::scale_value(5), 0, 0, 0);
+        valueLayout->setSpacing(0);
 
-        auto b = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(44));
+        auto value = new TextEmojiWidget(valueWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), CommonStyle::getLinkColor(), Utils::scale_value(44));
         {
-            Utils::grabTouchWidget(b);
-            b->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-            b->set_ellipsis(true);
-            b->setText(value);
-            QObject::connect(b, &TextEmojiWidget::clicked, [b, slot]()
+            Utils::grabTouchWidget(value);
+            value->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+            value->setEllipsis(true);
+            value->setText(_value);
+            QObject::connect(value, &TextEmojiWidget::clicked, [value, _slot]()
             {
-                slot(b);
+                _slot(value);
             });
-            spl->addWidget(b);
+            valueLayout->addWidget(value);
         }
-        l->addWidget(sp);
+        mainLayout->addWidget(valueWidget);
 
-        layout->addWidget(f);
-        return b;
+        _layout->addWidget(mainWidget);
+        return value;
     }
 
-    GeneralCreator::DropperInfo GeneralCreator::addDropper(QWidget* parent, QLayout* layout, const QString& info, const std::vector< QString >& values, int selected, int width, std::function< void(QString, int, TextEmojiWidget*) > slot1, bool isCheckable, bool switched, std::function< QString(bool) > slot2)
+    GeneralCreator::DropperInfo GeneralCreator::addDropper(QWidget* _parent, QLayout* _layout, const QString& _info, const std::vector< QString >& _values, int _selected, int _width, std::function< void(QString, int, TextEmojiWidget*) > _slot1, bool _isCheckable, bool _switched, std::function< QString(bool) > _slot2)
     {
         TextEmojiWidget* w1 = nullptr;
         TextEmojiWidget* aw1 = nullptr;
-        auto ap = new QWidget(parent);
-        auto apl = new QHBoxLayout(ap);
-        Utils::grabTouchWidget(ap);
-        ap->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-        apl->setAlignment(Qt::AlignLeft);
-        apl->setContentsMargins(0, 0, 0, 0);
-        apl->setSpacing(Utils::scale_value(5));
+        auto mainWidget = new QWidget(_parent);
+        auto mainLayout = new QHBoxLayout(mainWidget);
+        Utils::grabTouchWidget(mainWidget);
+        mainWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+        mainLayout->setAlignment(Qt::AlignLeft);
+        mainLayout->setContentsMargins(0, 0, 0, 0);
+        mainLayout->setSpacing(Utils::scale_value(5));
         {
-            w1 = new TextEmojiWidget(ap, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
+            w1 = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(w1);
             w1->setSizePolicy(QSizePolicy::Policy::Preferred, w1->sizePolicy().verticalPolicy());
-            w1->setText(info);
-            apl->addWidget(w1);
+            w1->setText(_info);
+            mainLayout->addWidget(w1);
 
-            aw1 = new TextEmojiWidget(ap, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
+            aw1 = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(aw1);
             aw1->setSizePolicy(QSizePolicy::Policy::Preferred, aw1->sizePolicy().verticalPolicy());
             aw1->setText(" ");
-            apl->addWidget(aw1);
+            mainLayout->addWidget(aw1);
         }
-        layout->addWidget(ap);
+        _layout->addWidget(mainWidget);
 
-        auto g = new QWidget(parent);
+        auto g = new QWidget(_parent);
         auto gl = new QHBoxLayout(g);
         Utils::grabTouchWidget(g);
         g->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Fixed);
@@ -162,16 +170,16 @@ namespace Ui
             auto dl = new QVBoxLayout(d);
             d->setFlat(true);
             d->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-            d->setFixedSize(QSize(Utils::scale_value(width == -1 ? 280 : width), Utils::scale_value(46)));
+            d->setFixedSize(QSize(Utils::scale_value(_width == -1 ? 280 : _width), Utils::scale_value(46)));
             d->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
             dl->setContentsMargins(0, 0, 0, 0);
             dl->setSpacing(0);
             {
-                auto w2 = new TextEmojiWidget(d, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(29));
+                auto w2 = new TextEmojiWidget(d, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(29));
                 Utils::grabTouchWidget(w2);
 
-                w2->setText(Utils::get_item_safe(values, selected, " "));
-                w2->set_ellipsis(true);
+                w2->setText(Utils::getItemSafe(_values, _selected, " "));
+                w2->setEllipsis(true);
                 dl->addWidget(w2);
                 di.currentSelected = w2;
 
@@ -186,135 +194,139 @@ namespace Ui
                     Utils::grabTouchWidget(ln);
                     ln->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding);
                     ln->setFrameShape(QFrame::StyledPanel);
-                    ln->setStyleSheet(QString("border-width: %1px; border-bottom-style: solid; border-color: #d7d7d7;").arg(Utils::scale_value(1)));
+                    Utils::ApplyStyle(ln, DROPDOWN_STYLE);
                     lpl->addWidget(ln);
                 }
                 dl->addWidget(lp);
 
-                auto m = new FlatMenu(d);
-                for (auto v : values)
-                    m->addAction(v);
-                QObject::connect(m, &QMenu::triggered, parent, [m, aw1, w2, slot1](QAction* a)
+                auto menu = new FlatMenu(d);
+                for (auto v : _values)
+                    menu->addAction(v);
+                QObject::connect(menu, &QMenu::triggered, _parent, [menu, aw1, w2, _slot1](QAction* a)
                 {
                     int ix = -1;
-                    QList<QAction*> allActions = m->actions();
-                    for (QAction* action : allActions) {
+                    QList<QAction*> allActions = menu->actions();
+                    for (QAction* action : allActions)
+                    {
                         ix++;
-                        if (a == action) {
+                        if (a == action)
+                        {
                             w2->setText(a->text());
-                            slot1(a->text(), ix, aw1);
+                            _slot1(a->text(), ix, aw1);
                             break;
                         }
                     }
                 });
-                d->setMenu(m);
-                di.menu = m;
+                d->setMenu(menu);
+                di.menu = menu;
             }
             gl->addWidget(d);
         }
-        if (isCheckable)
+        if (_isCheckable)
         {
             auto c = new QCheckBox(g);
-            Utils::ApplyPropertyParameter(c, "ordinary", true);
+            c->setObjectName("greenCheckBox");
             c->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
             c->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-            c->setChecked(switched);
-            c->setText(slot2(c->isChecked()));
-            QObject::connect(c, &QCheckBox::toggled, [c, slot2]()
+            c->setChecked(_switched);
+            c->setText(_slot2(c->isChecked()));
+            QObject::connect(c, &QCheckBox::toggled, [c, _slot2]()
             {
-                c->setText(slot2(c->isChecked()));
+                c->setText(_slot2(c->isChecked()));
             });
             gl->addWidget(c);
         }
-        layout->addWidget(g);
+        _layout->addWidget(g);
 
         return di;
     }
 
-    void GeneralCreator::addProgresser(QWidget* parent, QLayout* layout, const std::vector< QString >& values, int selected, std::function< void(TextEmojiWidget*, TextEmojiWidget*, int) > slot)
+    void GeneralCreator::addProgresser(QWidget* _parent, QLayout* _layout, const std::vector< QString >& _values, int _selected, std::function< void(TextEmojiWidget*, TextEmojiWidget*, int) > _slot)
     {
         TextEmojiWidget* w = nullptr;
         TextEmojiWidget* aw = nullptr;
-        auto ap = new QWidget(parent);
-        Utils::grabTouchWidget(ap);
-        auto apl = new QHBoxLayout(ap);
-        ap->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-        apl->setAlignment(Qt::AlignLeft);
-        apl->setContentsMargins(0, 0, 0, 0);
-        apl->setSpacing(Utils::scale_value(5));
+        auto mainWidget = new QWidget(_parent);
+        Utils::grabTouchWidget(mainWidget);
+        auto mainLayout = new QHBoxLayout(mainWidget);
+        mainWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+        mainLayout->setAlignment(Qt::AlignLeft);
+        mainLayout->setContentsMargins(0, 0, 0, 0);
+        mainLayout->setSpacing(Utils::scale_value(5));
         {
-            w = new TextEmojiWidget(ap, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
+            w = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(w);
             w->setSizePolicy(QSizePolicy::Policy::Preferred, w->sizePolicy().verticalPolicy());
             w->setText(" ");
-            apl->addWidget(w);
+            mainLayout->addWidget(w);
 
-            aw = new TextEmojiWidget(ap, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(44));
+            aw = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(aw);
             aw->setSizePolicy(QSizePolicy::Policy::Preferred, aw->sizePolicy().verticalPolicy());
             aw->setText(" ");
-            apl->addWidget(aw);
+            mainLayout->addWidget(aw);
 
-            slot(w, aw, selected);
+            _slot(w, aw, _selected);
         }
-        layout->addWidget(ap);
+        _layout->addWidget(mainWidget);
 
-        auto sp = new QWidget(parent);
-        Utils::grabTouchWidget(sp);
-        auto spl = new QVBoxLayout(sp);
-        sp->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-        sp->setFixedWidth(Utils::scale_value(280));
-        spl->setAlignment(Qt::AlignBottom);
-        spl->setContentsMargins(0, Utils::scale_value(12), 0, 0);
-        spl->setSpacing(0);
+        auto sliderWidget = new QWidget(_parent);
+        Utils::grabTouchWidget(sliderWidget);
+        auto sliderLayout = new QVBoxLayout(sliderWidget);
+        sliderWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+        sliderWidget->setFixedWidth(Utils::scale_value(280));
+        sliderLayout->setAlignment(Qt::AlignBottom);
+        sliderLayout->setContentsMargins(0, Utils::scale_value(12), 0, 0);
+        sliderLayout->setSpacing(0);
         {
-            auto p = new SettingsSlider(Qt::Orientation::Horizontal, parent);
-            Utils::grabTouchWidget(p);
-            p->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
-            p->setFixedWidth(Utils::scale_value(280));
-            p->setFixedHeight(Utils::scale_value(24));
-            p->setMinimum(0);
-            p->setMaximum((int)values.size() - 1);
-            p->setValue(selected);
-            p->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-            p->setStyleSheet(QString("* QSlider::handle:horizontal { margin: %1 0 %2 0; }").arg(Utils::scale_value(-12)).arg(Utils::scale_value(-12)));
-            QObject::connect(p, &QSlider::valueChanged, [w, aw, slot](int v)
+            auto slider = new SettingsSlider(Qt::Orientation::Horizontal, _parent);
+            Utils::grabTouchWidget(slider);
+            slider->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
+            slider->setFixedWidth(Utils::scale_value(280));
+            slider->setFixedHeight(Utils::scale_value(24));
+            slider->setMinimum(0);
+            slider->setMaximum((int)_values.size() - 1);
+            slider->setValue(_selected);
+            slider->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+            auto SLIDER_STYLE =
+                QString("QSlider::handle:horizontal { margin: %1 0 %2 0; }")
+                .arg(Utils::scale_value(-12)).arg(Utils::scale_value(-12));
+            slider->setStyleSheet(SLIDER_STYLE);
+            QObject::connect(slider, &QSlider::valueChanged, [w, aw, _slot](int v)
             {
-                slot(w, aw, v);
+                _slot(w, aw, v);
                 w->update();
                 aw->update();
             });
-            spl->addWidget(p);
+            sliderLayout->addWidget(slider);
         }
-        layout->addWidget(sp);
+        _layout->addWidget(sliderWidget);
     }
 
-    void GeneralCreator::addBackButton(QWidget* parent, QLayout* layout, std::function<void()> _on_button_click)
+    void GeneralCreator::addBackButton(QWidget* _parent, QLayout* _layout, std::function<void()> _onButtonClick)
     {
-        auto backbutton_area = new QWidget(parent);
-        backbutton_area->setObjectName(QStringLiteral("backbutton_area"));
-        backbutton_area->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
-        auto backbutton_area_layout = new QVBoxLayout(backbutton_area);
-        backbutton_area_layout->setObjectName(QStringLiteral("backbutton_area_layout"));
-        backbutton_area_layout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(24), 0, 0);
+        auto backArea = new QWidget(_parent);
+        backArea->setObjectName(QStringLiteral("backArea"));
+        backArea->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+        auto backLayout = new QVBoxLayout(backArea);
+        backLayout->setObjectName(QStringLiteral("backLayout"));
+        backLayout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(24), 0, 0);
 
-        auto back_button = new BackButton(backbutton_area);
-        back_button->setObjectName(QStringLiteral("back_button"));
-        back_button->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-        back_button->setFlat(true);
-        back_button->setFocusPolicy(Qt::NoFocus);
-        back_button->setCursor(Qt::CursorShape::PointingHandCursor);
-        backbutton_area_layout->addWidget(back_button);
+        auto backButton = new BackButton(backArea);
+        backButton->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+        backButton->setFlat(true);
+        backButton->setFocusPolicy(Qt::NoFocus);
+        backButton->setCursor(Qt::CursorShape::PointingHandCursor);
+        backLayout->addWidget(backButton);
 
         auto verticalSpacer = new QSpacerItem(Utils::scale_value(15), Utils::scale_value(543), QSizePolicy::Minimum, QSizePolicy::Expanding);
-        backbutton_area_layout->addItem(verticalSpacer);
+        backLayout->addItem(verticalSpacer);
 
-        layout->addWidget(backbutton_area);
-        QObject::connect(back_button, &QPushButton::clicked, _on_button_click);
+        _layout->addWidget(backArea);
+        QObject::connect(backButton, &QPushButton::clicked, _onButtonClick);
     }
 
-    SettingsSlider::SettingsSlider(Qt::Orientation orientation, QWidget *parent/* = nullptr*/):
-        QSlider(orientation, parent)
+    SettingsSlider::SettingsSlider(Qt::Orientation _orientation, QWidget* _parent/* = nullptr*/):
+        QSlider(_orientation, _parent)
     {
         //
     }
@@ -324,27 +336,27 @@ namespace Ui
         //
     }
 
-    void SettingsSlider::mousePressEvent(QMouseEvent *event)
+    void SettingsSlider::mousePressEvent(QMouseEvent* _event)
     {
-        QSlider::mousePressEvent(event);
+        QSlider::mousePressEvent(_event);
 #ifndef __APPLE__
-        if (event->button() == Qt::LeftButton)
+        if (_event->button() == Qt::LeftButton)
         {
             if (orientation() == Qt::Vertical)
-                setValue(minimum() + ((maximum()-minimum() + 1) * (height()-event->y())) / height());
+                setValue(minimum() + ((maximum()-minimum() + 1) * (height()-_event->y())) / height());
             else
-                setValue(minimum() + ((maximum()-minimum() + 1) * event->x()) / width());
-            event->accept();
+                setValue(minimum() + ((maximum()-minimum() + 1) * _event->x()) / width());
+            _event->accept();
         }
 #endif // __APPLE__
     }
     
-    void SettingsSlider::wheelEvent(QWheelEvent *e)
+    void SettingsSlider::wheelEvent(QWheelEvent* _e)
     {
         // Disable mouse wheel event for sliders
         if (parent())
         {
-            parent()->event(e);
+            parent()->event(_e);
         }
     }
 }

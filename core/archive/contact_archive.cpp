@@ -6,6 +6,7 @@
 #include "messages_data.h"
 #include "archive_index.h"
 #include "history_message.h"
+#include "image_cache.h"
 
 using namespace core;
 using namespace archive;
@@ -14,6 +15,7 @@ contact_archive::contact_archive(const std::wstring& _archive_path, const std::s
     : index_(new archive_index(_archive_path + L"/" + version_db_filename(L"_idx")))
     , data_(new messages_data(_archive_path + L"/" + version_db_filename(L"_db")))
     , state_(new archive_state(_archive_path + L"/" + version_db_filename(L"_ste"), _contact_id))
+    , images_(new image_cache(_archive_path + L"/" + version_db_filename(L"_img")))
     , path_(_archive_path)
     , local_loaded_(false)
 {
@@ -22,6 +24,46 @@ contact_archive::contact_archive(const std::wstring& _archive_path, const std::s
 
 contact_archive::~contact_archive()
 {
+    images_->cancel_build();
+    if (image_cache_thread_.joinable())
+        image_cache_thread_.join();
+}
+
+void contact_archive::get_images(int64_t _from, int64_t _count, image_list& _images) const
+{
+    images_->get_images(_from, _count, _images);
+}
+
+bool contact_archive::repair_images() const
+{
+    return images_->build(*this);
+}
+
+void contact_archive::get_messages(int64_t _from, int64_t _count, history_block& _messages, get_message_policy policy) const
+{
+    _messages.clear();
+
+    headers_list headers;
+    while (true)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        index_->serialize_from(_from, _count, headers);
+        if (headers.empty())
+            return;
+
+        _from = headers.begin()->get_id();
+
+        if (policy == get_message_policy::skip_patches_and_deleted)
+        {
+            headers.remove_if([](const message_header& h) { return h.is_patch() || h.is_deleted(); });
+            if (headers.empty())
+                continue;
+        }
+
+        data_->get_messages(headers, _messages);
+        return;
+    }
 }
 
 void contact_archive::get_messages_index(int64_t _from, int64_t _count, headers_list& _headers) const
@@ -50,6 +92,8 @@ bool contact_archive::get_messages_buddies(std::shared_ptr<archive::msgids_list>
 
         _headers.emplace_back(msg_header);
     }
+
+    std::lock_guard<std::mutex> lock(mutex_);
 
     data_->get_messages(_headers, *_messages);
 
@@ -217,16 +261,26 @@ void contact_archive::insert_history_block(
         return;
     }
 
-    if (!data_->update(insert_data))
     {
-        assert(!"update data error");
-        return;
-    }
+        std::lock_guard<std::mutex> lock(mutex_);
 
-    if (!index_->update(insert_data, _inserted_messages))
-    {
-        assert(!"update index error");
-        return;
+        if (!data_->update(insert_data))
+        {
+            assert(!"update data error");
+            return;
+        }
+
+        if (!images_->update(insert_data))
+        {
+            assert(!"update images error");
+            return;
+        }
+
+        if (!index_->update(insert_data, _inserted_messages))
+        {
+            assert(!"update index error");
+            return;
+        }
     }
 
     const auto last_message_changed = (state_->get_state().get_last_message().get_msgid() != last_msgid);
@@ -258,6 +312,7 @@ int contact_archive::load_from_local()
         }
     }
 
+    image_cache_thread_ = std::move(std::thread(&image_cache::load_from_local, images_.get(), std::ref(*this)));
 
     return 0;
 }
@@ -274,7 +329,13 @@ bool contact_archive::need_optimize()
 
 void contact_archive::optimize()
 {
-    index_->optimize();
+    if (index_->need_optimize())
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        index_->optimize();
+        images_->synchronize(*index_);
+    }
 }
 
 void contact_archive::delete_messages_up_to(const int64_t _up_to)
@@ -297,7 +358,10 @@ void contact_archive::delete_messages_up_to(const int64_t _up_to)
         state_->set_state(dlg_state, Out changes);
     }
 
+    std::lock_guard<std::mutex> lock(mutex_);
+
     index_->delete_up_to(_up_to);
+    images_->synchronize(*index_);
 }
 
 std::wstring archive::version_db_filename(const std::wstring &filename)

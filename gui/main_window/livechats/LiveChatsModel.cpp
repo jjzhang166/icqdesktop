@@ -1,10 +1,11 @@
 #include "stdafx.h"
 #include "LiveChatsModel.h"
 
-#include "../../utils/utils.h"
 #include "../../core_dispatcher.h"
-#include "../../utils/gui_coll_helper.h"
 #include "../../cache/avatars/AvatarStorage.h"
+#include "../../utils/gui_coll_helper.h"
+#include "../../utils/InterConnector.h"
+#include "../../utils/utils.h"
 
 namespace
 {
@@ -13,10 +14,10 @@ namespace
 
 namespace Logic
 {
-    static std::unique_ptr<LiveChatsModel> g_livechat_model;
+    static std::unique_ptr<LiveChatsModel> gLivechatModel;
 
-    LiveChatsModel::LiveChatsModel(QObject *parent)
-        : QAbstractListModel(parent)
+    LiveChatsModel::LiveChatsModel(QObject* _parent)
+        : QAbstractListModel(_parent)
         , inited_(false)
         , finished_(false)
     {
@@ -35,7 +36,7 @@ namespace Logic
         }
     }
 
-    void LiveChatsModel::avatarLoaded(QString aimid)
+    void LiveChatsModel::avatarLoaded(QString _aimId)
     {
         if (!inited_)
             return;
@@ -43,7 +44,7 @@ namespace Logic
         int i = 0;
         for (auto iter : cache_)
         {
-            if (iter.AimId_ == aimid)
+            if (iter.AimId_ == _aimId)
             {
                 emit dataChanged(index(i), index(i));
                 return;
@@ -52,7 +53,7 @@ namespace Logic
             int memberCount = 0;
             for (auto member : iter.Members_)
             {
-                if (member.AimId_ == aimid)
+                if (member.AimId_ == _aimId)
                 {
                     emit dataChanged(index(i), index(i));
                     return;
@@ -66,37 +67,62 @@ namespace Logic
         }
     }
 
-    int LiveChatsModel::rowCount(const QModelIndex &parent) const
+    int LiveChatsModel::rowCount(const QModelIndex &/*parent*/) const
     {
         return cache_.size();
     }
 
-    QVariant LiveChatsModel::data(const QModelIndex &index, int role) const
+    QVariant LiveChatsModel::data(const QModelIndex& _index, int _role) const
     {
-        int row = index.row();
+        int row = _index.row();
         if (row < 0 || row > rowCount())
             return QVariant();
 
-        if (role == Qt::DisplayRole && rowCount() - index.row() <= preload_size)
+        if (_role == Qt::DisplayRole && rowCount() - _index.row() <= preload_size)
             requestMore();
 
         return QVariant::fromValue(cache_.at(row));
     }
 
-    Qt::ItemFlags LiveChatsModel::flags(const QModelIndex &index) const
+    Qt::ItemFlags LiveChatsModel::flags(const QModelIndex& _index) const
     {
-        if (!index.isValid())
+        if (!_index.isValid())
             return Qt::ItemIsEnabled;
-        return QAbstractItemModel::flags(index) | Qt::ItemIsEnabled;
+        return QAbstractItemModel::flags(_index) | Qt::ItemIsEnabled;
     }
 
-    void LiveChatsModel::select(const QModelIndex& index)
+    void LiveChatsModel::select(const QModelIndex& _index)
     {
-        int row = index.row();
+        int row = _index.row();
         if (row < 0 || row > rowCount())
             return;
 
         emit selected(cache_[row]);
+        emit Utils::InterConnector::instance().liveChatSelected();
+    }
+
+    void LiveChatsModel::pending(const QString& _aimId)
+    {
+        for (QList<Data::ChatInfo>::iterator iter = cache_.begin(); iter != cache_.end(); ++iter)
+        {
+            if (iter->AimId_ == _aimId)
+            {
+                iter->YouPending_ = true;
+                break;
+            }
+        }
+    }
+
+    void LiveChatsModel::joined(const QString& _aimId)
+    {
+        for (QList<Data::ChatInfo>::iterator iter = cache_.begin(); iter != cache_.end(); ++iter)
+        {
+            if (iter->AimId_ == _aimId)
+            {
+                iter->YouMember_ = true;
+                break;
+            }
+        }
     }
 
     void LiveChatsModel::chatsHome(QList<Data::ChatInfo> _chats, QString _newTag, bool _restart, bool _finished)
@@ -138,15 +164,15 @@ namespace Logic
 
 	LiveChatsModel* GetLiveChatsModel()
 	{	
-        if (!g_livechat_model)
-            g_livechat_model.reset(new LiveChatsModel(0));
+        if (!gLivechatModel)
+            gLivechatModel.reset(new LiveChatsModel(0));
 
-		return g_livechat_model.get();
+		return gLivechatModel.get();
 	}
 
     void ResetLiveChatsModel()
     {
-        if (g_livechat_model)
-            g_livechat_model.reset();
+        if (gLivechatModel)
+            gLivechatModel.reset();
     }
 }

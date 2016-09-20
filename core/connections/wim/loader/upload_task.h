@@ -1,19 +1,16 @@
-#ifndef __UPLOAD_TASK_H_
-#define __UPLOAD_TASK_H_
-
 #pragma once
 
-#include "loader_task.h"
+#include "fs_loader_task.h"
 
 namespace core
 {
     namespace wim
     {
-        class upload_progress_handler;
+        struct upload_progress_handler;
         class web_file_info;
+        enum class loader_errors;
 
-
-        class upload_task : public loader_task, public std::enable_shared_from_this<upload_task>
+        class upload_task : public fs_loader_task, public std::enable_shared_from_this<upload_task>
         {
             std::wstring				file_name_;
             std::wstring				file_name_short_;
@@ -32,8 +29,8 @@ namespace core
 
             std::shared_ptr<upload_progress_handler>	handler_;
 
-            int32_t read_data_from_file();
-            int32_t send_data_to_server();
+            loader_errors read_data_from_file();
+            loader_errors send_data_to_server();
 
             virtual void resume(loader& _loader) override;
 
@@ -44,9 +41,9 @@ namespace core
 
             bool is_end();
 
-            int32_t get_gate();
-            int32_t open_file();
-            int32_t send_next_range();
+            loader_errors get_gate();
+            loader_errors open_file();
+            loader_errors send_next_range();
 
             std::string get_file_url() const;
 
@@ -61,5 +58,3 @@ namespace core
 
     }
 }
-
-#endif // !__UPLOAD_TASK_H_

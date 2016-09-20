@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../types/contact.h"
+#include "../../types/chat.h"
 
 namespace Logic
 {
@@ -13,33 +14,36 @@ namespace Logic
 		Q_OBJECT
 
 	Q_SIGNALS:
-		void avatarChanged(QString);
+		void avatarChanged(QString aimId);
 
 	private Q_SLOTS:
-		void avatarLoaded(const QString &aimId, QPixmap *avatar, int size);
+		void avatarLoaded(const QString& _aimId, QPixmap* _avatar, int _size);
+
+        void chatInfo(qint64, std::shared_ptr<Data::ChatInfo> _info);
 
 		void cleanup();
 
 	public:
 		~AvatarStorage();
 
-		const QPixmapSCptr& Get(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled, bool& isDefault, bool regenerate);
+		const QPixmapSCptr& Get(const QString& _aimId, const QString& _displayName, const int _sizePx, const bool _isFilled, bool& _isDefault, bool _regenerate);
 
-		const QPixmapSCptr& GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool regenerate, bool from_cl = false);
+		const QPixmapSCptr& GetRounded(const QString& _aimId, const QString& _displayName, const int _sizePx, const QString& _state, const bool _isFilled, bool& _isDefault, bool _regenerate, bool mini_icons);
 
-		QString GetLocal(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled);
+		QString GetLocal(const QString& _aimId, const QString& _displayName, const int _sizePx, const bool _isFilled);
 
-        void UpdateDefaultAvatarIfNeed(const QString& aimId);
-        void UpdateAvatar(const QString& aimId);
+        void UpdateDefaultAvatarIfNeed(const QString& _aimId);
+        void UpdateAvatar(const QString& _aimId, bool force = true);
+        void ForceRequest(const QString& _aimId, const int _sizePx);
         
 	private:
 		typedef std::map<QString, QPixmapSCptr> CacheMap;
 
 		AvatarStorage();
 
-		void CleanupSecondaryCaches(const QString &aimId);
+		void CleanupSecondaryCaches(const QString& _aimId);
 
-		const QPixmapSCptr& GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl, bool isDefault);
+		const QPixmapSCptr& GetRounded(const QPixmap& _avatar, const QString& _aimId, const QString& _state, bool mini_icons, bool _isDefault);
 
 		CacheMap AvatarsByAimIdAndSize_;
 
@@ -50,6 +54,10 @@ namespace Logic
 		std::set<QString> RequestedAvatars_;
 
 		QStringList LoadedAvatars_;
+
+        QStringList LoadedAvatarsFails_;
+
+        QMap<QString, int> ChatInfoRequested_;
 
 		std::map<QString, QDateTime> TimesCache_;
 

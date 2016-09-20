@@ -18,38 +18,38 @@ namespace Ui
 
 Q_SIGNALS:
 
-        void need_more(int _skip_count);
-        void add_contact(QString _contact);
-        void msg_contact(QString _contact);
-        void call_contact(QString _contact);
-        void contact_info(QString _contact);
+        void needMore(int _skipCount);
+        void addContact(QString _contact);
+        void msgContact(QString _contact);
+        void callContact(QString _contact);
+        void contactInfo(QString _contact);
 
     private Q_SLOTS:
 
-        void on_avatar_loaded(QString _aimid);
+        void onAvatarLoaded(QString _aimid);
 
-        void on_add_contact(QString _contact);
-        void on_msg_contact(QString _contact);
-        void on_call_contact(QString _contact);
-        void on_contact_info(QString _contact);
+        void onAddContact(QString _contact);
+        void onMsgContact(QString _contact);
+        void onCallContact(QString _contact);
+        void onContactInfo(QString _contact);
 
     private:
 
         QScrollArea*							area_;
-        FlowLayout*								contacts_layout_;
-        QVBoxLayout*							root_layout_;
+        FlowLayout*								contactsLayout_;
+        QVBoxLayout*							rootLayout_;
 
-        int										prev_scroll_value_;
+        int										prevScrollValue_;
 
         std::map<QString, ContactWidget*>		items_;
         std::map<QString, QString>				countries_;
 
-        void hook_scroll();
+        void hookScroll();
 
     public:
 
-        void insert_items(const profiles_list& _profiles);
-        void contact_add_result(const QString& _contact, bool _res);
+        int insertItems(const profiles_list& _profiles);
+        void contactAddResult(const QString& _contact, bool _res);
         void clear();
         bool empty();
 

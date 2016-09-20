@@ -26,15 +26,15 @@ int32_t attach_uin::init_request(std::shared_ptr<core::http_request_simple> _req
 {
     if (from_params_.a_token_.empty())
         return wpie_invalid_login;
-    
-    std::string from_uin_signed_url = "";
+
+    auto from_uin_signed_url = std::string();
     {
         core::http_request_simple request_from(_request->get_user_proxy(), utils::get_user_agent());
         const std::string host = WIM_API_REPLACE_ACCOUNT_HOST;
         request_from.set_url(host);
         request_from.push_post_parameter("a", escape_symbols(from_params_.a_token_));
         request_from.push_post_parameter("k", escape_symbols(from_params_.dev_id_));
-        
+
         time_t ts = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - from_params_.time_offset_;
         request_from.push_post_parameter("ts", tools::from_int64(ts));
 

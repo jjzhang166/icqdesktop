@@ -1,175 +1,191 @@
 #include "stdafx.h"
 #include "SearchWidget.h"
 #include "../../controls/LineEditEx.h"
+#include "../../controls/CommonStyle.h"
 #include "../../controls/CustomButton.h"
 #include "../../utils/utils.h"
 
 namespace Ui
 {
-	SearchWidget::SearchWidget(bool _isWithButton, QWidget* _parent, int _offset)
+    SearchWidget::SearchWidget(bool _isWithButton, QWidget* _parent, int _offset)
         : QWidget(_parent)
-        , is_transparent_(false)
+        , isTransparent_(false)
         , menu_(0)
-	{
-        if (this->objectName().isEmpty())
-            this->setObjectName(QStringLiteral("search_widget"));
+        , isWithButton_(_isWithButton)
+    {
         active_ = false;
-        setStyleSheet(Utils::LoadStyle(":/main_window/contact_list/contact_list.qss", Utils::get_scale_coefficient(), true));
-        parent_search_vertical_layout_ = new QVBoxLayout(this);
-        parent_search_vertical_layout_->setContentsMargins(0, 0, 0, 0);
-        parent_search_vertical_layout_->setSpacing(0);
-        horizontal_search_layout_ = new QHBoxLayout();
-        horizontal_search_layout_->setContentsMargins(0, 0, 0, Utils::scale_value(0));
-        parent_search_vertical_layout_->addLayout(horizontal_search_layout_);
+        setStyleSheet(Utils::LoadStyle(":/main_window/contact_list/contact_list.qss"));
+        vMainLayout_ = new QVBoxLayout(this);
+        vMainLayout_->setContentsMargins(0, 0, 0, 0);
+        vMainLayout_->setSpacing(0);
+        hMainLayout = new QHBoxLayout();
+        hMainLayout->setContentsMargins(0, 0, 0, Utils::scale_value(0));
+        vMainLayout_->addLayout(hMainLayout);
 
-        horizontal_search_layout_->addSpacing(_offset);
+        hMainLayout->addSpacing(_offset);
 
-        search_icon_ = new Ui::CustomButton(this, ":/resources/contr_search_100.png");
-        search_icon_->setOffsets(Utils::scale_value(8), Utils::scale_value(0));
-        search_icon_->setActiveImage(":/resources/contr_search_100_active.png");
-        search_icon_->setFixedWidth(Utils::scale_value(34));
-        search_icon_->setFixedHeight(Utils::scale_value(53));
-        search_icon_->setStyleSheet("border: none;");
-        horizontal_search_layout_->addWidget(search_icon_);
+        searchIcon_ = new Ui::CustomButton(this, ":/resources/contr_search_100.png");
+        searchIcon_->setOffsets(Utils::scale_value(8), Utils::scale_value(0));
+        searchIcon_->setActiveImage(":/resources/contr_search_100_active.png");
+        searchIcon_->setFixedWidth(Utils::scale_value(34));
+        searchIcon_->setFixedHeight(Utils::scale_value(53));
+        searchIcon_->setStyleSheet("border: none;");
+        hMainLayout->addWidget(searchIcon_);
 
-        parent_widget_ = new QWidget(this);
-        search_vertical_layout_ = new QVBoxLayout(parent_widget_);
-        search_vertical_layout_->setContentsMargins(0, Utils::scale_value(5), 0, 0);
-        search_edit_ = new LineEditEx(this);
-        search_edit_->setProperty("SearchEdit", true);
-        search_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("search_widget", "Search"));
-        search_edit_->setContentsMargins(Utils::scale_value(6), 0, Utils::scale_value(22), 0);
-        search_edit_->setAttribute(Qt::WA_MacShowFocusRect, false);
-        search_edit_->setStyleSheet(QString("background-color: transparent"));
-        Testing::setAccessibleName(search_edit_, "search_edit");
-        search_vertical_layout_->addSpacing(Utils::scale_value(0));
-        search_vertical_layout_->addWidget(search_edit_);
-        horizontal_search_layout_->addWidget(parent_widget_);
-        search_edit_->setContextMenuPolicy(Qt::NoContextMenu);
+        parentWidget_ = new QWidget(this);
+        vSearchLayout_ = new QVBoxLayout(parentWidget_);
+        vSearchLayout_->setContentsMargins(0, 0, 0, 0);
+        vSearchLayout_->setSpacing(0);
+        searchEdit_ = new LineEditEx(this);
+        searchEdit_->setObjectName("searchEdit");
+        searchEdit_->setPlaceholderText(QT_TRANSLATE_NOOP("search_widget", "Search"));
+        searchEdit_->setContentsMargins(Utils::scale_value(6), 0, Utils::scale_value(27), 0);
+        searchEdit_->setAttribute(Qt::WA_MacShowFocusRect, false);
+        searchEdit_->setStyleSheet(QString("background-color: transparent"));
+        Testing::setAccessibleName(searchEdit_, "search_edit");
+        vSearchLayout_->addSpacing(Utils::scale_value(0));
+        vSearchLayout_->addWidget(searchEdit_);
+        hMainLayout->addWidget(parentWidget_);
+        searchEdit_->setContextMenuPolicy(Qt::NoContextMenu);
 
-        search_edit_icon_ = new CustomButton(this, ":/resources/contr_compose_100.png");
-        search_edit_icon_->setOffsets(Utils::scale_value(0), Utils::scale_value(0));
-		search_edit_icon_->setOffsetsForActive(Utils::scale_value(2), Utils::scale_value(0));
-        search_edit_icon_->setHoverImage(":/resources/contr_compose_100_hover.png");
-        search_edit_icon_->setActiveImage(":/resources/contr_clear_100.png");
-        search_edit_icon_->setFixedWidth(Utils::scale_value(50));
-        search_edit_icon_->setFixedHeight(Utils::scale_value(53));
-		search_edit_icon_->setCursor(Qt::PointingHandCursor);
-		search_edit_icon_->setFocusPolicy(Qt::NoFocus);
-        search_edit_icon_->setStyleSheet("background-color: transparent;");
-        Testing::setAccessibleName(search_edit_icon_, "CreateGroupChat");
-		horizontal_search_layout_->addWidget(search_edit_icon_);
+        searchEditIcon_ = new CustomButton(this, ":/resources/contr_compose_100.png");
+        searchEditIcon_->setOffsets(Utils::scale_value(0), Utils::scale_value(0));
+        searchEditIcon_->setOffsetsForActive(Utils::scale_value(2), Utils::scale_value(0));
+        searchEditIcon_->setHoverImage(":/resources/contr_compose_100_hover.png");
+        searchEditIcon_->setActiveImage(":/resources/contr_clear_100.png");
+        searchEditIcon_->setFixedWidth(Utils::scale_value(50));
+        searchEditIcon_->setFixedHeight(Utils::scale_value(53));
+        searchEditIcon_->setCursor(Qt::PointingHandCursor);
+        searchEditIcon_->setFocusPolicy(Qt::NoFocus);
+        searchEditIcon_->setStyleSheet("background-color: transparent;");
+        Testing::setAccessibleName(searchEditIcon_, "CreateGroupChat");
+        hMainLayout->addWidget(searchEditIcon_);
 
-        horizontal_line_widget_ = new QWidget(this);
-        horizontal_line_widget_->setFixedHeight(Utils::scale_value(1));
-        horizontal_line_widget_->setStyleSheet(QString("background-color: #dadada;"));
-        horizontal_line_widget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        parent_search_vertical_layout_->addSpacing(0);
-        widget_2_ = new QWidget(this);
-        horizontal_layout_2_ = new QHBoxLayout(widget_2_);
-        horizontal_layout_2_->setContentsMargins(Utils::scale_value(_isWithButton ? 24 : 16), 0, Utils::scale_value(_isWithButton ? 24 : 60), Utils::scale_value(10));
-        horizontal_layout_2_->addWidget(horizontal_line_widget_);
-        parent_search_vertical_layout_->addWidget(widget_2_);
+        horLineWidget_ = new QWidget(this);
+        horLineWidget_->setFixedHeight(Utils::scale_value(1));
+        horLineWidget_->setStyleSheet(QString("background-color: #dadada;"));
+        horLineWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        vMainLayout_->addSpacing(0);
+
+        horLine_ = new QWidget(this);
+        horLineLayout_ = new QHBoxLayout(horLine_);
+        horLineLayout_->setContentsMargins(Utils::scale_value(_isWithButton ? 24 : 16), 0, Utils::scale_value(_isWithButton ? 24 : 60), Utils::scale_value(10));
+        horLineLayout_->addWidget(horLineWidget_);
+        vMainLayout_->addWidget(horLine_);
 
         QMetaObject::connectSlotsByName(this);
-        connect(search_edit_, SIGNAL(textEdited(QString)), this, SLOT(searchChanged(QString)), Qt::QueuedConnection);
-        connect(search_edit_, SIGNAL(clicked()), this, SLOT(searchStarted()), Qt::QueuedConnection);
-        connect(search_edit_, SIGNAL(escapePressed()), this, SLOT(searchCompleted()), Qt::QueuedConnection);
-        connect(search_edit_, SIGNAL(enter()), this, SLOT(editEnterPressed()), Qt::QueuedConnection);
-        connect(search_edit_, SIGNAL(upArrow()), this, SLOT(editUpPressed()), Qt::QueuedConnection);
-        connect(search_edit_, SIGNAL(downArrow()), this, SLOT(editDownPressed()), Qt::QueuedConnection);
-        connect(search_edit_, SIGNAL(focusOut()), this, SLOT(focusedOut()), Qt::QueuedConnection);
-        connect(search_edit_icon_, SIGNAL(clicked()), this, SLOT(clearPressed()), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(textEdited(QString)), this, SLOT(searchChanged(QString)), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(clicked()), this, SLOT(searchStarted()), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(escapePressed()), this, SLOT(searchCompleted()), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(enter()), this, SLOT(editEnterPressed()), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(upArrow()), this, SLOT(editUpPressed()), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(downArrow()), this, SLOT(editDownPressed()), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(focusOut()), this, SLOT(focusedOut()), Qt::QueuedConnection);
+        connect(searchEditIcon_, SIGNAL(clicked()), this, SLOT(clearPressed()), Qt::QueuedConnection);
 
-		setActive(false);
-	}
+        connect(searchIcon_, &CustomButton::clicked, this, &SearchWidget::searchIconClicked, Qt::QueuedConnection);
 
-    void SearchWidget::retranslateUi(QWidget *search_widget)
-	{
-		search_widget->setWindowTitle("");
-        search_icon_->setText(QString());
-        search_edit_icon_->setText(QString());
+        setActive(false);
     }
 
-	void SearchWidget::SetShowButton(bool _isShow)
-	{
-		is_show_button_= _isShow;
-		search_edit_icon_->setVisible(is_show_button_);
-	}
+    void SearchWidget::retranslateUi(QWidget* _searchWidget)
+    {
+        _searchWidget->setWindowTitle("");
+        searchIcon_->setText(QString());
+        searchEditIcon_->setText(QString());
+    }
+
+    void SearchWidget::setShowButton(bool _isShow)
+    {
+        isShowButton_= _isShow;
+        searchEditIcon_->setVisible(isShowButton_);
+    }
 
     void SearchWidget::setTransparent(bool _isTransparent)
     {
-        is_transparent_ = _isTransparent;
+        isTransparent_ = _isTransparent;
     }
 
     void SearchWidget::setFocus()
     {
-        search_edit_->setFocus(Qt::MouseFocusReason);
+        searchEdit_->setFocus(Qt::MouseFocusReason);
         setActive(true);
     }
 
-	SearchWidget::~SearchWidget()
-	{
-	}
+    SearchWidget::~SearchWidget()
+    {
+    }
 
-	void SearchWidget::setActive(bool active)
-	{
-        if (active && search_edit_icon_->menu())
+    void SearchWidget::setActive(bool _active)
+    {
+        if (_active && searchEditIcon_->menu())
         {
-            menu_ = search_edit_icon_->menu();
-            search_edit_icon_->setMenu(0);
+            menu_ = searchEditIcon_->menu();
+            searchEditIcon_->setMenu(0);
         }
         
-        if (!active)
-            search_edit_icon_->setMenu(menu_);
+        if (!_active)
+            searchEditIcon_->setMenu(menu_);
         
-		active_ = active;
-        search_icon_->setActive(active);
-        search_edit_icon_->setActive(active);
-        if (active)
+        active_ = _active;
+        searchIcon_->setActive(_active);
+        searchEditIcon_->setActive(_active);
+        if (_active)
         {
-            horizontal_line_widget_->setStyleSheet(QString("background-color: #579e1c;"));
+            horLineWidget_->setStyleSheet(QString("background-color: #579e1c;"));
         }
         else
         {
-            horizontal_line_widget_->setStyleSheet(QString("background-color: #dadada;"));
+            horLineWidget_->setStyleSheet(QString("background-color: #dadada;"));
         }
-	}
+        emit activeChanged(_active);
+    }
 
     void SearchWidget::paintEvent(QPaintEvent*)
     {
         QPainter painter(this);
-		painter.setPen(QPen(QColor("#dadada"), Utils::scale_value(1)));
-        if (!is_transparent_)
+        painter.setPen(QPen(QColor("#dadada"), Utils::fscale_value(1.5)));
+        if (!isTransparent_)
         {
-            painter.fillRect(rect(), QColor(255, 255, 255, 0.95 * 255));
-		    painter.drawLine(geometry().width()-1, geometry().y(), geometry().width()-1, geometry().height());
+            painter.fillRect(rect(), CommonStyle::getFrameTransparency());
+            QLineF line(geometry().width() - 0.5, geometry().height(), geometry().width() - 0.5, 0);
+            painter.drawLine(line);
         }
     }
 
-	void SearchWidget::searchStarted()
-	{
-		setActive(true);
-	}
+    void SearchWidget::searchStarted()
+    {
+        setActive(true);
+    }
 
-	void SearchWidget::ClearInput()
-	{
-		search_edit_->clear();
-        search_edit_->clearFocus();
-	}
+    QString SearchWidget::getText() const
+    {
+        return searchEdit_->text();
+    }
 
-	void SearchWidget::searchCompleted()
-	{
-		ClearInput();
-		setActive(false);
-		emit searchEnd();
-	}
+    bool SearchWidget::isEmpty() const
+    {
+        return getText().isEmpty();
+    }
 
-	void SearchWidget::searchChanged(QString text)
-	{
+    void SearchWidget::clearInput()
+    {
+        searchEdit_->clear();
+        searchEdit_->clearFocus();
+    }
+
+    void SearchWidget::searchCompleted()
+    {
+        clearInput();
+        setActive(false);
+        emit searchEnd();
+    }
+
+    void SearchWidget::searchChanged(QString _text)
+    {
         setActive(true);
 
-        if (!text.isEmpty())
+        if (!_text.isEmpty())
         {
             emit searchBegin();
         }
@@ -178,14 +194,14 @@ namespace Ui
             searchEnd();
         }
 
-		emit search(text);
-	}
+        emit search(_text);
+    }
 
-	void SearchWidget::clearPressed()
-	{
-		if (active_)
+    void SearchWidget::clearPressed()
+    {
+        if (active_)
         {
-			searchCompleted();
+            searchCompleted();
         }
         else
         {
@@ -193,23 +209,66 @@ namespace Ui
         }
     }
 
-	void SearchWidget::editEnterPressed()
-	{
-		emit enterPressed();
-	}
+    void SearchWidget::editEnterPressed()
+    {
+        emit enterPressed();
+    }
 
-	void SearchWidget::editUpPressed()
-	{
-		emit upPressed();
-	}
+    void SearchWidget::editUpPressed()
+    {
+        emit upPressed();
+    }
 
-	void SearchWidget::editDownPressed()
-	{
-		emit downPressed();
-	}
+    void SearchWidget::editDownPressed()
+    {
+        emit downPressed();
+    }
 
-	void SearchWidget::focusedOut()
-	{
+    void SearchWidget::focusedOut()
+    {
         setActive(false);
-	}
+    }
+
+    void SearchWidget::setShortView(bool _isShort)
+    {
+        if (isShortView_ == _isShort)
+            return;
+
+        searchEdit_->setVisible(!_isShort);
+        searchEditIcon_->setVisible(!_isShort);
+        parentWidget_->setVisible(!_isShort);
+        horLineWidget_->setStyleSheet(QString(_isShort ? "background-color: transparent;" : "background-color: #dadada;"));
+
+        if (!_isShort)
+        {
+            searchIcon_->setOffsets(Utils::scale_value(8), Utils::scale_value(0));
+            searchIcon_->setCursor(Qt::ArrowCursor);
+            searchIcon_->setHoverImage(":/resources/contr_search_100.png");
+        }
+        else
+        {
+            searchIcon_->setOffsets(Utils::scale_value(0), Utils::scale_value(0));
+            searchIcon_->setCursor(Qt::PointingHandCursor);
+            searchIcon_->setHoverImage(":/resources/contr_search_100_hover.png");
+        }
+
+        isShortView_ = _isShort;
+    }
+
+    void SearchWidget::setSearchEditIconVisible(bool _isShow)
+    {
+        if (_isShow)
+        {
+            searchEditIcon_->setContentsMargins(Utils::scale_value(6), 0, Utils::scale_value(22), 0);
+            searchEdit_->setContentsMargins(Utils::scale_value(6), 0, Utils::scale_value(27), 0);
+            horLineLayout_->setContentsMargins(Utils::scale_value(isWithButton_ ? 24 : 16), 0, Utils::scale_value(isWithButton_ ? 24 : 60), Utils::scale_value(10));
+        }
+        else
+        {
+            searchEditIcon_->setContentsMargins(0, 0, 0, 0);
+            searchEdit_->setContentsMargins(Utils::scale_value(6), 0, Utils::scale_value(24), 0);
+            horLineLayout_->setContentsMargins(Utils::scale_value(isWithButton_ ? 24 : 16), 0, Utils::scale_value(24), Utils::scale_value(10));
+        }
+        searchEditIcon_->setVisible(_isShow);
+    }
 }

@@ -8,15 +8,15 @@ namespace Ui
     {
         Q_OBJECT
         QPixmap pixmap_;
-        int theme_id_;
+        int themeId_;
         ThemesModel* themesModel_;
         QWidget *borderWidget_;
     public:
-        ThemeWidget(QWidget* parent, QPixmap& pixmap, ThemesModel* _themesModel, int _theme_id);
-        int get_id() const { return theme_id_; }
+        ThemeWidget(QWidget* _parent, QPixmap& _pixmap, ThemesModel* _themesModel, int _themeId);
+        int get_id() const { return themeId_; }
         void setBorder(const bool border);
     private Q_SLOTS:
-        void on_theme_pressed();
+        void onThemePressed();
     };
 }
 

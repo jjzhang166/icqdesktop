@@ -18,7 +18,7 @@ namespace Ui
             insertWidget(page.key(), page.value());
         }
 
-        connect(Logic::GetContactListModel(), SIGNAL(contact_removed(QString)), this, SLOT(contactRemoved(QString)), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(contact_removed(QString)), this, SLOT(contactRemoved(QString)), Qt::QueuedConnection);
     }
 
     void Sidebar::contactRemoved(QString aimId)
@@ -44,6 +44,16 @@ namespace Ui
     {
         if (currentIndex() == menu_page)
             qobject_cast<MenuPage*>(currentWidget())->allMemebersClicked();
+    }
+    
+    int Sidebar::currentPage() const
+    {
+        return currentIndex();
+    }
+    
+    QString Sidebar::currentAimId() const
+    {
+        return currentAimId_;
     }
 
     void Sidebar::setSidebarWidth(int width)

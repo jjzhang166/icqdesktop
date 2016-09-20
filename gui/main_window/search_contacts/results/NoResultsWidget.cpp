@@ -5,15 +5,15 @@ namespace Ui
 {
 	NoResultsWidget::NoResultsWidget(QWidget* _parent)
 		:	QWidget(_parent), 
-			root_layout_(new QVBoxLayout())
+			rootLayout_(new QVBoxLayout())
 	{
 		QLabel* text = new QLabel(this);
 		text->setObjectName("no_result_label");
 		text->setText(QT_TRANSLATE_NOOP("search_widget", "Nothing found"));
 		text->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-		root_layout_->addWidget(text);
+        rootLayout_->addWidget(text);
 
-		setLayout(root_layout_);
+		setLayout(rootLayout_);
 	}
 
 

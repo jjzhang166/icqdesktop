@@ -13,6 +13,8 @@
 #include "../main_window/history_control/MessagesModel.h"
 
 #include "../cache/avatars/AvatarStorage.h"
+#include "../main_window/contact_list/ContactListModel.h"
+#include "../my_info.h"
 
 namespace
 {
@@ -33,11 +35,13 @@ namespace
 		const qint64 theirs_last_delivered,
 		const qint64 theirs_last_read);
 
-    bool containsImagePreviewUri(const QString &text, Out QStringRef &uri);
+    bool containsSitePreviewUri(const QString &text, Out QStringRef &uri);
 
     bool containsPttAudio(const QString& text, Out int& duration);
 
     bool containsImage(const QString& text);
+
+    bool containsVideo(const QString& text);
 
     int decodeSymbols(const QString& str)
     {
@@ -79,7 +83,6 @@ namespace Data
 		, Filled_(false)
         , Deleted_(false)
 	{
-
 	}
 
     void MessageBuddy::ApplyModification(const MessageBuddy &modification)
@@ -104,8 +107,10 @@ namespace Data
             assert(!eventText.isEmpty());
 
             SetText(eventText);
+            SetChatEvent(modification.GetChatEvent());
 
-            Type_ = core::message_type::base;
+            Type_ = core::message_type::chat_event;
+            //Type_ = core::message_type::base;
 
             return;
         }
@@ -115,7 +120,7 @@ namespace Data
 
     bool MessageBuddy::IsEmpty() const
     {
-        return (Id_ == -1) && InternalId_.isEmpty();
+        return ((Id_ == -1) && InternalId_.isEmpty());
     }
 
     bool MessageBuddy::CheckInvariant() const
@@ -138,13 +143,41 @@ namespace Data
 		return true;
 	}
 
-    bool MessageBuddy::ContainsPreviewableLink() const
+    Logic::preview_type MessageBuddy::GetPreviewableLinkType() const
     {
         assert(Type_ > core::message_type::min);
         assert(Type_ < core::message_type::max);
 
+        if (FileSharing_ || Sticker_ || ChatEvent_ || VoipEvent_)
+        {
+            return Logic::preview_type::none;
+        }
+
         QStringRef uri;
-        return containsImagePreviewUri(Text_, Out uri);
+        if (containsSitePreviewUri(Text_, Out uri))
+        {
+            return Logic::preview_type::site;
+        }
+
+        return Logic::preview_type::none;
+    }
+
+    bool MessageBuddy::ContainsAnyPreviewableLink() const
+    {
+        const auto previewLinkType = GetPreviewableLinkType();
+        assert(previewLinkType > Logic::preview_type::min);
+        assert(previewLinkType < Logic::preview_type::max);
+
+        return (previewLinkType != Logic::preview_type::none);
+    }
+
+    bool MessageBuddy::ContainsPreviewableSiteLink() const
+    {
+        const auto previewLinkType = GetPreviewableLinkType();
+        assert(previewLinkType > Logic::preview_type::min);
+        assert(previewLinkType < Logic::preview_type::max);
+
+        return (previewLinkType == Logic::preview_type::site);
     }
 
     bool MessageBuddy::ContainsPttAudio() const
@@ -172,25 +205,97 @@ namespace Data
         assert(Type_ > core::message_type::min);
         assert(Type_ < core::message_type::max);
 
-        QString uri;
-        if (FileSharing_.get())
-            uri = FileSharing_->GetUri();
+        if (FileSharing_)
+        {
+            const auto isImage = (
+                (FileSharing_->getContentType() == core::file_sharing_content_type::image) ||
+                (FileSharing_->getContentType() == core::file_sharing_content_type::gif));
+            return isImage;
+        }
 
-        return containsImage(Text_) || containsImage(uri);
+        return false;
     }
 
-    bool MessageBuddy::GetIndentWith(const MessageBuddy &buddy)
+    bool MessageBuddy::ContainsVideo() const
     {
-        if (buddy.IsServiceMessage())
+        assert(Type_ > core::message_type::min);
+        assert(Type_ < core::message_type::max);
+
+        if (FileSharing_)
+        {
+            const auto isVideo = (FileSharing_->getContentType() == core::file_sharing_content_type::video);
+            return isVideo;
+        }
+
+        return false;
+    }
+
+    bool MessageBuddy::GetIndentWith(const MessageBuddy& _buddy)
+    {
+        if (_buddy.IsServiceMessage())
         {
             return false;
         }
 
-        return (
-            (ChatSender_ != buddy.ChatSender_) ||
-            (IsOutgoingVoip() != buddy.IsOutgoingVoip()) ||
-            buddy.IsChatEvent()
-        );
+        if (_buddy.IsChatEvent())
+        {
+            return true;
+        }
+
+        if (!isSameDirection(_buddy))
+        {
+            return true;
+        }
+
+        if (!_buddy.IsOutgoing() && !IsOutgoing() && ChatSender_ != _buddy.ChatSender_)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool MessageBuddy::isSameDirection(const MessageBuddy& _prevBuddy) const
+    {
+        if (IsVoipEvent() && _prevBuddy.IsVoipEvent())
+        {
+            return (IsOutgoingVoip() == _prevBuddy.IsOutgoingVoip());
+        }
+        else if (IsVoipEvent() && !_prevBuddy.IsVoipEvent())
+        {
+            return (IsOutgoingVoip() == _prevBuddy.IsOutgoing());
+        }
+        else if (!IsVoipEvent() && _prevBuddy.IsVoipEvent())
+        {
+            return (IsOutgoing() == _prevBuddy.IsOutgoingVoip());
+        }
+
+        return (IsOutgoing() == _prevBuddy.IsOutgoing());
+    }
+
+    bool MessageBuddy::hasAvatarWith(const MessageBuddy& _prevBuddy, const bool _isMultichat)
+    {
+        if (_isMultichat)
+        {
+            return (GetChatSender() != _prevBuddy.GetChatSender());
+        }
+
+        if (!isSameDirection(_prevBuddy))
+        {
+            return true;
+        }
+
+        if (_prevBuddy.IsChatEvent())
+        {
+            return true;
+        }
+
+        if (_prevBuddy.IsServiceMessage())
+        {
+            return true;
+        }
+
+        return false;
     }
 
 	bool MessageBuddy::IsBase() const
@@ -262,10 +367,6 @@ namespace Data
         return (!IsBase() && !IsFileSharing() && !IsSticker() && !IsChatEvent() && !IsVoipEvent());
     }
 
-	bool MessageBuddy::IsStandalone() const
-	{
-		return (IsFileSharing() || IsSticker() || IsChatEvent() || IsVoipEvent() || ContainsPreviewableLink() || IsDeleted());
-	}
 
     bool MessageBuddy::IsVoipEvent() const
     {
@@ -294,10 +395,10 @@ namespace Data
 		return FileSharing_;
 	}
 
-    QStringRef MessageBuddy::GetFirstUriFromText() const
+    QStringRef MessageBuddy::GetFirstSiteLinkFromText() const
     {
         QStringRef result;
-        containsImagePreviewUri(GetText(), Out result);
+        containsSitePreviewUri(GetText(), Out result);
         return result;
     }
 
@@ -373,24 +474,9 @@ namespace Data
 		return !Text_.isEmpty();
 	}
 
-	void MessageBuddy::FillFrom(const MessageBuddy &buddy, const bool merge)
+	void MessageBuddy::FillFrom(const MessageBuddy &buddy)
 	{
-		if (merge)
-		{
-            assert(!IsStandalone());
-            assert(!buddy.IsStandalone());
-
-			if (HasText())
-			{
-				Text_ += "\n";
-			}
-
-			Text_ += buddy.GetText();
-		}
-		else
-		{
-			Text_ = buddy.GetText();
-		}
+		Text_ = buddy.GetText();
 
 		SetLastId(buddy.Id_);
 		Unread_ = buddy.Unread_;
@@ -402,6 +488,8 @@ namespace Data
 		SetSticker(buddy.GetSticker());
 		SetChatEvent(buddy.GetChatEvent());
         SetVoipEvent(buddy.GetVoipEvent());
+
+        Quotes_ = buddy.Quotes_;
 
 		NotificationKeys_.append(buddy.NotificationKeys_);
 	}
@@ -489,7 +577,7 @@ namespace Data
 
 	Logic::MessageKey MessageBuddy::ToKey() const
 	{
-		return Logic::MessageKey(Id_, Prev_, InternalId_, PendingId_, Time_, Type_, IsOutgoing(), ContainsPreviewableLink(), IsDeleted(), Logic::control_type::ct_message);
+        return Logic::MessageKey(Id_, Prev_, InternalId_, PendingId_, Time_, Type_, IsOutgoing(), GetPreviewableLinkType(), Logic::control_type::ct_message);
 	}
 
 	void MessageBuddy::SetNotificationKeys(const QStringList &keys)
@@ -632,6 +720,48 @@ namespace Data
             }
         }
 	}
+
+    void Quote::serialize(core::icollection* _collection) const
+    {
+        Ui::gui_coll_helper coll(_collection, false);
+        coll.set_value_as_qstring("text", text_);
+        coll.set_value_as_qstring("sender", senderId_);
+        coll.set_value_as_qstring("chatId", chatId_);
+        coll.set_value_as_qstring("senderFriendly", senderFriendly_);
+        coll.set_value_as_int("time", time_);
+        coll.set_value_as_int64("msg", msgId_);
+        coll.set_value_as_bool("forward", isForward_);
+    }
+
+    void Quote::unserialize(core::icollection* _collection)
+    {
+        Ui::gui_coll_helper coll(_collection, false);
+        if (coll->is_value_exist("text"))
+            text_ = coll.get_value_as_string("text");
+
+        if (coll->is_value_exist("sender"))
+            senderId_ = coll.get_value_as_string("sender");
+
+        if (coll->is_value_exist("chatId"))
+            chatId_ = coll.get_value_as_string("chatId");
+
+        if (coll->is_value_exist("time"))
+            time_ = coll.get_value_as_int("time");
+
+        if (coll->is_value_exist("msg"))
+            msgId_ = coll.get_value_as_int64("msg");
+
+        if (coll->is_value_exist("senderFriendly"))
+            senderFriendly_ = coll.get_value_as_string("senderFriendly");
+
+        if (coll->is_value_exist("forward"))
+            isForward_ = coll.get_value_as_bool("forward");
+
+        if (senderId_ == Ui::MyInfo()->aimId())
+            senderFriendly_ = Ui::MyInfo()->friendlyName();
+        else if (Logic::getContactListModel()->getContactItem(senderId_))
+            senderFriendly_ = Logic::getContactListModel()->getDisplayName(senderId_);
+    }
 }
 
 namespace
@@ -669,7 +799,10 @@ namespace
 			"	size=<" << msgArray->size() << ">\n" <<
 			"	last_delivered=<" << theirs_last_delivered << ">");
 
-		for (auto i = 0; i < msgArray->size(); ++i)
+        // unserialize only last 30 messages
+        int32_t startPos = ((msgArray->size() > Data::PRELOAD_MESSAGES_COUNT) ? (msgArray->size() - Data::PRELOAD_MESSAGES_COUNT) : 0);
+
+		for (auto i = startPos; i < msgArray->size(); ++i)
 		{
 			core::coll_helper value(
 				msgArray->get_at(i)->get_as_collection(),
@@ -758,6 +891,8 @@ namespace
 				message->Chat_ = true;
 				message->SetChatSender(chat.get_value_as_string("sender"));
 				message->ChatFriendly_ = chat.get_value_as_string("friendly");
+                if (message->ChatFriendly_.isEmpty() && QString(chat.get_value_as_string("sender")) != myAimid)
+                    message->ChatFriendly_ = chat.get_value_as_string("sender");
 			}
 		}
 
@@ -804,13 +939,22 @@ namespace
             );
 		}
 
+        if (msgColl->is_value_exist("quotes"))
+        {
+            core::iarray* quotes = msgColl.get_value_as_array("quotes");
+            for (auto i = 0; i < quotes->size(); ++i)
+            {
+                Data::Quote q;
+                q.unserialize(quotes->get_at(i)->get_as_collection());
+                message->Quotes_.push_back(q);
+            }
+        }
+
 		return message;
 	}
 
-    bool containsImagePreviewUri(const QString &text, Out QStringRef &uri)
+    bool containsSitePreviewUri(const QString &text, Out QStringRef &uri)
     {
-        assert(uri == QStringRef());
-
         Out uri = QStringRef();
 
         static const QRegExp space("\\s|\\n|\\r");
@@ -822,8 +966,7 @@ namespace
             const auto isUri = (
                 part.startsWith("http://") ||
                 part.startsWith("www.") ||
-                part.startsWith("https://")
-            );
+                part.startsWith("https://"));
             if (!isUri)
             {
                 continue;
@@ -831,12 +974,6 @@ namespace
 
             const auto lastDotIndex = part.lastIndexOf(".");
             if (lastDotIndex < 0)
-            {
-                continue;
-            }
-
-            const auto ext = part.mid(lastDotIndex + 1);
-            if (!isSupportedImagePreviewExts(ext))
             {
                 continue;
             }
@@ -904,7 +1041,32 @@ namespace
             }
 
             ++index;
-            return part.at(index) >= '0' && part.at(index) <= '7';
+            return ((part.at(index) >= '0') && (part.at(index) <= '7'));
+        }
+
+        return false;
+    }
+
+    bool containsVideo(const QString& text)
+    {
+        const auto parts = text.splitRef(QChar(' '), QString::SkipEmptyParts);
+        for (const auto &part : parts)
+        {
+            if (!part.startsWith("www.") &&
+                !part.startsWith("http://") &&
+                !part.startsWith("https://"))
+            {
+                continue;
+            }
+
+            auto index = part.lastIndexOf('/');
+            if (index < 0)
+            {
+                continue;
+            }
+
+            ++index;
+            return ((part.at(index) >= '8') && (part.at(index) <= 'F'));
         }
 
         return false;

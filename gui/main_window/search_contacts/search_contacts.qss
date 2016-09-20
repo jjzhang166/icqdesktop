@@ -28,28 +28,8 @@ Ui--SearchFilters
 	max-width: 460dip;
 }
 
-
-Ui--LineEditEx#keyword
-{
-	font-family: "%FONT_FAMILY%";
-	font-weight: %FONT_WEIGHT%;
-	font-size: 18dip;
-	color: #282828;
-	margin-right: 12dip;
-	padding: 0;
-	max-height: 40dip;
-	min-height: 40dip;
-	border: none;
-	border-bottom-style:solid;
-	border-bottom-width:1dip;
-	border-bottom-color:#579e1c;
-	qproperty-alignment: AlignVCenter;
-}
-
 Ui--ComboButton
 {
-	font-family: "%FONT_FAMILY%";
-	font-weight: %FONT_WEIGHT%;
 	font-size: 14dip;
 	color: #579e1c;
 	background-color: white;
@@ -63,8 +43,6 @@ Ui--ComboButton
 
 QCheckBox#online_check
 {
-	font-family: "%FONT_FAMILY%";
-	font-weight: %FONT_WEIGHT%;
 	font-size: 14dip;
 	color: #579e1c;
 	background-color: white;
@@ -179,8 +157,6 @@ Ui--NoResultsWidget
 
 QWidget#no_result_label
 {
-	font-family: "%FONT_FAMILY%";
-	font-weight: %FONT_WEIGHT%;
 	font-size: 18dip;
 	color: #282828;	
 }

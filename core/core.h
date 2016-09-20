@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../corelib/core_face.h"
+#include "../common.shared/common_defs.h"
 #include "Voip/VoipManagerDefines.h"
 
 namespace coretools
@@ -67,7 +68,7 @@ namespace core
         std::unique_ptr<scheduler> scheduler_;
 
         std::shared_ptr<im_container> im_container_;
-        std::unique_ptr<voip_manager::VoipManager> voip_manager_;
+        std::shared_ptr<voip_manager::VoipManager> voip_manager_;
 
         std::shared_ptr<core::core_settings> settings_;
         std::shared_ptr<core::gui_settings> gui_settings_;
@@ -87,6 +88,8 @@ namespace core
 
         // updater
         std::unique_ptr<update::updater> updater_;
+
+        common::core_gui_settings core_gui_settings_;
 
         std::atomic_uchar search_count_;
 
@@ -112,9 +115,10 @@ namespace core
         core_dispatcher();
         virtual ~core_dispatcher();
 
-        void start();
+        void start(const common::core_gui_settings&);
         std::string get_uniq_device_id();
         void excute_core_context(std::function<void()> _func);
+        void excute_core_context_priority(std::function<void()> _func);
 
         uint32_t add_timer(std::function<void()> _func, uint32_t _timeout);
         void stop_timer(uint32_t _id);
@@ -123,11 +127,13 @@ namespace core
 
         icollection* create_collection();
 
-        void link_gui(icore_interface* _core_face);
+        void link_gui(icore_interface* _core_face, const common::core_gui_settings& _settings);
         void unlink_gui();
 
         void post_message_to_gui(const char * _message, int64_t _seq, icollection* _message_data);
         void receive_message_from_gui(const char * _message, int64_t _seq, icollection* _message_data);
+
+        const common::core_gui_settings& get_core_gui_settings() const;
 
         bool is_valid_search();
         void begin_search();
@@ -162,6 +168,7 @@ namespace core
 
         void set_user_proxy_settings(const proxy_settings& _user_proxy_settings);
 
+        bool locale_was_changed() const;
         void set_locale(const std::string& _locale);
         std::string get_locale() const;
 
@@ -171,31 +178,32 @@ namespace core
         void post_user_proxy_to_gui();
 
         std::thread::id get_core_thread_id() const;
+        bool is_core_thread() const;
 
         void save_themes_etag(const std::string &etag);
         std::string load_themes_etag();
-        
+
         //template<typename __ParamType> void on_voip_signal(voip_manager::eNotificationTypes type, const __ParamType* param) {
-        //    coll_helper coll(create_collection(), true); 
-        //    type >> coll; 
-        //    if (param) { 
-        //        *param >> coll; 
-        //    } 
-        //    post_message_to_gui(L"voip_signal", 0, coll.get()); 
+        //    coll_helper coll(create_collection(), true);
+        //    type >> coll;
+        //    if (param) {
+        //        *param >> coll;
+        //    }
+        //    post_message_to_gui(L"voip_signal", 0, coll.get());
         //}
         //void on_voip_signal(voip_manager::eNotificationTypes type) {
-        //    coll_helper coll(create_collection(), true); 
-        //    type >> coll; 
-        //    post_message_to_gui(L"voip_signal", 0, coll.get()); 
+        //    coll_helper coll(create_collection(), true);
+        //    type >> coll;
+        //    post_message_to_gui(L"voip_signal", 0, coll.get());
         //}
 
 		// We save fix voip mute flag in settings,
 		// Because we want to call this fix once.
 		void set_voip_mute_fix_flag(bool bValue);
-		bool get_voip_mute_fix_flag();        
+		bool get_voip_mute_fix_flag();
     };
 
-    extern std::unique_ptr<core::core_dispatcher>		g_core;	
+    extern std::unique_ptr<core::core_dispatcher>		g_core;
 }
 
 

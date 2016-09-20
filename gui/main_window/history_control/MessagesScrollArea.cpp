@@ -6,8 +6,12 @@
 
 #include "../../utils/InterConnector.h"
 #include "../../utils/log/log.h"
-#include "../../utils/profiling/auto_stop_watch.h"
 #include "../../utils/utils.h"
+#include "../../my_info.h"
+
+#include "../../main_window/contact_list/ContactListModel.h"
+
+#include "complex_message/ComplexMessageItem.h"
 
 #include "MessageItem.h"
 #include "MessagesScrollbar.h"
@@ -103,7 +107,7 @@ namespace Ui
         assert(success);
 
         WheelEventsBufferResetTimer_.setInterval(300);
-        WheelEventsBufferResetTimer_.setTimerType(Qt::PreciseTimer);
+        WheelEventsBufferResetTimer_.setTimerType(Qt::CoarseTimer);
 
         success = QObject::connect(
             &WheelEventsBufferResetTimer_, &QTimer::timeout,
@@ -153,7 +157,27 @@ namespace Ui
         assert(!_widgets.empty());
         Layout_->insertWidgets(_widgets);
 
+        for (auto iter : _widgets)
+        {
+            if (auto messageItem = qobject_cast<Ui::MessageItem*>(iter.second))
+            {
+                contacts_.insert(messageItem->getMchatSenderAimId());
+                continue;
+            }
+
+            if (auto complexItem = qobject_cast<Ui::ComplexMessage::ComplexMessageItem*>(iter.second))
+            {
+                contacts_.insert(complexItem->getSenderAimid());
+                continue;
+            }
+        }
+
         updateScrollbar();
+    }
+
+    bool MessagesScrollArea::isScrolling() const
+    {
+        return ScrollAnimationTimer_.isActive();
     }
 
     bool MessagesScrollArea::isSelecting() const
@@ -181,6 +205,15 @@ namespace Ui
     void MessagesScrollArea::removeWidget(QWidget *widget)
     {
         assert(widget);
+
+        if (auto messageItem = qobject_cast<Ui::MessageItem*>(widget))
+        {
+            contacts_.erase(messageItem->getMchatSenderAimId());
+        }
+        else if (auto complexItem = qobject_cast<Ui::ComplexMessage::ComplexMessageItem*>(widget))
+        {
+            contacts_.erase(complexItem->getSenderAimid());
+        }
 
         Layout_->removeWidget(widget);
 
@@ -218,6 +251,7 @@ namespace Ui
         }
 
         resetUserActivityTimer();
+        updateScrollbar();
     }
 
     void MessagesScrollArea::updateItemKey(const Logic::MessageKey &key)
@@ -244,7 +278,7 @@ namespace Ui
 
         const auto viewportAbsY = Layout_->getViewportAbsY();
         const auto scrollPos = (viewportAbsY - viewportScrollBounds.first);
-        assert(scrollPos >= 0);
+        //assert(scrollPos >= 0);
 
         Scrollbar_->setValue(scrollPos);
     }
@@ -297,28 +331,102 @@ namespace Ui
         QString first_message_text_only;
         QString first_message_full;
 
-        enumerateMessagesItems(
+        enumerateWidgets(
             [&selection_text, &first_message_text_only, &first_message_full]
-            (Ui::MessageItem* _item, const bool)
+            (QWidget* _item, const bool)
             {
-                if (first_message_text_only.isEmpty())
+                QString selected_full;
+
+                if (auto messageItem = qobject_cast<Ui::MessageItem*>(_item))
                 {
-                    first_message_text_only = _item->selection(true);
-                    first_message_full = _item->selection(false);
+                    selected_full = messageItem->selection(false);
+
+                    if (first_message_text_only.isEmpty())
+                    {
+                        first_message_text_only = messageItem->selection(true);
+                        first_message_full = selected_full;
+
+                        return true;
+                    }
                 }
-                else
+
+                if (auto complexItem = qobject_cast<Ui::ComplexMessage::ComplexMessageItem*>(_item))
                 {
-                    selection_text += _item->selection();
+                    selected_full = complexItem->getSelectedText(true);
+
+                    if (first_message_text_only.isEmpty())
+                    {
+                        const auto selected_text = complexItem->getSelectedText(false);
+                        first_message_text_only = selected_text;
+
+                        first_message_full = selected_full;
+
+                        return true;
+                    }
                 }
+
+                if (selected_full.isEmpty())
+                {
+                    return true;
+                }
+
+                if (!selection_text.isEmpty())
+                {
+                    selection_text += QChar::LineFeed;
+                    selection_text += QChar::LineFeed;
+                }
+
+                selection_text += selected_full;
 
                 return true;
-
             }, true
         );
 
-        QString result = (selection_text.isEmpty() ? first_message_text_only : (first_message_full + selection_text));
+        auto result = (
+            selection_text.isEmpty() ?
+                first_message_text_only :
+                (first_message_full + QChar::LineFeed + QChar::LineFeed + selection_text));
+
         if (!result.isEmpty() && result.endsWith("\n\n"))
+        {
             result = result.left(result.length() - 1);
+        }
+
+        return result;
+    }
+
+    QList<Data::Quote> MessagesScrollArea::getQuotes() const
+    {
+        QList<Data::Quote> result;
+        enumerateWidgets(
+        [&result] (QWidget* _item, const bool)
+        {
+            QString selected_full;
+
+            if (auto messageItem = qobject_cast<Ui::MessageItem*>(_item))
+            {
+                QString selectedText = messageItem->selection(true);
+                if (selectedText.isEmpty())
+                    return true;
+
+                result.push_back(messageItem->getQuote());
+                return true;
+            }
+
+            if (auto complexItem = qobject_cast<Ui::ComplexMessage::ComplexMessageItem*>(_item))
+            {
+
+                QString selectedText = complexItem->getSelectedText(false);
+                if (selectedText.isEmpty())
+                    return true;
+
+                result.append(complexItem->getQuotes());
+                return true;
+            }
+
+            return true;
+        }, true
+            );
 
         return result;
     }
@@ -364,6 +472,15 @@ namespace Ui
         resetUserActivityTimer();
 
         LastMouseGlobalPos_ = e->globalPos();
+
+        const auto mouseAbsPos = Layout_->viewport2Absolute(e->pos());
+
+        if (SelectionBeginAbsPos_.isNull())
+        {
+            SelectionBeginAbsPos_ = mouseAbsPos;
+        }
+
+        SelectionEndAbsPos_ = mouseAbsPos;
 
         applySelection();
 
@@ -415,14 +532,27 @@ namespace Ui
             return;
         }
 
+        const auto mouseAbsPos = Layout_->viewport2Absolute(e->pos());
+
         if (!(e->modifiers() & Qt::ShiftModifier))
         {
             clearSelection();
+
             LastMouseGlobalPos_ = e->globalPos();
+
+            SelectionBeginAbsPos_ = mouseAbsPos;
+            SelectionEndAbsPos_ = mouseAbsPos;
+
             applySelection(true);
         }
         else
         {
+            if (SelectionBeginAbsPos_.isNull())
+            {
+                SelectionBeginAbsPos_ = mouseAbsPos;
+                SelectionEndAbsPos_ = mouseAbsPos;
+            }
+
             auto old = LastMouseGlobalPos_;
             LastMouseGlobalPos_ = e->globalPos();
             applySelection();
@@ -434,6 +564,11 @@ namespace Ui
 
     void MessagesScrollArea::mouseReleaseEvent(QMouseEvent *e)
     {
+        if (IsSelecting_)
+        {
+            notifySelectionChanges();
+        }
+
         resetUserActivityTimer();
 
         QWidget::mouseReleaseEvent(e);
@@ -444,6 +579,31 @@ namespace Ui
         {
             stopScrollAnimation();
         }
+    }
+
+    void MessagesScrollArea::notifySelectionChanges()
+    {
+        int selectedItems = 0;
+
+        enumerateWidgets(
+            [this, &selectedItems] (QWidget* _item, const bool)
+            {
+                if (auto messageItem = qobject_cast<Ui::MessageItem*>(_item))
+                {
+                    if (messageItem->isSelected() || messageItem->isTextSelected())
+                        ++selectedItems;
+                }
+                else if (auto complexItem = qobject_cast<Ui::ComplexMessage::ComplexMessageItem*>(_item))
+                {
+                    if (complexItem->isSelected())
+                        ++selectedItems;
+                }
+                return true;
+            },
+            false);
+
+        if (selectedItems > 0)
+            emit messagesSelected();
     }
 
     void MessagesScrollArea::wheelEvent(QWheelEvent *e)
@@ -497,6 +657,52 @@ namespace Ui
 
         ScrollDistance_ = std::max(ScrollDistance_, -getMaximumScrollDistance());
         ScrollDistance_ = std::min(ScrollDistance_, getMaximumScrollDistance());
+    }
+
+    void MessagesScrollArea::scroll(ScrollDerection direction, int delta)
+    {
+        if (delta == 0)
+        {
+            return;
+        }
+
+        resetUserActivityTimer();
+
+        if (!Scrollbar_->isVisible())
+        {
+            stopScrollAnimation();
+            return;
+        }
+
+        cancelWheelBufferReset();
+
+        startScrollAnimation(ScrollingMode::Plain);
+
+        delta = direction == UP ? -delta : delta;
+
+        ScrollDistance_ += delta;
+
+        ScrollDistance_ = std::max(ScrollDistance_, -getMaximumScrollDistance());
+        ScrollDistance_ = std::min(ScrollDistance_, getMaximumScrollDistance());
+    }
+
+    bool MessagesScrollArea::contains(const QString& _aimId) const
+    {
+        return contacts_.find(_aimId) != contacts_.end();
+    }
+
+    void MessagesScrollArea::resumeVisibleItems()
+    {
+        assert(Layout_);
+
+        Layout_->resumeVisibleItems();
+    }
+
+    void MessagesScrollArea::suspendVisibleItems()
+    {
+        assert(Layout_);
+
+        Layout_->suspendVisibleItems();
     }
 
     bool MessagesScrollArea::event(QEvent *e)
@@ -636,17 +842,33 @@ namespace Ui
         }
 
         if (isScrollAtBottom())
+        {
             emit scrollMovedToBottom();
+        }
     }
 
-    void MessagesScrollArea::applySelection(bool forShift)
+    void MessagesScrollArea::applySelection(const bool forShift)
     {
+        forShift;
+
         assert(!LastMouseGlobalPos_.isNull());
 
-        enumerateMessagesItems(
-            [this, forShift](Ui::MessageItem *messageItem, const bool)
+        const auto selectionBegin = Layout_->absolute2Viewport(SelectionBeginAbsPos_);
+        const auto selectionEnd = Layout_->absolute2Viewport(SelectionEndAbsPos_);
+        const auto selectionBeginGlobal = mapToGlobal(selectionBegin);
+        const auto selectionEndGlobal = mapToGlobal(selectionEnd);
+
+        enumerateWidgets(
+            [this, forShift, selectionBeginGlobal, selectionEndGlobal](QWidget *w, const bool)
             {
-                messageItem->selectByPos(LastMouseGlobalPos_, forShift);
+                if (auto messageItem = qobject_cast<Ui::MessageItem*>(w))
+                {
+                    messageItem->selectByPos(LastMouseGlobalPos_, forShift);
+                }
+                else if (auto complexItem = qobject_cast<Ui::ComplexMessage::ComplexMessageItem*>(w))
+                {
+                    complexItem->selectByPos(selectionBeginGlobal, selectionEndGlobal);
+                }
 
                 return true;
             },
@@ -656,16 +878,27 @@ namespace Ui
 
     void MessagesScrollArea::clearSelection()
     {
-        Layout_->enumerateWidgets(
-            [this](QWidget *widget, const bool /*flag*/)
+        SelectionBeginAbsPos_ = QPoint();
+        SelectionEndAbsPos_ = QPoint();
+
+        enumerateWidgets(
+            [](QWidget *w, const bool)
+            {
+                if (auto messageItem = qobject_cast<Ui::MessageItem*>(w))
                 {
-                    if (auto item = qobject_cast<Ui::HistoryControlPageItem*>(widget))
-                    {
-                        item->clearSelection();
-                        return true;
-                    }
-                    return true;
-                }, false);
+                    messageItem->clearSelection();
+                }
+                else if (auto complexItem = qobject_cast<Ui::ComplexMessage::ComplexMessageItem*>(w))
+                {
+                    complexItem->clearSelection();
+                }
+
+                return true;
+            },
+            false
+        );
+
+        emit messagesDeselected();
     }
 
     bool MessagesScrollArea::enqueWheelEvent(const int32_t delta)
@@ -739,11 +972,6 @@ namespace Ui
             0);
 
         return sign(sum);
-    }
-
-    bool MessagesScrollArea::isScrolling() const
-    {
-        return ScrollAnimationTimer_.isActive();
     }
 
     void MessagesScrollArea::scheduleWheelBufferReset()

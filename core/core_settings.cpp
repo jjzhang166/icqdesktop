@@ -27,7 +27,7 @@ void core_settings::init_default()
     if (!lang.empty() && !country.empty())
         locale = lang + "-" + country;
     
-    set_value(core_settings_values::core_settings_locale, locale.empty() ? locale : boost::locale::to_lower(locale));
+    set_value(core_settings_values::core_settings_locale, locale.empty() ? locale : boost::locale::to_lower(locale, loc));
 }
 
 bool core_settings::save()
@@ -52,6 +52,17 @@ void core_settings::set_user_proxy_settings(const proxy_settings& _user_proxy_se
     _user_proxy_settings.serialize(bs_data);
     set_value(core_settings_values::core_settings_proxy, bs_data);
     save();
+}
+
+void core_settings::set_locale_was_changed(bool _was_changed)
+{
+    set_value(core_settings_values::core_settings_locale_was_changed, _was_changed);
+    save();
+}
+
+bool core_settings::get_locale_was_changed() const
+{
+    return get_value(core_settings_values::core_settings_locale_was_changed, true);
 }
 
 void core_settings::set_locale(const std::string& _locale)

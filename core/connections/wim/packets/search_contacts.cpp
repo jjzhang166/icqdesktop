@@ -78,7 +78,7 @@ int32_t search_contacts::init_request(std::shared_ptr<core::http_request_simple>
 
             ss_url << c_wim_host << "memberDir/get" <<
                 "?f=json" <<
-                "&aimsid=" << get_params().aimsid_ <<
+                "&aimsid=" << escape_symbols(get_params().aimsid_) <<
                 "&infoLevel=full" <<
                 "&locale=" << "ru-RU" <<
                 "&t=" << escape_symbols(filters_.get_keyword());
@@ -91,7 +91,7 @@ int32_t search_contacts::init_request(std::shared_ptr<core::http_request_simple>
 
             ss_url << c_wim_host << "presence/get" <<
                 "?f=json" <<
-                "&aimsid=" << get_params().aimsid_ <<
+                "&aimsid=" << escape_symbols(get_params().aimsid_) <<
                 "&mdir=1" <<
                 "&t=" << escape_symbols(filters_.get_keyword());
 
@@ -102,7 +102,7 @@ int32_t search_contacts::init_request(std::shared_ptr<core::http_request_simple>
 
         ss_url << c_wim_host << "memberDir/search" <<
             "?f=json" <<
-            "&aimsid=" << get_params().aimsid_ <<
+            "&aimsid=" << escape_symbols(get_params().aimsid_) <<
             "&nToGet=" << filters_.get_count() <<
             "&nToSkip=" << filters_.get_skip_count() << 
             "&infoLevel=full" <<

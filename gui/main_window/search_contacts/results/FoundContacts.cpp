@@ -1,46 +1,49 @@
 #include "stdafx.h"
 #include "FoundContacts.h"
+
 #include "ContactWidget.h"
 #include "../../contact_list/contact_profile.h"
-#include "../../../controls/FlowLayout.h"
-#include "../../../utils/utils.h"
 #include "../../../cache/avatars/AvatarStorage.h"
 #include "../../../cache/countries.h"
+#include "../../../controls/FlowLayout.h"
+#include "../../../controls/TransparentScrollBar.h"
+#include "../../../utils/utils.h"
+
 
 namespace Ui
 {
     FoundContacts::FoundContacts(QWidget* _parent)
         :	QWidget(_parent),
-        root_layout_(new QVBoxLayout()),
-        contacts_layout_(new FlowLayout(0, Utils::scale_value(24), Utils::scale_value(24))),
-        area_(new QScrollArea(this)),
-        prev_scroll_value_(-1)
+        rootLayout_(new QVBoxLayout()),
+        contactsLayout_(new FlowLayout(0, Utils::scale_value(24), Utils::scale_value(24))),
+        area_(CreateScrollAreaAndSetTrScrollBar(this)),
+        prevScrollValue_(-1)
     {
-        root_layout_->setContentsMargins(0, Utils::scale_value(24), 0, 0);
-        root_layout_->setSpacing(0);
+        rootLayout_->setContentsMargins(0, Utils::scale_value(24), 0, 0);
+        rootLayout_->setSpacing(0);
 
         area_->setObjectName("results_scroll_area");
         Utils::grabTouchWidget(area_->viewport(), true);
 
-        QWidget* scroll_area_widget = new QWidget(area_);
-        scroll_area_widget->setObjectName("results_scroll_area_widget");
-        area_->setWidget(scroll_area_widget);
+        QWidget* scrollAreaWidget = new QWidget(area_);
+        scrollAreaWidget->setObjectName("results_scroll_area_widget");
+        area_->setWidget(scrollAreaWidget);
         area_->setWidgetResizable(true);
 
-        scroll_area_widget->setLayout(contacts_layout_);
-        Utils::grabTouchWidget(scroll_area_widget);
+        scrollAreaWidget->setLayout(contactsLayout_);
+        Utils::grabTouchWidget(scrollAreaWidget);
 
 
-        root_layout_->addWidget(area_);
+        rootLayout_->addWidget(area_);
 
-        connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(on_avatar_loaded(QString)), Qt::QueuedConnection);
+        connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(onAvatarLoaded(QString)), Qt::QueuedConnection);
 
-        hook_scroll();
+        hookScroll();
 
         for (const auto& country : Ui::countries::get())
-            countries_[country.code_] = country.name_;
+            countries_[country.iso_code_] = country.name_;
 
-        setLayout(root_layout_);
+        setLayout(rootLayout_);
     }
 
 
@@ -48,90 +51,95 @@ namespace Ui
     {
     }
 
-    void FoundContacts::hook_scroll()
+    void FoundContacts::hookScroll()
     {
         connect(area_->verticalScrollBar(), &QAbstractSlider::valueChanged, [this](int _value)
         {
-            if (prev_scroll_value_ != -1 && prev_scroll_value_ < _value)
+            if (prevScrollValue_ != -1 && prevScrollValue_ < _value)
             {
-                int32_t max_value = area_->verticalScrollBar()->maximum();
+                int32_t maxValue = area_->verticalScrollBar()->maximum();
 
-                if ((max_value - _value) < Utils::scale_value(360))
+                if ((maxValue - _value) < Utils::scale_value(360))
                 {
-                    emit need_more((int)items_.size());
+                    emit needMore((int)items_.size());
                 }
             }
 
-            prev_scroll_value_ = _value;
+            prevScrollValue_ = _value;
         });
     }
 
-    void FoundContacts::on_avatar_loaded(QString _aimid)
+    void FoundContacts::onAvatarLoaded(QString _aimid)
     {
         auto iter_cw = items_.find(_aimid);
         if (iter_cw != items_.end())
             iter_cw->second->update();
     }
 
-    void FoundContacts::insert_items(const profiles_list& profiles)
+    int FoundContacts::insertItems(const profiles_list& _profiles)
     {
-        for (auto profile : profiles)
+        const auto prev = items_.size();
+        for (auto profile : _profiles)
         {
-            ContactWidget* cw = new ContactWidget(0, profile, countries_);
-
-            connect(cw, SIGNAL(add_contact(QString)), this, SLOT(on_add_contact(QString)), Qt::QueuedConnection);
-            connect(cw, SIGNAL(msg_contact(QString)), this, SLOT(on_msg_contact(QString)), Qt::QueuedConnection);
-            connect(cw, SIGNAL(call_contact(QString)), this, SLOT(on_call_contact(QString)), Qt::QueuedConnection);
-            connect(cw, SIGNAL(contact_info(QString)), this, SLOT(on_contact_info(QString)), Qt::QueuedConnection);
-
-            contacts_layout_->addWidget(cw);
-
-            items_[profile->get_aimid()] = cw;
+            if (items_.find(profile->get_aimid()) == items_.end())
+            {
+                ContactWidget* cw = new ContactWidget(0, profile, countries_);
+                
+                connect(cw, SIGNAL(addContact(QString)), this, SLOT(onAddContact(QString)), Qt::QueuedConnection);
+                connect(cw, SIGNAL(msgContact(QString)), this, SLOT(onMsgContact(QString)), Qt::QueuedConnection);
+                connect(cw, SIGNAL(callContact(QString)), this, SLOT(onCallContact(QString)), Qt::QueuedConnection);
+                connect(cw, SIGNAL(contactInfo(QString)), this, SLOT(onContactInfo(QString)), Qt::QueuedConnection);
+                
+                contactsLayout_->addWidget(cw);
+                
+                items_[profile->get_aimid()] = cw;
+            }
         }
+        return (int)(items_.size() - prev);
     }
 
     void FoundContacts::clear()
     {
-        while (contacts_layout_->count())
+        while (contactsLayout_->count())
         {
-            QLayoutItem* item = contacts_layout_->itemAt(0);
-            contacts_layout_->removeItem(item);
+            QLayoutItem* item = contactsLayout_->itemAt(0);
+            contactsLayout_->removeItem(item);
             item->widget()->deleteLater();
         }
 
         items_.clear();
     }
 
-    void FoundContacts::on_add_contact(QString _contact)
+    void FoundContacts::onAddContact(QString _contact)
     {
-        emit add_contact(_contact);
+        emit addContact(_contact);
     }
 
-    void FoundContacts::on_msg_contact(QString _contact)
+    void FoundContacts::onMsgContact(QString _contact)
     {
-        emit msg_contact(_contact);
+        emit msgContact(_contact);
     }
 
-    void FoundContacts::on_call_contact(QString _contact)
+    void FoundContacts::onCallContact(QString _contact)
     {
-        emit call_contact(_contact);
+        emit callContact(_contact);
     }
 
-    void FoundContacts::on_contact_info(QString _contact)
+    void FoundContacts::onContactInfo(QString _contact)
     {
-        emit contact_info(_contact);
+        emit contactInfo(_contact);
     }
 
     bool FoundContacts::empty()
     {
-        return !contacts_layout_->count();
+        return !contactsLayout_->count();
     }
 
-    void FoundContacts::contact_add_result(const QString& _contact, bool _res)
+    void FoundContacts::contactAddResult(const QString& _contact, bool _res)
     {
         auto iter = items_.find(_contact);
         if (iter != items_.end())
-            iter->second->on_add_result(_res);
+            iter->second->onAddResult(_res);
     }
 }
 

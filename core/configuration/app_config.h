@@ -1,7 +1,6 @@
 #pragma once
 
-#define CORE_CONFIGURATION_NS_BEGIN namespace core { namespace configuration {
-#define CORE_CONFIGURATION_NS_END }}
+#include "../namespaces.h"
 
 CORE_CONFIGURATION_NS_BEGIN
 
@@ -11,9 +10,10 @@ struct app_config
 
     app_config(
         const bool _is_server_history_enabled,
-        const int _forced_dpi, 
+        const int _forced_dpi,
         const bool _is_crash_enabled,
-        const bool _full_log);
+        const bool _full_log,
+        const bool _unlock_context_menu_features);
 
     void serialize(Out core::coll_helper &_collection) const;
 
@@ -24,6 +24,8 @@ struct app_config
     const bool is_crash_enabled_;
 
     const bool full_log_;
+
+    const bool unlock_context_menu_features_;
 };
 
 const app_config& get_app_config();

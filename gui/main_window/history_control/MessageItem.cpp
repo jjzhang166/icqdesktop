@@ -1,59 +1,42 @@
 #include "stdafx.h"
-
-#include "MessageStatusWidget.h"
-#include "MessageItemLayout.h"
 #include "MessageItem.h"
+
+#include "MessageItemLayout.h"
 #include "MessagesModel.h"
+#include "MessageStatusWidget.h"
 #include "MessageStyle.h"
-
-#include "ContentWidgets/FileSharingWidget.h"
-#include "ContentWidgets/StickerWidget.h"
 #include "ContentWidgets/ImagePreviewWidget.h"
+#include "ContentWidgets/FileSharingWidget.h"
+#include "../contact_list/ContactListModel.h"
 
-#include "../../utils/utils.h"
+#include "../../app_config.h"
+#include "../../cache/avatars/AvatarStorage.h"
+#include "../../cache/themes/themes.h"
+#include "../../controls/TextEditEx.h"
+#include "../../controls/TextEmojiWidget.h"
+#include "../../controls/ContextMenu.h"
+#include "../../my_info.h"
+#include "../../theme_settings.h"
+#include "../../utils/InterConnector.h"
 #include "../../utils/PainterPath.h"
 #include "../../utils/Text.h"
 #include "../../utils/Text2DocConverter.h"
-#include "../../utils/InterConnector.h"
+#include "../../utils/utils.h"
 #include "../../utils/log/log.h"
-#include "../../utils/profiling/auto_stop_watch.h"
 
-#include "../contact_list/RecentsModel.h"
-#include "../contact_list/ContactListModel.h"
-
-#include "../../core_dispatcher.h"
-
-#include "../../controls/TextEditEx.h"
-#include "../../controls/TextEmojiWidget.h"
-#include "../../controls/PictureWidget.h"
-#include "../../controls/ContextMenu.h"
-
-#include "../../cache/avatars/AvatarStorage.h"
-
-#include "../../my_info.h"
-
-#include "../../themes/ResourceIds.h"
-#include "../../themes/ThemePixmap.h"
-
-#include "../../cache/themes/themes.h"
-#include "../../theme_settings.h"
-
-namespace
-{
-
-    int32_t getMessageBottomPadding();
-
-    int32_t getMessageTopPadding();
-
-    int32_t getSenderHeight();
-
-    int32_t getSenderBottomMargin();
-
-	QMap<QString, QVariant> makeData(const QString& command);
-}
 
 namespace Ui
 {
+
+    namespace
+    {
+        int32_t getFullTimeLineWidth();
+
+        int32_t getMessageTopPadding();
+        int32_t getMessageBottomPadding();
+
+        QMap<QString, QVariant> makeData(const QString& command);
+    }
 
     MessageData::MessageData()
         : AvatarVisible_(false)
@@ -78,13 +61,13 @@ namespace Ui
 
     MessageItemsAvatars::MessageItemsAvatars()
     {
-        QObject::connect(Logic::GetAvatarStorage(), &Logic::AvatarStorage::avatarChanged, [this](QString aimId)
+        QObject::connect(Logic::GetAvatarStorage(), &Logic::AvatarStorage::avatarChanged, [this](QString _aimId)
         {
-            if (MessageItemsAvatars::instance().data_.find(aimId) != MessageItemsAvatars::instance().data_.end())
+            if (MessageItemsAvatars::instance().data_.find(_aimId) != MessageItemsAvatars::instance().data_.end())
             {
                 bool isDefault = false;
-                auto &info = MessageItemsAvatars::instance().data_[aimId];
-                info.avatar_ = *Logic::GetAvatarStorage()->GetRounded(aimId, info.friendlyName_, info.size_, QString(), true, isDefault, false).get();
+                auto &info = MessageItemsAvatars::instance().data_[_aimId];
+                info.avatar_ = *Logic::GetAvatarStorage()->GetRounded(_aimId, info.friendlyName_, info.size_, QString(), true, isDefault, false, false).get();
                 if (info.callback_)
                 {
                     info.callback_();
@@ -101,30 +84,29 @@ namespace Ui
 
     MessageItemsAvatars::~MessageItemsAvatars()
     {
-        //
     }
 
-    QPixmap &MessageItemsAvatars::get(const QString &aimId, const QString &friendlyName, int size, const std::function<void()> &callback)
+    QPixmap &MessageItemsAvatars::get(const QString& _aimId, const QString& _friendlyName, int _size, const std::function<void()>& _callback)
     {
-        if (MessageItemsAvatars::instance().data_.find(aimId) == MessageItemsAvatars::instance().data_.end())
+        if (MessageItemsAvatars::instance().data_.find(_aimId) == MessageItemsAvatars::instance().data_.end())
         {
             bool isDefault = false;
             MessageItemsAvatars::Info info;
-            info.avatar_ = *Logic::GetAvatarStorage()->GetRounded(aimId, friendlyName, size, QString(), true, isDefault, false).get();
-            info.aimId_ = aimId;
-            info.friendlyName_ = friendlyName;
-            info.size_ = size;
-            info.callback_ = callback;
-            MessageItemsAvatars::instance().data_[aimId] = info;
+            info.avatar_ = *Logic::GetAvatarStorage()->GetRounded(_aimId, _friendlyName, _size, QString(), true, isDefault, false, false).get();
+            info.aimId_ = _aimId;
+            info.friendlyName_ = _friendlyName;
+            info.size_ = _size;
+            info.callback_ = _callback;
+            MessageItemsAvatars::instance().data_[_aimId] = info;
         }
-        return MessageItemsAvatars::instance().data_[aimId].avatar_;
+        return MessageItemsAvatars::instance().data_[_aimId].avatar_;
     }
 
-    void MessageItemsAvatars::reset(const QString &aimId)
+    void MessageItemsAvatars::reset(const QString& _aimId)
     {
-        if (MessageItemsAvatars::instance().data_.find(aimId) != MessageItemsAvatars::instance().data_.end())
+        if (MessageItemsAvatars::instance().data_.find(_aimId) != MessageItemsAvatars::instance().data_.end())
         {
-            MessageItemsAvatars::instance().data_.erase(aimId);
+            MessageItemsAvatars::instance().data_.erase(_aimId);
         }
     }
 
@@ -134,35 +116,36 @@ namespace Ui
         , MessageBody_(nullptr)
         , Sender_(nullptr)
         , ContentWidget_(nullptr)
-        , Direction_(NONE)
+        , Direction_(SelectDirection::NONE)
         , Menu_(0)
         , ContentMenu_(0)
         , ClickedOnAvatar_(false)
         , Layout_(nullptr)
-        , StatusWidget_(nullptr)
+        , TimeWidget_(nullptr)
         , isConnectedToDeliveryEvent_(false)
         , isConnectedReadEvent_(false)
-        , start_select_y_(0)
-        , is_selection_(false)
+        , startSelectY_(0)
+        , isSelection_(false)
     {
     }
 
-	MessageItem::MessageItem(QWidget* parent)
-		: MessageItemBase(parent)
+	MessageItem::MessageItem(QWidget* _parent)
+		: MessageItemBase(_parent)
 		, MessageBody_(nullptr)
 		, Sender_(nullptr)
 		, ContentWidget_(nullptr)
 		, Data_(new MessageData())
-        , Direction_(NONE)
+        , Direction_(SelectDirection::NONE)
 		, Menu_(0)
         , ContentMenu_(0)
         , ClickedOnAvatar_(false)
         , Layout_(new MessageItemLayout(this))
-        , StatusWidget_(new MessageStatusWidget(this))
+        , TimeWidget_(new MessageStatusWidget(this))
         , isConnectedToDeliveryEvent_(false)
         , isConnectedReadEvent_(false)
-        , start_select_y_(0)
-        , is_selection_(false)
+        , startSelectY_(0)
+        , isSelection_(false)
+        , LastRead_(false)
     {
         QMetaObject::connectSlotsByName(this);
 
@@ -175,8 +158,6 @@ namespace Ui
 
         assert(Layout_);
         setLayout(Layout_);
-
-        lastRead_ = false;
 	}
 
 	MessageItem::~MessageItem()
@@ -190,9 +171,9 @@ namespace Ui
     void MessageItem::setContact(const QString& _aimId)
     {
         HistoryControlPageItem::setContact(_aimId);
-        if (StatusWidget_)
+        if (TimeWidget_)
         {
-            StatusWidget_->setContact(_aimId);
+            TimeWidget_->setContact(_aimId);
         }
     }
 
@@ -211,15 +192,15 @@ namespace Ui
 		return Data_->Text_;
 	}
 
-	void MessageItem::setId(qint64 id, const QString& aimId)
+	void MessageItem::setId(qint64 _id, const QString& _aimId)
 	{
-		Data_->Id_ = id;
-		Data_->AimId_ = aimId;
+		Data_->Id_ = _id;
+		Data_->AimId_ = _aimId;
 	}
 
-	void MessageItem::setNotificationKeys(const QStringList& keys)
+	void MessageItem::setNotificationKeys(const QStringList& _keys)
 	{
-		Data_->NotificationsKeys_.append(keys);
+		Data_->NotificationsKeys_.append(_keys);
 		Data_->NotificationsKeys_.removeDuplicates();
 	}
 
@@ -228,16 +209,16 @@ namespace Ui
 		return Data_->NotificationsKeys_;
 	}
 
-    void MessageItem::loadAvatar(const int size)
+    void MessageItem::loadAvatar(const int _size)
     {
-        assert(size > 0);
+        assert(_size > 0);
 
-        if (Data_->AvatarSize_ != size)
+        if (Data_->AvatarSize_ != _size)
         {
             MessageItemsAvatars::reset(Data_->Sender_);
         }
 
-        Data_->AvatarSize_ = size;
+        Data_->AvatarSize_ = _size;
 
         setAvatarVisible(true);
 
@@ -250,7 +231,7 @@ namespace Ui
 
         height += evaluateDesiredContentHeight();
 
-        if (lastRead_)
+        if (LastRead_)
         {
             height += MessageStyle::getLastReadAvatarSize() + 2 * MessageStyle::getLastReadAvatarMargin();
         }
@@ -263,28 +244,80 @@ namespace Ui
         return result;
     }
 
-	void MessageItem::setAvatarVisible(const bool visible)
-	{
-        const auto visibilityChanged = (Data_->AvatarVisible_ != visible);
 
-        Data_->AvatarVisible_ = visible;
+    void MessageItem::onVisibilityChanged(const bool _isVisible)
+    {
+        if (ContentWidget_)
+        {
+            ContentWidget_->onVisibilityChanged(_isVisible);
+        }
+    }
+
+    Data::Quote MessageItem::getQuote(bool force) const
+    {
+        Data::Quote quote;
+        if (selection(true).isEmpty() && !force)
+            return quote;
+
+        if (force)
+        {
+            if (MessageBody_)
+                quote.text_ = MessageBody_->getPlainText();
+            else if (ContentWidget_)
+                quote.text_ = ContentWidget_->toString();
+        }
+        else
+        {
+            quote.text_ = selection(true);
+        }
+
+        if (Data_)
+        {
+            quote.senderId_ = Data_->isOutgoing() ? MyInfo()->aimId() : Data_->Sender_;
+            quote.chatId_ = Data_->AimId_;
+            quote.time_ = Data_->Time_;
+            quote.msgId_ = Data_->Id_;
+            QString senderFriendly = Data_->SenderFriendly_.isEmpty() ? Logic::getContactListModel()->getDisplayName(Data_->AimId_) : Data_->SenderFriendly_;
+            if (Data_->isOutgoing())
+                senderFriendly = MyInfo()->friendlyName();
+            quote.senderFriendly_ = senderFriendly;
+        }
+        return quote;
+    }
+
+    void MessageItem::setHasAvatar(const bool _value)
+    {
+        setAvatarVisible(_value);
+    }
+
+    void MessageItem::setAvatarVisible(const bool _visible)
+	{
+        const auto visibilityChanged = (Data_->AvatarVisible_ != _visible);
+
+        Data_->AvatarVisible_ = _visible;
+        Data_->SenderVisible_ = (!Data_->Sender_.isEmpty() && Data_->AvatarVisible_);
 
         if (visibilityChanged)
         {
+            if (Data_->AvatarVisible_ && Data_->AvatarSize_ <= 0)
+            {
+                loadAvatar(Utils::scale_bitmap(MessageStyle::getAvatarSize()));
+            }
+
             update();
         }
 	}
 
-    void MessageItem::leaveEvent(QEvent *e)
+    void MessageItem::leaveEvent(QEvent* _e)
     {
         ClickedOnAvatar_ = false;
 
-        QWidget::leaveEvent(e);
+        QWidget::leaveEvent(_e);
     }
 
-    void MessageItem::mouseMoveEvent(QMouseEvent *e)
+    void MessageItem::mouseMoveEvent(QMouseEvent* _e)
     {
-        if (isOverAvatar(e->pos()) && Data_->AvatarSize_ > 0)
+        if (isOverAvatar(_e->pos()) && Data_->AvatarSize_ > 0)
         {
             setCursor(Qt::PointingHandCursor);
         }
@@ -293,23 +326,23 @@ namespace Ui
             setCursor(Qt::ArrowCursor);
         }
 
-        QWidget::mouseMoveEvent(e);
+        QWidget::mouseMoveEvent(_e);
     }
 
-    void MessageItem::mousePressEvent(QMouseEvent *e)
+    void MessageItem::mousePressEvent(QMouseEvent* _e)
     {
-        const auto isLeftButtonFlagSet = ((e->buttons() & Qt::LeftButton) != 0);
+        const auto isLeftButtonFlagSet = ((_e->buttons() & Qt::LeftButton) != 0);
         const auto isLeftButton = (
             isLeftButtonFlagSet ||
-            (e->button() == Qt::LeftButton)
+            (_e->button() == Qt::LeftButton)
         );
 
-        if (isLeftButton && isOverAvatar(e->pos()) && Data_->AvatarSize_ > 0)
+        if (isLeftButton && isOverAvatar(_e->pos()) && Data_->AvatarSize_ > 0)
         {
             ClickedOnAvatar_ = true;
         }
 
-        QWidget::mousePressEvent(e);
+        QWidget::mousePressEvent(_e);
     }
 
     void MessageItem::trackContentMenu(const QPoint& _pos)
@@ -326,12 +359,13 @@ namespace Ui
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_attach_100.png")), QT_TRANSLATE_NOOP("context_menu", "Copy file"), makeData("copy_file"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_download_100.png")), QT_TRANSLATE_NOOP("context_menu", "Save as..."), makeData("save_as"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_quote_100.png")), QT_TRANSLATE_NOOP("context_menu", "Quote"), makeData("quote"));
+        ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_forwardmsg_100.png")), QT_TRANSLATE_NOOP("context_menu", "Forward"), makeData("forward"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_closechat_100.png")), QT_TRANSLATE_NOOP("context_menu", "Delete for me"), makeData("delete"));
 
         connect(ContentMenu_, &ContextMenu::triggered, this, &MessageItem::menu, Qt::QueuedConnection);
 
         const auto isOutgoing = (Data_->Outgoing_.Set_ && Data_->Outgoing_.Outgoing_);
-        const auto isChatAdmin = Logic::GetContactListModel()->isYouAdmin(Data_->AimId_);
+        const auto isChatAdmin = Logic::getContactListModel()->isYouAdmin(Data_->AimId_);
         if (isOutgoing || isChatAdmin)
         {
             ContentMenu_->addActionWithIcon(QIcon(
@@ -349,38 +383,48 @@ namespace Ui
             delete Menu_;
 
         Menu_ = new ContextMenu(this);
-        Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_copy_100.png")), QT_TRANSLATE_NOOP("context_menu", "Copy"), makeData("copy"));
-        Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_quote_100.png")), QT_TRANSLATE_NOOP("context_menu", "Quote"), makeData("quote"));
+        Menu_->addActionWithIcon(":/resources/dialog_copy_100.png", QT_TRANSLATE_NOOP("context_menu", "Copy"), makeData("copy"));
+        Menu_->addActionWithIcon(":/resources/dialog_quote_100.png", QT_TRANSLATE_NOOP("context_menu", "Quote"), makeData("quote"));
+        Menu_->addActionWithIcon(":/resources/dialog_forwardmsg_100.png", QT_TRANSLATE_NOOP("context_menu", "Forward"), makeData("forward"));
 
-        Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_closechat_100.png")), QT_TRANSLATE_NOOP("context_menu", "Delete for me"), makeData("delete"));
+        Menu_->addActionWithIcon(":/resources/dialog_closechat_100.png", QT_TRANSLATE_NOOP("context_menu", "Delete for me"), makeData("delete"));
 
         connect(Menu_, &ContextMenu::triggered, this, &MessageItem::menu, Qt::QueuedConnection);
 
         const auto isOutgoing = (Data_->Outgoing_.Set_ && Data_->Outgoing_.Outgoing_);
-        const auto isChatAdmin = Logic::GetContactListModel()->isYouAdmin(Data_->AimId_);
+        const auto isChatAdmin = Logic::getContactListModel()->isYouAdmin(Data_->AimId_);
         if (isOutgoing || isChatAdmin)
         {
-            Menu_->addActionWithIcon(QIcon(
-                Utils::parse_image_name(":/resources/dialog_closechat_all_100.png")),
+            Menu_->addActionWithIcon(
+                ":/resources/dialog_closechat_all_100.png",
                 QT_TRANSLATE_NOOP("context_menu", "Delete for all"),
-                makeData("delete_all")
-                );
+                makeData("delete_all"));
+        }
+
+        if (GetAppConfig().IsContextMenuFeaturesUnlocked())
+        {
+            Menu_->addActionWithIcon(":/resources/tabs_settings_100.png", "Copy Message ID", makeData("dev:copy_message_id"));
         }
 
         Menu_->popup(_pos);
     }
 
-    void MessageItem::mouseReleaseEvent(QMouseEvent *e)
+    void MessageItem::mouseReleaseEvent(QMouseEvent* _e)
     {
-        const auto isRightButtonFlagSet = ((e->buttons() & Qt::RightButton) != 0);
+        const auto isRightButtonFlagSet = ((_e->buttons() & Qt::RightButton) != 0);
         const auto isRightButton = (
             isRightButtonFlagSet ||
-            (e->button() == Qt::RightButton)
+            (_e->button() == Qt::RightButton)
         );
 
         if (isRightButton)
         {
-            QPoint globalPos = mapToGlobal(e->pos());
+            if (isOverAvatar(_e->pos()))
+            {
+                emit adminMenuRequest(Data_->Sender_);
+                return;
+            }
+            QPoint globalPos = mapToGlobal(_e->pos());
             if (MessageBody_)
             {
                 trackMenu(globalPos);
@@ -394,22 +438,22 @@ namespace Ui
             }
         }
 
-        const auto isLeftButtonFlagSet = ((e->buttons() & Qt::LeftButton) != 0);
+        const auto isLeftButtonFlagSet = ((_e->buttons() & Qt::LeftButton) != 0);
         const auto isLeftButton = (
             isLeftButtonFlagSet ||
-            (e->button() == Qt::LeftButton)
+            (_e->button() == Qt::LeftButton)
         );
 
         if (isLeftButton &&
             ClickedOnAvatar_ &&
-            isOverAvatar(e->pos()))
+            isOverAvatar(_e->pos()))
         {
             avatarClicked();
-            e->accept();
+            _e->accept();
             return;
         }
 
-        QWidget::mouseReleaseEvent(e);
+        QWidget::mouseReleaseEvent(_e);
     }
 
     void MessageItem::paintEvent(QPaintEvent*)
@@ -425,37 +469,46 @@ namespace Ui
 
         drawMessageBubble(p);
 
-        if (lastRead_)
+        if (LastRead_)
         {
-            drawLastReadAvatar(p, Data_->Sender_, Data_->SenderFriendly_, MessageStyle::getRightPadding(isOutgoing()));
+            drawLastReadAvatar(
+                p,
+                Data_->Sender_,
+                Data_->SenderFriendly_,
+                MessageStyle::getRightMargin(isOutgoing()),
+                MessageStyle::getLastReadAvatarMargin());
         }
     }
 
     void MessageItem::updateMessageBodyColor()
     {
-        if (MessageBody_)
+        if (!MessageBody_)
         {
-            QColor textColor = QColor(0x28, 0x28, 0x28);
-            if (theme())
-            {
-                if (isOutgoing())
-                {
-                    textColor = theme()->outgoing_bubble_.text_color_;
-                }
-                else
-                {
-                    textColor = theme()->incoming_bubble_.text_color_;
-                }
-            }
-            QPalette palette;
-            palette.setColor(QPalette::Text, textColor);
-            MessageBody_->setPalette(palette);
+            return;
         }
+
+        auto textColor = MessageStyle::getTextColor();
+
+        if (theme())
+        {
+            if (isOutgoing())
+            {
+                textColor = theme()->outgoing_bubble_.text_color_;
+            }
+            else
+            {
+                textColor = theme()->incoming_bubble_.text_color_;
+            }
+        }
+
+        QPalette palette;
+        palette.setColor(QPalette::Text, textColor);
+        MessageBody_->setPalette(palette);
     }
 
-    void MessageItem::resizeEvent(QResizeEvent *e)
+    void MessageItem::resizeEvent(QResizeEvent* _e)
     {
-        HistoryControlPageItem::resizeEvent(e);
+        HistoryControlPageItem::resizeEvent(_e);
     }
 
     void MessageItem::createMessageBody()
@@ -468,7 +521,7 @@ namespace Ui
         QPalette palette;
         MessageBody_ = new TextEditEx(
             this,
-            Utils::FontsFamily::SEGOE_UI,
+            Fonts::defaultAppFontFamily(),
             Utils::scale_value(15),
             palette,
             false,
@@ -476,7 +529,8 @@ namespace Ui
         );
         updateMessageBodyColor();
 
-        QString styleSheet = QString("background: transparent; selection-background-color: %1;").arg(Utils::getSelectionColor().name(QColor::HexArgb));
+        QString styleSheet = QString("background: transparent; selection-background-color: %1;")
+            .arg(Utils::rgbaStringFromColor(Utils::getSelectionColor()));
 
         MessageBody_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         MessageBody_->setFrameStyle(QFrame::NoFrame);
@@ -486,12 +540,14 @@ namespace Ui
         MessageBody_->setOpenLinks(true);
         MessageBody_->setOpenExternalLinks(true);
         MessageBody_->setWordWrapMode(QTextOption::WordWrap);
-        MessageBody_->setStyleSheet(styleSheet);
+        Utils::ApplyStyle(MessageBody_, styleSheet);
         MessageBody_->setFocusPolicy(Qt::NoFocus);
         MessageBody_->document()->setDocumentMargin(0);
         MessageBody_->setContextMenuPolicy(Qt::NoContextMenu);
         MessageBody_->setReadOnly(true);
         MessageBody_->setUndoRedoEnabled(false);
+
+        connect(MessageBody_, &QTextBrowser::selectionChanged, [this]() { emit selectionChanged(); });
     }
 
     void MessageItem::updateSenderControlColor()
@@ -510,14 +566,15 @@ namespace Ui
         QColor color;
         Sender_ = new TextEmojiWidget(
             this,
-            Utils::FontsFamily::SEGOE_UI,
+            Fonts::defaultAppFontFamily(),
+            Fonts::defaultAppFontStyle(),
             Utils::scale_value(12),
             color
         );
         updateSenderControlColor();
     }
 
-    void MessageItem::drawAvatar(QPainter &p)
+    void MessageItem::drawAvatar(QPainter& _p)
     {
         if (Data_->Sender_.isEmpty() || Data_->AvatarSize_ <= 0)
         {
@@ -529,12 +586,14 @@ namespace Ui
             return;
         }
 
-        auto rect = getAvatarRect();
+        const auto &rect = getAvatarRect();
         if (rect.isValid())
-            p.drawPixmap(getAvatarRect(), avatar);
+        {
+            _p.drawPixmap(rect, avatar);
+        }
     }
 
-    void MessageItem::drawMessageBubble(QPainter &p)
+    void MessageItem::drawMessageBubble(QPainter& _p)
     {
         if (ContentWidget_ && !ContentWidget_->isBlockElement())
         {
@@ -548,7 +607,7 @@ namespace Ui
 
         assert(!Bubble_.isEmpty());
 
-        p.fillPath(Bubble_, MessageStyle::getBodyBrush(Data_->isOutgoing(), isSelected(), theme()->get_id()));
+        _p.fillPath(Bubble_, MessageStyle::getBodyBrush(Data_->isOutgoing(), isSelected(), theme()->get_id()));
     }
 
     QRect MessageItem::evaluateAvatarRect() const
@@ -556,7 +615,7 @@ namespace Ui
         assert(!AvatarRect_.isValid());
 
         QRect result(
-            MessageStyle::getLeftPadding(isOutgoing()),
+            MessageStyle::getLeftMargin(isOutgoing()),
             evaluateTopContentMargin(),
             MessageStyle::getAvatarSize(),
             MessageStyle::getAvatarSize()
@@ -565,16 +624,36 @@ namespace Ui
         return result;
     }
 
+    QRect MessageItem::evaluateBubbleGeometry(const QRect &_contentGeometry) const
+    {
+        assert(!_contentGeometry.isEmpty());
+
+        auto bubbleGeometry(_contentGeometry);
+
+        if (!isFileSharing() || !isBlockItem())
+        {
+            return bubbleGeometry;
+        }
+
+        bubbleGeometry.setWidth(
+            bubbleGeometry.width() -
+            getFullTimeLineWidth() -
+            MessageStyle::getTimeMargin());
+
+        return bubbleGeometry;
+    }
+
     QRect MessageItem::evaluateContentHorGeometry(const int32_t contentWidth) const
     {
         assert(contentWidth > 0);
 
+        auto width = contentWidth;
+
         const QRect result(
             evaluateLeftContentMargin(),
             -1,
-            contentWidth,
-            0
-        );
+            width,
+            0);
 
         return result;
     }
@@ -593,11 +672,11 @@ namespace Ui
         return result;
     }
 
-    int32_t MessageItem::evaluateContentWidth(const int32_t widgetWidth) const
+    int32_t MessageItem::evaluateContentWidth(const int32_t _widgetWidth) const
     {
-        assert(widgetWidth > 0);
+        assert(_widgetWidth > 0);
 
-        auto contentWidth = widgetWidth;
+        auto contentWidth = _widgetWidth;
 
         contentWidth -= evaluateLeftContentMargin();
         contentWidth -= evaluateRightContentMargin();
@@ -607,7 +686,7 @@ namespace Ui
 
     int32_t MessageItem::evaluateDesiredContentHeight() const
     {
-        auto height = MessageStyle::getBubbleHeight();
+        auto height = MessageStyle::getMinBubbleHeight();
 
         if (MessageBody_)
         {
@@ -617,14 +696,21 @@ namespace Ui
 
             if (textHeight > 0)
             {
-                height = std::max<int32_t>(
-                    height,
-                    textHeight
-                );
+                if (platform::is_apple())
+                {
+                    height = std::max(getMessageTopPadding() + textHeight + getMessageBottomPadding(), MessageStyle::getMinBubbleHeight());
+                }
+                else
+                {
+                    height = std::max<int32_t>(
+                        height,
+                        textHeight
+                    );
 
-                height += getMessageTopPadding();
+                    height += getMessageTopPadding();
 
-                height = std::max<int32_t>(Utils::applyMultilineTextFix(textHeight, height), MessageStyle::getBubbleHeight());
+                    height = std::max<int32_t>(Utils::applyMultilineTextFix(textHeight, height), MessageStyle::getMinBubbleHeight());
+                }
             }
         }
 
@@ -640,7 +726,7 @@ namespace Ui
 
     int32_t MessageItem::evaluateLeftContentMargin() const
     {
-        auto leftContentMargin = MessageStyle::getLeftPadding(isOutgoing());
+        auto leftContentMargin = MessageStyle::getLeftMargin(isOutgoing());
 
         if (isAvatarVisible())
         {
@@ -653,19 +739,19 @@ namespace Ui
 
     int32_t MessageItem::evaluateRightContentMargin() const
     {
-        auto rightContentMargin = MessageStyle::getRightPadding(isOutgoing());
+        auto rightContentMargin = MessageStyle::getRightMargin(isOutgoing());
 
         return rightContentMargin;
     }
 
     int32_t MessageItem::evaluateTopContentMargin() const
     {
-        auto topContentMargin = MessageStyle::getTopPadding(hasTopMargin());
+        auto topContentMargin = MessageStyle::getTopMargin(hasTopMargin());
 
         if (Data_->SenderVisible_)
         {
-            topContentMargin += getSenderHeight();
-            topContentMargin += getSenderBottomMargin();
+            topContentMargin += MessageStyle::getSenderHeight();
+            topContentMargin += MessageStyle::getSenderBottomMargin();
         }
 
         return topContentMargin;
@@ -682,16 +768,6 @@ namespace Ui
         }
 
         return AvatarRect_;
-    }
-
-    void MessageItem::initializeContentWidget()
-    {
-        if (!ContentWidget_)
-        {
-            return;
-        }
-
-        ContentWidget_->initialize();
     }
 
     bool MessageItem::isAvatarVisible() const
@@ -714,25 +790,37 @@ namespace Ui
         return Data_->isOutgoing();
     }
 
-    bool MessageItem::isOverAvatar(const QPoint &p) const
+    bool MessageItem::isFileSharing() const
+    {
+        if (!ContentWidget_)
+        {
+            return false;
+        }
+
+        return qobject_cast<HistoryControl::FileSharingWidget*>(ContentWidget_);
+    }
+
+    bool MessageItem::isOverAvatar(const QPoint& _p) const
     {
         return (
             isAvatarVisible() &&
-            getAvatarRect().contains(p)
+            getAvatarRect().contains(_p)
         );
     }
 
-    void MessageItem::manualUpdateGeometry(const int32_t widgetWidth)
+    void MessageItem::manualUpdateGeometry(const int32_t _widgetWidth)
     {
-        assert(widgetWidth > 0);
+        assert(_widgetWidth > 0);
 
-        const auto contentWidth = evaluateContentWidth(widgetWidth);
+        const auto contentWidth = evaluateContentWidth(_widgetWidth);
 
         const auto enoughSpace = (contentWidth > 0);
         if (!enoughSpace)
         {
             return;
         }
+
+        setUpdatesEnabled(false);
 
         const auto contentHorGeometry = evaluateContentHorGeometry(contentWidth);
 
@@ -745,19 +833,21 @@ namespace Ui
             contentHorGeometry.left(),
             contentVertGeometry.top(),
             contentHorGeometry.width(),
-            contentVertGeometry.height()
-        );
+            contentVertGeometry.height());
+
         assert(!contentGeometry.isEmpty());
 
         updateMessageBodyFullGeometry(contentGeometry);
 
-        updateBubbleGeometry(contentGeometry);
+        const auto bubbleGeometry = evaluateBubbleGeometry(contentGeometry);
+
+        updateBubbleGeometry(bubbleGeometry);
 
         updateSenderGeometry();
 
-        updateStatusGeometry(contentGeometry);
+        updateTimeGeometry(contentGeometry);
 
-        initializeContentWidget();
+        setUpdatesEnabled(true);
     }
 
 
@@ -788,24 +878,24 @@ namespace Ui
         return ContentWidget_->metaObject()->className();
     }
 
-    void MessageItem::updateBubbleGeometry(const QRect &bubbleGeometry)
+    void MessageItem::updateBubbleGeometry(const QRect &_bubbleGeometry)
     {
-        assert(!bubbleGeometry.isEmpty());
+        assert(!_bubbleGeometry.isEmpty());
 
-        Bubble_ = Utils::renderMessageBubble(bubbleGeometry, MessageStyle::getBorderRadius(), Data_->isOutgoing());
+        Bubble_ = Utils::renderMessageBubble(_bubbleGeometry, MessageStyle::getBorderRadius(), Data_->isOutgoing());
         assert(!Bubble_.isEmpty());
     }
 
-    void MessageItem::updateContentWidgetHorGeometry(const QRect &bubbleHorGeometry)
+    void MessageItem::updateContentWidgetHorGeometry(const QRect &_contenHorGeometry)
     {
-        assert(bubbleHorGeometry.width() > 0);
+        assert(_contenHorGeometry.width() > 0);
 
         if (!ContentWidget_)
         {
             return;
         }
 
-        auto left = bubbleHorGeometry.left();
+        auto left = _contenHorGeometry.left();
 
         if (ContentWidget_->isBlockElement())
         {
@@ -819,18 +909,30 @@ namespace Ui
 
         if (ContentWidget_->isBlockElement())
         {
+            auto blockWidth = _contenHorGeometry.width();
+            blockWidth -= (MessageStyle::getBubbleHorPadding() * 2);
+
+            if (isFileSharing())
+            {
+                blockWidth += MessageStyle::getTimeMargin();
+            }
+
+            ContentWidget_->setFixedWidth(blockWidth);
+
             return;
         }
 
-        auto width = bubbleHorGeometry.width();
+        auto width = _contenHorGeometry.width();
 
-        int maxWidgetWidth = ContentWidget_->maxWidgetWidth();
+        const auto maxWidgetWidth = ContentWidget_->maxWidgetWidth();
+        const auto isMaxWidgetWidthSet = (maxWidgetWidth != -1);
 
-        if (!ContentWidget_->hasTextBubble() || maxWidgetWidth != -1)
+        const auto isPreview = (bool)qobject_cast<HistoryControl::PreviewContentWidget*>(ContentWidget_);
+        if (!isPreview && (!ContentWidget_->hasTextBubble() || isMaxWidgetWidthSet))
         {
             width -= MessageStatusWidget::getMaxWidth();
-            width -= MessageStyle::getTimeStatusMargin();
-            width -= MessageStyle::getTimeStatusMargin();
+            width -= MessageStyle::getTimeMargin();
+            width -= MessageStyle::getTimeMargin();
         }
 
         assert(width > 0);
@@ -847,16 +949,16 @@ namespace Ui
         ContentWidget_->setFixedWidth(width);
     }
 
-    void MessageItem::updateMessageBodyHorGeometry(const QRect &bubbleHorGeometry)
+    void MessageItem::updateMessageBodyHorGeometry(const QRect &_bubbleHorGeometry)
     {
-        assert(bubbleHorGeometry.width() > 0);
+        assert(_bubbleHorGeometry.width() > 0);
 
         if (!MessageBody_)
         {
             return;
         }
 
-        auto messageBodyWidth = bubbleHorGeometry.width();
+        auto messageBodyWidth = _bubbleHorGeometry.width();
         messageBodyWidth -= (MessageStyle::getBubbleHorPadding() * 2);
         messageBodyWidth -= MessageStatusWidget::getMaxWidth();
 
@@ -902,103 +1004,104 @@ namespace Ui
         }
 
         Sender_->move(
-            MessageStyle::getLeftPadding(isOutgoing()),
-            MessageStyle::getTopPadding(hasTopMargin())
+            MessageStyle::getLeftMargin(isOutgoing()),
+            MessageStyle::getTopMargin(hasTopMargin())
         );
 
         Sender_->setVisible(true);
     }
 
-    void MessageItem::updateStatusGeometry(const QRect &contentGeometry)
+    void MessageItem::updateTimeGeometry(const QRect &_contentGeometry)
     {
-        const auto statusWidgetSize = StatusWidget_->sizeHint();
+        const auto timeWidgetSize = TimeWidget_->sizeHint();
 
         QPoint posHint;
 
         if (ContentWidget_)
         {
             // width with left margin
-            auto fullStatusLineWidth = (
-                MessageStatusWidget::getMaxWidth() +
-                MessageStyle::getTimeStatusMargin()
-            );
+            auto fullTimeLineWidth = getFullTimeLineWidth();
 
             if (ContentWidget_->hasTextBubble())
             {
                 // right margin
-                fullStatusLineWidth += MessageStyle::getTimeStatusMargin();
+                fullTimeLineWidth += MessageStyle::getTimeMargin();
             }
 
             posHint = ContentWidget_->deliveryStatusOffsetHint(
-                fullStatusLineWidth
+                fullTimeLineWidth
             );
         }
 
         assert(posHint.x() >= 0);
         assert(posHint.y() >= 0);
 
-        auto statusX = 0;
+        auto timeX = 0;
 
         if (posHint.x() > 0)
         {
-            statusX = posHint.x();
-            statusX += evaluateLeftContentMargin();
-            statusX += MessageStyle::getTimeStatusMargin();
+            timeX = posHint.x();
+            timeX += evaluateLeftContentMargin();
+            timeX += MessageStyle::getTimeMargin();
         }
         else
         {
-            statusX = contentGeometry.right();
+            timeX = _contentGeometry.right();
 
-            statusX -= MessageStatusWidget::getMaxWidth();
-            statusX -= MessageStyle::getTimeStatusMargin();
+            timeX -= MessageStatusWidget::getMaxWidth();
+            timeX -= MessageStyle::getTimeMargin();
         }
 
-        auto statusY = 0;
+        auto timeY = 0;
 
         if (posHint.y() > 0)
         {
-            statusY = posHint.y();
-            statusY += evaluateTopContentMargin();
+            timeY = posHint.y();
+            timeY += evaluateTopContentMargin();
         }
         else
         {
-            statusY = contentGeometry.bottom();
+            timeY = _contentGeometry.bottom();
         }
 
-        statusY -= MessageStyle::getTimeStatusMargin();
-        statusY -= statusWidgetSize.height();
+        timeY -= MessageStyle::getTimeMargin();
+        timeY -= timeWidgetSize.height();
 
-        const QRect statusGeometry(
-            statusX,
-            statusY,
+        const QRect timeGeometry(
+            timeX,
+            timeY,
             MessageStatusWidget::getMaxWidth(),
-            statusWidgetSize.height()
+            timeWidgetSize.height()
         );
 
-        StatusWidget_->setGeometry(statusGeometry);
+        TimeWidget_->setGeometry(timeGeometry);
     }
 
-	void MessageItem::selectByPos(const QPoint& pos, bool doNotSelectImage)
+	void MessageItem::selectByPos(const QPoint& _pos, bool _doNotSelectImage)
 	{
-        if (!is_selection_)
+        if (!isSelection_)
         {
-            is_selection_ = true;
-            start_select_y_ = pos.y();
+			isSelection_ = true;
+			startSelectY_ = _pos.y();
         }
 
 		if (MessageBody_)
 		{
-			MessageBody_->selectByPos(pos);
+			MessageBody_->selectByPos(_pos);
             return;
 		}
 
         assert(ContentWidget_);
+        if (!ContentWidget_)
+        {
+            return;
+        }
 
         QRect widgetRect;
         bool selected = false;
         if (ContentWidget_->hasTextBubble())
         {
-            selected = ContentWidget_->selectByPos(pos);
+            selected = ContentWidget_->selectByPos(_pos);
             widgetRect = QRect(mapToGlobal(ContentWidget_->rect().topLeft()), mapToGlobal(ContentWidget_->rect().bottomRight()));
         }
         else
@@ -1007,10 +1110,10 @@ namespace Ui
         }
 
         const auto isCursorOverWidget = (
-            (widgetRect.top() <= pos.y()) &&
-            (widgetRect.bottom() >= pos.y())
+            (widgetRect.top() <= _pos.y()) &&
+            (widgetRect.bottom() >= _pos.y())
         );
-		if (isCursorOverWidget && !selected && !doNotSelectImage)
+		if (isCursorOverWidget && !selected && !_doNotSelectImage)
 		{
 			if (!isSelected())
 			{
@@ -1020,20 +1123,20 @@ namespace Ui
             return;
 		}
 
-        const auto distanceToWidgetTop = std::abs(pos.y() - widgetRect.top());
-        const auto distanceToWidgetBottom = std::abs(pos.y() - widgetRect.bottom());
+        const auto distanceToWidgetTop = std::abs(_pos.y() - widgetRect.top());
+        const auto distanceToWidgetBottom = std::abs(_pos.y() - widgetRect.bottom());
         const auto isCursorCloserToTop = (distanceToWidgetTop < distanceToWidgetBottom);
 
-        if (Direction_ == NONE)
+        if (Direction_ == SelectDirection::NONE)
         {
-            Direction_ = (isCursorCloserToTop ? DOWN : UP);
+            Direction_ = (isCursorCloserToTop ? SelectDirection::DOWN : SelectDirection::UP);
         }
 
         if (selected)
             return;
 
-        const auto isDirectionDown = (Direction_ == DOWN);
-        const auto isDirectionUp = (Direction_ == UP);
+        const auto isDirectionDown = (Direction_ == SelectDirection::DOWN);
+        const auto isDirectionUp = (Direction_ == SelectDirection::UP);
 
 		if (isSelected())
 		{
@@ -1042,10 +1145,10 @@ namespace Ui
                 (!isCursorCloserToTop && isDirectionUp)
             );
 
-			if (needToClear && (start_select_y_ < widgetRect.top() || start_select_y_ > widgetRect.bottom()))
+			if (needToClear && (startSelectY_ < widgetRect.top() || startSelectY_ > widgetRect.bottom()))
             {
 				clearSelection();
-                is_selection_ = true;
+				isSelection_ = true;
             }
 
             return;
@@ -1074,7 +1177,7 @@ namespace Ui
 
 	void MessageItem::clearSelection()
 	{
-        is_selection_ = false;
+		isSelection_ = false;
         HistoryControlPageItem::clearSelection();
 
 		if (MessageBody_)
@@ -1084,7 +1187,7 @@ namespace Ui
 
 		if (ContentWidget_)
 		{
-			Direction_ = NONE;
+			Direction_ = SelectDirection::NONE;
 
             if (ContentWidget_->hasTextBubble())
             {
@@ -1101,7 +1204,7 @@ namespace Ui
 		}
 	}
 
-	QString MessageItem::selection(bool textonly/* = false*/)
+	QString MessageItem::selection(bool _textonly/* = false*/) const
 	{
         QString selectedText;
         if (ContentWidget_)
@@ -1112,7 +1215,7 @@ namespace Ui
             return QString();
         }
 
-		if (textonly && MessageBody_ && !MessageBody_->isAllSelected())
+		if (_textonly && MessageBody_ && !MessageBody_->isAllSelected())
         {
 			return MessageBody_->selection();
         }
@@ -1128,12 +1231,12 @@ namespace Ui
 			displayName = (
                 Data_->Chat_ ?
                     Sender_->text() :
-                    Logic::GetContactListModel()->getDisplayName(Data_->AimId_)
+                    Logic::getContactListModel()->getDisplayName(Data_->AimId_)
             );
         }
 
         QString format = (
-            textonly ?
+            _textonly ?
                 "" :
                 QString("%1 (%2):\n").arg(
                     displayName,
@@ -1146,7 +1249,6 @@ namespace Ui
             if (!MessageBody_->selection().isEmpty())
             {
 			    format += MessageBody_->selection();
-			    format += "\n\n";
                 return format;
             }
             return QString();
@@ -1163,11 +1265,24 @@ namespace Ui
             format += ContentWidget_->toString();
         }
 
-        if (!textonly)
-            format += "\n\n";
+        if (!_textonly && !format.isEmpty())
+        {
+            format += "\n";
+        }
 
         return format;
 	}
+
+    bool MessageItem::isSelected() const
+    {
+        return HistoryControlPageItem::isSelected();
+    }
+
+    bool MessageItem::isTextSelected() const
+    {
+        return MessageBody_
+            && !MessageBody_->selection().isEmpty();
+    }
 
     void MessageItem::avatarClicked()
     {
@@ -1180,6 +1295,13 @@ namespace Ui
 		const auto params = _action->data().toMap();
 		const auto command = params["command"].toString();
 
+        if (command == "dev:copy_message_id")
+        {
+            const auto idStr = QString::number(getId());
+
+            QApplication::clipboard()->setText(idStr);
+        }
+
         QString displayName;
 
         if (isOutgoing())
@@ -1191,7 +1313,7 @@ namespace Ui
             displayName = (
                 Data_->Chat_ ?
                     Sender_->text() :
-                    Logic::GetContactListModel()->getDisplayName(Data_->AimId_)
+                    Logic::getContactListModel()->getDisplayName(Data_->AimId_)
             );
         }
 
@@ -1226,9 +1348,16 @@ namespace Ui
 		}
 		else if (command == "quote")
 		{
-            format += "\n";
-			emit quote(format);
+            QList<Data::Quote> q;
+            q.push_back(getQuote(true));
+            emit quote(q);
 		}
+        else if (command == "forward")
+        {
+            QList<Data::Quote> q;
+            q.push_back(getQuote(true));
+            emit forward(q);
+        }
         else if (command == "copy_link")
         {
             emit copy(ContentWidget_->toLink());
@@ -1250,8 +1379,23 @@ namespace Ui
             }
 
             const auto is_shared = (command == "delete_all");
-            const auto ids = Logic::GetMessagesModel()->getBubbleMessageIds(Data_->AimId_, Data_->Id_);
-            GetDispatcher()->delete_messages(ids, Data_->AimId_, is_shared);
+            std::vector<int64_t> ids;
+            ids.push_back(Data_->Id_);
+
+            QString text = QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to delete message?");
+
+            auto confirm = Utils::GetConfirmationWithTwoButtons(
+                QT_TRANSLATE_NOOP("popup_window", "Cancel"),
+                QT_TRANSLATE_NOOP("popup_window", "Yes"),
+                text,
+                QT_TRANSLATE_NOOP("popup_window", "Delete message"),
+                NULL
+            );
+
+            if (confirm && Data_)
+            {
+                GetDispatcher()->deleteMessages(ids, Data_->AimId_, is_shared);
+            }
         }
 	}
 
@@ -1272,11 +1416,11 @@ namespace Ui
 		return ContentWidget_->isBlockElement();
 	}
 
-	void MessageItem::setMessage(const QString& message)
+	void MessageItem::setMessage(const QString& _message)
 	{
         assert(!ContentWidget_);
 
-		Data_->Text_ = message;
+		Data_->Text_ = _message;
 
         if (!parent())
         {
@@ -1291,7 +1435,7 @@ namespace Ui
 
         MessageBody_->document()->clear();
 
-		Logic::Text4Edit(message, *MessageBody_, Logic::Text2DocHtmlMode::Escape, true, true);
+		Logic::Text4Edit(_message, *MessageBody_, Logic::Text2DocHtmlMode::Escape, true, true);
 
         MessageBody_->verticalScrollBar()->blockSignals(false);
 
@@ -1310,18 +1454,18 @@ namespace Ui
     {
         HistoryControlPageItem::setLastRead(_isLastRead);
 
-        if (_isLastRead != lastRead_)
+        if (_isLastRead == LastRead_)
         {
-            lastRead_ = _isLastRead;
-
-            Layout_->setDirty();
-
-            updateGeometry();
-
-            return true;
+            return false;
         }
 
-        return false;
+        LastRead_ = _isLastRead;
+
+        Layout_->setDirty();
+
+        updateGeometry();
+
+        return true;
     }
 
 	void MessageItem::setOutgoing(const bool _isOutgoing, const bool _isDeliveredToServer, const bool _isMChat, const bool _isInit)
@@ -1329,6 +1473,9 @@ namespace Ui
         Data_->Outgoing_.Outgoing_ = _isOutgoing;
         Data_->Outgoing_.Set_ = true;
         Data_->Chat_ = _isMChat;
+
+        if (TimeWidget_)
+            TimeWidget_->setOutgoing(_isOutgoing);
 
         if (_isOutgoing && (Data_->deliveredToServer_ != _isDeliveredToServer || _isInit))
         {
@@ -1377,41 +1524,41 @@ namespace Ui
         return;
     }
 
-	void MessageItem::deliveredToServer(QString key)
+	void MessageItem::deliveredToServer(QString _key)
 	{
-		assert(!key.isEmpty());
+		assert(!_key.isEmpty());
 
 		__TRACE(
 			"delivery",
 			"status event reached a widget\n" <<
 			"	status=<server>\n" <<
-			"	key=<" << key <<">");
+			"	key=<" << _key <<">");
 
-		if (!Data_ || !Data_->NotificationsKeys_.contains(key))
+		if (!Data_ || !Data_->NotificationsKeys_.contains(_key))
 		{
 			return;
 		}
 
         if (Data_->deliveredToServer_)
             return;
-        
+
 		setOutgoing(Data_->isOutgoing(), true, Data_->Chat_);
 		setTime(Data_->Time_);
 	}
 
-    void MessageItem::setMchatSenderAimId(const QString& senderAimId)
+    void MessageItem::setMchatSenderAimId(const QString& _senderAimId)
     {
-        MessageSenderAimId_ = senderAimId;
+        MessageSenderAimId_ = _senderAimId;
     }
 
-	void MessageItem::setMchatSender(const QString& sender)
+	void MessageItem::setMchatSender(const QString& _sender)
 	{
         createSenderControl();
 
-		Sender_->setText(sender);
-        Data_->SenderFriendly_ = sender;
+		Sender_->setText(_sender);
+        Data_->SenderFriendly_ = _sender;
 
-        auto senderName = sender;
+        auto senderName = _sender;
         Utils::removeLineBreaks(InOut senderName);
 
 		Data_->SenderVisible_ = (!senderName.isEmpty() && Data_->AvatarVisible_);
@@ -1421,45 +1568,45 @@ namespace Ui
         updateGeometry();
 	}
 
-	void MessageItem::setTime(const int32_t time)
+	void MessageItem::setTime(const int32_t _time)
 	{
-		Data_->Time_ = time;
+		Data_->Time_ = _time;
 
-        StatusWidget_->setTime(time);
+        TimeWidget_->setTime(_time);
 
-        StatusWidget_->show();
+        TimeWidget_->show();
 	}
 
-	void MessageItem::setTopMargin(const bool value)
+	void MessageItem::setTopMargin(const bool _value)
 	{
-        const auto topMarginUpdated = (hasTopMargin() != value);
+        const auto topMarginUpdated = (hasTopMargin() != _value);
         if (topMarginUpdated)
         {
             AvatarRect_ = QRect();
         }
 
-        Data_->IndentBefore_ = value;
+        Data_->IndentBefore_ = _value;
 
-        HistoryControlPageItem::setTopMargin(value);
+        HistoryControlPageItem::setTopMargin(_value);
 	}
 
     themes::themePtr MessageItem::theme() const
     {
-        return get_qt_theme_settings()->themeForContact(Data_.get() ? Data_->AimId_ : aimId_);
+        return get_qt_theme_settings()->themeForContact(Data_.get() ? Data_->AimId_ : getAimid());
     }
 
-	void MessageItem::setContentWidget(HistoryControl::MessageContentWidget *widget)
+	void MessageItem::setContentWidget(HistoryControl::MessageContentWidget* _widget)
 	{
-		assert(widget);
+		assert(_widget);
 		assert(!ContentWidget_);
         assert(!MessageBody_);
 
-		ContentWidget_ = widget;
+		ContentWidget_ = _widget;
 
         connect(ContentWidget_, SIGNAL(stateChanged()), this, SLOT(updateData()), Qt::UniqueConnection);
-        if (StatusWidget_)
+        if (TimeWidget_)
         {
-            StatusWidget_->setMessageBubbleVisible(isMessageBubbleVisible());
+            TimeWidget_->setMessageBubbleVisible(isMessageBubbleVisible());
         }
 
         if (!parent())
@@ -1482,7 +1629,7 @@ namespace Ui
         ContentWidget_->setParent(this);
         ContentWidget_->show();
 
-        StatusWidget_->raise();
+        TimeWidget_->raise();
 
 		Utils::grabTouchWidget(ContentWidget_);
 
@@ -1491,14 +1638,14 @@ namespace Ui
         update();
 	}
 
-	void MessageItem::setStickerText(const QString& text)
+	void MessageItem::setStickerText(const QString& _text)
 	{
-		Data_->StickerText_ = text;
+		Data_->StickerText_ = _text;
 	}
 
-	void MessageItem::setDate(const QDate& date)
+	void MessageItem::setDate(const QDate& _date)
 	{
-		Data_->Date_ = date;
+		Data_->Date_ = _date;
 	}
 
 	bool MessageItem::selected()
@@ -1564,23 +1711,32 @@ namespace Ui
     bool MessageItem::updateData()
     {
         updateMessageBodyColor();
+
         updateSenderControlColor();
-        if (StatusWidget_)
+
+        if (TimeWidget_)
         {
-            StatusWidget_->setMessageBubbleVisible(isMessageBubbleVisible());
+            const auto bubbleVisible = (
+                isFileSharing() ?
+                    false :
+                    isMessageBubbleVisible());
+
+            TimeWidget_->setMessageBubbleVisible(bubbleVisible);
         }
+
         update();
+
         return true;
     }
 
-	void MessageItem::updateWith(MessageItem &messageItem)
+	void MessageItem::updateWith(MessageItem& _messageItem)
 	{
-        auto &data = messageItem.Data_;
+        auto &data = _messageItem.Data_;
         assert(data);
         assert(Data_ != data);
 
 		Data_ = std::move(data);
-        aimId_ = Data_->AimId_;
+        setAimid(Data_->AimId_);
 
         const auto updateNotificationKeys = (Data_->isOutgoing());
 		if (updateNotificationKeys)
@@ -1588,10 +1744,10 @@ namespace Ui
             setNotificationKeys(Data_->NotificationsKeys_);
         }
 
-        if (messageItem.MessageBody_)
+        if (_messageItem.MessageBody_)
         {
             assert(!Data_->Text_.isEmpty());
-            assert(!messageItem.ContentWidget_);
+            assert(!_messageItem.ContentWidget_);
 
             if (ContentWidget_)
             {
@@ -1602,10 +1758,10 @@ namespace Ui
             setMessage(Data_->Text_);
         }
 
-        if (messageItem.ContentWidget_)
+        if (_messageItem.ContentWidget_)
         {
             assert(Data_->Text_.isEmpty());
-            assert(!messageItem.MessageBody_);
+            assert(!_messageItem.MessageBody_);
 
             if (MessageBody_)
             {
@@ -1618,8 +1774,8 @@ namespace Ui
                 ContentWidget_->deleteLater();
                 ContentWidget_ = nullptr;
 
-                setContentWidget(messageItem.ContentWidget_);
-                messageItem.ContentWidget_ = nullptr;
+                setContentWidget(_messageItem.ContentWidget_);
+                _messageItem.ContentWidget_ = nullptr;
             }
         }
 
@@ -1644,30 +1800,36 @@ namespace Ui
 	{
 		return Data_;
 	}
+
+    namespace
+    {
+
+        int32_t getFullTimeLineWidth()
+        {
+            const auto fullTimeLineWidth = (
+                MessageStatusWidget::getMaxWidth() +
+                MessageStyle::getTimeMargin());
+
+            return fullTimeLineWidth;
+        }
+
+        int32_t getMessageTopPadding()
+        {
+            return Utils::scale_value(4);
+        }
+
+        int32_t getMessageBottomPadding()
+        {
+            return Utils::scale_value(8);
+        }
+
+        QMap<QString, QVariant> makeData(const QString& _command)
+        {
+            QMap<QString, QVariant> result;
+            result["command"] = _command;
+            return result;
+        }
+    }
 }
 
-namespace
-{
 
-    int32_t getMessageTopPadding()
-    {
-        return Utils::scale_value(4);
-    }
-
-    int32_t getSenderHeight()
-    {
-        return Utils::scale_value(14);
-    }
-
-    int32_t getSenderBottomMargin()
-    {
-        return Utils::scale_value(4);
-    }
-
-    QMap<QString, QVariant> makeData(const QString& command)
-    {
-        QMap<QString, QVariant> result;
-        result["command"] = command;
-        return result;
-    }
-}

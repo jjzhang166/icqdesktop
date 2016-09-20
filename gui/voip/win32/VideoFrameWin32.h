@@ -4,11 +4,14 @@
 #include <QWidget>
 #include "../VideoFrame.h"
 
-namespace platform_win32 {
+namespace platform_win32
+{
     
-class GraphicsPanelWin32 : public platform_specific::GraphicsPanel { Q_OBJECT
+class GraphicsPanelWin32 : public platform_specific::GraphicsPanel
+{
+    Q_OBJECT
 public:
-    GraphicsPanelWin32(QWidget* parent, std::vector<QWidget*>& panels);
+    GraphicsPanelWin32(QWidget* _parent, std::vector<QWidget*>& _panels);
     virtual ~GraphicsPanelWin32();
 };
 

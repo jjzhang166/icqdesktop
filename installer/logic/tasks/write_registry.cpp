@@ -107,19 +107,11 @@ namespace installer
 
             QString exe_path = get_icq_exe();
             exe_path = exe_path.replace('/', '\\');
-
-            if (!get_exported_data().get_settings() || get_exported_data().get_settings()->auto_run_)
-            {
-                CRegKey key_software_run;
-                if (ERROR_SUCCESS != key_software_run.Open(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", KEY_SET_VALUE))
-                    return installer::error(errorcode::open_registry_key, "open registry key: Software\\Microsoft\\Windows\\CurrentVersion\\Run");
-
-                if (ERROR_SUCCESS != key_software_run.SetStringValue((const wchar_t*) get_product_name().utf16(), (const wchar_t*)(QString("\"") + exe_path + "\"").utf16()))
-                    return installer::error(errorcode::set_registry_value, "set registry value: Software\\Microsoft\\Windows\\CurrentVersion\\Run icq.desktop");
-            }
-
-
             CRegKey key_software;
+
+            auto error = write_registry_autorun();
+            if (!error.is_ok())
+                return error;
 
             if (ERROR_SUCCESS != key_software.Open(HKEY_CURRENT_USER, L"Software"))
                 return installer::error(errorcode::open_registry_key, "open registry key: Software");
@@ -169,6 +161,32 @@ namespace installer
                 return err;
 
             return err;
+        }
+
+        installer::error write_registry_autorun()
+        {
+            QString exe_path = get_icq_exe();
+            exe_path = exe_path.replace('/', '\\');
+
+            CRegKey key_software_run;
+            if (ERROR_SUCCESS != key_software_run.Open(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", KEY_SET_VALUE | KEY_QUERY_VALUE))
+                return installer::error(errorcode::open_registry_key, "open registry key: Software\\Microsoft\\Windows\\CurrentVersion\\Run");
+
+            bool haveAutorun = false;
+            {
+                ULONG len = 1024;
+                wchar_t buffer[1025];
+                if (key_software_run.QueryStringValue((const wchar_t*) get_product_name().utf16(), buffer, &len) == ERROR_SUCCESS)
+                    haveAutorun = true;
+            }
+
+            if (!get_exported_data().get_settings() || get_exported_data().get_settings()->auto_run_ || haveAutorun)
+            {
+                if (ERROR_SUCCESS != key_software_run.SetStringValue((const wchar_t*) get_product_name().utf16(), (const wchar_t*)(QString("\"") + exe_path + "\"" + " /startup").utf16()))
+                    return installer::error(errorcode::set_registry_value, "set registry value: Software\\Microsoft\\Windows\\CurrentVersion\\Run icq.desktop");
+            }
+
+            return installer::error();
         }
 
         installer::error clear_registry()

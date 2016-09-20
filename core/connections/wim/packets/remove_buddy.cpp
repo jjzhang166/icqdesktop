@@ -25,7 +25,7 @@ int32_t remove_buddy::init_request(std::shared_ptr<core::http_request_simple> _r
 
     ss_url << c_wim_host << "buddylist/removeBuddy" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&buddy=" << escape_symbols(aimid_) <<
         "&r=" << core::tools::system::generate_guid() <<
         "&allGroups=1";

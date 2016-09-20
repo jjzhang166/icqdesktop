@@ -1,64 +1,73 @@
 #include "stdafx.h"
-
-#include "../../utils/utils.h"
 #include "GeneralSettingsWidget.h"
-#include "../../controls/TextEmojiWidget.h"
-#include "../../../common.shared/version_info_constants.h"
-#include "../../controls/TextEditEx.h"
+#include "../contact_list/contact_profile.h"
+#include "../contact_list/ContactListModel.h"
+#include "../../controls/CommonStyle.h"
+#include "../../controls/GeneralCreator.h"
 #include "../../controls/LineEditEx.h"
+#include "../../controls/TextEditEx.h"
+#include "../../controls/TextEmojiWidget.h"
+#include "../../controls/TransparentScrollBar.h"
+#include "../../core_dispatcher.h"
+#include "../../gui_settings.h"
 #include "../../utils/gui_coll_helper.h"
 #include "../../utils/InterConnector.h"
-#include "../../core_dispatcher.h"
-#include "../contact_list/ContactListModel.h"
-#include "../../gui_settings.h"
-#include "../contact_list/contact_profile.h"
-#include "../../controls/CustomButton.h"
-#include "../../controls/GeneralCreator.h"
+#include "../../utils/utils.h"
+#include "../../../common.shared/version_info_constants.h"
 
 using namespace Ui;
 
-void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/)
+namespace
+{
+    const int TEXTEDIT_MIN_HEIGHT = 88;
+    const int TEXTEDIT_MAX_HEIGHT = 252;
+    const int CONTROLS_WIDTH = 440;
+    const QColor ERROR_LABEL_COLOR(0xe3, 0x0f, 0x04);
+    const QColor SENDING_LABEL_COLOR(0x57, 0x9e, 0x1c);
+}
+
+void GeneralSettingsWidget::Creator::initContactUs(QWidget* _parent, std::map<std::string, Synchronizator> &/*collector*/)
 {
     static std::map<QString, QString> filesToSend;
 
-    auto scroll_area = new QScrollArea(parent);
-    scroll_area->setWidgetResizable(true);
-    scroll_area->setStyleSheet(Utils::LoadStyle(":/main_window/settings/contact_us.qss", Utils::get_scale_coefficient(), true));
-    Utils::grabTouchWidget(scroll_area->viewport(), true);
+    auto scrollArea = CreateScrollAreaAndSetTrScrollBar(_parent);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setStyleSheet(Utils::LoadStyle(":/main_window/settings/contact_us.qss"));
+    Utils::grabTouchWidget(scrollArea->viewport(), true);
 
-    auto scroll_area_content = new QWidget(scroll_area);
-    scroll_area_content->setGeometry(QRect(0, 0, Utils::scale_value(800), Utils::scale_value(600)));
-    Utils::grabTouchWidget(scroll_area_content);
+    auto mainWidget = new QWidget(scrollArea);
+    mainWidget->setGeometry(QRect(0, 0, Utils::scale_value(800), Utils::scale_value(600)));
+    Utils::grabTouchWidget(mainWidget);
 
-    auto scroll_area_content_layout = new QVBoxLayout(scroll_area_content);
-    scroll_area_content_layout->setSpacing(0);
-    scroll_area_content_layout->setAlignment(Qt::AlignTop);
-    scroll_area_content_layout->setContentsMargins(Utils::scale_value(48), 0, 0, Utils::scale_value(48));
+    auto mainLayout = new QVBoxLayout(mainWidget);
+    mainLayout->setSpacing(0);
+    mainLayout->setAlignment(Qt::AlignTop);
+    mainLayout->setContentsMargins(Utils::scale_value(48), 0, 0, Utils::scale_value(48));
 
-    scroll_area->setWidget(scroll_area_content);
+    scrollArea->setWidget(mainWidget);
 
-    auto layout = new QHBoxLayout(parent);
+    auto layout = new QHBoxLayout(_parent);
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(scroll_area);
+    layout->addWidget(scrollArea);
 
-    GeneralCreator::addHeader(scroll_area, scroll_area_content_layout, QT_TRANSLATE_NOOP("contactus_page", "Contact Us"));
+    GeneralCreator::addHeader(scrollArea, mainLayout, QT_TRANSLATE_NOOP("contactus_page", "Contact Us"));
     {
         static quint64 filesSizeLimiter = 0;
         TextEditEx *suggestioner = nullptr;
         TextEmojiWidget *suggestionMinSizeError = nullptr;
         TextEmojiWidget *suggestionMaxSizeError = nullptr;
         QWidget *suggestionerCover = nullptr;
-        QWidget *filer = nullptr;
+        QWidget *attachWidget = nullptr;
         QWidget *filerCover = nullptr;
-        TextEmojiWidget *filerTotalSizeError = nullptr;
-        TextEmojiWidget *filerSizeError = nullptr;
-        LineEditEx *emailer = nullptr;
+        TextEmojiWidget *attachTotalSizeError = nullptr;
+        TextEmojiWidget *attachSizeError = nullptr;
+        LineEditEx *email = nullptr;
         QWidget *emailerCover = nullptr;
-        TextEmojiWidget *emailerError = nullptr;
+        TextEmojiWidget *emailError = nullptr;
 
-        auto successPage = new QWidget(scroll_area);
-        auto sendingPage = new QWidget(scroll_area);
+        auto successPage = new QWidget(scrollArea);
+        auto sendingPage = new QWidget(scrollArea);
 
         Utils::grabTouchWidget(successPage);
         Utils::grabTouchWidget(sendingPage);
@@ -68,20 +77,21 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
         sendingPageLayout->setSpacing(Utils::scale_value(8));
         sendingPageLayout->setAlignment(Qt::AlignTop);
         {
-            suggestioner = new TextEditEx(sendingPage, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), QColor(0x28, 0x28, 0x28), true, false);
+            suggestioner = new TextEditEx(sendingPage, Fonts::defaultAppFontFamily(), Utils::scale_value(18), CommonStyle::getTextCommonColor(), true, false);
             Testing::setAccessibleName(suggestioner, "feedback_suggestioner");
 
             Utils::grabTouchWidget(suggestioner);
             suggestioner->setContentsMargins(0, Utils::scale_value(24), 0, 0);
             suggestioner->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Minimum);
-            suggestioner->setFixedWidth(Utils::scale_value(440));
-            suggestioner->setMinimumHeight(Utils::scale_value(88));
-            suggestioner->setMaximumHeight(Utils::scale_value(252));
+            suggestioner->setFixedWidth(Utils::scale_value(CONTROLS_WIDTH));
+            suggestioner->setMinimumHeight(Utils::scale_value(TEXTEDIT_MIN_HEIGHT));
+            suggestioner->setMaximumHeight(Utils::scale_value(TEXTEDIT_MAX_HEIGHT));
             suggestioner->setPlaceholderText(QT_TRANSLATE_NOOP("contactus_page","Your comments or suggestions..."));
             suggestioner->setAutoFillBackground(false);
             suggestioner->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             suggestioner->setTextInteractionFlags(Qt::TextEditable | Qt::TextEditorInteraction);
             suggestioner->setProperty("normal", true);
+            QObject::connect(&Utils::InterConnector::instance(), SIGNAL(generalSettingsContactUsShown()), suggestioner, SLOT(setFocus()), Qt::QueuedConnection);
             {
                 suggestionerCover = new QWidget(suggestioner);
                 Utils::grabTouchWidget(suggestionerCover);
@@ -90,135 +100,135 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 suggestionerCover->setVisible(false);
             }
             {
-                GetDisconnector()->add("suggestioner", scroll_area->connect(suggestioner->document(), &QTextDocument::contentsChanged, [=]()
+                GetDisconnector()->add("suggestioner", scrollArea->connect(suggestioner->document(), &QTextDocument::contentsChanged, [=]()
                 {
-                    auto nh = suggestioner->document()->size().height() + Utils::scale_value(12 + 10 + 2); // paddings + border_width*2
-                    if (nh > suggestioner->maximumHeight())
+                    auto textControlHeight = suggestioner->document()->size().height() + Utils::scale_value(12 + 10 + 2); // paddings + border_width*2
+                    if (textControlHeight > suggestioner->maximumHeight())
                         suggestioner->setMinimumHeight(suggestioner->maximumHeight());
-                    else if (nh > Utils::scale_value(88))
-                        suggestioner->setMinimumHeight(nh);
+                    else if (textControlHeight > Utils::scale_value(TEXTEDIT_MIN_HEIGHT))
+                        suggestioner->setMinimumHeight(textControlHeight);
                     else
-                        suggestioner->setMinimumHeight(Utils::scale_value(88));
+                        suggestioner->setMinimumHeight(Utils::scale_value(TEXTEDIT_MIN_HEIGHT));
                 }));
             }
             sendingPageLayout->addWidget(suggestioner);
 
-            suggestionMinSizeError = new TextEmojiWidget(suggestioner, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#e30f04"), Utils::scale_value(12));
+            suggestionMinSizeError = new TextEmojiWidget(suggestioner, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), ERROR_LABEL_COLOR, Utils::scale_value(12));
             Utils::grabTouchWidget(suggestionMinSizeError);
             suggestionMinSizeError->setText(QT_TRANSLATE_NOOP("contactus_page", "Message is too short"));
             suggestionMinSizeError->setVisible(false);
             sendingPageLayout->addWidget(suggestionMinSizeError);
 
-            suggestionMaxSizeError = new TextEmojiWidget(suggestioner, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#e30f04"), Utils::scale_value(12));
+            suggestionMaxSizeError = new TextEmojiWidget(suggestioner, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), ERROR_LABEL_COLOR, Utils::scale_value(12));
             Utils::grabTouchWidget(suggestionMaxSizeError);
             suggestionMaxSizeError->setText(QT_TRANSLATE_NOOP("contactus_page", "Message is too long"));
             suggestionMaxSizeError->setVisible(false);
             sendingPageLayout->addWidget(suggestionMaxSizeError);
         }
         {
-            filer = new QWidget(sendingPage);
-            Testing::setAccessibleName(filer, "feedback_filer");
+            attachWidget = new QWidget(sendingPage);
+            Testing::setAccessibleName(attachWidget, "feedback_filer");
 
-            Utils::grabTouchWidget(filer);
-            auto fcl = new QVBoxLayout(filer);
-            filer->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
-            filer->setFixedWidth(Utils::scale_value(440));
-            fcl->setContentsMargins(0, Utils::scale_value(4), 0, 0);
-            fcl->setSpacing(Utils::scale_value(8));
+            Utils::grabTouchWidget(attachWidget);
+            auto attachLayout = new QVBoxLayout(attachWidget);
+            attachWidget->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
+            attachWidget->setFixedWidth(Utils::scale_value(CONTROLS_WIDTH));
+            attachLayout->setContentsMargins(0, Utils::scale_value(4), 0, 0);
+            attachLayout->setSpacing(Utils::scale_value(8));
             {
-                filerCover = new QWidget(filer);
+                filerCover = new QWidget(attachWidget);
                 Utils::grabTouchWidget(filerCover);
                 filerCover->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-                filerCover->setFixedSize(filer->minimumWidth(), filer->minimumHeight());
+                filerCover->setFixedSize(attachWidget->minimumWidth(), attachWidget->minimumHeight());
                 filerCover->setVisible(false);
             }
             {
-                filerSizeError = new TextEmojiWidget(filer, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#e30f04"), Utils::scale_value(12));
-                Utils::grabTouchWidget(filerSizeError);
-                filerSizeError->setText(QT_TRANSLATE_NOOP("contactus_page", "File size exceeds 1 MB"));
-                filerSizeError->setVisible(false);
-                fcl->addWidget(filerSizeError);
+                attachSizeError = new TextEmojiWidget(attachWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), ERROR_LABEL_COLOR, Utils::scale_value(12));
+                Utils::grabTouchWidget(attachSizeError);
+                attachSizeError->setText(QT_TRANSLATE_NOOP("contactus_page", "File size exceeds 1 MB"));
+                attachSizeError->setVisible(false);
+                attachLayout->addWidget(attachSizeError);
 
-                filerTotalSizeError = new TextEmojiWidget(filer, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#e30f04"), Utils::scale_value(12));
-                Utils::grabTouchWidget(filerTotalSizeError);
-                filerTotalSizeError->setText(QT_TRANSLATE_NOOP("contactus_page", "Attachments size exceeds 25 MB"));
-                filerTotalSizeError->setVisible(false);
-                fcl->addWidget(filerTotalSizeError);
+                attachTotalSizeError = new TextEmojiWidget(attachWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), ERROR_LABEL_COLOR, Utils::scale_value(12));
+                Utils::grabTouchWidget(attachTotalSizeError);
+                attachTotalSizeError->setText(QT_TRANSLATE_NOOP("contactus_page", "Attachments size exceeds 25 MB"));
+                attachTotalSizeError->setVisible(false);
+                attachLayout->addWidget(attachTotalSizeError);
 
-                auto bsc = [=](QString fileName, QString fileSize, QString realName, qint64 realSize)
+                auto bsc = [=](QString _fileName, QString _fileSize, QString _realName, qint64 _realSize)
                 {
-                    auto bf = new QWidget(filer);
-                    auto bfl = new QHBoxLayout(bf);
-                    Utils::grabTouchWidget(bf);
-                    bf->setObjectName(fileName);
-                    bf->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-                    bf->setFixedWidth(Utils::scale_value(440));
-                    bf->setFixedHeight(Utils::scale_value(32));
-                    bf->setProperty("filer", true);
-                    bfl->setContentsMargins(Utils::scale_value(12), 0, Utils::scale_value(12), 0);
-                    bfl->setSpacing(Utils::scale_value(12));
-                    bfl->setAlignment(Qt::AlignVCenter);
+                    auto fileWidget = new QWidget(attachWidget);
+                    auto fileLayout = new QHBoxLayout(fileWidget);
+                    Utils::grabTouchWidget(fileWidget);
+                    fileWidget->setObjectName(_fileName);
+                    fileWidget->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
+                    fileWidget->setFixedWidth(Utils::scale_value(CONTROLS_WIDTH));
+                    fileWidget->setFixedHeight(Utils::scale_value(32));
+                    fileWidget->setProperty("fileWidget", true);
+                    fileLayout->setContentsMargins(Utils::scale_value(12), 0, Utils::scale_value(12), 0);
+                    fileLayout->setSpacing(Utils::scale_value(12));
+                    fileLayout->setAlignment(Qt::AlignVCenter);
                     {
-                        auto fns = new QWidget(bf);
-                        auto fnsl = new QHBoxLayout(fns);
-                        Utils::grabTouchWidget(fns);
-                        fns->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-                        fnsl->setContentsMargins(0, 0, 0, 0);
-                        fnsl->setSpacing(0);
-                        fnsl->setAlignment(Qt::AlignLeft);
+                        auto fileInfoWidget = new QWidget(fileWidget);
+                        auto fileInfoLayout = new QHBoxLayout(fileInfoWidget);
+                        Utils::grabTouchWidget(fileInfoWidget);
+                        fileInfoWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+                        fileInfoLayout->setContentsMargins(0, 0, 0, 0);
+                        fileInfoLayout->setSpacing(0);
+                        fileInfoLayout->setAlignment(Qt::AlignLeft);
                         {
-                            auto fn = new QLabel(fns);
-                            Utils::grabTouchWidget(fn);
-                            fn->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
-                            fn->setText(fileName);
-                            fn->setProperty("fileName", true);
-                            fnsl->addWidget(fn);
+                            auto fileName = new QLabel(fileInfoWidget);
+                            Utils::grabTouchWidget(fileName);
+                            fileName->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
+                            fileName->setText(_fileName);
+                            fileName->setProperty("fileName", true);
+                            fileInfoLayout->addWidget(fileName);
 
-                            auto fs = new QLabel(fns);
-                            Utils::grabTouchWidget(fs);
-                            fs->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
-                            fs->setText(QString(" - %1").arg(fileSize));
-                            fs->setProperty("fileSize", true);
-                            fnsl->addWidget(fs);
+                            auto fileSize = new QLabel(fileInfoWidget);
+                            Utils::grabTouchWidget(fileSize);
+                            fileSize->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
+                            fileSize->setText(QString(" - %1").arg(_fileSize));
+                            fileSize->setProperty("fileSize", true);
+                            fileInfoLayout->addWidget(fileSize);
                         }
-                        bfl->addWidget(fns);
+                        fileLayout->addWidget(fileInfoWidget);
 
-                        auto d = new QPushButton(bf);
-                        d->setFlat(true);
-                        d->setStyleSheet("QPushButton { border-image: url(:/resources/controls_cotext_close_200_active.png); } QPushButton:hover { border-image: url(:/resources/controls_cotext_close_200_hover.png); }");
-                        d->setCursor(Qt::PointingHandCursor);
-                        d->setFixedSize(Utils::scale_value(12), Utils::scale_value(12));
-                        GetDisconnector()->add("filer", filer->connect(d, &QPushButton::clicked, [=]()
+                        auto deleteFile = new QPushButton(fileWidget);
+                        deleteFile->setObjectName("deleteFile");
+                        deleteFile->setFlat(true);
+                        deleteFile->setCursor(Qt::PointingHandCursor);
+                        deleteFile->setFixedSize(Utils::scale_value(12), Utils::scale_value(12));
+                        GetDisconnector()->add("filer", attachWidget->connect(deleteFile, &QPushButton::clicked, [=]()
                         {
-                            filesToSend.erase(bf->objectName());
-                            filesSizeLimiter -= realSize;
-                            filerSizeError->setVisible(false);
-                            filerTotalSizeError->setVisible(false);
-                            bf->setVisible(false);
-                            delete bf;
+                            filesToSend.erase(fileWidget->objectName());
+                            filesSizeLimiter -= _realSize;
+                            attachSizeError->setVisible(false);
+                            attachTotalSizeError->setVisible(false);
+                            fileWidget->setVisible(false);
+                            delete fileWidget;
                         }));
-                        bfl->addWidget(d);
+                        fileLayout->addWidget(deleteFile);
                     }
-                    fcl->insertWidget(0, bf); // always insert at the top
+                    attachLayout->insertWidget(0, fileWidget); // always insert at the top
                 };
 
-                auto sc = new QWidget(sendingPage);
-                auto scl = new QHBoxLayout(sc);
-                Utils::grabTouchWidget(sc);
-                sc->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-                sc->setFixedWidth(Utils::scale_value(440));
-                sc->setCursor(Qt::PointingHandCursor);
-                scl->setContentsMargins(0, Utils::scale_value(0), 0, 0);
-                scl->setSpacing(Utils::scale_value(12));
+                auto attachLinkWidget = new QWidget(sendingPage);
+                auto attachLinkLayout = new QHBoxLayout(attachLinkWidget);
+                Utils::grabTouchWidget(attachLinkWidget);
+                attachLinkWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+                attachLinkWidget->setFixedWidth(Utils::scale_value(CONTROLS_WIDTH));
+                attachLinkWidget->setCursor(Qt::PointingHandCursor);
+                attachLinkLayout->setContentsMargins(0, Utils::scale_value(0), 0, 0);
+                attachLinkLayout->setSpacing(Utils::scale_value(12));
                 {
                     auto attachFilesRoutine = [=]()
                     {
-                        filerSizeError->setVisible(false);
-                        filerTotalSizeError->setVisible(false);
+                        attachSizeError->setVisible(false);
+                        attachTotalSizeError->setVisible(false);
 #ifdef __linux__
                         QWidget *parentForDialog = nullptr;
 #else
-                        QWidget *parentForDialog = scroll_area;
+                        QWidget *parentForDialog = scrollArea;
 #endif //__linux__
                         static auto dd = QDir::homePath();
                         QFileDialog d(parentForDialog);
@@ -229,36 +239,36 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                         if (d.exec())
                         {
                             dd = d.directory().absolutePath();
-                            auto fls = d.selectedFiles();
-                            for (auto f: fls)
+                            auto selectedFiles = d.selectedFiles();
+                            for (auto f: selectedFiles)
                             {
                                 const auto rf = f;
-                                const auto rfs = QFileInfo(f).size();
+                                const auto fileSize = QFileInfo(f).size();
 
-                                if ((rfs / 1024. / 1024.) > 1)
+                                if ((fileSize / 1024. / 1024.) > 1)
                                 {
-                                    filerSizeError->setVisible(true);
+                                    attachSizeError->setVisible(true);
                                     continue;
                                 }
 
-                                filesSizeLimiter += rfs;
+                                filesSizeLimiter += fileSize;
                                 if ((filesSizeLimiter / 1024. / 1024.) > 25)
                                 {
-                                    filesSizeLimiter -= rfs;
-                                    filerTotalSizeError->setVisible(true);
+                                    filesSizeLimiter -= fileSize;
+                                    attachTotalSizeError->setVisible(true);
                                     break;
                                 }
 
-                                double fs = rfs / 1024.f;
-                                QString fss;
+                                double fs = fileSize / 1024.f;
+                                QString sizeString;
                                 if (fs < 100)
                                 {
-                                    fss = QString("%1 %2").arg(QString::number(fs, 'f', 2)). arg(QT_TRANSLATE_NOOP("contactus_page", "KB"));
+                                    sizeString = QString("%1 %2").arg(QString::number(fs, 'f', 2)). arg(QT_TRANSLATE_NOOP("contactus_page", "KB"));
                                 }
                                 else
                                 {
                                     fs /= 1024.;
-                                    fss = QString("%1 %2").arg(QString::number(fs, 'f', 2)). arg(QT_TRANSLATE_NOOP("contactus_page", "MB"));
+                                    sizeString = QString("%1 %2").arg(QString::number(fs, 'f', 2)). arg(QT_TRANSLATE_NOOP("contactus_page", "MB"));
                                 }
 
                                 auto ls = f.lastIndexOf('/');
@@ -268,88 +278,87 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
 
                                 if (filesToSend.find(fsn) == filesToSend.end())
                                 {
-                                    //filerSizeError->setVisible(false);
-                                    //filerTotalSizeError->setVisible(false);
+                                    //attachSizeError->setVisible(false);
+                                    //attachTotalSizeError->setVisible(false);
                                     filesToSend.insert(std::make_pair(fsn, rf));
-                                    bsc(fsn, fss, rf, rfs);
+                                    bsc(fsn, sizeString, rf, fileSize);
                                 }
                                 else
                                 {
-                                    filesSizeLimiter -= rfs;
+                                    filesSizeLimiter -= fileSize;
                                 }
                             }
                         }
                     };
 
-                    auto b = new QPushButton(sc);
-                    b->setFlat(true);
+                    auto attachImage = new QPushButton(attachLinkWidget);
+                    attachImage->setFlat(true);
                     const QString addImageStyle = "QPushButton { border-image: url(:/resources/controls_cotext_addimg_100_active.png); } QPushButton:hover { border-image: url(:/resources/controls_cotext_addimg_100_hover.png); }";
-                    b->setStyleSheet(Utils::ScaleStyle(addImageStyle, Utils::get_scale_coefficient()));
-                    b->setFixedSize(Utils::scale_value(24), Utils::scale_value(24));
-                    GetDisconnector()->add("attach/button", scroll_area->connect(b, &QPushButton::clicked, attachFilesRoutine));
-                    scl->addWidget(b);
+                    Utils::ApplyStyle(attachImage, addImageStyle);
+                    attachImage->setFixedSize(Utils::scale_value(24), Utils::scale_value(24));
+                    GetDisconnector()->add("attach/button", scrollArea->connect(attachImage, &QPushButton::clicked, attachFilesRoutine));
+                    attachLinkLayout->addWidget(attachImage);
 
-                    auto w = new TextEmojiWidget(sc, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(16));
-                    Utils::grabTouchWidget(w);
-                    w->setText(QT_TRANSLATE_NOOP("contactus_page", "Attach screenshot"));
-                    GetDisconnector()->add("attach/text", scroll_area->connect(w, &TextEmojiWidget::clicked, attachFilesRoutine));
-                    scl->addWidget(w);
+                    auto attachLink = new TextEmojiWidget(attachLinkWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), CommonStyle::getLinkColor(), Utils::scale_value(16));
+                    Utils::grabTouchWidget(attachLink);
+                    attachLink->setText(QT_TRANSLATE_NOOP("contactus_page", "Attach screenshot"));
+                    GetDisconnector()->add("attach/text", scrollArea->connect(attachLink, &TextEmojiWidget::clicked, attachFilesRoutine));
+                    attachLinkLayout->addWidget(attachLink);
                 }
-                fcl->addWidget(sc);
+                attachLayout->addWidget(attachLinkWidget);
             }
-            sendingPageLayout->addWidget(filer);
+            sendingPageLayout->addWidget(attachWidget);
         }
         {
-            emailer = new LineEditEx(sendingPage);
+            email = new LineEditEx(sendingPage);
             {
-                auto f = QFont(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
-                f.setPixelSize(Utils::scale_value(18));
-                emailer->setFont(f);
+                auto f = Fonts::appFontScaled(18);
+                email->setFont(f);
             }
 
-            emailer->setContentsMargins(0, Utils::scale_value(16), 0, 0);
-            emailer->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
-            emailer->setFixedWidth(Utils::scale_value(440));
-            emailer->setPlaceholderText(QT_TRANSLATE_NOOP("contactus_page", "Your Email"));
-            emailer->setAutoFillBackground(false);
-            emailer->setText(get_gui_settings()->get_value(settings_feedback_email, QString("")));
-            emailer->setProperty("normal", true);
-            Testing::setAccessibleName(emailer, "feedback_email");
+            email->setContentsMargins(0, Utils::scale_value(16), 0, 0);
+            email->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Preferred);
+            email->setFixedWidth(Utils::scale_value(CONTROLS_WIDTH));
+            email->setPlaceholderText(QT_TRANSLATE_NOOP("contactus_page", "Your Email"));
+            email->setAutoFillBackground(false);
+            email->setText(get_gui_settings()->get_value(settings_feedback_email, QString("")));
+            email->setProperty("normal", true);
+            Testing::setAccessibleName(email, "feedback_email");
 
             {
-                emailerCover = new QWidget(emailer);
+                emailerCover = new QWidget(email);
                 Utils::grabTouchWidget(emailerCover);
                 emailerCover->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-                emailerCover->setFixedSize(emailer->minimumWidth(), emailer->minimumHeight());
+                emailerCover->setFixedSize(email->minimumWidth(), email->minimumHeight());
                 emailerCover->setVisible(false);
             }
-            sendingPageLayout->addWidget(emailer);
+            sendingPageLayout->addWidget(email);
 
-            emailerError = new TextEmojiWidget(sendingPage, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#e30f04"), Utils::scale_value(12));
-            Utils::grabTouchWidget(emailerError);
-            emailerError->setText(QT_TRANSLATE_NOOP("contactus_page","Please enter a valid email address"));
-            emailerError->setVisible(false);
-            sendingPageLayout->addWidget(emailerError);
+            emailError = new TextEmojiWidget(sendingPage, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), ERROR_LABEL_COLOR, Utils::scale_value(12));
+            Utils::grabTouchWidget(emailError);
+            emailError->setText(QT_TRANSLATE_NOOP("contactus_page","Please enter a valid email address"));
+            emailError->setVisible(false);
+            sendingPageLayout->addWidget(emailError);
 
             GetDisconnector()->add("emailer/checking", connect(&Utils::InterConnector::instance(), &Utils::InterConnector::generalSettingsShow, [=](int type)
             {
-                if ((Utils::CommonSettingsType)type == Utils::CommonSettingsType::CommonSettingsType_ContactUs && !Utils::isValidEmailAddress(emailer->text()))
-                    emailer->setText("");
-                if (!emailer->property("normal").toBool())
-                    Utils::ApplyPropertyParameter(emailer, "normal", true);
-                emailerError->setVisible(false);
+                if ((Utils::CommonSettingsType)type == Utils::CommonSettingsType::CommonSettingsType_ContactUs && !Utils::isValidEmailAddress(email->text()))
+                    email->setText("");
+                if (!email->property("normal").toBool())
+                    Utils::ApplyPropertyParameter(email, "normal", true);
+                emailError->setVisible(false);
             }));
         }
         {
-            auto sp = new QWidget(sendingPage);
-            auto spl = new QHBoxLayout(sp);
-            Utils::grabTouchWidget(sp);
-            sp->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
-            spl->setContentsMargins(0, Utils::scale_value(16), 0, 0);
-            spl->setSpacing(Utils::scale_value(12));
-            spl->setAlignment(Qt::AlignLeft);
+            auto sendWidget = new QWidget(sendingPage);
+            auto sendLayout = new QHBoxLayout(sendWidget);
+            Utils::grabTouchWidget(sendWidget);
+            sendWidget->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
+            sendLayout->setContentsMargins(0, Utils::scale_value(16), 0, 0);
+            sendLayout->setSpacing(Utils::scale_value(12));
+            sendLayout->setAlignment(Qt::AlignLeft);
             {
-                auto sendButton = new QPushButton(sp);
+                auto sendButton = new QPushButton(sendWidget);
                 sendButton->setFlat(true);
                 sendButton->setText(QT_TRANSLATE_NOOP("contactus_page", "Send"));
                 sendButton->setCursor(Qt::PointingHandCursor);
@@ -358,14 +367,14 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 sendButton->setFixedHeight(Utils::scale_value(40));
                 Testing::setAccessibleName(sendButton, "send_feedback");
                 {
-                    Utils::ApplyStyle(sendButton, (suggestioner->getPlainText().length() && emailer->text().length()) ? main_button_style : disable_button_style);
+                    Utils::ApplyStyle(sendButton, (suggestioner->getPlainText().length() && email->text().length()) ? CommonStyle::getGreenButtonStyle() : CommonStyle::getDisabledButtonStyle());
                 }
-                spl->addWidget(sendButton);
+                sendLayout->addWidget(sendButton);
                 auto updateSendButton = [=](bool state)
                 {
-                    Utils::ApplyStyle(sendButton, (state) ? main_button_style : disable_button_style);
+                    Utils::ApplyStyle(sendButton, (state) ? CommonStyle::getGreenButtonStyle() : CommonStyle::getDisabledButtonStyle());
                 };
-                GetDisconnector()->add("suggestioner/sendbutton", scroll_area->connect(suggestioner->document(), &QTextDocument::contentsChanged, [=]()
+                GetDisconnector()->add("suggestioner/sendbutton", scrollArea->connect(suggestioner->document(), &QTextDocument::contentsChanged, [=]()
                 {
                     bool state = suggestioner->getPlainText().length();
                     if (state && suggestioner->property("normal").toBool() != state)
@@ -374,26 +383,26 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                         suggestionMinSizeError->setVisible(false);
                         suggestionMaxSizeError->setVisible(false);
                     }
-                    updateSendButton(state && emailer->text().length());
+                    updateSendButton(state && email->text().length());
                 }));
-                GetDisconnector()->add("emailer/sendbutton", scroll_area->connect(emailer, &QLineEdit::textChanged, [=](const QString &)
+                GetDisconnector()->add("emailer/sendbutton", scrollArea->connect(email, &QLineEdit::textChanged, [=](const QString &)
                 {
-                    bool state = emailer->text().length();
-                    if (state && emailer->property("normal").toBool() != state)
+                    bool state = email->text().length();
+                    if (state && email->property("normal").toBool() != state)
                     {
-                        Utils::ApplyPropertyParameter(emailer, "normal", state);
-                        emailerError->setVisible(false);
+                        Utils::ApplyPropertyParameter(email, "normal", state);
+                        emailError->setVisible(false);
                     }
                     updateSendButton(suggestioner->getPlainText().length() && state);
                 }));
 
-                auto errorOccuredSign = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#e30f04"), Utils::scale_value(16));
+                auto errorOccuredSign = new TextEmojiWidget(sendWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), ERROR_LABEL_COLOR, Utils::scale_value(16));
                 Utils::grabTouchWidget(errorOccuredSign);
                 errorOccuredSign->setText(QT_TRANSLATE_NOOP("contactus_page", "Error occured, try again later"));
                 errorOccuredSign->setVisible(false);
-                spl->addWidget(errorOccuredSign);
+                sendLayout->addWidget(errorOccuredSign);
 
-                auto sendSpinner = new QLabel(sp);
+                auto sendSpinner = new QLabel(sendWidget);
                 auto abm = new QMovie(":/resources/gifs/r_spiner200.gif");
                 Utils::grabTouchWidget(sendSpinner);
                 sendSpinner->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
@@ -403,29 +412,29 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 abm->start();
                 sendSpinner->setMovie(abm);
                 sendSpinner->setVisible(false);
-                spl->addWidget(sendSpinner);
+                sendLayout->addWidget(sendSpinner);
 
-                auto sendingSign = new TextEmojiWidget(sp, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(16));
+                auto sendingSign = new TextEmojiWidget(sendWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), SENDING_LABEL_COLOR, Utils::scale_value(16));
                 Utils::grabTouchWidget(sendingSign);
                 sendingSign->setText(QT_TRANSLATE_NOOP("contactus_page", "Sending..."));
                 sendingSign->setVisible(false);
-                spl->addWidget(sendingSign);
+                sendLayout->addWidget(sendingSign);
 
-                GetDisconnector()->add("feedback/send", scroll_area->connect(sendButton, &QPushButton::pressed, [=]()
+                GetDisconnector()->add("feedback/send", scrollArea->connect(sendButton, &QPushButton::pressed, [=]()
                 {
-                    get_gui_settings()->set_value(settings_feedback_email, emailer->text());
+                    get_gui_settings()->set_value(settings_feedback_email, email->text());
 
                     const auto sb = suggestioner->property("normal").toBool();
-                    const auto eb = emailer->property("normal").toBool();
+                    const auto eb = email->property("normal").toBool();
                     if (!sb)
                         suggestioner->setProperty("normal", true);
                     if (!eb)
-                        emailer->setProperty("normal", true);
+                        email->setProperty("normal", true);
                     suggestionMinSizeError->setVisible(false);
                     suggestionMaxSizeError->setVisible(false);
-                    emailerError->setVisible(false);
-                    filerSizeError->setVisible(false);
-                    filerTotalSizeError->setVisible(false);
+                    emailError->setVisible(false);
+                    attachSizeError->setVisible(false);
+                    attachTotalSizeError->setVisible(false);
                     auto sg = suggestioner->getPlainText();
                     sg.remove(' ');
                     if (!sg.length())
@@ -442,10 +451,10 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                         suggestioner->setProperty("normal", false);
                         suggestionMaxSizeError->setVisible(true);
                     }
-                    else if (!Utils::isValidEmailAddress(emailer->text()))
+                    else if (!Utils::isValidEmailAddress(email->text()))
                     {
-                        emailer->setProperty("normal", false);
-                        emailerError->setVisible(true);
+                        email->setProperty("normal", false);
+                        emailError->setVisible(true);
                     }
                     else
                     {
@@ -455,12 +464,12 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                         sendingSign->setVisible(true);
 
                         suggestioner->setEnabled(false);
-                        filer->setEnabled(false);
-                        emailer->setEnabled(false);
+                        attachWidget->setEnabled(false);
+                        email->setEnabled(false);
 
                         suggestionerCover->setFixedSize(suggestioner->minimumWidth(), suggestioner->minimumHeight());
-                        filerCover->setFixedSize(filer->contentsRect().width(), filer->contentsRect().height());
-                        emailerCover->setFixedSize(emailer->minimumWidth(), emailer->minimumHeight());
+                        filerCover->setFixedSize(attachWidget->contentsRect().width(), attachWidget->contentsRect().height());
+                        emailerCover->setFixedSize(email->minimumWidth(), email->minimumHeight());
 
                         suggestionerCover->setVisible(true);
                         filerCover->setVisible(true);
@@ -468,7 +477,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
 
                         filerCover->raise();
 
-                        Logic::GetContactListModel()->get_contact_profile("", [=](Logic::profile_ptr _profile, int32_t /*error*/)
+                        Logic::getContactListModel()->getContactProfile("", [=](Logic::profile_ptr _profile, int32_t /*error*/)
                         {
                             if (_profile)
                             {
@@ -477,11 +486,11 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                                 col.set_value_as_string("fb.screen_resolution", (QString("%1x%2").arg(qApp->desktop()->screenGeometry().width()).arg(qApp->desktop()->screenGeometry().height())).toStdString());
                                 col.set_value_as_string("fb.referrer", "icq");
                                 {
-                                    auto icqv = QString("ICQ %1").arg(VERSION_INFO_STR);
+                                    auto icqVer = QString("ICQ %1").arg(VERSION_INFO_STR);
                                     auto osv = QSysInfo::prettyProductName();
                                     if (!osv.length() || osv == "unknown")
                                         osv = QString("%1 %2 (%3 %4)").arg(QSysInfo::productType()).arg(QSysInfo::productVersion()).arg(QSysInfo::kernelType()).arg(QSysInfo::kernelVersion());
-                                    auto concat = QString("%1 %2 icq:%3").arg(osv).arg(icqv).arg(_profile ? _profile->get_aimid() : "");
+                                    auto concat = QString("%1 %2 icq:%3").arg(osv).arg(icqVer).arg(_profile ? _profile->get_aimid() : "");
                                     col.set_value_as_string("fb.question.3004", concat.toStdString());
                                     col.set_value_as_string("fb.question.159", osv.toStdString());
                                     col.set_value_as_string("fb.question.178", build::is_debug() ? "beta" : "live");
@@ -513,7 +522,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                                     col.set_value_as_string("fb.user_name", "");
                                 }
                                 col.set_value_as_string("fb.message", suggestioner->getPlainText().toStdString());
-                                col.set_value_as_string("fb.communication_email", emailer->text().toStdString());
+                                col.set_value_as_string("fb.communication_email", email->text().toStdString());
                                 col.set_value_as_string("Lang", QLocale::system().name().toStdString());
                                 col.set_value_as_string("attachements_count", QString::number((filesToSend.size() + 1)).toStdString()); // +1 'coz we're sending log txt
                                 if (!filesToSend.empty())
@@ -538,19 +547,19 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                     }
                     if (sb != suggestioner->property("normal").toBool())
                         Utils::ApplyStyle(suggestioner, suggestioner->styleSheet());
-                    if (eb != emailer->property("normal").toBool())
-                        Utils::ApplyStyle(emailer, emailer->styleSheet());
+                    if (eb != email->property("normal").toBool())
+                        Utils::ApplyStyle(email, email->styleSheet());
                 }));
 
-                GetDisconnector()->add("feedback/sent", scroll_area->connect(GetDispatcher(), &core_dispatcher::feedbackSent, [=](bool succeeded)
+                GetDisconnector()->add("feedback/sent", scrollArea->connect(GetDispatcher(), &core_dispatcher::feedbackSent, [=](bool succeeded)
                 {
                     sendButton->setVisible(true);
                     sendSpinner->setVisible(false);
                     sendingSign->setVisible(false);
 
                     suggestioner->setEnabled(true);
-                    filer->setEnabled(true);
-                    emailer->setEnabled(true);
+                    attachWidget->setEnabled(true);
+                    email->setEnabled(true);
 
                     suggestionerCover->setVisible(false);
                     filerCover->setVisible(false);
@@ -564,7 +573,7 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                     {
                         for (auto p: filesToSend)
                         {
-                            auto f = filer->findChild<QWidget *>(p.first);
+                            auto f = attachWidget->findChild<QWidget *>(p.first);
                             if (f)
                             {
                                 f->setVisible(false);
@@ -582,9 +591,9 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
                 }));
 
             }
-            sendingPageLayout->addWidget(sp);
+            sendingPageLayout->addWidget(sendWidget);
         }
-        scroll_area_content_layout->addWidget(sendingPage);
+        mainLayout->addWidget(sendingPage);
 
         auto successPageLayout = new QVBoxLayout(successPage);
         successPage->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
@@ -592,56 +601,56 @@ void GeneralSettingsWidget::Creator::initContactUs(QWidget* parent, std::map<std
         successPageLayout->setSpacing(0);
         successPageLayout->setAlignment(Qt::AlignCenter);
         {
-            auto mp = new QWidget(successPage);
-            Utils::grabTouchWidget(mp);
-            auto mpl = new QVBoxLayout(mp);
-            mp->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-            mpl->setAlignment(Qt::AlignCenter);
-            mpl->setContentsMargins(0, 0, 0, 0);
+            auto successWidget = new QWidget(successPage);
+            Utils::grabTouchWidget(successWidget);
+            auto successImageLayout = new QVBoxLayout(successWidget);
+            successWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+            successImageLayout->setAlignment(Qt::AlignCenter);
+            successImageLayout->setContentsMargins(0, 0, 0, 0);
             {
-                auto m = new QPushButton(mp);
-                m->setFlat(true);
-                m->setStyleSheet("border-image: url(:/resources/placeholders/content_illustration_good_200.png);");
-                m->setFixedSize(Utils::scale_value(120), Utils::scale_value(136));
-                mpl->addWidget(m);
+                auto successImage = new QPushButton(successWidget);
+                successImage->setObjectName("successImage");
+                successImage->setFlat(true);
+                successImage->setFixedSize(Utils::scale_value(120), Utils::scale_value(136));
+                successImageLayout->addWidget(successImage);
             }
-            successPageLayout->addWidget(mp);
+            successPageLayout->addWidget(successWidget);
 
-            auto t1p = new QWidget(successPage);
-            auto t1pl = new QVBoxLayout(t1p);
-            Utils::grabTouchWidget(t1p);
-            t1p->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-            t1pl->setAlignment(Qt::AlignCenter);
-            t1pl->setContentsMargins(0, 0, 0, 0);
+            auto thanksWidget = new QWidget(successPage);
+            auto thanksLayout = new QVBoxLayout(thanksWidget);
+            Utils::grabTouchWidget(thanksWidget);
+            thanksWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+            thanksLayout->setAlignment(Qt::AlignCenter);
+            thanksLayout->setContentsMargins(0, 0, 0, 0);
             {
-                auto t1 = new TextEmojiWidget(t1p, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#282828"), Utils::scale_value(32));
-                t1->setText(QT_TRANSLATE_NOOP("contactus_page", "Thank you for contacting us!"));
-                t1->setSizePolicy(QSizePolicy::Policy::Preferred, t1->sizePolicy().verticalPolicy());
-                t1pl->addWidget(t1);
+                auto thanksLabel = new TextEmojiWidget(thanksWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), CommonStyle::getTextCommonColor(), Utils::scale_value(32));
+                thanksLabel->setText(QT_TRANSLATE_NOOP("contactus_page", "Thank you for contacting us!"));
+                thanksLabel->setSizePolicy(QSizePolicy::Policy::Preferred, thanksLabel->sizePolicy().verticalPolicy());
+                thanksLayout->addWidget(thanksLabel);
             }
-            successPageLayout->addWidget(t1p);
+            successPageLayout->addWidget(thanksWidget);
 
-            auto t2p = new QWidget(successPage);
-            auto t2pl = new QVBoxLayout(t2p);
-            Utils::grabTouchWidget(t2p);
-            t2p->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
-            t2pl->setAlignment(Qt::AlignCenter);
-            t2pl->setContentsMargins(0, 0, 0, 0);
+            auto resendWidget = new QWidget(successPage);
+            auto resendLayout = new QVBoxLayout(resendWidget);
+            Utils::grabTouchWidget(resendWidget);
+            resendWidget->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+            resendLayout->setAlignment(Qt::AlignCenter);
+            resendLayout->setContentsMargins(0, 0, 0, 0);
             {
-                auto t2 = new TextEmojiWidget(t2p, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(32));
-                t2->setText(QT_TRANSLATE_NOOP("contactus_page", "Send another review"));
-                t2->setSizePolicy(QSizePolicy::Policy::Preferred, t2->sizePolicy().verticalPolicy());
-                t2->setCursor(Qt::PointingHandCursor);
-                GetDisconnector()->add("feedback/repeat", scroll_area->connect(t2, &TextEmojiWidget::clicked, [=]()
+                auto resendLink = new TextEmojiWidget(resendWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), CommonStyle::getLinkColor(), Utils::scale_value(32));
+                resendLink->setText(QT_TRANSLATE_NOOP("contactus_page", "Send another review"));
+                resendLink->setSizePolicy(QSizePolicy::Policy::Preferred, resendLink->sizePolicy().verticalPolicy());
+                resendLink->setCursor(Qt::PointingHandCursor);
+                GetDisconnector()->add("feedback/repeat", scrollArea->connect(resendLink, &TextEmojiWidget::clicked, [=]()
                 {
                     successPage->setVisible(false);
                     sendingPage->setVisible(true);
                 }));
-                t2pl->addWidget(t2);
+                resendLayout->addWidget(resendLink);
             }
-            successPageLayout->addWidget(t2p);
+            successPageLayout->addWidget(resendWidget);
         }
         successPage->setVisible(false);
-        scroll_area_content_layout->addWidget(successPage);
+        mainLayout->addWidget(successPage);
     }
 }

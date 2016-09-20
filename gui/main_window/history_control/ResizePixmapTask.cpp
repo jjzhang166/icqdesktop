@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#include "../../utils/profiling/auto_stop_watch.h"
-
 #include "ResizePixmapTask.h"
 
 namespace HistoryControl

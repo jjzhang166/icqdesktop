@@ -24,23 +24,27 @@ namespace Ui
 
     void AvatarPreview::paintEvent(QPaintEvent* _e)
     {
-        const auto &avatar = Utils::RoundImage(img_, "", false, false);
+        const auto &avatar = Utils::roundImage(img_, "", false, false);
         QPainter p(this);
         
         p.setRenderHint(QPainter::Antialiasing);
         p.setRenderHint(QPainter::SmoothPixmapTransform);
 
         auto size1_px = Utils::scale_value(size1);
-        p.drawPixmap(0, 0, size1_px, size1_px, avatar);
+        auto avatar1 = avatar.scaled(QSize(size1_px, size1_px), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        p.drawPixmap(0, 0, size1_px, size1_px, avatar1);
 
         auto size2_px = Utils::scale_value(size2);
-        p.drawPixmap(Utils::scale_value(size1 + margin1), Utils::scale_value(margin2), size2_px, size2_px, avatar);
+        auto avatar2 = avatar1.scaled(QSize(size2_px, size2_px), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        p.drawPixmap(Utils::scale_value(size1 + margin1), Utils::scale_value(margin2), size2_px, size2_px, avatar2);
 
         auto size3_px = Utils::scale_value(size3);
-        p.drawPixmap(Utils::scale_value(size1 + margin1), Utils::scale_value(margin2 + size2 + margin1), size3_px, size3_px, avatar);
+        auto avatar3 = avatar2.scaled(QSize(size3_px, size3_px), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        p.drawPixmap(Utils::scale_value(size1 + margin1), Utils::scale_value(margin2 + size2 + margin1), size3_px, size3_px, avatar3);
 
         auto size4_px = Utils::scale_value(size4);
-        p.drawPixmap(Utils::scale_value(size1 + margin1), Utils::scale_value(margin2 + size2 + margin1 + size3 + margin1), size4_px, size4_px, avatar);
+        auto avatar4 = avatar3.scaled(QSize(size4_px, size4_px), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        p.drawPixmap(Utils::scale_value(size1 + margin1), Utils::scale_value(margin2 + size2 + margin1 + size3 + margin1), size4_px, size4_px, avatar4);
 
         return QWidget::paintEvent(_e);
     }

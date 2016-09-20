@@ -29,7 +29,7 @@ int32_t add_members::init_request(std::shared_ptr<core::http_request_simple> _re
     ss_url << c_wim_host << "mchat/AddChat" <<
         "?f=json" <<
         "&chat_id=" <<  aimid_ <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&r=" <<  core::tools::system::generate_guid() <<
         "&members=" << members_to_add_;
 

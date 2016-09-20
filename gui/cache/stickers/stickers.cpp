@@ -10,32 +10,32 @@
 
 UI_STICKERS_NS_BEGIN
 
-std::unique_ptr<cache> g_cache;
-cache& get_cache();
+std::unique_ptr<Cache> g_cache;
+Cache& getCache();
 
-sticker::sticker()
+Sticker::Sticker()
     : id_(0)
 {
 
 }
 
-sticker::sticker(const int32_t _id)
+Sticker::Sticker(const int32_t _id)
     : id_(_id)
 {
     assert(id_ > 0);
 }
 
-void sticker::unserialize(core::coll_helper _coll)
+void Sticker::unserialize(core::coll_helper _coll)
 {
     id_ = _coll.get_value_as_int("id");
 }
 
-int32_t sticker::get_id() const
+int32_t Sticker::getId() const
 {
     return id_;
 }
 
-QImage sticker::get_image(const core::sticker_size _size) const
+QImage Sticker::getImage(const core::sticker_size _size) const
 {
     const auto found = images_.find(_size);
     if (found == images_.cend())
@@ -46,19 +46,19 @@ QImage sticker::get_image(const core::sticker_size _size) const
     return std::get<0>(found->second);
 }
 
-void sticker::set_image(const core::sticker_size _size, const QImage &_image)
+void Sticker::setImage(const core::sticker_size _size, const QImage &_image)
 {
     assert(!_image.isNull());
 
-    auto &image_data = images_[_size];
+    auto &imageData = images_[_size];
 
-    if (std::get<0>(image_data).isNull())
+    if (std::get<0>(imageData).isNull())
     {
-        image_data = std::make_tuple(_image, false);
+        imageData = std::make_tuple(_image, false);
     }
 }
 
-bool sticker::is_image_requested(const core::sticker_size _size) const
+bool Sticker::isImageRequested(const core::sticker_size _size) const
 {
     const auto found = images_.find(_size);
     if (found == images_.end())
@@ -69,19 +69,19 @@ bool sticker::is_image_requested(const core::sticker_size _size) const
     return std::get<1>(found->second);
 }
 
-void sticker::set_image_requested(const core::sticker_size _size, const bool _val)
+void Sticker::setImageRequested(const core::sticker_size _size, const bool _val)
 {
-    auto &image_data = images_[_size];
+    auto &imageData = images_[_size];
 
-    image_data = std::make_tuple(
-        std::get<0>(image_data),
+    imageData = std::make_tuple(
+        std::get<0>(imageData),
         _val
         );
 
-    assert(!_val || std::get<0>(image_data).isNull());
+    assert(!_val || std::get<0>(imageData).isNull());
 }
 
-void sticker::clear_cache()
+void Sticker::clearCache()
 {
     for (auto &pair : images_)
     {
@@ -93,105 +93,105 @@ void sticker::clear_cache()
     }
 }
 
-set::set(int32_t _max_size)
-    :	max_size_(_max_size),
+Set::Set(int32_t _maxSize)
+    :	maxSize_(_maxSize),
     id_(-1)
 {
 
 }
 
 
-QImage set::get_sticker_image(const int32_t _sticker_id, const core::sticker_size _size)
+QImage Set::getStickerImage(const int32_t _stickerId, const core::sticker_size _size)
 {
     assert(_size > core::sticker_size::min);
     assert(_size < core::sticker_size::max);
 
-    auto iter = stickers_tree_.find(_sticker_id);
-    if (iter == stickers_tree_.end())
+    auto iter = stickersTree_.find(_stickerId);
+    if (iter == stickersTree_.end())
     {
         return QImage();
     }
 
-    auto image = iter->second->get_image(_size);
+    auto image = iter->second->getImage(_size);
 
-    if (image.isNull() && !iter->second->is_image_requested(_size))
+    if (image.isNull() && !iter->second->isImageRequested(_size))
     {
-        const auto set_id = get_id();
-        assert(set_id > 0);
+        const auto setId = getId();
+        assert(setId > 0);
 
-        const auto sticker_id = iter->second->get_id();
-        assert(sticker_id);
+        const auto stickerId = iter->second->getId();
+        assert(stickerId);
 
-        Ui::GetDispatcher()->getSticker(set_id, sticker_id, _size);
+        Ui::GetDispatcher()->getSticker(setId, stickerId, _size);
 
-        iter->second->set_image_requested(_size, true);
+        iter->second->setImageRequested(_size, true);
     }
 
     return image;
 }
 
-void set::set_sticker_image(const int32_t _sticker_id, const core::sticker_size _size, QImage _image)
+void Set::setStickerImage(const int32_t _stickerId, const core::sticker_size _size, QImage _image)
 {
-    assert(_sticker_id > 0);
+    assert(_stickerId > 0);
     assert(_size > core::sticker_size::min);
     assert(_size < core::sticker_size::max);
 
-    sticker_sptr update_sticker;
+    stickerSptr updateSticker;
 
-    auto iter = stickers_tree_.find(_sticker_id);
-    if (iter == stickers_tree_.end())
+    auto iter = stickersTree_.find(_stickerId);
+    if (iter == stickersTree_.end())
     {
-        update_sticker.reset(new sticker(_sticker_id));
-        stickers_tree_[_sticker_id] = update_sticker;
+        updateSticker.reset(new Sticker(_stickerId));
+        stickersTree_[_stickerId] = updateSticker;
     }
     else
     {
-        update_sticker = iter->second;
+        updateSticker = iter->second;
     }
 
-    update_sticker->set_image(_size, _image);
+    updateSticker->setImage(_size, _image);
 }
 
-void set::set_id(int32_t _id)
+void Set::setId(int32_t _id)
 {
     id_= _id;
 }
 
-int32_t set::get_id() const
+int32_t Set::getId() const
 {
     return id_;
 }
 
-bool set::empty() const
+bool Set::empty() const
 {
     return stickers_.empty();
 }
 
-void set::set_name(const QString& _name)
+void Set::setName(const QString& _name)
 {
     name_ = _name;
 }
 
-QString set::get_name() const
+QString Set::getName() const
 {
     return name_;
 }
 
-void set::load_icon(char* _data, int32_t _size)
+void Set::loadIcon(char* _data, int32_t _size)
 {
     icon_.loadFromData((const uchar*)_data, _size);
     Utils::check_pixel_ratio(icon_);
 }
 
-QPixmap set::get_icon() const
+QPixmap Set::getIcon() const
 {
     return icon_;
 }
 
-sticker_sptr set::get_sticker(int32_t _sticker_id) const
+stickerSptr Set::getSticker(int32_t _stickerId) const
 {
-    auto iter = stickers_tree_.find(_sticker_id);
-    if (iter != stickers_tree_.end())
+    auto iter = stickersTree_.find(_stickerId);
+    if (iter != stickersTree_.end())
     {
         return iter->second;
     }
@@ -199,36 +199,36 @@ sticker_sptr set::get_sticker(int32_t _sticker_id) const
     return nullptr;
 }
 
-int32_t set::get_count() const
+int32_t Set::getCount() const
 {
     return (int32_t) stickers_.size();
 }
 
-int32_t set::get_sticker_pos(int32_t _sticker_id) const
+int32_t Set::getStickerPos(int32_t _stickerId) const
 {
     for (int32_t i = 0; i < (int32_t) stickers_.size(); ++i)
     {
-        if (stickers_[i] == _sticker_id)
+        if (stickers_[i] == _stickerId)
             return i;
     }
 
     return -1;
 }
 
-void set::unserialize(core::coll_helper _coll)
+void Set::unserialize(core::coll_helper _coll)
 {
-    set_id(_coll.get_value_as_int("id"));
-    set_name(_coll.get_value_as_string("name"));
+    setId(_coll.get_value_as_int("id"));
+    setName(_coll.get_value_as_string("name"));
 
     if (_coll.is_value_exist("icon"))
     {
-        core::istream* icon_stream = _coll.get_value_as_stream("icon");
-        if (icon_stream)
+        core::istream* iconStream = _coll.get_value_as_stream("icon");
+        if (iconStream)
         {
-            int32_t icon_size = icon_stream->size();
-            if (icon_size > 0)
+            int32_t iconSize = iconStream->size();
+            if (iconSize > 0)
             {
-                load_icon((char*)icon_stream->read(icon_size), icon_size);
+                loadIcon((char*)iconStream->read(iconSize), iconSize);
             }
         }
     }
@@ -241,89 +241,89 @@ void set::unserialize(core::coll_helper _coll)
     {
         core::coll_helper coll_sticker(sticks->get_at(i)->get_as_collection(), false);
 
-        auto inserted_sticker = std::make_shared<sticker>();
-        inserted_sticker->unserialize(coll_sticker);
+        auto insertedSticker = std::make_shared<Sticker>();
+        insertedSticker->unserialize(coll_sticker);
 
-        stickers_tree_[inserted_sticker->get_id()] = inserted_sticker;
-        stickers_.push_back(inserted_sticker->get_id());
+        stickersTree_[insertedSticker->getId()] = insertedSticker;
+        stickers_.push_back(insertedSticker->getId());
     }
 }
 
-void set::reset_flag_requested(const int32_t _sticker_id, const core::sticker_size _size)
+void Set::resetFlagRequested(const int32_t _stickerId, const core::sticker_size _size)
 {
-    auto iter = stickers_tree_.find(_sticker_id);
-    if (iter != stickers_tree_.end())
+    auto iter = stickersTree_.find(_stickerId);
+    if (iter != stickersTree_.end())
     {
-        iter->second->set_image_requested(_size, false);
+        iter->second->setImageRequested(_size, false);
     }
 }
 
-void set::clear_cache()
+void Set::clearCache()
 {
-    for (auto iter = stickers_tree_.begin(); iter != stickers_tree_.end(); ++iter)
+    for (auto iter = stickersTree_.begin(); iter != stickersTree_.end(); ++iter)
     {
-        iter->second->clear_cache();
+        iter->second->clearCache();
     }
 }
 
-const stickers_array& set::get_stickers() const
+const stickersArray& Set::getStickers() const
 {
     return stickers_;
 }
 
 void unserialize(core::coll_helper _coll)
 {
-    get_cache().unserialize(_coll);
+    getCache().unserialize(_coll);
 }
 
-void set_sticker_data(core::coll_helper _coll)
+void setStickerData(core::coll_helper _coll)
 {
-    get_cache().set_sticker_data(_coll);
+    getCache().setStickerData(_coll);
 }
 
-const sets_ids_array& get_stickers_sets()
+const setsIdsArray& getStickersSets()
 {
-    return get_cache().get_sets();
+    return getCache().getSets();
 }
 
-void clear_cache()
+void clearCache()
 {
-    get_cache().clear_cache();
+    getCache().clearCache();
 }
 
-std::shared_ptr<sticker> get_sticker(uint32_t _set_id, uint32_t _sticker_id)
+std::shared_ptr<Sticker> getSticker(uint32_t _setId, uint32_t _stickerId)
 {
-    return get_cache().get_sticker(_set_id, _sticker_id);
+    return getCache().getSticker(_setId, _stickerId);
 }
 
-cache::cache()
+Cache::Cache()
 {
 
 }
 
-void cache::set_sticker_data(core::coll_helper _coll)
+void Cache::setStickerData(core::coll_helper _coll)
 {
-    const qint32 set_id = _coll.get_value_as_int("set_id");
+    const qint32 setId = _coll.get_value_as_int("set_id");
 
-    set_sptr sticker_set;
+    setSptr stickerSet;
 
-    auto iter_set = sets_tree_.find(set_id);
-    if (iter_set == sets_tree_.end())
+    auto iterSet = setsTree_.find(setId);
+    if (iterSet == setsTree_.end())
     {
-        sticker_set = std::make_shared<set>();
-        sticker_set->set_id(set_id);
-        sets_tree_[set_id] = sticker_set;
+        stickerSet = std::make_shared<Set>();
+        stickerSet->setId(setId);
+        setsTree_[setId] = stickerSet;
     }
     else
     {
-        sticker_set = iter_set->second;
+        stickerSet = iterSet->second;
     }
 
     
-    const qint32 sticker_id = _coll.get_value_as_int("sticker_id");
+    const qint32 stickerId = _coll.get_value_as_int("sticker_id");
 
-    const auto load_data =
-        [&_coll, sticker_set, sticker_id](const char *_id, const core::sticker_size _size)
+    const auto loadData =
+        [&_coll, stickerSet, stickerId](const char *_id, const core::sticker_size _size)
     {
         if (!_coll->is_value_exist(_id))
         {
@@ -331,25 +331,25 @@ void cache::set_sticker_data(core::coll_helper _coll)
         }
 
         auto data = _coll.get_value_as_stream(_id);
-        const auto data_size = data->size();
+        const auto dataSize = data->size();
 
         QImage image;
-        if (image.loadFromData(data->read(data_size), data_size))
+        if (image.loadFromData(data->read(dataSize), dataSize))
         {
-            sticker_set->set_sticker_image(sticker_id, _size, std::move(image));
+            stickerSet->setStickerImage(stickerId, _size, std::move(image));
         }
     };
 
-    load_data("data/small", core::sticker_size::small);
-    load_data("data/medium", core::sticker_size::medium);
-    load_data("data/large", core::sticker_size::large);
+    loadData("data/small", core::sticker_size::small);
+    loadData("data/medium", core::sticker_size::medium);
+    loadData("data/large", core::sticker_size::large);
 
-    sticker_set->reset_flag_requested(sticker_id, core::sticker_size::small);
-    sticker_set->reset_flag_requested(sticker_id, core::sticker_size::medium);
-    sticker_set->reset_flag_requested(sticker_id, core::sticker_size::large);
+    stickerSet->resetFlagRequested(stickerId, core::sticker_size::small);
+    stickerSet->resetFlagRequested(stickerId, core::sticker_size::medium);
+    stickerSet->resetFlagRequested(stickerId, core::sticker_size::large);
 }
 
-void cache::unserialize(const core::coll_helper &_coll)
+void Cache::unserialize(const core::coll_helper &_coll)
 {
     core::iarray* sets = _coll.get_value_as_array("sets");
     if (!sets)
@@ -360,142 +360,142 @@ void cache::unserialize(const core::coll_helper &_coll)
 
     for (int32_t i = 0; i < sets->size(); i++)
     {
-        core::coll_helper coll_set(sets->get_at(i)->get_as_collection(), false);
+        core::coll_helper collSet(sets->get_at(i)->get_as_collection(), false);
 
-        auto inserted_set = std::make_shared<set>();
+        auto insertedSet = std::make_shared<Set>();
 
-        inserted_set->unserialize(coll_set);
+        insertedSet->unserialize(collSet);
 
-        sets_tree_[inserted_set->get_id()] = inserted_set;
+        setsTree_[insertedSet->getId()] = insertedSet;
 
-        sets_.push_back(inserted_set->get_id());
+        sets_.push_back(insertedSet->getId());
     }
 }
 
-const sets_ids_array& cache::get_sets() const
+const setsIdsArray& Cache::getSets() const
 {
     return sets_;
 }
 
-set_sptr cache::get_set(int32_t _set_id) const
+setSptr Cache::getSet(int32_t _setId) const
 {
-    auto iter = sets_tree_.find(_set_id);
-    if (iter == sets_tree_.end())
+    auto iter = setsTree_.find(_setId);
+    if (iter == setsTree_.end())
         return nullptr;
 
     return iter->second;
 }
 
-set_sptr cache::insert_set(int32_t _set_id)
+setSptr Cache::insertSet(int32_t _setId)
 {
-    auto iter = sets_tree_.find(_set_id);
-    if (iter != sets_tree_.end())
+    auto iter = setsTree_.find(_setId);
+    if (iter != setsTree_.end())
     {
         assert(false);
         return iter->second;
     }
 
-    auto inserted_set = std::make_shared<set>();
-    inserted_set->set_id(_set_id);
-    sets_tree_[_set_id] = inserted_set;
+    auto insertedSet = std::make_shared<Set>();
+    insertedSet->setId(_setId);
+    setsTree_[_setId] = insertedSet;
 
-    return inserted_set;
+    return insertedSet;
 }
 
-std::shared_ptr<sticker> cache::get_sticker(uint32_t _set_id, uint32_t _sticker_id) const
+std::shared_ptr<Sticker> Cache::getSticker(uint32_t _setId, uint32_t _stickerId) const
 {
-    auto iter_set = sets_tree_.find(_set_id);
-    if (iter_set == sets_tree_.end())
+    auto iterSet = setsTree_.find(_setId);
+    if (iterSet == setsTree_.end())
         return nullptr;
 
-    return iter_set->second->get_sticker(_sticker_id);
+    return iterSet->second->getSticker(_stickerId);
 }
 
-void cache::clear_cache()
+void Cache::clearCache()
 {
-    for (auto iter = sets_tree_.begin(); iter != sets_tree_.end(); ++iter)
+    for (auto iter = setsTree_.begin(); iter != setsTree_.end(); ++iter)
     {
-        iter->second->clear_cache();
+        iter->second->clearCache();
     }
 }
 
-const int32_t get_set_stickers_count(int32_t _set_id)
+const int32_t getSetStickersCount(int32_t _setId)
 {
-    auto search_set = g_cache->get_set(_set_id);
-    assert(search_set);
-    if (!search_set)
+    auto searchSet = g_cache->getSet(_setId);
+    assert(searchSet);
+    if (!searchSet)
         return 0;
 
-    return search_set->get_count();
+    return searchSet->getCount();
 }
 
-const int32_t get_sticker_pos_in_set(int32_t _set_id, int32_t _sticker_id)
+const int32_t getStickerPosInSet(int32_t _setId, int32_t _stickerId)
 {
-    auto search_set = g_cache->get_set(_set_id);
-    assert(search_set);
-    if (!search_set)
+    auto searchSet = g_cache->getSet(_setId);
+    assert(searchSet);
+    if (!searchSet)
         return -1;
 
-    return search_set->get_sticker_pos(_sticker_id);
+    return searchSet->getStickerPos(_stickerId);
 }
 
-const stickers_array& get_stickers(int32_t _set_id)
+const stickersArray& getStickers(int32_t _setId)
 {
-    auto search_set = g_cache->get_set(_set_id);
-    assert(search_set);
-    if (!search_set)
+    auto searchSet = g_cache->getSet(_setId);
+    assert(searchSet);
+    if (!searchSet)
     {
-        return g_cache->insert_set(_set_id)->get_stickers();
+        return g_cache->insertSet(_setId)->getStickers();
     }
 
-    return search_set->get_stickers();
+    return searchSet->getStickers();
 }
 
-QImage get_sticker_image(int32_t _set_id, int32_t _sticker_id, const core::sticker_size _size)
+QImage getStickerImage(int32_t _setId, int32_t _stickerId, const core::sticker_size _size)
 {
-    auto search_set = g_cache->get_set(_set_id);
-    if (!search_set)
+    auto searchSet = g_cache->getSet(_setId);
+    if (!searchSet)
     {
         return QImage();
     }
 
-    return search_set->get_sticker_image(_sticker_id, _size);
+    return searchSet->getStickerImage(_stickerId, _size);
 }
 
-QPixmap get_set_icon(int32_t _set_id)
+QPixmap getSetIcon(int32_t _setId)
 {
-    auto search_set = g_cache->get_set(_set_id);
-    assert(search_set);
-    if (!search_set)
+    auto searchSet = g_cache->getSet(_setId);
+    assert(searchSet);
+    if (!searchSet)
     {
         return QPixmap();
     }
 
-    return search_set->get_icon();
+    return searchSet->getIcon();
 }
 
-QString get_set_name(int32_t _set_id)
+QString getSetName(int32_t _setId)
 {
-    auto search_set = g_cache->get_set(_set_id);
-    assert(search_set);
-    if (!search_set)
+    auto searchSet = g_cache->getSet(_setId);
+    assert(searchSet);
+    if (!searchSet)
     {
         return QString();
     }
 
-    return search_set->get_name();
+    return searchSet->getName();
 }
 
-void reset_cache()
+void resetCache()
 {
     if (g_cache)
         g_cache.reset();
 }
 
-cache& get_cache()
+Cache& getCache()
 {
     if (!g_cache)
-        g_cache.reset(new cache());
+        g_cache.reset(new Cache());
 
     return (*g_cache);
 }

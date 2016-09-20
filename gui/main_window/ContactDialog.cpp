@@ -1,15 +1,20 @@
 #include "stdafx.h"
 #include "ContactDialog.h"
-#include "history_control/HistoryControl.h"
-#include "sidebar/Sidebar.h"
-#include "input_widget/InputWidget.h"
-#include "smiles_menu/SmilesMenu.h"
-#include "contact_list/ContactListModel.h"
-#include "../core_dispatcher.h"
-#include "../utils/InterConnector.h"
-#include "../utils/gui_coll_helper.h"
-#include "../gui_settings.h"
+
 #include "MainWindow.h"
+#include "contact_list/ContactListModel.h"
+#include "history_control/HistoryControl.h"
+#include "input_widget/InputWidget.h"
+#include "sidebar/Sidebar.h"
+#include "smiles_menu/SmilesMenu.h"
+#include "../core_dispatcher.h"
+#include "../gui_settings.h"
+#include "../utils/gui_coll_helper.h"
+#include "../utils/InterConnector.h"
+
+#ifdef __APPLE__
+#   include "../utils/macos/mac_support.h"
+#endif
 
 namespace
 {
@@ -39,15 +44,31 @@ namespace Ui
         painter.setRenderHint(QPainter::Antialiasing);
 
         painter.setBrush(QBrush(QColor(255, 255, 255, 0)));
-        painter.fillRect(rect().x(), rect().y(), rect().width(), Utils::scale_value(64), QBrush(QColor(255, 255, 255, 1)));
-        painter.fillRect(rect().x(), rect().y() + Utils::scale_value(64), rect().width(), rect().height() - Utils::scale_value(64), QBrush(QColor(255, 255, 255, 255 * 0.9)));
+        painter.fillRect(
+            rect().x(),
+            rect().y(),
+            rect().width(),
+            Utils::scale_value(64),
+            QBrush(QColor(255, 255, 255, 1))
+        );
+        painter.fillRect(
+            rect().x(),
+            rect().y() + Utils::scale_value(64),
+            rect().width(),
+            rect().height() - Utils::scale_value(64),
+            QBrush(QColor(255, 255, 255, 255 * 0.9))
+        );
 
-        QPen pen;
-        pen.setColor(QColor(0x57,0x9e,0x1c));
-        pen.setStyle(Qt::DashLine);
-        pen.setWidth(Utils::scale_value(2));
+        QPen pen (QColor(0x57, 0x9e, 0x1c), Utils::scale_value(2), Qt::DashLine, Qt::RoundCap);
         painter.setPen(pen);
-        painter.drawRoundedRect(Utils::scale_value(24), Utils::scale_value(64), rect().width() - Utils::scale_value(24) * 2, rect().height() - Utils::scale_value(64) - Utils::scale_value(24), Utils::scale_value(8), Utils::scale_value(8));
+        painter.drawRoundedRect(
+            Utils::scale_value(24),
+            Utils::scale_value(top_height) + Utils::scale_value(24),
+            rect().width() - Utils::scale_value(24) * 2,
+            rect().height() - Utils::scale_value(top_height) - Utils::scale_value(24) * 2,
+            Utils::scale_value(8),
+            Utils::scale_value(8)
+        );
 
         QPixmap p(Utils::parse_image_name(":/resources/file_sharing/content_upload_main_100.png"));
         Utils::check_pixel_ratio(p);
@@ -55,36 +76,42 @@ namespace Ui
         int x = (rect().width() / 2) - (p.width() / 2. / ratio);
         int y = (rect().height() / 2) - (p.height() / 2. / ratio);
         painter.drawPixmap(x, y, p);
-        painter.setFont(Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15)));
-        Utils::drawText(painter, QPointF(rect().width() / 2, y + p.height() + Utils::scale_value(24)), Qt::AlignHCenter | Qt::AlignVCenter, QT_TRANSLATE_NOOP("filesharing_widget", "Drop files to place"));
+        painter.setFont(Fonts::appFontScaled(15));
+        Utils::drawText(
+            painter,
+            QPointF(rect().width() / 2,
+                y + p.height() + Utils::scale_value(24)),
+            Qt::AlignHCenter | Qt::AlignVCenter,
+            QT_TRANSLATE_NOOP("chat_page", "Drop files to place")
+        );
     }
 
-    void DragOverlayWindow::dragEnterEvent(QDragEnterEvent *e)
+    void DragOverlayWindow::dragEnterEvent(QDragEnterEvent *_e)
     {
-        e->acceptProposedAction();
+        _e->acceptProposedAction();
     }
 
-    void DragOverlayWindow::dragLeaveEvent(QDragLeaveEvent *e)
+    void DragOverlayWindow::dragLeaveEvent(QDragLeaveEvent *_e)
     {
         hide();
-        e->accept();
+        _e->accept();
         Utils::InterConnector::instance().setDragOverlay(false);
     }
 
-    void DragOverlayWindow::dragMoveEvent(QDragMoveEvent *e)
+    void DragOverlayWindow::dragMoveEvent(QDragMoveEvent *_e)
     {
-        e->acceptProposedAction();
+        _e->acceptProposedAction();
     }
 
-    void DragOverlayWindow::dropEvent(QDropEvent *e)
+    void DragOverlayWindow::dropEvent(QDropEvent *_e)
     {
-        const QMimeData* mimeData = e->mimeData();
+        const QMimeData* mimeData = _e->mimeData();
 
         if (mimeData->hasUrls())
         {
             QList<QUrl> urlList = mimeData->urls();
 
-            QString contact = Logic::GetContactListModel()->selectedContact();
+            QString contact = Logic::getContactListModel()->selectedContact();
             for (QUrl url : urlList)
             {
                 if (url.isLocalFile())
@@ -111,7 +138,7 @@ namespace Ui
             }
         }
 
-        e->acceptProposedAction();
+        _e->acceptProposedAction();
         hide();
         Utils::InterConnector::instance().setDragOverlay(false);
     }
@@ -123,6 +150,7 @@ namespace Ui
 		, smilesMenu_(new Smiles::SmilesMenu(this))
         , dragOverlayWindow_(new DragOverlayWindow(this))
         , overlayUpdateTimer_(new QTimer(this))
+        , sidebarUpdateTimer_(new QTimer(this))
         , topWidget_(new QStackedWidget(this))
         , sidebar_(new Sidebar(this))
         , rootLayout_(new QVBoxLayout())
@@ -157,13 +185,12 @@ namespace Ui
 
 		connect(inputWidget_, SIGNAL(smilesMenuSignal()), this, SLOT(onSmilesMenu()), Qt::QueuedConnection);
 		connect(inputWidget_, SIGNAL(editFocusOut()), this, SLOT(onInputEditFocusOut()), Qt::QueuedConnection);
-		connect(inputWidget_, SIGNAL(editFocusOut()), this, SLOT(onInputEditFocusOut()), Qt::QueuedConnection);
-		connect(inputWidget_, SIGNAL(sendMessage(QString)), this, SIGNAL(sendMessage(QString)), Qt::QueuedConnection);
+		connect(inputWidget_, SIGNAL(sendMessage(QString)), this, SLOT(onSendMessage(QString)), Qt::QueuedConnection);
 
-		connect(historyControlWidget_, SIGNAL(quote(QString)), inputWidget_, SLOT(quote(QString)), Qt::QueuedConnection);
-
-		connect(this, SIGNAL(contactSelected(QString)), inputWidget_, SLOT(contactSelected(QString)), Qt::QueuedConnection);
-		connect(this, SIGNAL(contactSelected(QString)), historyControlWidget_, SLOT(contactSelected(QString)), Qt::QueuedConnection);
+        connect(historyControlWidget_, SIGNAL(quote(QList<Data::Quote>)), inputWidget_, SLOT(quote(QList<Data::Quote>)), Qt::QueuedConnection);        
+        
+		connect(this, &ContactDialog::contactSelected, inputWidget_, &InputWidget::contactSelected, Qt::QueuedConnection);
+		connect(this, &ContactDialog::contactSelected, historyControlWidget_, &HistoryControl::contactSelected, Qt::QueuedConnection);
         connect(historyControlWidget_, SIGNAL(clicked()), this, SLOT(historyControlClicked()), Qt::QueuedConnection);
 
 		initSmilesMenu();
@@ -172,6 +199,9 @@ namespace Ui
         overlayUpdateTimer_->setInterval(500);
         overlayUpdateTimer_->setSingleShot(false);
         connect(overlayUpdateTimer_, SIGNAL(timeout()), this, SLOT(updateDragOverlay()), Qt::QueuedConnection);
+
+        sidebarUpdateTimer_->setInterval(500);
+        sidebarUpdateTimer_->setSingleShot(true);
 	}
 
 
@@ -181,7 +211,7 @@ namespace Ui
         topWidget_ = 0;
 	}
 
-    void ContactDialog::showSidebar(const QString& aimId, int page)
+    void ContactDialog::showSidebar(const QString& _aimId, int _page)
     {
         if (!layout_->itemAt(1))
         {
@@ -190,10 +220,12 @@ namespace Ui
             sidebar_->show();
         }
         bool showSingle = sideBarShowSingle(width());
+        bool force = _aimId != sidebar_->currentAimId();
         sidebar_->setSidebarWidth(showSingle ? Utils::scale_value(sidebar_max_width) : Utils::scale_value(sidebar_default_width));
-        sidebar_->preparePage(aimId, page == all_members ? menu_page : (SidebarPages)page);
-        setSidebarVisible(true);
-        if (page == all_members)
+        sidebar_->preparePage(_aimId, _page == all_members ? menu_page : (SidebarPages)_page);
+        setSidebarVisible(true, force);
+        sidebarUpdateTimer_->start();
+        if (_page == all_members)
             sidebar_->showAllMembers();
     }
 
@@ -207,24 +239,29 @@ namespace Ui
         return sidebar_;
     }
 
-    void ContactDialog::setSidebarVisible(bool show)
+    void ContactDialog::setSidebarVisible(bool _show, bool _force)
     {
-        sidebarVisible_ = show;
+        if (sidebarVisible_ == _show && !_force)
+            return;
 
-        get_gui_settings()->set_value<bool>(settings_sidebar_hide, !show);
+        sidebarVisible_ = _show;
 
-        bool showSingle = sideBarShowSingle(width());
+        get_gui_settings()->set_value<bool>(settings_sidebar_hide, !_show);
 
-        int sidebarWidth = 0;
-        if (show)
+        const auto showSingle = sideBarShowSingle(width());
+
+        auto sidebarWidth = 0;
+        if (_show)
+        {
             sidebarWidth = showSingle ? width() : Utils::scale_value(sidebar_default_width);
+        }
 
         if (showSingle)
         {
-            if (show)
+            if (_show)
             {
                 historyControlWidget_->hide();
-                inputWidget_->hide();
+                inputWidget_->hideNoClear();
                 smilesMenu_->hide();
                 sidebar_->setFixedWidth(sidebarWidth);
             }
@@ -260,23 +297,23 @@ namespace Ui
         return needShowSidebar(width());
     }
 
-    bool ContactDialog::needShowSidebar(int _contact_dialog_width)
+    bool ContactDialog::needShowSidebar(int _contactDialogWidth)
     {
-        return !get_gui_settings()->get_value<bool>(settings_sidebar_hide, false) && _contact_dialog_width > Utils::scale_value(sidebar_show_width);
+        return !get_gui_settings()->get_value<bool>(settings_sidebar_hide, false) && _contactDialogWidth > Utils::scale_value(sidebar_show_width);
     }
 
-    bool ContactDialog::sideBarShowSingle(int _contact_dialog_width)
+    bool ContactDialog::sideBarShowSingle(int _contactDialogWidth)
     {
-        return _contact_dialog_width < Utils::scale_value(sidebar_single_width);
+        return _contactDialogWidth < Utils::scale_value(sidebar_single_width);
     }
 
-    std::string ContactDialog::getSideBarPolicy(int _contact_dialog_width)
+    std::string ContactDialog::getSideBarPolicy(int _contactDialogWidth)
     {
-        if (needShowSidebar(_contact_dialog_width))
+        if (needShowSidebar(_contactDialogWidth))
         {
             return "Sidebar_AlwaysShown";
         }
-        else if (sideBarShowSingle(_contact_dialog_width))
+        else if (sideBarShowSingle(_contactDialogWidth))
         {
             return "Sidebar_Fullsize";
         }
@@ -299,8 +336,8 @@ namespace Ui
 	{
 		smilesMenu_->setFixedHeight(0);
 
-		connect(smilesMenu_, SIGNAL(emoji_selected(int32_t, int32_t)), inputWidget_, SLOT(insert_emoji(int32_t, int32_t)));
-		connect(smilesMenu_, SIGNAL(sticker_selected(int32_t, int32_t)), inputWidget_, SLOT(send_sticker(int32_t, int32_t)));
+		connect(smilesMenu_, SIGNAL(emojiSelected(int32_t, int32_t)), inputWidget_, SLOT(insert_emoji(int32_t, int32_t)));
+		connect(smilesMenu_, SIGNAL(stickerSelected(int32_t, int32_t)), inputWidget_, SLOT(send_sticker(int32_t, int32_t)));
 	}
 
 	void ContactDialog::initInputWidget()
@@ -321,6 +358,11 @@ namespace Ui
 		smilesMenu_->Hide();
 	}
 
+    void ContactDialog::hideSmilesMenu()
+    {
+        smilesMenu_->Hide();
+    }
+
     void ContactDialog::updateDragOverlay()
     {
         if (!rect().contains(mapFromGlobal(QCursor::pos())))
@@ -329,8 +371,16 @@ namespace Ui
 
     void ContactDialog::historyControlClicked()
     {
-        if (!needShowSidebar())
+        if (!needShowSidebar() && !sidebarUpdateTimer_->isActive())
             setSidebarVisible(false);
+        emit clicked();
+    }
+
+    void ContactDialog::onSendMessage(QString _contact)
+    {
+        historyControlWidget_->scrollHistoryToBottom(_contact);
+
+        emit sendMessage(_contact);
     }
 
     void ContactDialog::cancelSelection()
@@ -349,8 +399,12 @@ namespace Ui
 
     void ContactDialog::showDragOverlay()
     {
+#ifdef __APPLE__
+        auto pos = MacSupport::viewPosition(winId());
+#else
         QPoint pos = QPoint(rect().x(), rect().y());
         pos = mapToGlobal(pos);
+#endif
         dragOverlayWindow_->move(pos.x(),pos.y());
         dragOverlayWindow_->resize(width(), height());
         dragOverlayWindow_->show();
@@ -364,103 +418,130 @@ namespace Ui
         Utils::InterConnector::instance().setDragOverlay(false);
     }
 
-    void ContactDialog::insertTopWidget(const QString& aimId, QWidget* widget)
+    void ContactDialog::insertTopWidget(const QString& _aimId, QWidget* _widget)
     {
-        if (!topWidgetsCache_.contains(aimId))
+        if (!topWidgetsCache_.contains(_aimId))
         {
-            topWidgetsCache_.insert(aimId, widget);
-            topWidget_->addWidget(widget);
+            topWidgetsCache_.insert(_aimId, _widget);
+            topWidget_->addWidget(_widget);
         }
 
         topWidget_->show();
-        topWidget_->setCurrentWidget(topWidgetsCache_[aimId]);
+        topWidget_->setCurrentWidget(topWidgetsCache_[_aimId]);
     }
 
-    void ContactDialog::removeTopWidget(const QString& aimId)
+    void ContactDialog::removeTopWidget(const QString& _aimId)
     {
         if (!topWidget_)
             return;
 
-        if (topWidgetsCache_.contains(aimId))
+        if (topWidgetsCache_.contains(_aimId))
         {
-            topWidget_->removeWidget(topWidgetsCache_[aimId]);
-            topWidgetsCache_.remove(aimId);
+            topWidget_->removeWidget(topWidgetsCache_[_aimId]);
+            topWidgetsCache_.remove(_aimId);
         }
 
         if (!topWidget_->currentWidget())
             topWidget_->hide();
     }
 
-    void ContactDialog::dragEnterEvent(QDragEnterEvent *e)
+    void ContactDialog::dragEnterEvent(QDragEnterEvent *_e)
     {
-        if (Logic::GetContactListModel()->selectedContact().isEmpty() || !(e->mimeData() && e->mimeData()->hasUrls()))
+        if (Logic::getContactListModel()->selectedContact().isEmpty() || !(_e->mimeData() && _e->mimeData()->hasUrls()) || _e->mimeData()->property("icq").toBool())
         {
-            e->setDropAction(Qt::IgnoreAction);
+            _e->setDropAction(Qt::IgnoreAction);
             return;
         }
 
+        Utils::InterConnector::instance().getMainWindow()->closeGallery();
         Utils::InterConnector::instance().getMainWindow()->activate();
         if (!dragOverlayWindow_->isVisible())
             showDragOverlay();
-        e->acceptProposedAction();
+        _e->acceptProposedAction();
     }
 
-    void ContactDialog::dragLeaveEvent(QDragLeaveEvent *e)
+    void ContactDialog::dragLeaveEvent(QDragLeaveEvent *_e)
     {
-        e->accept();
+        _e->accept();
     }
 
-    void ContactDialog::dragMoveEvent(QDragMoveEvent *e)
+    void ContactDialog::dragMoveEvent(QDragMoveEvent *_e)
     {
-        e->acceptProposedAction();
+        _e->acceptProposedAction();
     }
 
-    void ContactDialog::resizeEvent(QResizeEvent* e)
+    void ContactDialog::resizeEvent(QResizeEvent* _e)
     {
         if (isSidebarVisible())
         {
-            int width = e->size().width();
-            bool oldShowSingle = sideBarShowSingle(e->oldSize().width());
+            int width = _e->size().width();
+            bool oldShowSingle = sideBarShowSingle(_e->oldSize().width());
             bool showSingle = sideBarShowSingle(width);
+            sidebar_->setSidebarWidth(showSingle ? Utils::scale_value(sidebar_max_width) : Utils::scale_value(sidebar_default_width));
+            sidebar_->setFixedWidth(showSingle ? width : Utils::scale_value(sidebar_default_width));
+
+            if (!showSingle)
+            {
+                historyControlWidget_->setFixedWidth(width - Utils::scale_value(sidebar_default_width));
+                inputWidget_->setFixedWidth(width - Utils::scale_value(sidebar_default_width));
+                smilesMenu_->setFixedWidth(width - Utils::scale_value(sidebar_default_width));
+            }
+
             if (showSingle && !oldShowSingle)
             {
                 historyControlWidget_->hide();
-                inputWidget_->hide();
+                inputWidget_->hideNoClear();
                 smilesMenu_->hide();
             }
             else if (oldShowSingle && !showSingle)
             {
+                historyControlWidget_->setFixedWidth(width - Utils::scale_value(sidebar_default_width));
+                inputWidget_->setFixedWidth(width - Utils::scale_value(sidebar_default_width));
+                smilesMenu_->setFixedWidth(width - Utils::scale_value(sidebar_default_width));
                 historyControlWidget_->show();
                 inputWidget_->show();
                 smilesMenu_->show();
             }
-            sidebar_->setSidebarWidth(showSingle ? Utils::scale_value(sidebar_max_width) : Utils::scale_value(sidebar_default_width));
-            sidebar_->setFixedWidth(showSingle ? width : Utils::scale_value(sidebar_default_width));
-            historyControlWidget_->setFixedWidth(showSingle ? 0 : width - Utils::scale_value(sidebar_default_width));
-            inputWidget_->setFixedWidth(showSingle ? 0 : width - Utils::scale_value(sidebar_default_width));
-            smilesMenu_->setFixedWidth(showSingle ? 0 : width - Utils::scale_value(sidebar_default_width));
-            return QWidget::resizeEvent(e);
+            return QWidget::resizeEvent(_e);
         }
         else if (needShowSidebar())
         {
-            if (!Logic::GetContactListModel()->selectedContact().isEmpty())
-                showSidebar(Logic::GetContactListModel()->selectedContact(), menu_page);
+            if (!Logic::getContactListModel()->selectedContact().isEmpty())
+                showSidebar(Logic::getContactListModel()->selectedContact(), menu_page);
         }
-        historyControlWidget_->setFixedWidth(e->size().width());
-        inputWidget_->setFixedWidth(e->size().width());
-        smilesMenu_->setFixedWidth(e->size().width());
-        QWidget::resizeEvent(e);
+        historyControlWidget_->setFixedWidth(_e->size().width());
+        inputWidget_->setFixedWidth(_e->size().width());
+        smilesMenu_->setFixedWidth(_e->size().width());
+        QWidget::resizeEvent(_e);
     }
 
-    HistoryControlPage* ContactDialog::getHistoryPage(const QString& aimId) const
+    HistoryControlPage* ContactDialog::getHistoryPage(const QString& _aimId) const
     {
-        return historyControlWidget_->getHistoryPage(aimId);
+        return historyControlWidget_->getHistoryPage(_aimId);
 	}
-	
+
     const Smiles::SmilesMenu* ContactDialog::getSmilesMenu() const
     {
         assert(smilesMenu_);
         return smilesMenu_;
+    }
+
+    void ContactDialog::setFocusOnInputWidget()
+    {
+        inputWidget_->setFocusOnInput();
+    }
+
+    Ui::InputWidget* ContactDialog::getInputWidget() const
+    {
+        return inputWidget_;
+    }
+
+    void ContactDialog::notifyApplicationWindowActive(const bool isActive)
+    {
+        if (historyControlWidget_)
+        {
+            historyControlWidget_->notifyApplicationWindowActive(isActive);
+        }
     }
 }
 

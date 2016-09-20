@@ -38,7 +38,7 @@ namespace core
         std::unique_ptr<im_login_list> logins_;
         ims_list ims_;
 
-        voip_manager::VoipManager& voip_manager_;
+        std::shared_ptr<voip_manager::VoipManager> voip_manager_;
 
         bool create_ims();
         void connect_ims();
@@ -51,6 +51,8 @@ namespace core
         void on_login_by_phone(int64_t _seq, coll_helper& _params);
         void on_logout(int64_t _seq, coll_helper& _params);
         void on_phoneinfo(int64_t _seq, coll_helper& _params);
+        void on_snap_read(int64_t _seq, coll_helper& _params);
+        void on_snap_download_metainfo(int64_t _seq, coll_helper& _params);
         void on_connect_after_migration(int64_t _seq, coll_helper& _params);
         void on_get_contact_avatar(int64_t _seq, coll_helper& _params);
         void on_show_contact_avatar(int64_t _seq, coll_helper& _params);
@@ -59,6 +61,8 @@ namespace core
         void on_feedback(int64_t _seq, coll_helper& _params);
         void on_set_state(int64_t _seq, coll_helper& _params);
         void on_search(int64_t _seq, coll_helper& _params);
+        void on_get_archive_images(int64_t _seq, coll_helper& _params);
+        void on_repair_archive_images(int64_t _seq, coll_helper& _params);
         void on_get_archive_index(int64_t _seq, coll_helper& _params);
         void on_get_archive_messages_buddies(int64_t _seq, coll_helper& _params);
         void on_get_archive_messages(int64_t _seq, coll_helper& _params);
@@ -73,7 +77,12 @@ namespace core
         void on_upload_file_sharing(int64_t _seq, coll_helper& _params);
         void on_abort_file_sharing_uploading(int64_t _seq, coll_helper& _params);
         void on_download_file(int64_t _seq, coll_helper& _params);
+        void on_request_file_direct_uri(int64_t _seq, coll_helper& _params);
         void on_download_image(int64_t _seq, coll_helper& _params);
+        void on_cancel_image_downloading(int64_t _seq, coll_helper& _params);
+        void on_download_link_preview(int64_t _seq, coll_helper& _params);
+        void on_download_raise_priority(int64_t _seq, coll_helper& _params);
+        void on_download_raise_contact_tasks_priority(int64_t _seq, coll_helper& _params);
         void on_abort_file_downloading(int64_t _seq, coll_helper& _params);
         void on_get_stickers_meta(int64_t _seq, coll_helper& _params);
         void on_get_themes_meta(int64_t _seq, coll_helper& _params);
@@ -81,7 +90,9 @@ namespace core
         void on_get_sticker(int64_t _seq, coll_helper& _params);
         void on_get_chat_info(int64_t _seq, coll_helper& _params);
         void on_get_chat_blocked(int64_t _seq, coll_helper& _params);
+        void on_get_chat_pending(int64_t _seq, coll_helper& _params);
         void on_get_chat_home(int64_t _seq, coll_helper& _params);
+        void on_resolve_pending(int64_t _seq, coll_helper& _params);
         void on_search_contacts(int64_t _seq, coll_helper& _params);
         void on_search_contacts2(int64_t _seq, coll_helper& _params);
         void on_profile(int64_t _seq, coll_helper& _params);
@@ -100,6 +111,7 @@ namespace core
         void on_mod_chat_name(int64_t _seq, coll_helper& _params);
         void on_mod_chat_about(int64_t _seq, coll_helper& _params);
         void on_mod_chat_public(int64_t _seq, coll_helper& _params);
+        void on_mod_chat_join(int64_t _seq, coll_helper& _params);
         void on_block_chat_member(int64_t _seq, coll_helper& _params);
         void on_set_chat_member_role(int64_t _seq, coll_helper& _params);
 
@@ -139,7 +151,7 @@ namespace core
         void replace_uin_in_login(im_login_id& old_login, im_login_id& new_login);
         void logout();
 
-        im_container(voip_manager::VoipManager& voip_manager);
+        im_container(std::shared_ptr<voip_manager::VoipManager> voip_manager);
         virtual ~im_container();
 
         void create();

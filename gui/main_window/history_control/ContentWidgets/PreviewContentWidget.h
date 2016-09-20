@@ -21,6 +21,8 @@ namespace HistoryControl
 
         virtual QPoint deliveryStatusOffsetHint(const int32_t statusLineWidth) const override final;
 
+        const QRect& getLastPreviewGeometry() const;
+
         virtual bool hasTextBubble() const override;
 
         virtual void render(QPainter &p) override final;
@@ -46,7 +48,7 @@ namespace HistoryControl
 
         virtual bool isPreloaderVisible() const = 0;
 
-        virtual void renderPreview(QPainter &p);
+        virtual void renderPreview(QPainter &p, const bool isAnimating);
 
         void invalidateSizes();
 
@@ -57,6 +59,8 @@ namespace HistoryControl
         virtual void resizeEvent(QResizeEvent *event) override;
 
         void setPreview(const QPixmap &preview);
+
+        QPixmap getPreview() const;
 
         void setPreviewGenuineSize(const QSize &size);
 
@@ -70,9 +74,6 @@ namespace HistoryControl
 
         QSizeF PreviewGenuineSize_;
 
-        // you should not access the variable directly,
-        // use getPreviewScaledSize() instead
-        mutable QSizeF PreviewScaledSize_;
 
         QPainterPath ClippingPath_;
 
@@ -90,13 +91,17 @@ namespace HistoryControl
 
         QSize LastSize_;
 
+        QRect LastPreviewGeometry_;
+
         void applyClippingPath(QPainter &p);
 
         void createTextControl();
 
         QSizeF evaluatePreviewScaledSize(const int boundWidth) const;
 
-        const QSizeF& getPreviewScaledSizeF() const;
+        QSize evaluateWidgetSize(const bool withStatus) const;
+
+        QSizeF getPreviewScaledSizeF() const;
 
         const QPainterPath& getTextBubble() const;
 

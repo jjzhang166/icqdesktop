@@ -33,12 +33,11 @@ int32_t get_stickers_index::init_request(std::shared_ptr<core::http_request_simp
     const std::string host = "https://store.icq.com/openstore/contentlist";
     /*#endif _DEBUG*/
 
-    params["a"] = params_.a_token_;
+    params["a"] = escape_symbols(params_.a_token_);
     params["f"] = "json";
     params["k"] = params_.dev_id_;
     params["ts"] = ss_ts.str();
     params["r"] = core::tools::system::generate_guid();
-
 
     if (!md5_.empty())
     {
@@ -47,6 +46,8 @@ int32_t get_stickers_index::init_request(std::shared_ptr<core::http_request_simp
 
     params["client"] = "icq";
 
+    params["lang"] = g_core->get_locale();
+    
     const auto sha256 = escape_symbols(get_url_sign(host, params, params_, false));
     params["sig_sha256"] = sha256;
 

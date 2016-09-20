@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "SearchResults.h"
+
 #include "NoResultsWidget.h"
-#include "../../contact_list/contact_profile.h"
 #include "FoundContacts.h"
 
 namespace Ui
@@ -9,27 +9,27 @@ namespace Ui
 	SearchResults::SearchResults(QWidget* _parent)
 		:	QWidget(_parent),
 			pages_(new QStackedWidget(this)),
-			root_layout_(new QVBoxLayout()),
-			no_results_widget_(new NoResultsWidget(this)),
-			contacts_widget_(new FoundContacts(this))
+			rootLayout_(new QVBoxLayout()),
+			noResultsWidget_(new NoResultsWidget(this)),
+			contactsWidget_(new FoundContacts(this))
 	{
-		setLayout(root_layout_);
-		root_layout_->setContentsMargins(0, 0, 0, 0);
-		root_layout_->setSpacing(0);
+		setLayout(rootLayout_);
+        rootLayout_->setContentsMargins(0, 0, 0, 0);
+        rootLayout_->setSpacing(0);
 
-		root_layout_->addWidget(pages_);
+        rootLayout_->addWidget(pages_);
 
-		pages_->addWidget(no_results_widget_);
-		pages_->addWidget(contacts_widget_);
+		pages_->addWidget(noResultsWidget_);
+		pages_->addWidget(contactsWidget_);
 
-		pages_->setCurrentWidget(contacts_widget_);
+		pages_->setCurrentWidget(contactsWidget_);
 		
-		connect(contacts_widget_, SIGNAL(add_contact(QString)), this, SLOT(on_add_contact(QString)), Qt::QueuedConnection);
-		connect(contacts_widget_, SIGNAL(msg_contact(QString)), this, SLOT(on_msg_contact(QString)), Qt::QueuedConnection);
-		connect(contacts_widget_, SIGNAL(call_contact(QString)), this, SLOT(on_call_contact(QString)), Qt::QueuedConnection);
-        connect(contacts_widget_, SIGNAL(contact_info(QString)), this, SLOT(on_contact_info(QString)), Qt::QueuedConnection);
+		connect(contactsWidget_, SIGNAL(addContact(QString)), this, SLOT(onAddContact(QString)), Qt::QueuedConnection);
+		connect(contactsWidget_, SIGNAL(msgContact(QString)), this, SLOT(onMsgContact(QString)), Qt::QueuedConnection);
+		connect(contactsWidget_, SIGNAL(callContact(QString)), this, SLOT(onCallContact(QString)), Qt::QueuedConnection);
+        connect(contactsWidget_, SIGNAL(contactInfo(QString)), this, SLOT(onContactInfo(QString)), Qt::QueuedConnection);
 
-		connect(contacts_widget_, SIGNAL(need_more(int)), this, SLOT(on_need_more(int)), Qt::QueuedConnection);
+		connect(contactsWidget_, SIGNAL(needMore(int)), this, SLOT(onNeedMore(int)), Qt::QueuedConnection);
 	}
 
 
@@ -38,54 +38,55 @@ namespace Ui
 	}
 	
 	
-	void SearchResults::insert_items(const profiles_list& _profiles)
+	int SearchResults::insertItems(const profiles_list& _profiles)
 	{
 		if (!_profiles.empty())
 		{
-			pages_->setCurrentWidget(contacts_widget_);
-			contacts_widget_->insert_items(_profiles);	
+			pages_->setCurrentWidget(contactsWidget_);
+            return contactsWidget_->insertItems(_profiles);
 		}
 		else
 		{
-			if (contacts_widget_->empty())
+			if (contactsWidget_->empty())
 			{
-				pages_->setCurrentWidget(no_results_widget_);
+				pages_->setCurrentWidget(noResultsWidget_);
 			}
 		}
+        return 0;
 	}
 
-	void SearchResults::contact_add_result(const QString& _contact, bool _res)
+	void SearchResults::contactAddResult(const QString& _contact, bool _res)
 	{
-		contacts_widget_->contact_add_result(_contact, _res);
+        contactsWidget_->contactAddResult(_contact, _res);
 	}
-
+    
 	void SearchResults::clear()
 	{
-		contacts_widget_->clear();
+        contactsWidget_->clear();
 	}
 
-	void SearchResults::on_add_contact(QString _contact)
+	void SearchResults::onAddContact(QString _contact)
 	{
-		emit add_contact(_contact);
+		emit addContact(_contact);
 	}
 
-	void SearchResults::on_msg_contact(QString _contact)
+	void SearchResults::onMsgContact(QString _contact)
 	{
-		emit msg_contact(_contact);
+		emit msgContact(_contact);
 	}
 
-	void SearchResults::on_call_contact(QString _contact)
+	void SearchResults::onCallContact(QString _contact)
 	{
-		emit call_contact(_contact);
+		emit callContact(_contact);
 	}
 
-	void SearchResults::on_need_more(int _skip_count)
+	void SearchResults::onNeedMore(int _skipCount)
 	{
-		emit need_more(_skip_count);
+		emit needMore(_skipCount);
 	}
 
-    void SearchResults::on_contact_info(QString _contact)
+    void SearchResults::onContactInfo(QString _contact)
     {
-        emit contact_info(_contact);
+        emit contactInfo(_contact);
     }
 }

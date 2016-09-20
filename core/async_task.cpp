@@ -46,7 +46,7 @@ std::shared_ptr<async_task_handlers> core::async_executer::run_async_function( s
 {
     auto handler = std::make_shared<async_task_handlers>();
 
-    enqueue([func, handler]
+    push_back([func, handler]
     {
         int32_t result = func();
 
@@ -60,6 +60,20 @@ std::shared_ptr<async_task_handlers> core::async_executer::run_async_function( s
     return handler;
 }
 
+std::shared_ptr<async_task_handlers> core::async_executer::run_priority_async_function( std::function<int32_t()> func )
+{
+    auto handler = std::make_shared<async_task_handlers>();
 
+    push_front([func, handler]
+    {
+        int32_t result = func();
 
+        g_core->excute_core_context_priority([handler, result]
+        {
+            if (handler->on_result_)
+                handler->on_result_(result);
+        });
+    });
 
+    return handler;
+}

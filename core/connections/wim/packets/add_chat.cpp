@@ -28,7 +28,7 @@ int32_t add_chat::init_request(std::shared_ptr<core::http_request_simple> _reque
     ss_url << c_wim_host << "mchat/AddChat" <<
         "?f=json" <<
         "&chat_name="<< escape_symbols(m_chat_name) <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&r=" <<  core::tools::system::generate_guid() <<
         "&members=" << (*m_chat_members.begin());
 

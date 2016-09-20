@@ -286,6 +286,14 @@ photo</source>
         <source>Call back</source>
         <translation>معاودة الاتصال</translation>
     </message>
+    <message>
+        <source>You changed chat rules to &quot;</source>
+        <translation>لقد قمت بتغيير قواعد المحادثة إلى &quot;</translation>
+    </message>
+    <message>
+        <source> changed chat rules to &quot;</source>
+        <translation> بتغيير قواعد المحادثة إلى &quot;</translation>
+    </message>
 </context>
 <context>
     <name>chat_page</name>
@@ -360,6 +368,66 @@ photo</source>
     <message>
         <source>New messages</source>
         <translation>رسائل جديدة</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>إعادة إرسال</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>نسخ</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>إلغاء</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>معاينة</translation>
+    </message>
+    <message>
+        <source>Set to all</source>
+        <translation>تعيين للكل</translation>
+    </message>
+    <message>
+        <source>Set</source>
+        <translation>تعيين</translation>
+    </message>
+    <message>
+        <source> of </source>
+        <translation> من </translation>
+    </message>
+    <message>
+        <source>Drop files to place</source>
+        <translation>إفلات الملفات لوضعها</translation>
+    </message>
+    <message>
+        <source>Show in folder</source>
+        <translation>إظهار في المجلد</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>ملف</translation>
+    </message>
+    <message>
+        <source>typing</source>
+        <translation>يكتب</translation>
+    </message>
+    <message>
+        <source>are typing</source>
+        <translation>يكتب</translation>
+    </message>
+    <message>
+        <source>Snap expired</source>
+        <translation>انتهت صلاحية اللقطة</translation>
+    </message>
+    <message>
+        <source>Not authorized</source>
+        <translation>غير مصرح</translation>
+    </message>
+    <message>
+        <source>forwarded messages</source>
+        <translation>الرسالة المحوّلة</translation>
     </message>
 </context>
 <context>
@@ -481,6 +549,26 @@ photo</source>
     <message>
         <source>Create Groupchat</source>
         <translation>إنشاء الدردشة الجماعية</translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation>فيديو</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>ملف</translation>
+    </message>
+    <message>
+        <source>Unknown contacts</source>
+        <translation>جهات اتصال غير معروفة</translation>
+    </message>
+    <message>
+        <source>Close All</source>
+        <translation>إغلاق الكل</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>بحث</translation>
     </message>
 </context>
 <context>
@@ -632,995 +720,944 @@ photo</source>
         <source>Delete</source>
         <translation>حذف</translation>
     </message>
+    <message>
+        <source>Forward</source>
+        <translation>إعادة إرسال</translation>
+    </message>
 </context>
 <context>
     <name>countries</name>
     <message>
         <source>USA</source>
-        <translation type="unfinished"></translation>
+        <translation>الولايات المتحدة الأمريكية</translation>
     </message>
     <message>
         <source>Anguilla</source>
-        <translation type="unfinished"></translation>
+        <translation>أنغويلا</translation>
     </message>
     <message>
         <source>Antigua and Barbuda</source>
-        <translation type="unfinished"></translation>
+        <translation>أنتيغوا والكومنولث</translation>
     </message>
     <message>
         <source>Bahamas</source>
-        <translation type="unfinished"></translation>
+        <translation>الباهاما</translation>
     </message>
     <message>
         <source>Barbados</source>
-        <translation type="unfinished"></translation>
+        <translation>بربادوس</translation>
     </message>
     <message>
         <source>Bermuda</source>
-        <translation type="unfinished"></translation>
+        <translation>برمودا</translation>
     </message>
     <message>
         <source>British Virgin Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر العذراء الأمريكية</translation>
     </message>
     <message>
         <source>Canada</source>
-        <translation type="unfinished"></translation>
+        <translation>كندا</translation>
     </message>
     <message>
         <source>Cayman Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر كايمان</translation>
     </message>
     <message>
         <source>Dominica</source>
-        <translation type="unfinished"></translation>
+        <translation>دومينيكا</translation>
     </message>
     <message>
         <source>Dominican Republic</source>
-        <translation type="unfinished"></translation>
+        <translation>جمهورية الدومنيكان</translation>
     </message>
     <message>
         <source>Grenada</source>
-        <translation type="unfinished"></translation>
+        <translation>غرينادا</translation>
     </message>
     <message>
         <source>Jamaica</source>
-        <translation type="unfinished"></translation>
+        <translation>جامايكا</translation>
     </message>
     <message>
         <source>Montserrat</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Nevis</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>St. Kitts</source>
-        <translation type="unfinished"></translation>
+        <translation>مونتسيرات</translation>
     </message>
     <message>
         <source>Saint Kitts and Nevis</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>St. Vincent and the Grenadines</source>
-        <translation type="unfinished"></translation>
+        <translation>سانت كيتس ونيفيس</translation>
     </message>
     <message>
         <source>Trinidad and Tobago</source>
-        <translation type="unfinished"></translation>
+        <translation>ترينداد وتوباغو</translation>
     </message>
     <message>
         <source>Turks and Caicos Islands</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Barbuda</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Puerto Rico, Common Wealth of</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر تركس وكايكوس</translation>
     </message>
     <message>
         <source>Saint Lucia</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Virgin Islands of the United States</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Canary Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>لسانت لوسيا</translation>
     </message>
     <message>
         <source>Egypt</source>
-        <translation type="unfinished"></translation>
+        <translation>مصر</translation>
     </message>
     <message>
         <source>Morocco</source>
-        <translation type="unfinished"></translation>
+        <translation>المغرب</translation>
     </message>
     <message>
         <source>Algeria</source>
-        <translation type="unfinished"></translation>
+        <translation>الجزائر</translation>
     </message>
     <message>
         <source>Tunisia</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Libyan Arab Jamahiriya</source>
-        <translation type="unfinished"></translation>
+        <translation>تونس</translation>
     </message>
     <message>
         <source>Gambia</source>
-        <translation type="unfinished"></translation>
+        <translation>غامبيا</translation>
     </message>
     <message>
         <source>Senegal</source>
-        <translation type="unfinished"></translation>
+        <translation>السنغال</translation>
     </message>
     <message>
         <source>Mauritania</source>
-        <translation type="unfinished"></translation>
+        <translation>موريتانيا</translation>
     </message>
     <message>
         <source>Mali</source>
-        <translation type="unfinished"></translation>
+        <translation>مالي</translation>
     </message>
     <message>
         <source>Guinea</source>
-        <translation type="unfinished"></translation>
+        <translation>غينيا</translation>
     </message>
     <message>
         <source>Burkina Faso</source>
-        <translation type="unfinished"></translation>
+        <translation>بوركينا فاسو</translation>
     </message>
     <message>
         <source>Niger</source>
-        <translation type="unfinished"></translation>
+        <translation>النيجر</translation>
     </message>
     <message>
         <source>Togo</source>
-        <translation type="unfinished"></translation>
+        <translation>توغو</translation>
     </message>
     <message>
         <source>Benin</source>
-        <translation type="unfinished"></translation>
+        <translation>بنين</translation>
     </message>
     <message>
         <source>Mauritius</source>
-        <translation type="unfinished"></translation>
+        <translation>موريشيوس</translation>
     </message>
     <message>
         <source>Liberia</source>
-        <translation type="unfinished"></translation>
+        <translation>ليبيريا</translation>
     </message>
     <message>
         <source>Sierra Leone</source>
-        <translation type="unfinished"></translation>
+        <translation>سيرا ليون</translation>
     </message>
     <message>
         <source>Ghana</source>
-        <translation type="unfinished"></translation>
+        <translation>غانا</translation>
     </message>
     <message>
         <source>Nigeria</source>
-        <translation type="unfinished"></translation>
+        <translation>نيجيريا</translation>
     </message>
     <message>
         <source>Chad</source>
-        <translation type="unfinished"></translation>
+        <translation>تشاد</translation>
     </message>
     <message>
         <source>Central African Republic</source>
-        <translation type="unfinished"></translation>
+        <translation>جمهورية افريقيا الوسطى</translation>
     </message>
     <message>
         <source>Cameroon</source>
-        <translation type="unfinished"></translation>
+        <translation>الكاميرون</translation>
     </message>
     <message>
         <source>Cape Verde Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر الرأس الأخضر</translation>
     </message>
     <message>
         <source>Equatorial Guinea</source>
-        <translation type="unfinished"></translation>
+        <translation>غينيا الإستوائية</translation>
     </message>
     <message>
         <source>Gabon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Congo, (Republic of the)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Congo, Democratic Republic of (Zaire)</source>
-        <translation type="unfinished"></translation>
+        <translation>الغابون</translation>
     </message>
     <message>
         <source>Angola</source>
-        <translation type="unfinished"></translation>
+        <translation>أنغولا</translation>
     </message>
     <message>
         <source>Diego Garcia</source>
-        <translation type="unfinished"></translation>
+        <translation>دييغو غارسيا</translation>
     </message>
     <message>
         <source>Ascension Island</source>
-        <translation type="unfinished"></translation>
+        <translation>جزيرة أسنسيون</translation>
     </message>
     <message>
         <source>Seychelles</source>
-        <translation type="unfinished"></translation>
+        <translation>سيشيل</translation>
     </message>
     <message>
         <source>Sudan</source>
-        <translation type="unfinished"></translation>
+        <translation>السودان</translation>
     </message>
     <message>
         <source>Rwanda</source>
-        <translation type="unfinished"></translation>
+        <translation>رواندا</translation>
     </message>
     <message>
         <source>Ethiopia</source>
-        <translation type="unfinished"></translation>
+        <translation>أثيوبيا</translation>
     </message>
     <message>
         <source>Somalia</source>
-        <translation type="unfinished"></translation>
+        <translation>الصومال</translation>
     </message>
     <message>
         <source>Djibouti</source>
-        <translation type="unfinished"></translation>
+        <translation>جيبوتي</translation>
     </message>
     <message>
         <source>Kenya</source>
-        <translation type="unfinished"></translation>
+        <translation>كينيا</translation>
     </message>
     <message>
         <source>Tanzania, United Republic of</source>
-        <translation type="unfinished"></translation>
+        <translation>تنزانيا، جمهورية </translation>
     </message>
     <message>
         <source>Uganda</source>
-        <translation type="unfinished"></translation>
+        <translation>أوغندا المتحدة</translation>
     </message>
     <message>
         <source>Burundi</source>
-        <translation type="unfinished"></translation>
+        <translation>بوروندي</translation>
     </message>
     <message>
         <source>Mozambique</source>
-        <translation type="unfinished"></translation>
+        <translation>موزمبيق</translation>
     </message>
     <message>
         <source>Zambia</source>
-        <translation type="unfinished"></translation>
+        <translation>زامبيا</translation>
     </message>
     <message>
         <source>Madagascar</source>
-        <translation type="unfinished"></translation>
+        <translation>مدغشقر</translation>
     </message>
     <message>
         <source>Reunion Island</source>
-        <translation type="unfinished"></translation>
+        <translation>جزيرة ريونيون</translation>
     </message>
     <message>
         <source>Zimbabwe</source>
-        <translation type="unfinished"></translation>
+        <translation>زيمبابوي</translation>
     </message>
     <message>
         <source>Namibia</source>
-        <translation type="unfinished"></translation>
+        <translation>ناميبيا</translation>
     </message>
     <message>
         <source>Malawi</source>
-        <translation type="unfinished"></translation>
+        <translation>ملاوي</translation>
     </message>
     <message>
         <source>Lesotho</source>
-        <translation type="unfinished"></translation>
+        <translation>ليسوتو</translation>
     </message>
     <message>
         <source>Botswana</source>
-        <translation type="unfinished"></translation>
+        <translation>بوتسوانا</translation>
     </message>
     <message>
         <source>Swaziland</source>
-        <translation type="unfinished"></translation>
+        <translation>سوازيلاند</translation>
     </message>
     <message>
         <source>Mayotte Island</source>
-        <translation type="unfinished"></translation>
+        <translation>جزيرة مايوت</translation>
     </message>
     <message>
         <source>Comoros</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر القمر</translation>
     </message>
     <message>
         <source>South Africa</source>
-        <translation type="unfinished"></translation>
+        <translation>جنوب أفريقيا</translation>
     </message>
     <message>
         <source>Eritrea</source>
-        <translation type="unfinished"></translation>
+        <translation>إريتريا</translation>
     </message>
     <message>
         <source>Aruba</source>
-        <translation type="unfinished"></translation>
+        <translation>أروبا</translation>
     </message>
     <message>
         <source>Faeroe Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر فارو</translation>
     </message>
     <message>
         <source>Greenland</source>
-        <translation type="unfinished"></translation>
+        <translation>جرينلاند</translation>
     </message>
     <message>
         <source>Greece</source>
-        <translation type="unfinished"></translation>
+        <translation>اليونان</translation>
     </message>
     <message>
         <source>Netherlands</source>
-        <translation type="unfinished"></translation>
+        <translation>هولندا</translation>
     </message>
     <message>
         <source>Belgium</source>
-        <translation type="unfinished"></translation>
+        <translation>بلجيكا</translation>
     </message>
     <message>
         <source>France</source>
-        <translation type="unfinished"></translation>
+        <translation>فرنسا</translation>
     </message>
     <message>
         <source>Spain</source>
-        <translation type="unfinished"></translation>
+        <translation>إسبانيا</translation>
     </message>
     <message>
         <source>Gibraltar</source>
-        <translation type="unfinished"></translation>
+        <translation>جبل طارق</translation>
     </message>
     <message>
         <source>Portugal</source>
-        <translation type="unfinished"></translation>
+        <translation>البرتغال</translation>
     </message>
     <message>
         <source>Luxembourg</source>
-        <translation type="unfinished"></translation>
+        <translation>لوكسمبورغ</translation>
     </message>
     <message>
         <source>Ireland</source>
-        <translation type="unfinished"></translation>
+        <translation>أيرلندا</translation>
     </message>
     <message>
         <source>Iceland</source>
-        <translation type="unfinished"></translation>
+        <translation>أيسلندا</translation>
     </message>
     <message>
         <source>Albania</source>
-        <translation type="unfinished"></translation>
+        <translation>ألبانيا</translation>
     </message>
     <message>
         <source>Malta</source>
-        <translation type="unfinished"></translation>
+        <translation>مالطا</translation>
     </message>
     <message>
         <source>Cyprus</source>
-        <translation type="unfinished"></translation>
+        <translation>قبرص</translation>
     </message>
     <message>
         <source>Finland</source>
-        <translation type="unfinished"></translation>
+        <translation>فنلندا</translation>
     </message>
     <message>
         <source>Bulgaria</source>
-        <translation type="unfinished"></translation>
+        <translation>بلغاريا</translation>
     </message>
     <message>
         <source>Hungary</source>
-        <translation type="unfinished"></translation>
+        <translation>هنغاريا</translation>
     </message>
     <message>
         <source>Lithuania</source>
-        <translation type="unfinished"></translation>
+        <translation>ليتوانيا</translation>
     </message>
     <message>
         <source>Latvia</source>
-        <translation type="unfinished"></translation>
+        <translation>لاتفيا</translation>
     </message>
     <message>
         <source>Estonia</source>
-        <translation type="unfinished"></translation>
+        <translation>استونيا</translation>
     </message>
     <message>
         <source>Moldova, Republic of</source>
-        <translation type="unfinished"></translation>
+        <translation>مولدافيا، جمهورية</translation>
     </message>
     <message>
         <source>Armenia</source>
-        <translation type="unfinished"></translation>
+        <translation>أرمينيا</translation>
     </message>
     <message>
         <source>Belarus</source>
-        <translation type="unfinished"></translation>
+        <translation>روسيا البيضاء</translation>
     </message>
     <message>
         <source>Andorra</source>
-        <translation type="unfinished"></translation>
+        <translation>أندورا</translation>
     </message>
     <message>
         <source>Monaco</source>
-        <translation type="unfinished"></translation>
+        <translation>موناكو</translation>
     </message>
     <message>
         <source>San Marino</source>
-        <translation type="unfinished"></translation>
+        <translation>سان مارينو</translation>
     </message>
     <message>
         <source>Vatican City</source>
-        <translation type="unfinished"></translation>
+        <translation>مدينة الفاتيكان</translation>
     </message>
     <message>
         <source>Ukraine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Yugoslavia</source>
-        <translation type="unfinished"></translation>
+        <translation>أوكرانيا</translation>
     </message>
     <message>
         <source>Croatia</source>
-        <translation type="unfinished"></translation>
+        <translation>كرواتيا</translation>
     </message>
     <message>
         <source>Slovenia</source>
-        <translation type="unfinished"></translation>
+        <translation>سلوفينيا</translation>
     </message>
     <message>
         <source>Bosnia and Herzegovina</source>
-        <translation type="unfinished"></translation>
+        <translation>البوسنة والهرسك</translation>
     </message>
     <message>
         <source>Italy</source>
-        <translation type="unfinished"></translation>
+        <translation>إيطاليا</translation>
     </message>
     <message>
         <source>Romania</source>
-        <translation type="unfinished"></translation>
+        <translation>رومانيا</translation>
     </message>
     <message>
         <source>Switzerland</source>
-        <translation type="unfinished"></translation>
+        <translation>سويسرا</translation>
     </message>
     <message>
         <source>Liechtenstein</source>
-        <translation type="unfinished"></translation>
+        <translation>ليختنشتاين</translation>
     </message>
     <message>
         <source>Czech Republic</source>
-        <translation type="unfinished"></translation>
+        <translation>جمهورية التشيك</translation>
     </message>
     <message>
         <source>Slovakia</source>
-        <translation type="unfinished"></translation>
+        <translation>سلوفاكيا</translation>
     </message>
     <message>
         <source>Austria</source>
-        <translation type="unfinished"></translation>
+        <translation>النمسا</translation>
     </message>
     <message>
         <source>United Kingdom</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Wales</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Scotland</source>
-        <translation type="unfinished"></translation>
+        <translation>المملكة المتحدة</translation>
     </message>
     <message>
         <source>Denmark</source>
-        <translation type="unfinished"></translation>
+        <translation>الدنمارك</translation>
     </message>
     <message>
         <source>Sweden</source>
-        <translation type="unfinished"></translation>
+        <translation>السويد</translation>
     </message>
     <message>
         <source>Norway</source>
-        <translation type="unfinished"></translation>
+        <translation>النرويج</translation>
     </message>
     <message>
         <source>Poland</source>
-        <translation type="unfinished"></translation>
+        <translation>بولندا</translation>
     </message>
     <message>
         <source>Germany</source>
-        <translation type="unfinished"></translation>
+        <translation>ألمانيا</translation>
     </message>
     <message>
         <source>Falkland Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر فوكلاند</translation>
     </message>
     <message>
         <source>Belize</source>
-        <translation type="unfinished"></translation>
+        <translation>بليز</translation>
     </message>
     <message>
         <source>Guatemala</source>
-        <translation type="unfinished"></translation>
+        <translation>غواتيمالا</translation>
     </message>
     <message>
         <source>El Salvador</source>
-        <translation type="unfinished"></translation>
+        <translation>السلفادور</translation>
     </message>
     <message>
         <source>Honduras</source>
-        <translation type="unfinished"></translation>
+        <translation>هندوراس</translation>
     </message>
     <message>
         <source>Nicaragua</source>
-        <translation type="unfinished"></translation>
+        <translation>نيكاراغوا</translation>
     </message>
     <message>
         <source>Costa Rica</source>
-        <translation type="unfinished"></translation>
+        <translation>كوستا ريكا</translation>
     </message>
     <message>
         <source>Panama</source>
-        <translation type="unfinished"></translation>
+        <translation>بناما</translation>
     </message>
     <message>
         <source>Haiti</source>
-        <translation type="unfinished"></translation>
+        <translation>هايتي</translation>
     </message>
     <message>
         <source>Peru</source>
-        <translation type="unfinished"></translation>
+        <translation>بيرو</translation>
     </message>
     <message>
         <source>Mexico</source>
-        <translation type="unfinished"></translation>
+        <translation>المكسيك</translation>
     </message>
     <message>
         <source>Cuba</source>
-        <translation type="unfinished"></translation>
+        <translation>كوبا</translation>
     </message>
     <message>
         <source>Argentina</source>
-        <translation type="unfinished"></translation>
+        <translation>الأرجنتين</translation>
     </message>
     <message>
         <source>Brazil</source>
-        <translation type="unfinished"></translation>
+        <translation>البرازيل</translation>
     </message>
     <message>
         <source>Chile, Republic of</source>
-        <translation type="unfinished"></translation>
+        <translation>تشيلي، جمهورية</translation>
     </message>
     <message>
         <source>Colombia</source>
-        <translation type="unfinished"></translation>
+        <translation>كولومبيا</translation>
     </message>
     <message>
         <source>Venezuela</source>
-        <translation type="unfinished"></translation>
+        <translation>فنزويلا</translation>
     </message>
     <message>
         <source>Guadeloupe</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>French Antilles</source>
-        <translation type="unfinished"></translation>
+        <translation>غوادلوب</translation>
     </message>
     <message>
         <source>Antilles</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر الأنتيل</translation>
     </message>
     <message>
         <source>Bolivia</source>
-        <translation type="unfinished"></translation>
+        <translation>بوليفيا</translation>
     </message>
     <message>
         <source>Guyana</source>
-        <translation type="unfinished"></translation>
+        <translation>غيانا</translation>
     </message>
     <message>
         <source>Ecuador</source>
-        <translation type="unfinished"></translation>
+        <translation>الإكوادور</translation>
     </message>
     <message>
         <source>French Guiana</source>
-        <translation type="unfinished"></translation>
+        <translation>غيانا الفرنسية</translation>
     </message>
     <message>
         <source>Paraguay</source>
-        <translation type="unfinished"></translation>
+        <translation>باراغواي</translation>
     </message>
     <message>
         <source>Martinique</source>
-        <translation type="unfinished"></translation>
+        <translation>مارتينيك</translation>
     </message>
     <message>
         <source>Suriname</source>
-        <translation type="unfinished"></translation>
+        <translation>سورينام</translation>
     </message>
     <message>
         <source>Uruguay</source>
-        <translation type="unfinished"></translation>
+        <translation>أوروغواي</translation>
     </message>
     <message>
         <source>Netherlands Antilles</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر الأنتيل الهولندية</translation>
     </message>
     <message>
         <source>Malaysia</source>
-        <translation type="unfinished"></translation>
+        <translation>ماليزيا</translation>
     </message>
     <message>
         <source>Australia</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cocos (Keeling) Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>أستراليا</translation>
     </message>
     <message>
         <source>Indonesia</source>
-        <translation type="unfinished"></translation>
+        <translation>أندونيسيا</translation>
     </message>
     <message>
         <source>Philippines</source>
-        <translation type="unfinished"></translation>
+        <translation>الفلبين</translation>
     </message>
     <message>
         <source>New Zealand</source>
-        <translation type="unfinished"></translation>
+        <translation>نيوزيلاندا</translation>
     </message>
     <message>
         <source>Singapore</source>
-        <translation type="unfinished"></translation>
+        <translation>سنغافورة</translation>
     </message>
     <message>
         <source>Thailand</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Saipan Island</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rota Island</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tinian Island</source>
-        <translation type="unfinished"></translation>
+        <translation>تايلاند</translation>
     </message>
     <message>
         <source>Guam, US Territory of</source>
-        <translation type="unfinished"></translation>
+        <translation>غوام، إقليم الولايات المتحدة</translation>
     </message>
     <message>
         <source>Christmas Island</source>
-        <translation type="unfinished"></translation>
+        <translation>جزيرة عيد الميلاد</translation>
     </message>
     <message>
         <source>Norfolk Island</source>
-        <translation type="unfinished"></translation>
+        <translation>جزيرة نورفولك</translation>
     </message>
     <message>
         <source>Brunei</source>
-        <translation type="unfinished"></translation>
+        <translation>بروناي</translation>
     </message>
     <message>
         <source>Nauru</source>
-        <translation type="unfinished"></translation>
+        <translation>ناورو</translation>
     </message>
     <message>
         <source>Papua New Guinea</source>
-        <translation type="unfinished"></translation>
+        <translation>بابوا غينيا الجديدة</translation>
     </message>
     <message>
         <source>Tonga</source>
-        <translation type="unfinished"></translation>
+        <translation>تونغا</translation>
     </message>
     <message>
         <source>Solomon Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر سليمان</translation>
     </message>
     <message>
         <source>Vanuatu</source>
-        <translation type="unfinished"></translation>
+        <translation>فانواتو</translation>
     </message>
     <message>
         <source>Fiji</source>
-        <translation type="unfinished"></translation>
+        <translation>فيجي</translation>
     </message>
     <message>
         <source>Palau</source>
-        <translation type="unfinished"></translation>
+        <translation>بالاو</translation>
     </message>
     <message>
         <source>Wallis and Futuna Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>والس وفوتونا</translation>
     </message>
     <message>
         <source>Cook Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر كوك</translation>
     </message>
     <message>
         <source>Niue</source>
-        <translation type="unfinished"></translation>
+        <translation>نيوي</translation>
     </message>
     <message>
         <source>Samoa</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Western Samoa</source>
-        <translation type="unfinished"></translation>
+        <translation>ساموا</translation>
     </message>
     <message>
         <source>Kiribati</source>
-        <translation type="unfinished"></translation>
+        <translation>كيريباس</translation>
     </message>
     <message>
         <source>New Caledonia</source>
-        <translation type="unfinished"></translation>
+        <translation>كاليدونيا الجديدة</translation>
     </message>
     <message>
         <source>Tuvalu</source>
-        <translation type="unfinished"></translation>
+        <translation>توفالو</translation>
     </message>
     <message>
         <source>French Polynesia</source>
-        <translation type="unfinished"></translation>
+        <translation>بولينيزيا الفرنسية</translation>
     </message>
     <message>
         <source>Tokelau</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Micronesia, Federated States of</source>
-        <translation type="unfinished"></translation>
+        <translation>توكيلاو</translation>
     </message>
     <message>
         <source>Marshall Islands</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر مارشال الموحدة</translation>
     </message>
     <message>
         <source>Russia</source>
-        <translation type="unfinished"></translation>
+        <translation>روسيا</translation>
     </message>
     <message>
         <source>Kazakhstan</source>
-        <translation type="unfinished"></translation>
+        <translation>كازاخستان</translation>
     </message>
     <message>
         <source>Kyrgyzstan</source>
-        <translation type="unfinished"></translation>
+        <translation>قرغيزستان</translation>
     </message>
     <message>
         <source>Tajikistan</source>
-        <translation type="unfinished"></translation>
+        <translation>طاجيكستان</translation>
     </message>
     <message>
         <source>Turkmenistan</source>
-        <translation type="unfinished"></translation>
+        <translation>تركمانستان</translation>
     </message>
     <message>
         <source>Uzbekistan</source>
-        <translation type="unfinished"></translation>
+        <translation>أوزبكستان</translation>
     </message>
     <message>
         <source>Japan</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Korea (South Korea), Republic of</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Viet Nam</source>
-        <translation type="unfinished"></translation>
+        <translation>اليابان</translation>
     </message>
     <message>
         <source>Hong Kong</source>
-        <translation type="unfinished"></translation>
+        <translation>هونج كونج</translation>
     </message>
     <message>
         <source>Macau</source>
-        <translation type="unfinished"></translation>
+        <translation>ماكاو</translation>
     </message>
     <message>
         <source>Cambodia</source>
-        <translation type="unfinished"></translation>
+        <translation>كمبوديا</translation>
     </message>
     <message>
         <source>China</source>
-        <translation type="unfinished"></translation>
+        <translation>الصين</translation>
     </message>
     <message>
         <source>Bangladesh</source>
-        <translation type="unfinished"></translation>
+        <translation>بنغلاديش</translation>
     </message>
     <message>
         <source>Taiwan</source>
-        <translation type="unfinished"></translation>
+        <translation>تايوان</translation>
     </message>
     <message>
         <source>Turkey</source>
-        <translation type="unfinished"></translation>
+        <translation>تركيا</translation>
     </message>
     <message>
         <source>India</source>
-        <translation type="unfinished"></translation>
+        <translation>الهند</translation>
     </message>
     <message>
         <source>Pakistan</source>
-        <translation type="unfinished"></translation>
+        <translation>باكستان</translation>
     </message>
     <message>
         <source>Afghanistan</source>
-        <translation type="unfinished"></translation>
+        <translation>أفغانستان</translation>
     </message>
     <message>
         <source>Sri Lanka</source>
-        <translation type="unfinished"></translation>
+        <translation>سيريلانكا</translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation type="unfinished"></translation>
+        <translation>ميانمار</translation>
     </message>
     <message>
         <source>Maldives</source>
-        <translation type="unfinished"></translation>
+        <translation>جزر المالديف</translation>
     </message>
     <message>
         <source>Lebanon</source>
-        <translation type="unfinished"></translation>
+        <translation>لبنان</translation>
     </message>
     <message>
         <source>Jordan</source>
-        <translation type="unfinished"></translation>
+        <translation>الأردن</translation>
     </message>
     <message>
         <source>Syrian Arab Republic</source>
-        <translation type="unfinished"></translation>
+        <translation>الجمهورية العربية السورية</translation>
     </message>
     <message>
         <source>Iraq</source>
-        <translation type="unfinished"></translation>
+        <translation>العراق</translation>
     </message>
     <message>
         <source>Kuwait</source>
-        <translation type="unfinished"></translation>
+        <translation>الكويت</translation>
     </message>
     <message>
         <source>Saudi Arabia</source>
-        <translation type="unfinished"></translation>
+        <translation>المملكة العربية السعودية</translation>
     </message>
     <message>
         <source>Yemen</source>
-        <translation type="unfinished"></translation>
+        <translation>اليمن</translation>
     </message>
     <message>
         <source>Oman</source>
-        <translation type="unfinished"></translation>
+        <translation>سلطنة عمان</translation>
     </message>
     <message>
         <source>United Arab Emirates</source>
-        <translation type="unfinished"></translation>
+        <translation>الإمارات العربية المتحدة</translation>
     </message>
     <message>
         <source>Israel</source>
-        <translation type="unfinished"></translation>
+        <translation>إسرائيل</translation>
     </message>
     <message>
         <source>Bahrain</source>
-        <translation type="unfinished"></translation>
+        <translation>البحرين</translation>
     </message>
     <message>
         <source>Qatar</source>
-        <translation type="unfinished"></translation>
+        <translation>قطر</translation>
     </message>
     <message>
         <source>Bhutan</source>
-        <translation type="unfinished"></translation>
+        <translation>بوتان</translation>
     </message>
     <message>
         <source>Mongolia</source>
-        <translation type="unfinished"></translation>
+        <translation>منغوليا</translation>
     </message>
     <message>
         <source>Nepal</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Iran (Islamic Republic of)</source>
-        <translation type="unfinished"></translation>
+        <translation>نيبال</translation>
     </message>
     <message>
         <source>Azerbaijan</source>
-        <translation type="unfinished"></translation>
+        <translation>أذربيجان</translation>
     </message>
     <message>
         <source>Georgia</source>
-        <translation type="unfinished"></translation>
+        <translation>جورجيا</translation>
     </message>
     <message>
         <source>Cote d&apos;Ivoire</source>
-        <translation type="unfinished"></translation>
+        <translation>ساحل العاج</translation>
     </message>
     <message>
         <source>Sao Tome &amp;amp; Principe</source>
-        <translation type="unfinished"></translation>
+        <translation>ساو تومي، برينسيبي</translation>
     </message>
     <message>
         <source>Guinea-Bissau</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>St. Helena</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Serbia</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Montenegro</source>
-        <translation type="unfinished"></translation>
+        <translation>غينيا بيساو</translation>
     </message>
     <message>
         <source>Macedonia (F.Y.R.O.M.)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>St. Pierre and Miquelon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Korea (North Korea), Democratic People&apos;s Republic of</source>
-        <translation type="unfinished"></translation>
+        <translation>مقدونيا (F.Y.R.O.M.)</translation>
     </message>
     <message>
         <source>Lao People&apos;s Democratic Republic</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>filesharing_widget</name>
-    <message>
-        <source>Drop files to place</source>
-        <translation>إفلات الملفات لوضعها</translation>
+        <translation>جمهورية لاو الديمقراطية الشعبية</translation>
     </message>
     <message>
-        <source>File</source>
-        <translation>ملف</translation>
+        <source>Northern Mariana Islands</source>
+        <translation>جزر ماريانا الشمالية</translation>
     </message>
     <message>
-        <source>Show in folder</source>
-        <translation>إظهار في المجلد</translation>
+        <source>Saint Vincent and the Grenadines</source>
+        <translation>سانت فينسنت والغرينادين</translation>
+    </message>
+    <message>
+        <source>Puerto Rico</source>
+        <translation>بورتوريكو</translation>
+    </message>
+    <message>
+        <source>US Virgin Islands</source>
+        <translation>جزر العذراء الأمريكية</translation>
+    </message>
+    <message>
+        <source>Libya</source>
+        <translation>ليبيا</translation>
+    </message>
+    <message>
+        <source>Congo, Republic of</source>
+        <translation>جمهورية الكونغو</translation>
+    </message>
+    <message>
+        <source>Congo, Democratic Republic of</source>
+        <translation>جمهورية الكونغو الديمقراطية</translation>
+    </message>
+    <message>
+        <source>Cocos Islands</source>
+        <translation>جزر كوكوس</translation>
+    </message>
+    <message>
+        <source>East Timor</source>
+        <translation>تيمور الشرقية</translation>
+    </message>
+    <message>
+        <source>American Samoa</source>
+        <translation>ساموا الأمريكية</translation>
+    </message>
+    <message>
+        <source>Vietnam</source>
+        <translation>فيتنام</translation>
+    </message>
+    <message>
+        <source>Iran, Islamic Republic of</source>
+        <translation>إيران</translation>
+    </message>
+    <message>
+        <source>Saint Helena</source>
+        <translation>سانت هيلينا</translation>
+    </message>
+    <message>
+        <source>Serbia</source>
+        <translation>صربيا</translation>
+    </message>
+    <message>
+        <source>Montenegro</source>
+        <translation>الجبل الأسود</translation>
+    </message>
+    <message>
+        <source>Saint Pierre and Miquelon</source>
+        <translation>سان بيير وميكلون</translation>
+    </message>
+    <message>
+        <source>South Korea</source>
+        <translation>كوريا الجنوبية</translation>
+    </message>
+    <message>
+        <source>North Korea (DPRK)</source>
+        <translation>كوريا الشمالية</translation>
+    </message>
+    <message>
+        <source>Federated States of Micronesia</source>
+        <translation>ولايات ميكرونيسيا المتحدة</translation>
     </message>
 </context>
 <context>
     <name>groupchat_pages</name>
-    <message>
-        <source>View all </source>
-        <translation>عرض الكل </translation>
-    </message>
     <message>
         <source>Create Groupchat</source>
         <translation>إنشاء الدردشة الجماعية</translation>
@@ -1650,11 +1687,63 @@ photo</source>
     </message>
     <message>
         <source>EMOJI</source>
-        <translation>EMOJI</translation>
+        <translation>إيموجي</translation>
     </message>
     <message>
         <source>RECENTS</source>
         <translation>المستجدات</translation>
+    </message>
+    <message>
+        <source>Send image</source>
+        <translation>إرسال الصورة</translation>
+    </message>
+    <message>
+        <source>Send file</source>
+        <translation>إرسال الملف</translation>
+    </message>
+    <message>
+        <source>image</source>
+        <comment>1</comment>
+        <translation>صورة</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>2</comment>
+        <translation>صور</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>5</comment>
+        <translation>صور</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>21</comment>
+        <translation>صور</translation>
+    </message>
+    <message>
+        <source>file</source>
+        <comment>1</comment>
+        <translation>ملف</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>2</comment>
+        <translation>ملفات</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>5</comment>
+        <translation>ملفات</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>21</comment>
+        <translation>ملفات</translation>
+    </message>
+    <message>
+        <source>Send %1 %2 %3 %4</source>
+        <translation>إرسال %1 %2 %3 %4</translation>
     </message>
 </context>
 <context>
@@ -1702,6 +1791,10 @@ photo</source>
     <message>
         <source>Open</source>
         <translation>فتح</translation>
+    </message>
+    <message>
+        <source>Waiting for approval</source>
+        <translation>في انتظار الموافقة</translation>
     </message>
 </context>
 <context>
@@ -1792,6 +1885,109 @@ your phone number</source>
         <source>Code from SMS</source>
         <translation>رمز من رسالة SMS</translation>
     </message>
+    <message>
+        <source>Forgot password?</source>
+        <translation>هل نسيت كلمة المرور؟</translation>
+    </message>
+</context>
+<context>
+    <name>macos_menu</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>تحرير</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation>تراجع</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation>إعادة</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation>قص</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>نسخ</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>لصق</translation>
+    </message>
+    <message>
+        <source>Paste as Quote</source>
+        <translation>الصق كاقتباس</translation>
+    </message>
+    <message>
+        <source>Contact</source>
+        <translation>جهة اتصال</translation>
+    </message>
+    <message>
+        <source>Add Buddy</source>
+        <translation>إضافة صديق</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>حساب</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>إغلاق</translation>
+    </message>
+    <message>
+        <source>View</source>
+        <translation>عرض</translation>
+    </message>
+    <message>
+        <source>Next Unread Message</source>
+        <translation>الرسالة التالية غير المقروءة</translation>
+    </message>
+    <message>
+        <source>Enter Full Screen</source>
+        <translation>دخول وضع ملء الشاشة</translation>
+    </message>
+    <message>
+        <source>Exit Full Screen</source>
+        <translation>خروج من وضع ملء الشاشة</translation>
+    </message>
+    <message>
+        <source>Window</source>
+        <translation>نافذة</translation>
+    </message>
+    <message>
+        <source>Select Next Chat</source>
+        <translation>اختيار المحادثة التالية</translation>
+    </message>
+    <message>
+        <source>Select Previous Chat</source>
+        <translation>اختيار المحادثة السابقة</translation>
+    </message>
+    <message>
+        <source>Minimize</source>
+        <translation>تصغير</translation>
+    </message>
+    <message>
+        <source>Main Window</source>
+        <translation>النافذة الرئيسية</translation>
+    </message>
+    <message>
+        <source>Check For Updates...</source>
+        <translation>البحث عن تحديثات...</translation>
+    </message>
+    <message>
+        <source>About...</source>
+        <translation>حول...</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>إعدادات</translation>
+    </message>
+    <message>
+        <source>Emoji &amp; Symbols</source>
+        <translation>إيموجي &amp; حرف</translation>
+    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1821,10 +2017,6 @@ your phone number</source>
     <message>
         <source>Continue</source>
         <translation>مواصلة</translation>
-    </message>
-    <message>
-        <source>Skip</source>
-        <translation>تخطى</translation>
     </message>
     <message>
         <source>Your nickname cannot be longer than 20 symbols</source>
@@ -1936,6 +2128,57 @@ your phone number</source>
     <message>
         <source>Are you sure you want to revoke admin role?</source>
         <translation>هل تريد بالتأكيد إلغاء دور المشرف؟</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete message?</source>
+        <translation>هل تريد بالتأكيد حذف الرسالة؟</translation>
+    </message>
+    <message>
+        <source>Delete message</source>
+        <translation>حذف الرسالة</translation>
+    </message>
+    <message>
+        <source>Share link</source>
+        <translation>مشاركة الرابط على الدردشة</translation>
+    </message>
+    <message>
+        <source>Copy link and close</source>
+        <translation>نسخ الرابط والإغلاق</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>إعادة إرسال</translation>
+    </message>
+    <message>
+        <source>Ignored contacts</source>
+        <translation>اتصالات من قائمة التجاهل</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>القيام به</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirmation</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>previewer</name>
+    <message>
+        <source>Unable to download the image</source>
+        <translation>يتعذر تنزيل الصورة</translation>
+    </message>
+    <message>
+        <source>%1 of %2</source>
+        <translation>%1 من %2</translation>
+    </message>
+    <message>
+        <source>Loading...</source>
+        <translation>جاري التحميل...</translation>
     </message>
 </context>
 <context>
@@ -2118,10 +2361,6 @@ your phone number</source>
         <translation>Český</translation>
     </message>
     <message>
-        <source>General settings</source>
-        <translation>الإعدادات العامة</translation>
-    </message>
-    <message>
         <source>Launch ICQ when system starts</source>
         <translation>إطلاق ICQ عند تشغيل الجهاز</translation>
     </message>
@@ -2142,24 +2381,12 @@ your phone number</source>
         <translation>الأصوات</translation>
     </message>
     <message>
-        <source>Save to:</source>
-        <translation>حفظ في:</translation>
-    </message>
-    <message>
         <source>Choose new path</source>
         <translation>اختيار مسار جديد</translation>
     </message>
     <message>
         <source>Send message by:</source>
         <translation>إرسال رسالة بواسطة:</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>خصوصية</translation>
-    </message>
-    <message>
-        <source>Show last message in recents</source>
-        <translation>إظهار آخر رسالة في المستجدات</translation>
     </message>
     <message>
         <source>Preview images and videos</source>
@@ -2224,6 +2451,26 @@ your phone number</source>
     <message>
         <source>Show in menu bar</source>
         <translation>اعرض في شريط القائمة</translation>
+    </message>
+    <message>
+        <source>Launch minimized</source>
+        <translation>البدء في وضع مصغّر</translation>
+    </message>
+    <message>
+        <source>Application</source>
+        <translation>تطبيق</translation>
+    </message>
+    <message>
+        <source>Chat</source>
+        <translation>دردشة</translation>
+    </message>
+    <message>
+        <source>Save files to:</source>
+        <translation>حفظ الملفات إلى:</translation>
+    </message>
+    <message>
+        <source>Chat list compact mode</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2373,10 +2620,6 @@ your phone number</source>
         <translation>المشرفون</translation>
     </message>
     <message>
-        <source>All members</source>
-        <translation>جميع المشاركين</translation>
-    </message>
-    <message>
         <source>Blocked people</source>
         <translation>قائمة المحظورين</translation>
     </message>
@@ -2425,10 +2668,6 @@ your phone number</source>
         <translation>الدردشة العامة</translation>
     </message>
     <message>
-        <source>Chat description</source>
-        <translation>وصف الدردشة</translation>
-    </message>
-    <message>
         <source>Revoke admin role</source>
         <translation>سحب حقوق المسؤول</translation>
     </message>
@@ -2445,14 +2684,6 @@ your phone number</source>
         <translation>حذف من الدردشة</translation>
     </message>
     <message>
-        <source>Change chat name</source>
-        <translation>تغيير اسم الدردشة</translation>
-    </message>
-    <message>
-        <source>Change chat description</source>
-        <translation>تغيير وصف الدردشة</translation>
-    </message>
-    <message>
         <source>Rename</source>
         <translation>إعادة تسمية</translation>
     </message>
@@ -2466,24 +2697,73 @@ Please edit phone number and try again.</source>
         <translation>رقم الهاتف هذا مرتبط بالفعل بحساب آخر
 يُرجى تعديل رقم الهاتف والمحاولة مرة أخرى.</translation>
     </message>
-</context>
-<context>
-    <name>top_theme_widget</name>
     <message>
-        <source>Preview</source>
-        <translation>معاينة</translation>
+        <source>Copy link to chat</source>
+        <translation>نسخ الرابط في الدردشة</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation>إلغاء</translation>
+        <source>Approve All</source>
+        <translation>الموافقة على الكل</translation>
     </message>
     <message>
-        <source>Set to all</source>
-        <translation>تعيين للكل</translation>
+        <source>Approve All (</source>
+        <translation>الموافقة على الكل (</translation>
     </message>
     <message>
-        <source>Set</source>
-        <translation>تعيين</translation>
+        <source>Waiting for approval</source>
+        <translation>في انتظار الموافقة</translation>
+    </message>
+    <message>
+        <source>link copied</source>
+        <translation>تم نسخ الرابط</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>انضمام بموافقة</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>ستكون المحادثة ظاهرة للجميع</translation>
+    </message>
+    <message>
+        <source>Admin approval required to join</source>
+        <translation>موافقة المدير مطلوبة للانضمام</translation>
+    </message>
+    <message>
+        <source>more</source>
+        <translation>المزيد</translation>
+    </message>
+    <message>
+        <source>edit</source>
+        <translation>تحرير</translation>
+    </message>
+    <message>
+        <source>NAME</source>
+        <translation>اسم</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION</source>
+        <translation>الوصف</translation>
+    </message>
+    <message>
+        <source>hide</source>
+        <translation>إخفاء</translation>
+    </message>
+    <message>
+        <source>Add your description</source>
+        <translation>أضف وصفك</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>إعدادت المحادثة</translation>
+    </message>
+    <message>
+        <source>Members</source>
+        <translation>المشاركين</translation>
+    </message>
+    <message>
+        <source>Birthday</source>
+        <translation>عيد الميلاد</translation>
     </message>
 </context>
 <context>
@@ -2507,17 +2787,6 @@ Please edit phone number and try again.</source>
     <message>
         <source>Open</source>
         <translation>فتح</translation>
-    </message>
-</context>
-<context>
-    <name>typing_widget</name>
-    <message>
-        <source>typing</source>
-        <translation>يكتب</translation>
-    </message>
-    <message>
-        <source>are typing</source>
-        <translation>يكتب</translation>
     </message>
 </context>
 <context>
@@ -2569,6 +2838,18 @@ Please edit phone number and try again.</source>
     <message>
         <source>Video</source>
         <translation>فيديو</translation>
+    </message>
+    <message>
+        <source>Return to call</source>
+        <translation>عودة إلى المكالمة</translation>
+    </message>
+    <message>
+        <source>Data saving enabled</source>
+        <translation>تم تمكين حفظ البيانات</translation>
+    </message>
+    <message>
+        <source> enabled data saving</source>
+        <translation> بتمكين حفظ البيانات</translation>
     </message>
 </context>
 </TS>

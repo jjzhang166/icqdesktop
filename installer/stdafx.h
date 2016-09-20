@@ -13,7 +13,7 @@
 #include "../gui.shared/translator_base.h"
 #include "../gui.shared/constants.h"
 #include "../common.shared/common_defs.h"
-#include "../common.shared/TestingTools.h"
+#include "../gui.shared/TestingTools.h"
 #include "../common.shared/constants.h"
 
 #include <cassert>
@@ -165,5 +165,5 @@ typedef rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> rapidjson_alloca
 #include "utils/dpi.h"
 #include "errors.h"
 
-#include "../corelib/common.h"
+#include "../common.shared/common.h"
 #endif //__linux__

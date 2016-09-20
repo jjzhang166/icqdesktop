@@ -1,9 +1,11 @@
 #include "stdafx.h"
 #include "launch.h"
 #include "application.h"
-#include "../types/message.h"
-#include "../types/contact.h"
 #include "../types/chat.h"
+#include "../types/contact.h"
+#include "../types/images.h"
+#include "../types/link_metadata.h"
+#include "../types/message.h"
 #include "../types/typing.h"
 #include "../main_window/history_control/MessagesModel.h"
 
@@ -90,6 +92,7 @@ int launch::main(int _argc, char* _argv[])
 
     if (app.init())
     {
+        qRegisterMetaType<Data::ImageListPtr>("Data::ImageListPtr");
         qRegisterMetaType<std::shared_ptr<Data::ContactList>>("std::shared_ptr<Data::ContactList>");
         qRegisterMetaType<std::shared_ptr<Data::MessageBuddies>>("std::shared_ptr<Data::MessageBuddies>");
         qRegisterMetaType<std::shared_ptr<Data::ChatInfo>>("std::shared_ptr<Data::ChatInfo>");
@@ -103,12 +106,21 @@ int launch::main(int _argc, char* _argv[])
         qRegisterMetaType<QSystemTrayIcon::ActivationReason>("QSystemTrayIcon::ActivationReason");
         qRegisterMetaType<Logic::TypingFires>("Logic::TypingFires");
         qRegisterMetaType<int64_t>("int64_t");
+        qRegisterMetaType<int32_t>("int32_t");
+        qRegisterMetaType<uint64_t>("uint64_t");
+        qRegisterMetaType<uint32_t>("uint32_t");
+        qRegisterMetaType<Data::LinkMetadata>("Data::LinkMetadata");
+        qRegisterMetaType<QSharedPointer<QMovie>>("QSharedPointer<QMovie>");
+        qRegisterMetaType<Data::Quote>("Data::Quote");
+        qRegisterMetaType<QList<Data::Quote>>("QList<Data::Quote>");
     }
     else
     {
         return 1;
     }
 
+
+    //do not change context(1st argument), it's important
     QT_TRANSLATE_NOOP("QWidgetTextControl", "&Undo");
     QT_TRANSLATE_NOOP("QWidgetTextControl", "&Redo");
     QT_TRANSLATE_NOOP("QWidgetTextControl", "Cu&t");

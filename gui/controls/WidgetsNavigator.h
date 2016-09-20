@@ -7,18 +7,22 @@ namespace Ui
         Q_OBJECT
 
     public Q_SLOTS:
-        void push(QWidget *widget);
+        void push(QWidget* _widget);
         void pop();
         void poproot();
 
     private:
-        std::stack< int > history_;
-        std::unordered_map<QWidget*, int> indexes;
-        
+        std::stack<QWidget*> history_;
+        std::unordered_map<QWidget*, int> widgetToIndex_;
+        std::map<int, std::vector<QWidget*>> widgetsAddedOrderByIndexes_;
+
+        QWidget* getFirstWidget() const;
+
     public:
-        explicit WidgetsNavigator(QWidget *parent = nullptr);
-        void insertWidget(int index, QWidget *widget);
-        void removeWidget(QWidget *widget);
-        ~WidgetsNavigator();
+        explicit WidgetsNavigator(QWidget* _parent = nullptr);
+        void insertWidget(int _index, QWidget* _widget);
+        void removeWidget(QWidget* _widget);
+        virtual ~WidgetsNavigator();
+        int addWidget(QWidget* _widget);
     };
 }

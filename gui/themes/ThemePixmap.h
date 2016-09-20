@@ -25,6 +25,8 @@ namespace Themes
 
         virtual QSize GetSize() const = 0;
 
+        virtual QPixmap GetPixmap() const = 0;
+
 	};
 
 	typedef std::shared_ptr<IThemePixmap> IThemePixmapSptr;

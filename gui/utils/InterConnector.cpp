@@ -3,6 +3,9 @@
 #include "../main_window/MainWindow.h"
 #include "../main_window/MainPage.h"
 #include "../main_window/contact_list/ContactListModel.h"
+#ifdef __APPLE__
+#include "../utils/macos/mac_support.h"
+#endif //__APPLE__
 
 #include "InterConnector.h"
 
@@ -99,6 +102,12 @@ namespace Utils
 
         return false;
     }
+    
+    void InterConnector::restoreSidebar()
+    {
+        if (MainWindow_)
+            MainWindow_->restoreSidebar();
+    }
 
     void InterConnector::setDragOverlay(bool enable)
     {
@@ -123,7 +132,7 @@ namespace Utils
             if (stamp[stamp.length() - 1] == '/')
                 stamp = stamp.mid(0, stamp.length() - 1);
 
-            Logic::GetContactListModel()->joinLiveChat(stamp, false);
+            Logic::getContactListModel()->joinLiveChat(stamp, false);
 
             return true;
         }
@@ -144,18 +153,32 @@ namespace Utils
         {
             return;
         }
+        
+#ifdef __APPLE__
+        if (url.scheme().isEmpty())
+        {
+            MacSupport::openLink(decoded);
+            return;
+        }
+#endif //__APPLE__
 
         QDesktopServices::openUrl(decoded);
     }
 
     void InterConnector::setUrlHandler()
     {
+#ifdef __APPLE__
+        QDesktopServices::setUrlHandler("", this, "open_url");
+#endif //__APPLE__
         QDesktopServices::setUrlHandler("http", this, "open_url");
         QDesktopServices::setUrlHandler("https", this, "open_url");
     }
 
     void InterConnector::unsetUrlHandler()
     {
+#ifdef __APPLE__
+        QDesktopServices::unsetUrlHandler("");
+#endif __APPLE__
         QDesktopServices::unsetUrlHandler("http");
         QDesktopServices::unsetUrlHandler("https");
     }

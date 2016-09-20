@@ -3,15 +3,15 @@
 
 namespace Ui
 {
-	LabelEx::LabelEx(QWidget* parent)
-		: QLabel(parent)
+	LabelEx::LabelEx(QWidget* _parent)
+		: QLabel(_parent)
 	{
 
 	}
 
-	void LabelEx::mouseReleaseEvent(QMouseEvent* event)
+	void LabelEx::mouseReleaseEvent(QMouseEvent* _event)
 	{
 		emit clicked();
-		QLabel::mouseReleaseEvent(event);
+		QLabel::mouseReleaseEvent(_event);
 	}
 }

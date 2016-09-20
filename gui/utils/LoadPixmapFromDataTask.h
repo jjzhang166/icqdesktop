@@ -14,22 +14,16 @@ namespace Utils
         Q_OBJECT
 
     Q_SIGNALS:
-        void loadedSignal(qint64, QString, QPixmap, QString);
+        void loadedSignal(QPixmap pixmap);
 
     public:
-        LoadPixmapFromDataTask(const qint64 seq, const QString &uri, core::istream *stream, const QString& local);
+        LoadPixmapFromDataTask(core::istream *stream);
 
         virtual ~LoadPixmapFromDataTask();
 
         void run();
 
     private:
-        const qint64 Seq_;
-
-        const QString Uri_;
-
-        const QString Local_;
-
         core::istream *Stream_;
 
     };

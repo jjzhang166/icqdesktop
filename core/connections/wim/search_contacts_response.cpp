@@ -4,9 +4,16 @@
 using namespace core;
 using namespace wim;
 
-search_contacts_response::search_contacts_response()
+search_contacts_response::search_contacts_response(): finish_(false)
 {
     //
+}
+
+int32_t search_contacts_response::unserialize_header(const rapidjson::Value& node)
+{
+    { auto i = node.FindMember("finish"); if (i != node.MemberEnd() && i->value.IsBool()) finish_ = i->value.GetBool(); }
+    { auto i = node.FindMember("newTag"); if (i != node.MemberEnd() && i->value.IsString()) next_tag_ = i->value.GetString(); }
+    return 0;
 }
 
 int32_t search_contacts_response::unserialize(const rapidjson::Value& array)
@@ -89,4 +96,6 @@ void search_contacts_response::serialize(core::coll_helper root_coll)
 
         root_coll.set_value_as_array("data", array.get());
     }
+    root_coll.set_value_as_bool("finish", finish_);
+    root_coll.set_value_as_string("next_tag", next_tag_);
 }

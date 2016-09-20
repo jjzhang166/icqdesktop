@@ -7,8 +7,7 @@ using namespace core;
 using namespace wim;
 
 search_contacts2::search_contacts2(const wim_packet_params& _packet_params, const std::string& keyword, const std::string& phonenumber, const std::string& tag):
-    robusto_packet(_packet_params),
-    restart_(false), finish_(false)
+    robusto_packet(_packet_params)
 {
     params_.keyword_ = keyword;
     params_.phonenumber_ = phonenumber;
@@ -36,7 +35,15 @@ int32_t search_contacts2::init_request(std::shared_ptr<core::http_request_simple
     doc.AddMember("clientId", robusto_params_.robusto_client_id_, a);
     
     rapidjson::Value node_params(rapidjson::Type::kObjectType);
-    node_params.AddMember("keyword", params_.keyword_, a);
+    // possible only tag OR keyword OR phone. not all together.
+    if (!params_.tag_.empty())
+    {
+        node_params.AddMember("tag", params_.tag_, a);
+    }
+    else
+    {
+        node_params.AddMember("keyword", params_.keyword_, a);
+    }
     doc.AddMember("params", node_params, a);
     
     rapidjson::StringBuffer buffer;
@@ -50,9 +57,7 @@ int32_t search_contacts2::init_request(std::shared_ptr<core::http_request_simple
 
 int32_t search_contacts2::parse_results(const rapidjson::Value& node)
 {
-    { auto i = node.FindMember("restart"); if (i != node.MemberEnd() && i->value.IsBool()) restart_ = i->value.GetBool(); }
-    { auto i = node.FindMember("finish"); if (i != node.MemberEnd() && i->value.IsBool()) finish_ = i->value.GetBool(); }
-    { auto i = node.FindMember("newTag"); if (i != node.MemberEnd() && i->value.IsString()) new_tag_ = i->value.GetString(); }
+    response_.unserialize_header(node);
     {
         auto d = node.FindMember("data");
         if (d != node.MemberEnd() && d->value.IsArray() && response_.unserialize(d->value) == 0) return 0;

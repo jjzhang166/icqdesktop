@@ -27,7 +27,7 @@ namespace Logic
     {
         Q_OBJECT
 
-Q_SIGNALS:
+    Q_SIGNALS:
 
         void currentDlgStateChanged() const;
         void selectedContactChanged(QString) const;
@@ -36,6 +36,7 @@ Q_SIGNALS:
         void profile_loaded(profile_ptr _profile) const;
         void contact_added(QString _contact, bool _result);
         void contact_removed(QString _contact);
+        void leave_dialog(QString _contact);
         void results();
         void needSwitchToRecents();
         void needJoinLiveChat(QString _stamp);
@@ -60,31 +61,32 @@ Q_SIGNALS:
         void refresh();
         void searchResult(QStringList);
 
-        void auth_add_contact(QString _aimid);
-        void stats_auth_add_contact(QString _aimid);
-        void unknown_contact_profile_spam_contact(QString _aimid);
-        void auth_spam_contact(QString _aimid);
-        void auth_delete_contact(QString _aimid);
-        void auth_ignore_contact(QString _aimid);
-        void stats_spam_profile(QString _aimid);
+        void authAddContact(QString _aimId);
+        void authBlockContact(QString _aimId);
+        void authDeleteContact(QString _aimId);
+        void authIgnoreContact(QString _aimId);
         void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
+        void stats_auth_add_contact(QString _aimId);
+        void stats_spam_profile(QString _aimId);
+        void unknown_contact_profile_spam_contact(QString _aimId);
 
     public:
-        explicit ContactListModel(QObject *parent);
+        explicit ContactListModel(QObject* _parent);
+
+        QVariant data(const QModelIndex& _index, int _role) const;
+        Qt::ItemFlags flags(const QModelIndex& _index) const;
+        int rowCount(const QModelIndex& _parent = QModelIndex()) const;
+
         ContactItem* getContactItem(const QString& _aimId);
-        void setCurrentCallbackHappened(Ui::HistoryControlPage *page);
+        void setCurrentCallbackHappened(Ui::HistoryControlPage* _page);
 
-        int rowCount(const QModelIndex &parent = QModelIndex()) const;
-        QVariant data(const QModelIndex &index, int role) const;
+        int getAbsIndexByVisibleIndex(int _cur, int* _visibleCount, int _iterLimit) const;
 
-        int getAbsIndexByVisibleIndex(int cur, int* visibleCount, int iter_limit) const;
-
-        Qt::ItemFlags flags(const QModelIndex &index) const;
-        std::vector<ContactItem> getSearchedContacts(std::list<QString> contacts);
-        std::vector<ContactItem> getSearchedContacts();
+        std::vector<ContactItem> getSearchedContacts(std::list<QString> _contacts);
+        std::vector<ContactItem> getSearchedContacts(bool _isClSorting);
 
         void setFocus();
-        void setCurrent(QString aimdId, bool select = false, bool switchTab = false, std::function<void(Ui::HistoryControlPage*)> getPageCallback = nullptr);
+        void setCurrent(QString _aimId, bool _select = false, bool _switchTab = false, std::function<void(Ui::HistoryControlPage*)> _getPageCallback = nullptr);
 
         const ContactItem* getContactItem(const QString& _aimId) const;
 
@@ -92,54 +94,73 @@ Q_SIGNALS:
         QString selectedContactName() const;
         QString selectedContactState() const;
 
-        QString getDisplayName(const QString& aimdId) const;
-        QString getState(const QString& aimdId) const;
-        QDateTime getLastSeen(const QString& aimdId) const;
-        QString getInputText(const QString& aimdId) const;
-        void setInputText(const QString& aimId, const QString& _text);
-        bool isChat(const QString& aimId) const;
-        bool isMuted(const QString& aimId) const;
-        bool isLiveChat(const QString& aimId) const;
-        bool isOfficial(const QString& aimId) const;
-        bool isNotAuth(const QString& aimId) const;
-        QModelIndex contactIndex(const QString& aimId);
+        void setContactVisible(const QString& _aimId, bool visible);
 
-        void get_contact_profile(const QString& _aimId, std::function<void(profile_ptr, int32_t)> _call_back = [](profile_ptr, int32_t){});
-        void add_contact_to_contact_list(const QString& _aimid, std::function<void(bool)> _call_back = [](bool){});
-        void remove_contact_from_contact_list(const QString& _aimid);
-        void rename_contact(const QString& _aimid, const QString& _friendly);
-        void rename_chat(const QString& _aimid, const QString& _friendly);
-        bool block_spam_contact(const QString& _aimid, bool _with_confirmation = true);
-        void ignore_contact(const QString& _aimid, bool ignore);
-        bool ignore_and_remove_from_cl_contact(const QString& _aimid);
-        bool isYouAdmin(const QString& aimId);
-        void static get_ignore_list();
+        QString getDisplayName(const QString& _aimId) const;
+        QString getInputText(const QString& _aimId) const;
+        void setInputText(const QString& _aimId, const QString& _text);
+        QDateTime getLastSeen(const QString& _aimId) const;
+        QString getState(const QString& _aimId) const;
+        bool isChat(const QString& _aimId) const;
+        bool isMuted(const QString& _aimId) const;
+        bool isLiveChat(const QString& _aimId) const;
+        bool isOfficial(const QString& _aimId) const;
+        bool isNotAuth(const QString& _aimId) const;
+        QModelIndex contactIndex(const QString& _aimId);
 
-        void emitChanged(int first, int last);
+        void addContactToCL(const QString& _aimId, std::function<void(bool)> _callBack = [](bool) {});
+        bool blockAndSpamContact(const QString& _aimId, bool _withConfirmation = true);
+        void getContactProfile(const QString& _aimId, std::function<void(profile_ptr, int32_t)> _callBack = [](profile_ptr, int32_t) {});
+        void ignoreContact(const QString& _aimId, bool _ignore);
+        bool ignoreContactWithConfirm(const QString& _aimId);
+        bool isYouAdmin(const QString& _aimId);
+        void removeContactFromCL(const QString& _aimId);
+        void renameChat(const QString& _aimId, const QString& _friendly);
+        void renameContact(const QString& _aimId, const QString& _friendly);
+        void static getIgnoreList();
 
-        void ChangeChecked(const QString &index);
+        void removeContactsFromModel(const QVector<QString>& _vcontacts);
+
+        void emitChanged(int _first, int _last);
+
         std::vector<ContactItem> GetCheckedContacts() const;
         void clearChecked();
-        void setChecked(QString& _aimid);
+        void setChecked(const QString& _aimId, bool _isChecked);
         void setIsWithCheckedBox(bool);
-        bool setIsWithCheckedBox();
-        int get_service_index() const;
+        bool getIsChecked(const QString& _aimId) const;
+
+        bool isWithCheckedBox();
         QString contactToTryOnTheme() const;
 
         void refreshList();
         void joinLiveChat(const QString& _stamp, bool _silent);
 
+        void next();
+        void prev();
+
+        void sortByRecents();
+        bool contains(const QString& _aimdId) const;
+
     private:
         std::shared_ptr<bool>	ref_;
         std::function<void(Ui::HistoryControlPage*)> gotPageCallback_;
         void rebuild_index();
-        int addItem(Data::Contact *contact);
+        int addItem(Data::Contact* _contact);
         void pushChange(int i);
         void processChanges();
         void sort();
-        bool isShowInSelectMembers(const ContactItem& item);
+        bool isVisibleItem(const ContactItem& _item);
+        void updatePlaceholders();
+        int getIndexByOrderedIndex(int _index) const;
+        int getOrderIndexByAimid(const QString& _aimId) const;
+        void updateSortedIndexesList(std::vector<int>& _list, std::function<bool (const Logic::ContactItem&, const Logic::ContactItem&)> _less);
+        std::function<bool (const Logic::ContactItem&, const Logic::ContactItem&)> getLessFuncCL() const;
+        void updateIndexesListAfterRemoveContact(std::vector<int>& _list, int _index);
+        int innerRemoveContact(const QString& _aimId);
 
         std::vector<ContactItem> contacts_;
+        std::vector<int> sorted_index_cl_;
+        std::vector<int> sorted_index_recents_;
         QHash<QString, int> indexes_;
 
         int scrollPosition_;
@@ -156,8 +177,9 @@ Q_SIGNALS:
         bool searchRequested_;
         bool isSearch_;
         bool isWithCheckedBox_;
+        bool is_index_valid_;
     };
 
-    ContactListModel* GetContactListModel();
+    ContactListModel* getContactListModel();
     void ResetContactListModel();
 }

@@ -33,7 +33,7 @@ int32_t get_gateway::init_request(std::shared_ptr<core::http_request_simple> _re
     std::stringstream ss_file_size;
     ss_file_size << file_size_;
 
-    params["a"] = params_.a_token_;
+    params["a"] = escape_symbols(params_.a_token_);
     params["f"] = "json";
     params["k"] = params_.dev_id_;
     params["ts"] = tools::from_int64(ts);

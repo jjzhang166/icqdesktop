@@ -1,7 +1,6 @@
 #include "stdafx.h"
 
 #include "../../../utils/utils.h"
-#include "../../../core_dispatcher.h"
 
 #include "MessageContentWidget.h"
 
@@ -22,6 +21,7 @@ namespace HistoryControl
 	{
 
 	}
+
 
     QPoint MessageContentWidget::deliveryStatusOffsetHint(const int32_t statusLineWidth) const
     {
@@ -63,6 +63,15 @@ namespace HistoryControl
     void MessageContentWidget::clearSelection()
     {
         assert(hasTextBubble());
+    }
+
+    void MessageContentWidget::onVisibilityChanged(const bool isVisible)
+    {
+        if (isVisible && !Initialized_)
+        {
+            Initialized_ = true;
+            initialize();
+        }
     }
 
     QString MessageContentWidget::selectedText() const
@@ -134,19 +143,6 @@ namespace HistoryControl
 
     void MessageContentWidget::initialize()
     {
-        if (Initialized_)
-        {
-            return;
-        }
-
-        initializeInternal();
-
-        Initialized_ = true;
-    }
-
-    void MessageContentWidget::initializeInternal()
-    {
-
     }
 
 	void MessageContentWidget::paintEvent(QPaintEvent*)
@@ -162,4 +158,29 @@ namespace HistoryControl
 		render(p);
 	}
 
+
+    void MessageContentWidget::mouseMoveEvent(QMouseEvent *e)
+    {
+        const auto isLeftButtonPressed = ((e->buttons() & Qt::LeftButton) != 0);
+        if (isLeftButtonPressed)
+        {
+            auto pos = e->pos();
+            if (mousePos_.isNull())
+            {
+                mousePos_ = pos;
+            }
+            else if (!mousePos_.isNull() && (abs(mousePos_.x() - pos.x()) > Utils::GetDragDistance() || abs(mousePos_.y() - pos.y()) > Utils::GetDragDistance()))
+            {
+                mousePos_ = QPoint();
+                drag();
+                return;
+            }
+        }
+        else
+        {
+            mousePos_ = QPoint();
+        }
+
+        return QWidget::mouseMoveEvent(e);
+    }
 }

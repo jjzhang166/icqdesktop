@@ -13,6 +13,8 @@
 
 using namespace core;
 
+const int32_t default_http_connect_timeout = 15000; // 15 sec
+const int32_t default_http_execute_timeout = 15000; // 15 sec
 
 class http_handles : public core::ithread_callback
 {
@@ -85,32 +87,38 @@ struct curl_context
     std::shared_ptr<tools::binary_stream> output_;
     std::shared_ptr<tools::binary_stream> header_;
 
-    http_request_simple::stop_function must_stop_;
+    http_request_simple::stop_function stop_func_;
+
+    http_request_simple::progress_function progress_func_;
+
+    int32_t bytes_transferred_pct_;
 
     bool need_log_;
     std::shared_ptr<tools::binary_stream> log_data_;
 
     core::replace_log_function replace_log_function_;
-    
+
     curl_slist* header_chunk_;
     struct curl_httppost* post;
     struct curl_httppost* last;
 
     bool keep_alive_;
 
-    curl_context(std::function<bool()> _stop_func, bool _keep_alive)
+    curl_context(http_request_simple::stop_function _stop_func, http_request_simple::progress_function _progress_func, bool _keep_alive)
         :
         curl_(_keep_alive ? g_handles->get_for_this_thread() : curl_easy_init()),
         output_(new core::tools::binary_stream()),
         header_(new core::tools::binary_stream()),
         log_data_(new core::tools::binary_stream()),
-        must_stop_(_stop_func),
+        stop_func_(_stop_func),
+        progress_func_(_progress_func),
         header_chunk_(0),
         post(NULL),
         last(NULL),
         need_log_(true),
         keep_alive_(_keep_alive),
-        replace_log_function_([](tools::binary_stream&){})
+        replace_log_function_([](tools::binary_stream&){}),
+        bytes_transferred_pct_(0)
     {
     }
 
@@ -310,6 +318,8 @@ struct curl_context
     {
         CURLcode res = curl_easy_perform(curl_);
 
+        auto v = curl_version_info(CURLVERSION_NOW);
+
         std::stringstream error;
         error << "curl_easy_perform result is ";
         error << res;
@@ -362,10 +372,34 @@ static int32_t progress_callback(void* ptr, double TotalToDownload, double NowDo
 {
     auto cntx = (curl_context*)ptr;
 
-    if (cntx->must_stop_ && cntx->must_stop_())
+    assert(cntx->bytes_transferred_pct_ >= 0);
+    assert(cntx->bytes_transferred_pct_ <= 100);
+
+    if (cntx->stop_func_ && cntx->stop_func_())
     {
         return -1;
     }
+
+    const auto file_too_small = (TotalToDownload <= 1);
+    const auto skip_progress = (file_too_small || !cntx->progress_func_);
+    if (skip_progress)
+    {
+        return 0;
+    }
+
+    const auto bytes_transferred_pct = (int32_t)((NowDownloaded * 100) / TotalToDownload);
+    assert(bytes_transferred_pct >= 0);
+    assert(bytes_transferred_pct <= 100);
+
+    const auto percentage_updated = (bytes_transferred_pct != cntx->bytes_transferred_pct_);
+    if (!percentage_updated)
+    {
+        return 0;
+    }
+
+    cntx->bytes_transferred_pct_ = bytes_transferred_pct;
+
+    cntx->progress_func_((int64_t)TotalToDownload, (int64_t)NowDownloaded, bytes_transferred_pct);
 
     return 0;
 }
@@ -437,8 +471,8 @@ static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char*
     return 0;
 }
 
-http_request_simple::http_request_simple(proxy_settings _proxy_settings, const std::string &_user_agent, stop_function _stop_func)
-    : must_stop_(_stop_func),
+http_request_simple::http_request_simple(proxy_settings _proxy_settings, const std::string &_user_agent, stop_function _stop_func, progress_function _progress_func)
+    : stop_func_(_stop_func),
     output_(new tools::binary_stream()),
     header_(new tools::binary_stream()),
     is_time_condition_(false),
@@ -446,8 +480,8 @@ http_request_simple::http_request_simple(proxy_settings _proxy_settings, const s
     post_data_(0),
     post_data_size_(0),
     copy_post_data_(false),
-    timeout_(-1),
-    connect_timeout_(-1),
+    timeout_(default_http_execute_timeout),
+    connect_timeout_(default_http_connect_timeout),
     range_from_(-1),
     range_to_(-1),
     is_post_form_(false),
@@ -455,7 +489,8 @@ http_request_simple::http_request_simple(proxy_settings _proxy_settings, const s
     keep_alive_(false),
     proxy_settings_(_proxy_settings),
     user_agent_(_user_agent),
-    replace_log_function_([](tools::binary_stream&){})
+    replace_log_function_([](tools::binary_stream&){}),
+    progress_func_(_progress_func)
 {
     assert(!user_agent_.empty());
 }
@@ -599,7 +634,7 @@ void http_request_simple::set_post_params(curl_context* _ctx)
 
 bool http_request_simple::send_request(bool _post, bool switch_proxy)
 {
-    curl_context ctx(must_stop_, keep_alive_);
+    curl_context ctx(stop_func_, progress_func_, keep_alive_);
 
     auto is_user_proxy = proxy_settings_.proxy_type_ != (int)core::proxy_types::auto_proxy;
 

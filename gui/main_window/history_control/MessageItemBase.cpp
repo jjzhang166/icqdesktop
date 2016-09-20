@@ -1,4 +1,5 @@
 #include "stdafx.h"
+
 #include "MessageItemBase.h"
 
 namespace Ui

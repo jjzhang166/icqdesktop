@@ -7,17 +7,17 @@ namespace Ui
     class ThemesModel : public QObject
     {
         Q_OBJECT
-        ThemesWidget* themes_widget_;
-        QString target_contact_;
+        ThemesWidget* themesWidget_;
+        QString targetContact_;
     private Q_SLOTS:
-        void on_themes_meta();
-        void on_themes_meta_error();
+        void onThemesMeta();
+        void onThemesMetaError();
         void im_created();
 
     public:
         ThemesModel(ThemesWidget* _flowLayout);
-        void themeSelected(int _theme_id);
-        void set_target_contact(QString _aimId);
+        void themeSelected(int _themeId);
+        void setTargetContact(QString _aimId);
     };
 }
 

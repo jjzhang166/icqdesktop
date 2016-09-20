@@ -3,13 +3,16 @@
 
 #include "VoipSysPanelHeader.h"
 #include "VideoFrame.h"
+#include "VideoWindow.h"
 
-namespace Ui {
-    namespace video_window {
-        class ResizeEventFilter;
-    }
+namespace Ui
+{
+    class ShadowWindow;
+    class ResizeEventFilter;
 
-    class IncomingCallWindow : public QWidget { Q_OBJECT
+    class IncomingCallWindow : public QWidget
+    {
+        Q_OBJECT
         std::string contact_;
         std::string account_;
 
@@ -18,8 +21,8 @@ namespace Ui {
 
     private Q_SLOTS:
         void onVoipCallNameChanged(const std::vector<voip_manager::Contact>&);
-        void onVoipWindowRemoveComplete(quintptr win_id);
-        void onVoipWindowAddComplete(quintptr win_id);
+        void onVoipWindowRemoveComplete(quintptr _winId);
+        void onVoipWindowAddComplete(quintptr _winId);
 
         void onDeclineButtonClicked();
         void onAcceptVideoClicked();
@@ -28,7 +31,7 @@ namespace Ui {
 		void updateTitle();
 
     public:
-        IncomingCallWindow(const std::string& account, const std::string& contact);
+        IncomingCallWindow(const std::string& _account, const std::string& _contact);
         ~IncomingCallWindow();
 
         void showFrame();
@@ -36,16 +39,24 @@ namespace Ui {
 
     private:
         std::unique_ptr<VoipSysPanelHeader>  header_;
-        std::unique_ptr<VoipSysPanelControl> controls_;
+        std::unique_ptr<IncomingCallControls> controls_;
         
-        video_window::ResizeEventFilter* event_filter_;
+        ResizeEventFilter* eventFilter_;
 
 		// List of currect contacts.
-		std::vector<voip_manager::Contact> _contacts;
+		std::vector<voip_manager::Contact> contacts_;
 
+		// List of instances, needs to make cascade of these windows.
+		static QList<IncomingCallWindow*> instances_;
+
+		// Shadow of this widnow.
+		ShadowWindowParent shadow_;
 #ifndef STRIP_VOIP
-        FrameControl_t* _rootWidget;
+        FrameControl_t* rootWidget_;
 #endif //STRIP_VOIP
+
+		// Search best position for window related of other windows.
+		QPoint findBestPosition(const QPoint& _windowPosition, const QPoint& _offset);
 
         void showEvent(QShowEvent*) override;
         void hideEvent(QHideEvent*) override;

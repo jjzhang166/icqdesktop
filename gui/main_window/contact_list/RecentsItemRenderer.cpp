@@ -1,202 +1,151 @@
 #include "stdafx.h"
 
-#include "../../utils/utils.h"
-#include "../../core_dispatcher.h"
-#include "../../utils/Text2DocConverter.h"
+#include "RecentsItemRenderer.h"
+#include "Common.h"
+#include "RecentsModel.h"
+#include "ContactList.h"
+#include "../../gui_settings.h"
+#include "../../controls/CommonStyle.h"
 #include "../../themes/ThemePixmap.h"
 #include "../../themes/ResourceIds.h"
-
-#include "Common.h"
-#include "RecentsItemRenderer.h"
-#include "RecentsModel.h"
-
-#include "../../gui_settings.h"
-
-namespace
-{
-
-	using namespace ContactList;
-
-	namespace L
-	{
-		const auto itemHeight = dip(68);
-        const auto serviceItemHeight = dip(25);
-		const auto itemHorPadding = dip(16);
-        const auto favoritesStatusPadding = dip(4);
-
-		const auto avatarX = dip(16);
-		const auto avatarY = dip(6);
-		const auto avatarW = dip(56);
-		const auto avatarH = dip(56);
-
-		const auto nameFontSize = dip(17);
-		const auto nameHeight = dip(24);
-		const auto nameX = avatarX + avatarW + dip(13);
-		const auto nameY = dip(12);
-		const auto nameRightPadding = dip(12);
-        const auto getNameStylesheet = []{
-            return QString("font: %1 %2px \"%3\"; color: #282828; background-color: transparent")
-                .arg(Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI))
-                .arg(nameFontSize.px())
-                .arg(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
-        };
-
-		const auto messageFontSize = dip(14);
-		const auto messageHeight = dip(24);
-		const auto messageX = nameX;
-		const auto messageY = dip(34);
-		const auto getMessageStylesheet = []{
-            return QString("font: %1 %2px \"%3\"; color: #696969; background-color: transparent")
-                .arg(Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI))
-                .arg(messageFontSize.px())
-                .arg(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
-        };
-
-		const auto timeFontSize = dip(12);
-		const auto timeY = avatarY + dip(24);
-		const auto timeFont = dif(Utils::FontsFamily::SEGOE_UI, timeFontSize.px());
-		const QColor timeFontColor(0x69, 0x69, 0x69);
-
-		const auto deliveryStateY = avatarY + dip(11);
-		const auto deliveryStateRightPadding = dip(4);
-
-		const auto unreadsFont = dif(Utils::FontsFamily::SEGOE_UI_SEMIBOLD, 13);
-		const auto unreadsPadding = dip(6);
-		const auto unreadsMinimumExtent = dip(20);
-		const auto unreadsY = dip(38);
-		const auto unreadsLeftPadding = dip(12);
-        const auto dragOverlayPadding = dip(8);
-        const auto dragOverlayBorderWidth = dip(2);
-        const auto dragOverlayBorderRadius = dip(8);
-        const auto dragOverlayVerPadding = dip(1);
-
-        const auto official_hor_padding = dip(6);
-        const auto official_ver_padding = dip(4);
-
-        int getLastReadAvatarSize() {return Utils::scale_value(16);}
-	}
-
-	void RenderAvatar(QPainter &painter, const RecentItemVisualData &visData);
-
-	int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx);
-
-	void RenderContactName(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx);
-
-	void RenderMouseState(QPainter &painter, const RecentItemVisualData &visData, bool fromAlert, bool _shortView);
-
-	int RenderTime(QPainter &painter, const QDateTime &time, const DeliveryState state, bool fromAlert, bool _shortView);
-
-	int RenderUnread(QPainter &painter, const int unreads, bool muted);
-
-    void RenderLastReadAvatar(QPainter &painter, const QPixmap& _avatar, const int _xOffset);
-
-}
+#include "../../utils/Text2DocConverter.h"
+#include "../../utils/utils.h"
 
 namespace ContactList
 {
-	RecentItemVisualData::RecentItemVisualData(
-		const QString &aimId,
-		const QPixmap &avatar,
-		const QString &state,
-		const QString &status,
-		const bool isHovered,
-		const bool isSelected,
-        const bool isTyping,
-		const QString &contactName,
-		const DeliveryState deliveryState,
-		const bool haveLastSeen,
-		const QDateTime &lastSeen,
-		const int unreadsCounter,
-		const bool muted,
+    RecentItemVisualData::RecentItemVisualData(
+        const QString &aimId,
+        const QPixmap &avatar,
+        const QString &state,
+        const QString &status,
+        const bool isHovered,
+        const bool isSelected,
+        const QString &contactName,
+        const bool haveLastSeen,
+        const QDateTime &lastSeen,
+        const int unreadsCounter,
+        const bool muted,
         const QString &senderNick,
         const bool isOfficial,
         const bool _drawLastRead,
-        const QPixmap& _lastReadAvatar)
-		: VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, false, false, isOfficial, _drawLastRead, _lastReadAvatar)
-		, DeliveryState_(deliveryState)
-		, UnreadsCounter_(unreadsCounter)
-		, Muted_(muted)
+        const QPixmap& _lastReadAvatar,
+        const bool isTyping,
+        const DeliveryState deliveryState)
+        : VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, false /*_isWithCheckBox*/
+            , false /* _isChatMember */, isOfficial, _drawLastRead, _lastReadAvatar, QString() /* role */, unreadsCounter)
+        , DeliveryState_(deliveryState)
+        , Muted_(muted)
         , senderNick_(senderNick)
         , IsTyping_(isTyping)
-	{
-		assert(deliveryState >= DeliveryState::Min);
-		assert(deliveryState <= DeliveryState::Max);
-		assert(unreadsCounter >= 0);
-	}
+    {
+        assert(deliveryState >= DeliveryState::Min);
+        assert(deliveryState <= DeliveryState::Max);
+        assert(unreadsCounter >= 0);
+    }
 
-	bool RecentItemVisualData::HasAvatar() const
-	{
-		return !Avatar_.isNull();
-	}
+    void RenderRecentsItem(QPainter &painter, const RecentItemVisualData &item, const ViewParams& viewParams_)
+    {
+        auto contactListPxInRecents = GetRecentsParams(viewParams_.regim_);
+        painter.save();
 
-	void RenderRecentsItem(QPainter &painter, const RecentItemVisualData &item, bool fromAlert)
-	{
-		painter.save();
+        painter.setBrush(Qt::NoBrush);
+        painter.setPen(Qt::NoPen);
+        painter.setRenderHint(QPainter::Antialiasing);
 
-		painter.setBrush(Qt::NoBrush);
-		painter.setPen(Qt::NoPen);
-		painter.setRenderHint(QPainter::Antialiasing);
+        RenderMouseState(painter, item.IsHovered_, item.IsSelected_, contactListPxInRecents, viewParams_);
+        RenderAvatar(painter, contactListPxInRecents.avatarX().px(), item.Avatar_, contactListPxInRecents);
 
-        bool short_view = false;
+        int rightBorderPx = CorrectItemWidth(ItemWidth(viewParams_).px(), viewParams_.fixedWidth_) - contactListPxInRecents.itemHorPadding().px();
 
-		RenderMouseState(painter, item, fromAlert, short_view);
-
-		RenderAvatar(painter, item);
-
-        int rightBorderPx = (ItemWidth(fromAlert, false, short_view) - L::itemHorPadding).px();
-		RenderContactName(painter, item, rightBorderPx);
-
-		if (!fromAlert)
+        if (viewParams_.regim_ != ::Logic::MembersWidgetRegim::FROM_ALERT)
         {
-            if (!item.drawLastRead_ || item.Muted_)
+            if (viewParams_.regim_ == ::Logic::MembersWidgetRegim::UNKNOWN)
             {
-                rightBorderPx = RenderUnread(painter, item.UnreadsCounter_, item.Muted_);
+                if (!item.unreadsCounter_)
+                {
+                    if (!viewParams_.pictOnly_)
+                        rightBorderPx = RenderAddContact(painter, true, contactListPxInRecents, viewParams_);
+                }
+                else
+                {
+                    rightBorderPx = RenderNotifications(painter, item.unreadsCounter_, false /* muted */, viewParams_, contactListPxInRecents, false /* isUnknownHeader */);
+                }
+            }
+            else
+            {
+                if (!item.drawLastRead_ || item.Muted_)
+                {
+                    rightBorderPx = RenderNotifications(painter, item.unreadsCounter_, item.Muted_, viewParams_, contactListPxInRecents, false /* isUnknownHeader */);
+                }
             }
         }
 
+        if (viewParams_.pictOnly_)
+        {
+            painter.restore();
+            return;
+        }
+
+        RenderContactName(painter, item, contactListPxInRecents.nameY().px(), rightBorderPx, viewParams_, contactListPxInRecents);
+
         const int lastReadLeftMargin = Utils::scale_value(4);
         const int lastReadRightMargin = Utils::scale_value(4);
-        const int lastReadWidth = L::getLastReadAvatarSize() + lastReadRightMargin + lastReadLeftMargin;
+        const int lastReadWidth = contactListPxInRecents.getLastReadAvatarSize() + lastReadRightMargin + lastReadLeftMargin;
 
         rightBorderPx -= (item.drawLastRead_ ? lastReadWidth : 0);
 
-        const int messageWidth = RenderContactMessage(painter, item, rightBorderPx);
+        const int messageWidth = RenderContactMessage(painter, item, rightBorderPx, viewParams_, contactListPxInRecents);
 
-        if (item.drawLastRead_)
+        if (viewParams_.regim_ == Logic::MembersWidgetRegim::UNKNOWN)
         {
-            RenderLastReadAvatar(painter, item.lastReadAvatar_, L::messageX.px() + messageWidth + lastReadLeftMargin);
+            RenderRemoveContact(painter, item.IsHovered_, contactListPxInRecents, viewParams_);
+            painter.restore();
+            return;
         }
 
-		painter.restore();
-	}
+        const auto showLastMessage = Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true);
 
-    void RenderRecentsDragOverlay(QPainter &painter)
+        if (item.drawLastRead_ && !item.IsTyping_ && showLastMessage)
+        {
+            RenderLastReadAvatar(painter, item.lastReadAvatar_, contactListPxInRecents.messageX().px() + messageWidth + lastReadLeftMargin, contactListPxInRecents);
+        }
+
+        painter.restore();
+    }
+
+    void RenderRecentsDragOverlay(QPainter &painter, const ViewParams& viewParams_)
     {
         painter.save();
 
         painter.setPen(Qt::NoPen);
         painter.setRenderHint(QPainter::Antialiasing);
+        auto recentParams = GetRecentsParams(viewParams_.regim_);
 
-        painter.fillRect(0, 0, ItemWidth(false, false, false).px(), L::itemHeight.px(), QBrush(QColor(255, 255, 255, 255 * 0.9)));
+        auto width = CorrectItemWidth(ItemWidth(viewParams_).px(), viewParams_.fixedWidth_);
+        painter.fillRect(0, 0, width, recentParams.itemHeight().px(), QBrush(QColor(255, 255, 255, 255 * 0.9)));
         painter.setBrush(QBrush(QColor(255, 255, 255, 0)));;
-        QPen pen;
-        pen.setColor(QColor(0x57,0x9e,0x1c));
-        pen.setStyle(Qt::DashLine);
-        pen.setWidth(L::dragOverlayBorderWidth.px());
+        QPen pen (QColor(0x57, 0x9e, 0x1c), recentParams.dragOverlayBorderWidth().px(), Qt::DashLine, Qt::RoundCap);
         painter.setPen(pen);
-        painter.drawRoundedRect(L::dragOverlayPadding.px(), L::dragOverlayVerPadding.px(), ItemWidth(false, false, false).px() - L::itemHorPadding.px(), L::itemHeight.px() - L::dragOverlayVerPadding.px(), L::dragOverlayBorderRadius.px(), L::dragOverlayBorderRadius.px());
+        painter.drawRoundedRect(
+            recentParams.dragOverlayPadding().px(),
+            recentParams.dragOverlayVerPadding().px(),
+            width - recentParams.itemHorPadding().px() - Utils::scale_value(1),
+            recentParams.itemHeight().px() - recentParams.dragOverlayVerPadding().px(),
+            recentParams.dragOverlayBorderRadius().px(),
+            recentParams.dragOverlayBorderRadius().px()
+            );
 
         QPixmap p(Utils::parse_image_name(":/resources/file_sharing/content_upload_cl_100.png"));
         Utils::check_pixel_ratio(p);
         double ratio = Utils::scale_bitmap(1);
-        int x = (ItemWidth(false, false, false).px() / 2) - (p.width() / 2. / ratio);
-        int y = (L::itemHeight.px() / 2) - (p.height() / 2. / ratio);
+        int x = width / 2 - p.width() / 2. / ratio;
+        int y = (recentParams.itemHeight().px() / 2) - (p.height() / 2. / ratio);
         painter.drawPixmap(x, y, p);
 
         painter.restore();
     }
 
-    void RenderServiceItem(QPainter &painter, const QString& text, bool renderState)
+    void RenderServiceItem(QPainter &painter, const QString& text, bool renderState, bool drawLine, const ViewParams& viewParams_)
     {
         painter.save();
 
@@ -206,49 +155,107 @@ namespace ContactList
         QPen pen;
         pen.setColor(QColor(0x57,0x9e,0x1c));
         painter.setPen(pen);
-        QFont f = Utils::appFont(Utils::FontsFamily::SEGOE_UI_BOLD, Utils::scale_value(12));
+        QFont f = Fonts::appFontScaled(12, Fonts::defaultAppFontFamily(), Fonts::FontStyle::BOLD);
         painter.setFont(f);
-        Utils::drawText(painter, QPointF(L::itemHorPadding.px(), L::serviceItemHeight.px() / 2), Qt::AlignVCenter, text);
+
+        auto recentParams = GetRecentsParams(viewParams_.regim_);
+
+        if (!viewParams_.pictOnly_)
+        {
+            Utils::drawText(painter, QPointF(recentParams.itemHorPadding().px(), recentParams.serviceItemHeight().px() / 2), Qt::AlignVCenter, text);
+        }
+        else if (drawLine)
+        {
+            painter.save();
+            QPen line_pen;
+            line_pen.setColor(QColor("#dbdbdb"));
+            painter.setPen(line_pen);
+            int y = recentParams.serviceItemHeight().px() / 2;
+            painter.drawLine(0, y, recentParams.avatarW().px() + 2 * recentParams.itemHorPadding().px(), y);
+            painter.restore();
+        }
 
         if (renderState)
         {
-            QPixmap p(Utils::parse_image_name(Logic::GetRecentsModel()->isFavoritesVisible() ? ":/resources/cl_group_close_100.png" : ":/resources/cl_group_open_100.png"));
+            QPixmap p(Utils::parse_image_name(Logic::getRecentsModel()->isFavoritesVisible() ? ":/resources/cl_group_close_100.png" : ":/resources/cl_group_open_100.png"));
             Utils::check_pixel_ratio(p);
             double ratio = Utils::scale_bitmap(1);
             QFontMetrics m(f);
-            int x = L::itemHorPadding.px() + m.width(text) + L::favoritesStatusPadding.px();
-            int y = L::serviceItemHeight.px() / 2 - (p.height() / 2. / ratio) + Utils::scale_value(1);
+            int x = recentParams.itemHorPadding().px() + m.width(text) + recentParams.favoritesStatusPadding().px();
+            int y = recentParams.serviceItemHeight().px() / 2 - (p.height() / 2. / ratio) + Utils::scale_value(1);
             painter.drawPixmap(x, y, p);
         }
 
         painter.restore();
     }
+
+    void RenderUnknownsHeader(QPainter &painter, const QString& title, const int count, const ViewParams& viewParams_)
+    {
+        auto recentParams = GetRecentsParams(viewParams_.regim_);
+        painter.save();
+
+        painter.setPen(Qt::NoPen);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        if (!viewParams_.pictOnly_)
+        {
+            QPen pen;
+            pen.setColor(Utils::rgbaStringFromColor(Ui::CommonStyle::getTextCommonColor()));
+            painter.setPen(pen);
+
+            QFont f;
+            if (count)
+            {
+                f = Fonts::appFontScaled(16, Fonts::FontStyle::SEMIBOLD);
+            }
+            else
+            {
+                f = Fonts::appFontScaled(16);
+            }
+            painter.setFont(f);
+            QFontMetrics metrics(f);
+            Utils::drawText(painter, QPointF(recentParams.itemHorPadding().px(), recentParams.unknownsItemHeight().px() / 2. - dip(4).px()), Qt::AlignVCenter, title);
+        }
+        else
+        {
+            QPixmap pict(Utils::parse_image_name(":/resources/sidebar_allmembers_100.png"));
+            Utils::check_pixel_ratio(pict);
+            painter.drawPixmap(recentParams.avatarX().px() + recentParams.avatarW().px() / 2 - pict.width() / 2, recentParams.avatarY().px(), pict);
+        }
+
+        painter.restore();
+
+        if (count)
+        {
+            painter.save();
+
+            painter.setBrush(Qt::NoBrush);
+            painter.setPen(Qt::NoPen);
+            painter.setRenderHint(QPainter::Antialiasing);
+
+            RenderNotifications(painter, count, false, viewParams_, recentParams, true /* isUnknownHeader */);
+            painter.restore();
+        }
+    }
 }
 
-namespace
+namespace ContactList
 {
+    int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx, const ViewParams& viewParams_, ContactListParams& _recentParams)
+    {
+        if (!visData.HasStatus())
+        {
+            return 0;
+        }
 
-	void RenderAvatar(QPainter &painter, const RecentItemVisualData &visData)
-	{
-		if (!visData.HasAvatar())
-		{
-			return;
-		}
+        static auto plainTextControl = CreateTextBrowser("message", _recentParams.getMessageStylesheet(false), _recentParams.messageHeight().px());
+        static auto unreadsTextControl = CreateTextBrowser("messageUnreads", _recentParams.getMessageStylesheet(true), _recentParams.messageHeight().px());
 
-		painter.drawPixmap(L::avatarX.px(), L::avatarY.px(), L::avatarW.px(), L::avatarH.px(), visData.Avatar_);
-	}
+        const auto hasUnreads = (viewParams_.regim_ != ::Logic::MembersWidgetRegim::FROM_ALERT && (visData.unreadsCounter_ > 0));
+        auto &textControl = (hasUnreads ? unreadsTextControl : plainTextControl);
 
-	int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx)
-	{
-		if (!visData.HasStatus())
-		{
-			return 0;
-		}
-
-		static auto textControl = CreateTextBrowser("message", L::getMessageStylesheet(), L::messageHeight.px());
-
-		const auto maxWidth = (rightBorderPx - L::messageX.px());
-		textControl->setFixedWidth(maxWidth);
+        const auto maxWidth = (rightBorderPx - _recentParams.messageX().px());
+        textControl->setFixedWidth(maxWidth);
         textControl->setWordWrapMode(QTextOption::WrapMode::NoWrap);
 
         auto messageTextMaxWidth = maxWidth;
@@ -262,6 +269,10 @@ namespace
 
         const auto &senderNick = visData.senderNick_;
         const auto showLastMessage = Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true);
+
+        if (!showLastMessage && viewParams_.regim_ != Logic::MembersWidgetRegim::FROM_ALERT)
+            return -1;
+
         if (!senderNick.isEmpty() && !visData.IsTyping_ && showLastMessage)
         {
             static const QString fix(": ");
@@ -275,7 +286,7 @@ namespace
             const auto charFormat = cursor.charFormat();
 
             auto boldCharFormat = charFormat;
-            boldCharFormat.setFont(Utils::appFont(Utils::FontsFamily::SEGOE_UI_SEMIBOLD, Utils::scale_value(14)));
+            boldCharFormat.setFont(Fonts::appFontScaled(14, Fonts::FontStyle::SEMIBOLD));
 
             cursor.setCharFormat(boldCharFormat);
 
@@ -283,8 +294,7 @@ namespace
                 fixedNick,
                 cursor,
                 Logic::Text2DocHtmlMode::Pass,
-                false
-            );
+                false);
 
             cursor.setCharFormat(charFormat);
 
@@ -295,187 +305,205 @@ namespace
         const auto text = visData.GetStatus().trimmed().simplified().left(STATUS_LIMIT);
 
         QFontMetrics m(font);
-		const auto elidedText = m.elidedText(text, Qt::ElideRight, messageTextMaxWidth);
+        const auto elidedText = m.elidedText(text, Qt::ElideRight, messageTextMaxWidth);
 
-		Logic::Text2Doc(elidedText, cursor, Logic::Text2DocHtmlMode::Pass, false);
+        Logic::Text2Doc(elidedText, cursor, Logic::Text2DocHtmlMode::Pass, false);
 
-		Logic::FormatDocument(doc, L::messageHeight.px());
-
+        Logic::FormatDocument(doc, _recentParams.messageHeight().px());
 
         if (platform::is_apple())
         {
             qreal realHeight = doc.documentLayout()->documentSize().toSize().height();
             qreal correction = ((realHeight > 17) ? 0 : 4);
 
-            textControl->render(&painter, QPoint(L::messageX.px(), L::messageY.px() + correction));
+            textControl->render(
+                &painter,
+                QPoint(
+                    _recentParams.messageX().px(),
+                     _recentParams.messageY().px() + correction));
         }
         else
         {
-            textControl->render(&painter, QPoint(L::messageX.px(), L::messageY.px()));
+            textControl->render(&painter, QPoint(_recentParams.messageX().px(), _recentParams.messageY().px()));
         }
 
         return doc.idealWidth();
-	}
+    }
 
-	void RenderContactName(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx)
-	{
-		assert(!visData.ContactName_.isEmpty());
+    void RenderLastReadAvatar(QPainter &painter, const QPixmap& _avatar, const int _xOffset, ContactListParams& _recentParams)
+    {
+        painter.drawPixmap(_xOffset, _recentParams.lastReadY().px(), _recentParams.getLastReadAvatarSize(), _recentParams.getLastReadAvatarSize(), _avatar);
+    }
 
-        static auto textControl = CreateTextBrowser("name", L::getNameStylesheet(), L::nameHeight.px() + (platform::is_apple() ? 1 : 0));
+    int RenderNotifications(QPainter &painter, const int unreads, bool muted, const ViewParams& viewParams_, ContactListParams& _recentParams, bool _isUnknownHeader)
+    {
+        auto width = CorrectItemWidth(ItemWidth(viewParams_).px(), viewParams_.fixedWidth_);
+        assert(unreads >= 0);
 
-        QPixmap official_mark;
-        if (visData.isOfficial_)
+        if (muted)
         {
-            official_mark = QPixmap(Utils::parse_image_name(":/resources/cl_badges_official_100.png"));
-            Utils::check_pixel_ratio(official_mark);
+            if (!viewParams_.pictOnly_)
+            {
+                Themes::IThemePixmapSptr pixmap = Themes::GetPixmap(unreads == 0 ? Themes::PixmapResourceId::ContentMuteNotify : Themes::PixmapResourceId::ContentMuteNotifyNew);
+                auto mutedX = (width - _recentParams.itemHorPadding().px()) - pixmap->GetWidth();
+                pixmap->Draw(painter, mutedX, _recentParams.unreadsY().px());
+                return ((width - _recentParams.itemHorPadding().px()) - pixmap->GetWidth() - _recentParams.unreadsLeftPadding().px());
+            }
+            else
+            {
+                return width - _recentParams.itemHorPadding().px();
+            }
         }
 
-		int maxWidth = (rightBorderPx - L::nameX.px() - L::nameRightPadding.px());
-        if (!official_mark.isNull())
-            maxWidth -= official_mark.width();
-
-		textControl->setFixedWidth(maxWidth);
-
-		QFontMetrics m(textControl->font());
-        const auto elidedString = m.elidedText(visData.ContactName_, Qt::ElideRight, maxWidth);
-
-		auto &doc = *textControl->document();
-		doc.clear();
-		QTextCursor cursor = textControl->textCursor();
-		Logic::Text2Doc(elidedString, cursor, Logic::Text2DocHtmlMode::Pass, false);
-		Logic::FormatDocument(doc, L::nameHeight.px());
-
-        qreal correction = 0;
-        if (platform::is_apple())
+        if (unreads <= 0)
         {
-            qreal realHeight = doc.documentLayout()->documentSize().toSize().height();
-            correction = (realHeight > 21)?-2:2;
-            textControl->render(&painter, QPoint(L::nameX.px(), L::nameY.px() + correction));
+            return width - _recentParams.itemHorPadding().px();
+        }
+
+        const auto text = (unreads > 99) ? QString("99+") : QVariant(unreads).toString();
+
+        static QFontMetrics m(_recentParams.unreadsFont().font());
+
+        const auto unreadsRect = m.tightBoundingRect(text);
+        const auto firstChar = text[0];
+        const auto lastChar = text[text.size() - 1];
+        const auto unreadsWidth = (unreadsRect.width() + m.leftBearing(firstChar) + m.rightBearing(lastChar));
+        const auto unreadsHeight = unreadsRect.height();
+
+        auto balloonWidth = unreadsWidth;
+        const auto isLongText = (text.length() > 1);
+        if (isLongText)
+        {
+            balloonWidth += (_recentParams.unreadsPadding().px() * 2);
         }
         else
         {
-            textControl->render(&painter, QPoint(L::nameX.px(), L::nameY.px()));
+            balloonWidth = _recentParams.unreadsMinimumExtent().px();
         }
 
-        int x = L::nameX.px() + m.width(elidedString) + L::official_hor_padding.px();
-        int y = L::nameY.px() + L::official_ver_padding.px();
-        painter.drawPixmap(x, y, official_mark);
-	}
+        const auto ballonHeight = _recentParams.unreadsMinimumExtent().px();
 
-	void RenderMouseState(QPainter &painter, const RecentItemVisualData &visData, bool fromAlert, bool _shortView)
-	{
-		if (!visData.IsHovered_ && !visData.IsSelected_)
-		{
-			return;
-		}
+        auto unreadsX = ((width - (viewParams_.regim_ != Logic::MembersWidgetRegim::UNKNOWN ? _recentParams.itemHorPadding().px() : _recentParams.itemHorPaddingUnknown().px())) - balloonWidth);
+        const auto balloonRadius = (ballonHeight / 2);
+        auto unreadsY = _isUnknownHeader ? _recentParams.unknownsUnreadsY().px() : _recentParams.unreadsY().px();
 
-		painter.save();
+        if (viewParams_.pictOnly_)
+        {
+            unreadsX = _recentParams.itemHorPadding().px();
+            unreadsY = (_recentParams.itemHeight().px() - _recentParams.avatarH().px()) / 2;
+            auto gap = Utils::scale_value(2);
+            painter.setBrush(QColor("#FFFFFF"));
+            painter.drawRoundedRect(unreadsX - gap, unreadsY - gap, balloonWidth + 2 * gap, ballonHeight + 2 * gap, balloonRadius + gap, balloonRadius + gap);
+        }
+        else if (viewParams_.regim_ == Logic::MembersWidgetRegim::UNKNOWN)
+        {
+            unreadsX -= _recentParams.interPadding().px() + _recentParams.removeContactSize().px();
+        }
 
-		if (visData.IsHovered_)
-		{
-			static QBrush hoverBrush(fromAlert ? QColor(220, 220, 220, 0.7 * 255) : QColor(220, 220, 220, 0.4 * 255));
-			painter.setBrush(hoverBrush);
-		}
-		else
-		{
-			static QBrush selectedBrush(QColor(202, 230, 179, 0.7 * 255));
-			painter.setBrush(selectedBrush);
-		}
+        painter.setBrush(QColor("#579e1c"));
+        painter.drawRoundedRect(unreadsX, unreadsY, balloonWidth, ballonHeight, balloonRadius, balloonRadius);
 
-		painter.drawRect(0, 0, ItemWidth(fromAlert, false, _shortView).px(), L::itemHeight.px());
+        painter.setFont(_recentParams.unreadsFont().font());
+        painter.setPen(Qt::white);
+        if (platform::is_apple())
+        {
+            painter.drawText(QRectF(unreadsX, unreadsY, balloonWidth, ballonHeight), text, QTextOption(Qt::AlignCenter));
+        }
+        else
+        {
+            const float textX = floorf((float)unreadsX + ((float)balloonWidth - (float)unreadsWidth) / 2.);
+            const float textY = ceilf((float)unreadsY + ((float)ballonHeight + (float)unreadsHeight) / 2.);
+            painter.drawText(textX, textY, text);
+        }
 
-		painter.restore();
-	}
-
-	int RenderTime(QPainter &painter, const QDateTime &time, const DeliveryState state, bool fromAlert, bool _shortView)
-	{
-		const auto timeXRight = (ItemWidth(fromAlert, false, _shortView) - L::itemHorPadding);
-		assert(timeXRight.px() > 0);
-
-		const auto hasLastSeen = (state != DeliveryState::Sending && time.isValid() && (time != QDateTime()));
-		if (!hasLastSeen)
-		{
-			return timeXRight.px();
-		}
-
-		const auto timeStr = ContactList::FormatTime(time);
-		if (timeStr.isEmpty())
-		{
-			return timeXRight.px();
-		}
-
-		static QFontMetrics m(L::timeFont.font());
-		const auto leftBearing = m.leftBearing(timeStr[0]);
-		const auto rightBearing = m.rightBearing(timeStr[timeStr.length() - 1]);
-		const auto timeWidth = (m.tightBoundingRect(timeStr).width() + leftBearing + rightBearing);
-		const auto timeX = (timeXRight.px() - timeWidth);
-
-		painter.save();
-		painter.setFont(L::timeFont.font());
-		painter.setPen(L::timeFontColor);
-		painter.drawText(timeX, L::timeY.px(), timeStr);
-		painter.restore();
-
-		return timeX;
-	}
-
-    void RenderLastReadAvatar(QPainter &painter, const QPixmap& _avatar, const int _xOffset)
-    {
-        painter.drawPixmap(_xOffset, L::unreadsY.px(), L::getLastReadAvatarSize(), L::getLastReadAvatarSize(), _avatar);
+        return (unreadsX - _recentParams.unreadsLeftPadding().px());
     }
 
-	int RenderUnread(QPainter &painter, const int unreads, bool muted)
-	{
-		assert(unreads >= 0);
+    int RenderAddContact(QPainter &painter, bool hasMouseOver, ContactListParams& _recentParams, const ViewParams& _viewParams)
+    {
+        auto img = Utils::parse_image_name(hasMouseOver ? ":/resources/cl_addcontact_100_hover.png" : ":/resources/cl_addcontact_100.png");
+        _recentParams.addContactFrame().setX(CorrectItemWidth(ItemWidth(false, false, false).px(), _viewParams.fixedWidth_)
+            - _recentParams.itemHorPaddingUnknown().px() - _recentParams.addContactSize().px()
+            - _recentParams.interPadding().px() - _recentParams.removeContactSize().px());
+        _recentParams.addContactFrame().setY((_recentParams.itemHeight().px() - _recentParams.addContactSize().px()) / 2);
+        _recentParams.addContactFrame().setWidth(_recentParams.addContactSize().px());
+        _recentParams.addContactFrame().setHeight(_recentParams.addContactSize().px());
+        painter.save();
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+        painter.drawPixmap(_recentParams.addContactFrame().x(),
+            _recentParams.addContactFrame().y(),
+            _recentParams.addContactFrame().width(),
+            _recentParams.addContactFrame().height(),
+            img);
+        painter.restore();
+        return _recentParams.addContactFrame().x();
+    }
 
-		if (muted)
-		{
-			Themes::IThemePixmapSptr pixmap = Themes::GetPixmap(unreads == 0 ? Themes::PixmapResourceId::ContentMuteNotify : Themes::PixmapResourceId::ContentMuteNotifyNew);
-			auto mutedX = (ItemWidth(false, false, false).px() - L::itemHorPadding.px()) - pixmap->GetWidth();
-			pixmap->Draw(painter, mutedX, L::unreadsY.px());
-			return ((ItemWidth(false, false, false).px() - L::itemHorPadding.px()) - pixmap->GetWidth());
-		}
+    int RenderRemoveContact(QPainter &painter, bool hasMouseOver, ContactListParams& _recentParams, const ViewParams& _viewParams)
+    {
+        auto img = Utils::parse_image_name(hasMouseOver ? ":/resources/contr_clear_100_hover.png" : ":/resources/contr_clear_100.png");
+        _recentParams.removeContactFrame().setX(CorrectItemWidth(ItemWidth(false, false, false).px(), _viewParams.fixedWidth_) - _recentParams.itemHorPaddingUnknown().px() - _recentParams.removeContactSize().px());
+        _recentParams.removeContactFrame().setY((_recentParams.itemHeight().px() - _recentParams.removeContactSize().px()) / 2);
+        _recentParams.removeContactFrame().setWidth(_recentParams.removeContactSize().px());
+        _recentParams.removeContactFrame().setHeight(_recentParams.removeContactSize().px());
+        painter.save();
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+        painter.drawPixmap(_recentParams.removeContactFrame().x(),
+            _recentParams.removeContactFrame().y(),
+            _recentParams.removeContactFrame().width(),
+            _recentParams.removeContactFrame().height(),
+            img);
+        painter.restore();
+        return _recentParams.removeContactFrame().x();
+    }
 
-		if (unreads <= 0)
-		{
-			return ItemWidth(false, false, false).px() - L::itemHorPadding.px();
-		}
+    void RenderDeleteAllItem(QPainter &painter, const QString& title, bool isMouseOver, const ViewParams& _viewParams)
+    {
+        painter.save();
 
-		const auto text = (unreads > 99) ? QString("99+") : QVariant(unreads).toString();
+        painter.setPen(Qt::NoPen);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-		static QFontMetrics m(L::unreadsFont.font());
+        QPen pen;
+        pen.setColor(isMouseOver ? Ui::CommonStyle::getRedLinkColorHovered() : Ui::CommonStyle::getRedLinkColor());
+        painter.setPen(pen);
+        const auto font_size = Utils::scale_value(16);
+        QFont f = Fonts::appFont(font_size);
+        painter.setFont(f);
+        QFontMetrics metrics(f);
+        auto titleRect = metrics.boundingRect(title);
+        auto recentParams = GetRecentsParams(_viewParams.regim_);
 
-		const auto unreadsRect = m.tightBoundingRect(text);
-		const auto firstChar = text[0];
-		const auto lastChar = text[text.size() - 1];
-		const auto unreadsWidth = (unreadsRect.width() + m.leftBearing(firstChar) + m.rightBearing(lastChar));
-		const auto unreadsHeight = unreadsRect.height();
+        recentParams.deleteAllFrame().setX(CorrectItemWidth(ItemWidth(false, false, false).px(), _viewParams.fixedWidth_) - recentParams.itemHorPadding().px() - recentParams.interPadding().px() - titleRect.width());
+        recentParams.deleteAllFrame().setY(recentParams.unknownsItemHeight().px() / 2 - font_size / 2);
+        recentParams.deleteAllFrame().setWidth(ItemWidth(false, false, false).px() - recentParams.deleteAllFrame().x());
+        recentParams.deleteAllFrame().setHeight(recentParams.unknownsItemHeight().px());
+        Utils::drawText(painter, QPointF(recentParams.deleteAllFrame().x(), recentParams.deleteAllFrame().y()), Qt::AlignVCenter, title);
 
-		auto balloonWidth = unreadsWidth;
-		const auto isLongText = (text.length() > 1);
-		if (isLongText)
-		{
-			balloonWidth += (L::unreadsPadding.px() * 2);
-		}
-		else
-		{
-			balloonWidth = L::unreadsMinimumExtent.px();
-		}
+        recentParams.deleteAllFrame().setY(0);
+        recentParams.deleteAllFrame().setHeight(recentParams.unknownsItemHeight().px());
 
-		const auto ballonHeight = L::unreadsMinimumExtent.px();
+        painter.restore();
+    }
 
-		const auto unreadsX = ((ItemWidth(false, false, false).px() - L::itemHorPadding.px()) - balloonWidth);
-		const auto balloonRadius = (ballonHeight / 2);
+    QRect AddContactFrame()
+    {
+        auto recentParams = GetRecentsParams(Logic::MembersWidgetRegim::CONTACT_LIST);
+        return recentParams.addContactFrame();
+    }
 
-		painter.setBrush(QColor("#579e1c"));
-		painter.drawRoundedRect(unreadsX, L::unreadsY.px(), balloonWidth, ballonHeight, balloonRadius, balloonRadius);
+    QRect RemoveContactFrame()
+    {
+        auto recentParams = GetRecentsParams(Logic::MembersWidgetRegim::CONTACT_LIST);
+        return recentParams.removeContactFrame();
+    }
 
-		painter.setFont(L::unreadsFont.font());
-		painter.setPen(Qt::white);
-		const auto textX = (unreadsX + (balloonWidth - unreadsWidth) / 2);
-        const auto textY = (L::unreadsY.px() + (ballonHeight + unreadsHeight) / 2) + (platform::is_apple()?1:0);
-		painter.drawText(textX, textY, text);
-
-		return (unreadsX - L::unreadsLeftPadding.px());
-	}
+    QRect DeleteAllFrame()
+    {
+        auto recentParams = GetRecentsParams(Logic::MembersWidgetRegim::CONTACT_LIST);
+        return recentParams.deleteAllFrame();
+    }
 }

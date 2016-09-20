@@ -2,12 +2,14 @@
 #define __NAME_AND_STATUS_WIDGET_H__
 #include "../controls/TextEmojiWidget.h"
 
-namespace Ui {
+namespace Ui
+{
 
     template<typename __Base>
-    class ShadowedWidget : public __Base {
+    class ShadowedWidget : public __Base
+    {
     public:
-        ShadowedWidget(QWidget* parent = NULL, int tailLen = 30, int alphaFrom= 255, int alphaTo = 0);
+        ShadowedWidget(QWidget* _parent = NULL, int _tailLen = 30, int _alphaFrom = 255, int _alphaTo = 0);
         virtual ~ShadowedWidget();
 
     protected:
@@ -15,37 +17,41 @@ namespace Ui {
         void resizeEvent(QResizeEvent*);
 
     private:
-        QLinearGradient _linearGradient;
-        int _tailLenPx;
+        QLinearGradient linearGradient_;
+        int tailLenPx_;
     };
 
-    class NameAndStatusWidget : public QWidget { Q_OBJECT
+    class NameAndStatusWidget : public QWidget
+    {
+        Q_OBJECT
     public:
-        NameAndStatusWidget(QWidget* parent, int nameBaseline, int statusBaseline);
+        NameAndStatusWidget(QWidget* _parent, int _nameBaseline, int _statusBaseline);
         virtual ~NameAndStatusWidget();
 
-        void setName  (const char* name);
-        void setStatus(const char* status);
+        void setName  (const char* _name);
+        void setStatus(const char* _status);
 
-        void setNameProperty(const char* propName, bool val);
-        void setStatusProperty(const char* propName, bool val);
+        void setNameProperty(const char* _propName, bool _val);
+        void setStatusProperty(const char* _propName, bool _val);
 
     private:
-        TextEmojiLabel* _name;
-        TextEmojiLabel* _status;
+        TextEmojiLabel* name_;
+        TextEmojiLabel* status_;
     };
     
-    class NameWidget : public QWidget { Q_OBJECT
+    class NameWidget : public QWidget
+    {
+        Q_OBJECT
     public:
-        NameWidget(QWidget* parent, int nameBaseline);
+        NameWidget(QWidget* _parent, int _nameBaseline);
         virtual ~NameWidget();
         
-        void setName  (const char* name);
+        void setName  (const char* _name);
         
-        void setNameProperty(const char* propName, bool val);
+        void setNameProperty(const char* _propName, bool _val);
         
     private:
-        TextEmojiLabel* _name;
+        TextEmojiLabel* name_;
     };
 }
 

@@ -5,27 +5,43 @@
     #define VOIP_TOOLS_ENABLE_BB
 #endif
 
-namespace voipTools {
-    inline void __showBounds(QPainter& painter, const QRect& rc) {
-        const QPen wasPen = painter.pen();
-        painter.setPen  (QColor(0, 255, 0, 255));
-        painter.fillRect(QRect(rc.left(), rc.top(), rc.width() - 1, rc.height() - 1), QColor(0, 0, 255, 100));
-        painter.drawRect(QRect(rc.left(), rc.left(), rc.width() - 1, rc.height() - 1));
-        painter.setPen(wasPen);
+namespace voipTools
+{
+    inline void showBounds(QPainter& _painter, const QRect& _rc)
+    {
+        const QPen wasPen = _painter.pen();
+        _painter.setPen  (QColor(0, 255, 0, 255));
+        _painter.fillRect(QRect(_rc.left(), _rc.top(), _rc.width() - 1, _rc.height() - 1), QColor(0, 0, 255, 100));
+        _painter.drawRect(QRect(_rc.left(), _rc.left(), _rc.width() - 1, _rc.height() - 1));
+        _painter.setPen(wasPen);
     }
 
-    template<typename __Base> class BoundBox : public __Base {
+    template<typename __Base> class BoundBox : public __Base
+    {
     public:
-        template<typename __Param1> BoundBox(__Param1 param1) : __Base(param1) { }
-        template<typename __Param1, typename __Param2> BoundBox(__Param1 param1, __Param2 param2) : __Base(param1, param2) { }
-        template<typename __Param1, typename __Param2, typename __Param3, typename __Param4, typename __Param5> BoundBox(__Param1 param1, __Param2 param2, __Param3 param3, __Param4 param4, __Param5 param5) : __Base(param1, param2, param3, param4, param5) { }
+        template<typename Param1> BoundBox(Param1 par1)
+            :__Base(par1) { }
+
+        template<typename Param1, typename Param2> BoundBox(
+            Param1 par1,
+            Param2 par2)
+            :__Base(par1, par2) { }
+
+        template<typename Param1, typename Param2, typename Param3, typename Param4, typename Param5> BoundBox(
+            Param1 par1,
+            Param2 par2,
+            Param3 par3,
+            Param4 par4,
+            Param5 par5)
+            :__Base(par1, par2, par3, par4, par5) { }
 
     protected:
-        void paintEvent(QPaintEvent* e) override {
-            __Base::paintEvent(e);
+        void paintEvent(QPaintEvent* _e) override
+        {
+            __Base::paintEvent(_e);
 #if defined(_DEBUG) && defined(VOIP_TOOLS_ENABLE_BB)
             QPainter painter(this);
-            voipTools::__showBounds((painter), __Base::rect());
+            voipTools::showBounds((painter), __Base::rect());
 #endif
         }
     };

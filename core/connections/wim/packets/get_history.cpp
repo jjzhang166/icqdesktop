@@ -36,12 +36,13 @@ get_history_params::get_history_params(
     assert(!patch_version_.empty());
 }
 
-get_history::get_history(const wim_packet_params& _params, const get_history_params& _hist_params)
+get_history::get_history(const wim_packet_params& _params, const get_history_params& _hist_params, const std::string& _locale)
     :	robusto_packet(_params),
     hist_params_(_hist_params),
     messages_(new archive::history_block()),
     dlg_state_(new archive::dlg_state()),
-    older_msgid_(-1)
+    older_msgid_(-1),
+    locale_(_locale)
 {
 }
 
@@ -74,6 +75,8 @@ int32_t get_history::init_request(std::shared_ptr<core::http_request_simple> _re
     node_params.AddMember("count", hist_params_.count_, a);
     node_params.AddMember("aimSid", params_.aimsid_, a);
     node_params.AddMember("patchVersion", hist_params_.patch_version_ , a);
+    if (!locale_.empty())
+        node_params.AddMember("lang", locale_ , a);
 
     doc.AddMember("params", node_params, a);
 
@@ -167,8 +170,15 @@ int32_t get_history::parse_results(const rapidjson::Value& _node_results)
         return wpie_http_parse_response;
     }
 
+    auto iter_person = persons.find(hist_params_.aimid_);
+    if (iter_person != persons.end())
+    {
+        dlg_state_->set_friendly(iter_person->second.friendly_);
+        dlg_state_->set_official(iter_person->second.official_);
+    }
+
     set_last_message();
-    
+
     apply_patches();
 
     return 0;

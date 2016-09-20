@@ -3,9 +3,8 @@
 #include "MessageStyle.h"
 
 #include "../../cache/themes/themes.h"
-
+#include "../../fonts.h"
 #include "../../theme_settings.h"
-
 #include "../../utils/utils.h"
 
 UI_MESSAGE_STYLE_NS_BEGIN
@@ -23,11 +22,22 @@ namespace
 
 QFont getTextFont()
 {
-    static QFont font(
-        Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15))
-    );
+    return Fonts::appFontScaled(15);
+}
 
-    return font;
+QColor getTextColor()
+{
+    return QColor(0x28, 0x28, 0x28);
+}
+
+QColor getTimeColor()
+{
+    return QColor(0x97, 0x97, 0x97);
+}
+
+QFont getTimeFont()
+{
+    return Fonts::appFontScaled(12);
 }
 
 QColor getIncomingBodyColorA(const double alpha)
@@ -51,8 +61,8 @@ QColor getOutgoingBodyColorB(const double alpha)
 }
 
 QBrush getBodyBrush(
-    const bool isOutgoing, 
-    const bool isSelected, 
+    const bool isOutgoing,
+    const bool isSelected,
     const int _theme_id)
 {
     auto _theme = get_qt_theme_settings()->themeForId(_theme_id);
@@ -114,7 +124,7 @@ QBrush getBodyBrush(
     return result;
 }
 
-int32_t getBubbleHeight()
+int32_t getMinBubbleHeight()
 {
     return Utils::scale_value(32);
 }
@@ -124,28 +134,28 @@ int32_t getBorderRadius()
     return Utils::scale_value(8);
 }
 
-int32_t getTopPadding(const bool hasTopMargin)
+int32_t getTopMargin(const bool hasTopMargin)
 {
     return Utils::scale_value(
         hasTopMargin ? 12 : 2
     );
 }
 
-int32_t getLeftPadding(const bool isOutgoing)
+int32_t getLeftMargin(const bool isOutgoing)
 {
     return Utils::scale_value(
         isOutgoing ? 118 : 24
     );
 }
 
-int32_t getRightPadding(const bool isOutgoing)
+int32_t getRightMargin(const bool isOutgoing)
 {
     return Utils::scale_value(
         isOutgoing ? 16 : 72
     );
 }
 
-int32_t getTimeStatusMargin()
+int32_t getTimeMargin()
 {
     return Utils::scale_value(8);
 }
@@ -165,14 +175,98 @@ int32_t getBubbleHorPadding()
     return Utils::scale_value(16);
 }
 
-int getLastReadAvatarSize()
+int32_t getLastReadAvatarSize()
 {
     return Utils::scale_value(16);
 }
 
-int getLastReadAvatarMargin()
+int32_t getLastReadAvatarMargin()
 {
     return Utils::scale_value(4);
+}
+
+int32_t getHistoryWidgetMaxWidth()
+{
+    return Utils::scale_value(600);
+}
+
+int32_t getSenderHeight()
+{
+    return Utils::scale_value(14);
+}
+
+QSize getImagePlaceholderSize()
+{
+    return Utils::scale_value(QSize(320, 240));
+}
+
+QBrush getImagePlaceholderBrush()
+{
+    return QBrush(QColor(0x00, 0x00, 0x00, byteAlpha(.15)));
+}
+
+QBrush getImageShadeBrush()
+{
+    QColor shadeColor(0x00, 0x00, 0x00);
+    shadeColor.setAlphaF(0.4);
+
+    return QBrush(shadeColor);
+}
+
+QSize getMinPreviewSize()
+{
+    return Utils::scale_value(QSize(48, 48));
+}
+
+QSizeF getMinPreviewSizeF()
+{
+    return Utils::scale_value(QSizeF(48, 48));
+}
+
+QFont getRotatingProgressBarTextFont()
+{
+    using namespace Utils;
+
+    return Fonts::appFontScaled(15);
+}
+
+QPen getRotatingProgressBarTextPen()
+{
+    return QPen(Qt::white);
+}
+
+int32_t getRotatingProgressBarTextTopMargin()
+{
+    return Utils::scale_value(16);
+}
+
+int32_t getRotatingProgressBarPenWidth()
+{
+    return Utils::scale_value(2);
+}
+
+QPen getRotatingProgressBarPen()
+{
+    return QPen(
+        QColor(0x579e1c),
+        getRotatingProgressBarPenWidth());
+}
+
+int32_t getSenderBottomMargin()
+{
+    return Utils::scale_value(4);
+}
+
+int32_t getTextWidthStep()
+{
+    return Utils::scale_value(20);
+}
+
+int32_t roundTextWidthDown(const int32_t width)
+{
+    assert(width > 0);
+
+    return ((width / getTextWidthStep()) * getTextWidthStep());
 }
 
 UI_MESSAGE_STYLE_NS_END

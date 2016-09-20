@@ -24,11 +24,15 @@ namespace Logic
         void dlgStateHandled(Data::DlgState);
         void favoriteChanged(QString);
 
+    public Q_SLOTS:
+        void refresh();
+        
 	private Q_SLOTS:
 		void activeDialogHide(QString);
 		void contactChanged(QString);
 		void dlgState(Data::DlgState);
 		void sortDialogs();
+        void contactRemoved(QString);
 
 	public:
 		explicit RecentsModel(QObject *parent);
@@ -38,8 +42,11 @@ namespace Logic
 		Qt::ItemFlags flags(const QModelIndex &index) const;
 
 		Data::DlgState getDlgState(const QString& aimId = QString(), bool fronDialog = false);
+        void unknownToRecents(Data::DlgState);
 
         void toggleFavoritesVisible();
+        
+        void unknownAppearance();
 
 		void sendLastRead(const QString& aimId = QString());
 		void markAllRead();
@@ -50,6 +57,8 @@ namespace Logic
         bool isServiceItem(const QModelIndex& i) const;
         bool isFavoritesGroupButton(const QModelIndex& i) const;
         bool isFavoritesVisible() const;
+        bool isUnknownsButton(const QModelIndex& i) const;
+        void setFavoritesHeadVisible(bool _isVisible);
 
 		QModelIndex contactIndex(const QString& aimId);
 
@@ -60,17 +69,29 @@ namespace Logic
         QString nextAimId(QString aimId);
         QString prevAimId(QString aimId);
 
+        bool lessRecents(const QString& _aimid1, const QString& _aimid2);
+
+        std::vector<QString> getSortedRecentsContacts() const;
+
 	private:
         int correctIndex(int i) const;
-        int favoritesIndent() const;
+        int visibleContactsInFavorites() const;
+        
+        int getUnknownHeaderIndex() const;
+        int getSizeOfUnknownBlock() const;
+
+        int getFavoritesHeaderIndex() const;
+        int getRecentsHeaderIndex() const;
+        int getVisibleServiceItemInFavorites() const;
 
 		std::vector<Data::DlgState> Dialogs_;
 		QHash<QString, int> Indexes_;
 		QTimer* Timer_;
         quint16 FavoritesCount_;
         bool FavoritesVisible_;
+        bool FavoritesHeadVisible_;
 	};
 
-	RecentsModel* GetRecentsModel();
+	RecentsModel* getRecentsModel();
     void ResetRecentsModel();
 }

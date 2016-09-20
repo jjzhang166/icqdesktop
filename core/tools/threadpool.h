@@ -18,7 +18,10 @@ namespace core
 
             virtual ~threadpool();
 
-            bool enqueue(const task _task);
+            bool push_back(const task _task);
+
+            bool push_front(const task _task);
+
             const std::vector<std::thread::id> get_threads_ids() const;
 
         private:
@@ -26,7 +29,7 @@ namespace core
             std::vector<std::thread::id>        threads_ids_;
             std::mutex							queue_mutex_;
             std::condition_variable				condition_;
-            std::queue<task>					tasks_;
+            std::deque<task>					tasks_;
             std::atomic<bool>					stop_;
 
             bool run_task_impl();

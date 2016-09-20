@@ -33,7 +33,6 @@ SOURCES += \
     cache/emoji/EmojiDb.cpp \
     cache/emoji/EmojiIndexData.cpp \
     cache/stickers/stickers.cpp \
-    controls/Alert.cpp \
     controls/BackButton.cpp \
     controls/ContactAvatarWidget.cpp \
     controls/ContextMenu.cpp \
@@ -106,8 +105,6 @@ SOURCES += \
     main_window/tray/RecentMessagesAlert.cpp \
     main_window/tray/TrayIcon.cpp \
     previewer/Previewer.cpp \
-    previewer/PreviewWidget.cpp \
-    themes/IcqStyle.cpp \
     themes/ThemePixmap.cpp \
     themes/Themes.cpp \
     types/chat.cpp \
@@ -155,8 +152,6 @@ SOURCES += \
     main_window/settings/themes/ThemesSettingsWidget.cpp \
     main_window/settings/themes/ThemesWidget.cpp \
     main_window/settings/themes/ThemeWidget.cpp \
-    main_window/settings/Notifications.cpp \
-    main_window/settings/AboutUs.cpp \
     main_window/settings/ContactUs.cpp \
     main_window/contact_list/CustomAbstractListModel.cpp \
     main_window/history_control/HistoryControlPageThemePanel.cpp \
@@ -176,7 +171,6 @@ SOURCES += \
     main_window/history_control/ContentWidgets/MessageContentWidget.cpp \
     main_window/history_control/ContentWidgets/PreviewContentWidget.cpp \
     main_window/history_control/ContentWidgets/PttAudioWidget.cpp \
-    main_window/history_control/ContentWidgets/StickerWidget.cpp \
     controls/ImageCropper.cpp \
     main_window/livechats/LiveChatItemDelegate.cpp \
     main_window/livechats/LiveChatsHome.cpp \
@@ -185,13 +179,72 @@ SOURCES += \
     main_window/sidebar/ProfilePage.cpp \
     main_window/sidebar/Sidebar.cpp \
     main_window/sidebar/SidebarUtils.cpp \
-    ../common.shared/TestingTools.cpp \
     controls/AvatarPreview.cpp \
     main_window/PromoPage.cpp \
     main_window/history_control/MessageItemBase.cpp \
     main_window/history_control/DeletedMessageItem.cpp \
     voip/PushButton_t.cpp \
-    voip/secureCallWnd.cpp
+    voip/secureCallWnd.cpp \
+    types/link_metadata.cpp \
+    types/common_phone.cpp \
+    controls/CommonStyle.cpp \
+    main_window/history_control/complex_message/ComplexMessageItem.cpp \
+    main_window/history_control/complex_message/ComplexMessageItemBuilder.cpp \
+    main_window/history_control/complex_message/ComplexMessageItemLayout.cpp \
+    main_window/history_control/complex_message/ComplexMessageUtils.cpp \
+    main_window/history_control/complex_message/GenericBlock.cpp \
+    main_window/history_control/complex_message/GenericBlockLayout.cpp \
+    main_window/history_control/complex_message/IItemBlock.cpp \
+    main_window/history_control/complex_message/IItemBlockLayout.cpp \
+    main_window/history_control/complex_message/ILinkPreviewBlockLayout.cpp \
+    main_window/history_control/complex_message/ImagePreviewBlock.cpp \
+    main_window/history_control/complex_message/ImagePreviewBlockLayout.cpp \
+    main_window/history_control/complex_message/LinkPreviewBlock.cpp \
+    main_window/history_control/complex_message/LinkPreviewBlockBlankLayout.cpp \
+    main_window/history_control/complex_message/LinkPreviewBlockLayout.cpp \
+    main_window/history_control/complex_message/Style.cpp \
+    main_window/history_control/complex_message/TextBlock.cpp \
+    main_window/history_control/complex_message/TextBlockLayout.cpp \
+    main_window/history_control/complex_message/YoutubeLinkPreviewBlockLayout.cpp \
+    main_window/history_control/ActionButtonWidget.cpp \
+    main_window/history_control/ActionButtonWidgetLayout.cpp \
+    utils/LoadMovieFromFileTask.cpp \
+    main_window/contact_list/UnknownItemDelegate.cpp \
+    main_window/contact_list/UnknownsModel.cpp \
+    previewer/DownloadWidget.cpp \
+    previewer/GalleryFrame.cpp \
+    previewer/GalleryWidget.cpp \
+    previewer/ImageCache.cpp \
+    previewer/ImageIterator.cpp \
+    previewer/ImageLoader.cpp \
+    previewer/ImageViewerWidget.cpp \
+    main_window/history_control/complex_message/FileSharingBlock.cpp \
+    main_window/history_control/complex_message/FileSharingBlockBase.cpp \
+    main_window/history_control/complex_message/FileSharingImagePreviewBlockLayout.cpp \
+    main_window/history_control/complex_message/FileSharingPlainBlockLayout.cpp \
+    main_window/history_control/complex_message/FileSharingUtils.cpp \
+    main_window/history_control/complex_message/IFileSharingBlockLayout.cpp \
+    main_window/history_control/complex_message/PttBlock.cpp \
+    main_window/history_control/complex_message/PttBlockLayout.cpp \
+    controls/TransparentScrollBar.cpp \
+    utils/exif.cpp \
+    main_window/mplayer/FFMpegPlayer.cpp \
+    main_window/mplayer/MultimediaViewer.cpp \
+    main_window/mplayer/VideoPlayer.cpp \
+    controls/ToolTipEx.cpp \
+    main_window/settings/SettingsAboutUs.cpp \
+    main_window/settings/SettingsGeneral.cpp \
+    main_window/settings/SettingsNotifications.cpp \
+    main_window/settings/SettingsVoip.cpp \
+    types/images.cpp \
+    utils/translit.cpp \
+    main_window/selection/SelectionPanel.cpp \
+    main_window/history_control/complex_message/QuoteBlock.cpp \
+    main_window/history_control/complex_message/QuoteBlockLayout.cpp \
+    ../gui.shared/TestingTools.cpp \
+    voip/CommonUI.cpp \
+    main_window/history_control/complex_message/StickerBlock.cpp \
+    main_window/history_control/complex_message/StickerBlockLayout.cpp
 
 HEADERS  += \
     app_config.h \
@@ -353,7 +406,6 @@ HEADERS  += \
     main_window/history_control/ContentWidgets/MessageContentWidget.h \
     main_window/history_control/ContentWidgets/PreviewContentWidget.h \
     main_window/history_control/ContentWidgets/PttAudioWidget.h \
-    main_window/history_control/ContentWidgets/StickerWidget.h \
     controls/ImageCropper.h \
     main_window/livechats/LiveChatItemDelegate.h \
     main_window/livechats/LiveChatsHome.h \
@@ -362,17 +414,75 @@ HEADERS  += \
     main_window/sidebar/ProfilePage.h \
     main_window/sidebar/Sidebar.h \
     main_window/sidebar/SidebarUtils.h \
-    ../common.shared/TestingTools.h \
     controls/AvatarPreview.h \
     main_window/PromoPage.h \
     main_window/history_control/MessageItemBase.h \
     main_window/history_control/DeletedMessageItem.h \
     voip/PushButton_t.h \
-    voip/secureCallWnd.h
+    voip/secureCallWnd.h \
+    types/link_metadata.h \
+    types/common_phone.h \
+    controls/CommonStyle.h \
+    main_window/history_control/complex_message/ComplexMessageItem.h \
+    main_window/history_control/complex_message/ComplexMessageItemBuilder.h \
+    main_window/history_control/complex_message/ComplexMessageItemLayout.h \
+    main_window/history_control/complex_message/ComplexMessageUtils.h \
+    main_window/history_control/complex_message/GenericBlock.h \
+    main_window/history_control/complex_message/GenericBlockLayout.h \
+    main_window/history_control/complex_message/IItemBlock.h \
+    main_window/history_control/complex_message/IItemBlockLayout.h \
+    main_window/history_control/complex_message/ILinkPreviewBlockLayout.h \
+    main_window/history_control/complex_message/ImagePreviewBlock.h \
+    main_window/history_control/complex_message/ImagePreviewBlockLayout.h \
+    main_window/history_control/complex_message/LinkPreviewBlock.h \
+    main_window/history_control/complex_message/LinkPreviewBlockBlankLayout.h \
+    main_window/history_control/complex_message/LinkPreviewBlockLayout.h \
+    main_window/history_control/complex_message/Selection.h \
+    main_window/history_control/complex_message/Style.h \
+    main_window/history_control/complex_message/TextBlock.h \
+    main_window/history_control/complex_message/TextBlockLayout.h \
+    main_window/history_control/complex_message/YoutubeLinkPreviewBlockLayout.h \
+    main_window/history_control/ActionButtonWidget.h \
+    main_window/history_control/ActionButtonWidgetLayout.h \
+    utils/LoadMovieFromFileTask.h \
+    main_window/contact_list/UnknownItemDelegate.h \
+    main_window/contact_list/UnknownsModel.h \
+    previewer/DownloadWidget.h \
+    previewer/GalleryFrame.h \
+    previewer/GalleryWidget.h \
+    previewer/ImageCache.h \
+    previewer/ImageIterator.h \
+    previewer/ImageLoader.h \
+    previewer/ImageViewerWidget.h \
+    main_window/history_control/complex_message/FileSharingBlock.h \
+    main_window/history_control/complex_message/FileSharingBlockBase.h \
+    main_window/history_control/complex_message/FileSharingImagePreviewBlockLayout.h \
+    main_window/history_control/complex_message/FileSharingPlainBlockLayout.h \
+    main_window/history_control/complex_message/FileSharingUtils.h \
+    main_window/history_control/complex_message/IFileSharingBlockLayout.h \
+    main_window/history_control/complex_message/PttBlock.h \
+    main_window/history_control/complex_message/PttBlockLayout.h \
+    controls/TransparentScrollBar.h \
+    utils/exif.h \
+    main_window/mplayer/ffmpeg.h \
+    main_window/mplayer/FFMpegPlayer.h \
+    main_window/mplayer/MultimediaViewer.h \
+    main_window/mplayer/VideoPlayer.h \
+    controls/ToolTipEx.h \
+    types/images.h \
+    utils/translit.h \
+    main_window/selection/SelectionPanel.h \
+    main_window/history_control/complex_message/QuoteBlock.h \
+    main_window/history_control/complex_message/QuoteBlockLayout.h \
+    ../gui.shared/implayer.h \
+    ../gui.shared/TestingTools.h \
+    voip/CommonUI.h \
+    main_window/history_control/complex_message/StickerBlock.h \
+    main_window/history_control/complex_message/StickerBlockLayout.h
 
 DEFINES += STRIP_VOIP
 QMAKE_CXXFLAGS += -std=c++0x
-QMAKE_LIBS += -lopenal -lavformat -lavcodec -lswresample -lavfilter -lavutil -lcorelib -lminizip -lboost_system -lboost_locale -lcurl_static -lssl_static -lcrypto_static -lboost_filesystem -lidn -lrtmp -lgcrypt -lgnutls -lgpg-error -ltasn1 -lz -lstdc++ -lrt -lxcb-util
+QMAKE_LIBS += -lopenal -lavformat -lavcodec -lswresample -lavfilter -lavutil -lswscale -lcorelib -lminizip -lboost_system -lboost_locale -lcurl_static -lssl_static -lcrypto_static -lboost_filesystem -lidn -lrtmp -lgcrypt -lgnutls -lgpg-error -ltasn1 -lz -lstdc++ -lrt -lxcb-util
 CONFIG(32, 64|32) {
     QMAKE_LIBS += -lp11-kit
 }

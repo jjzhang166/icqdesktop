@@ -59,6 +59,7 @@ namespace core
             std::shared_ptr<archive::dlg_state>			dlg_state_;
             std::vector<archive::history_patch_uptr>    history_patches_;
             std::string                                 patch_version_;
+            std::string                                 locale_;
 
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
 
@@ -73,7 +74,8 @@ namespace core
         public:
             get_history(
                 const wim_packet_params& _params,
-                const get_history_params& _hist_params
+                const get_history_params& _hist_params,
+                const std::string& _locale
                 );
 
             virtual ~get_history();

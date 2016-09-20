@@ -2,67 +2,73 @@
 #include "SearchFilters.h"
 #include "ComboButton.h"
 #include "../../utils/utils.h"
-#include "../../core_dispatcher.h"
-#include "../../controls/CustomButton.h"
+#include "../../controls/CommonStyle.h"
 #include "../../controls/LineEditEx.h"
+#include "../../fonts.h"
 
 namespace Ui
 {
     SearchFilters::SearchFilters(QWidget* _parent)
         :	QWidget(_parent)
         , keyword_(new LineEditEx(this))
-        , search_button_(new QPushButton(this))
+        , searchButton_(new QPushButton(this))
 
     {
 
-        QVBoxLayout* root_layout = new QVBoxLayout();
-        root_layout->setContentsMargins(0, Utils::scale_value(16), 0, 0);
-        root_layout->setSpacing(0);
+        QVBoxLayout* rootLayout = new QVBoxLayout();
+        rootLayout->setContentsMargins(0, Utils::scale_value(16), 0, 0);
+        rootLayout->setSpacing(0);
 
-        QHBoxLayout* keyword_layout = new QHBoxLayout();
-        keyword_layout->setContentsMargins(0, 0, 0, 0);
-        keyword_layout->setSpacing(0);
+        QHBoxLayout* keywordLayout = new QHBoxLayout();
+        keywordLayout->setContentsMargins(0, 0, 0, 0);
+        keywordLayout->setSpacing(0);
 
         keyword_->setPlaceholderText(QT_TRANSLATE_NOOP("search_widget", "Phone or Name, Email, UIN"));
         keyword_->setAttribute(Qt::WA_MacShowFocusRect, false);
         keyword_->setObjectName("keyword");
-        keyword_layout->addWidget(keyword_);
+        keyword_->setFont(Fonts::appFontScaled(18));
+        QString keyword_style;
+        keyword_style =
+            "QLineEdit { margin-right: 12dip; padding: 0; }";
+        Utils::ApplyStyle(keyword_, Ui::CommonStyle::getLineEditStyle() + keyword_style);
 
-		Utils::ApplyStyle(search_button_, main_button_style);
-		search_button_->setText(QT_TRANSLATE_NOOP("search_widget", "Search"));
-        search_button_->setObjectName("search_button");
-        search_button_->setCursor(QCursor(Qt::PointingHandCursor));
+        keywordLayout->addWidget(keyword_);
 
-        keyword_layout->addWidget(search_button_);
+		Utils::ApplyStyle(searchButton_, CommonStyle::getGreenButtonStyle());
+        searchButton_->setText(QT_TRANSLATE_NOOP("search_widget", "Search"));
+        searchButton_->setObjectName("search_button");
+        searchButton_->setCursor(QCursor(Qt::PointingHandCursor));
 
-        root_layout->addLayout(keyword_layout);
+        keywordLayout->addWidget(searchButton_);
 
-        /*	QHBoxLayout* filters_layout = new QHBoxLayout();
-        filters_layout->setAlignment(Qt::AlignLeft);
-        filters_layout->setContentsMargins(0, Utils::scale_value(16), 0, 0);
+        rootLayout->addLayout(keywordLayout);
 
-        ComboButton* button_gender = new ComboButton(this);
-        button_gender->setText(TR_("SearchFilters", "Gender"));
-        filters_layout->addWidget(button_gender);
+        /*	QHBoxLayout* filtersLayout = new QHBoxLayout();
+        filtersLayout->setAlignment(Qt::AlignLeft);
+        filtersLayout->setContentsMargins(0, Utils::scale_value(16), 0, 0);
 
-        ComboButton* button_country = new ComboButton(this);
-        button_country->setText(TR_("SearchFilters", "Country"));
-        filters_layout->addWidget(button_country);
+        ComboButton* buttonGender = new ComboButton(this);
+        buttonGender->setText(TR_("SearchFilters", "Gender"));
+        filtersLayout->addWidget(buttonGender);
 
-        ComboButton* button_age = new ComboButton(this);
-        button_age->setText(TR_("SearchFilters", "Age"));
-        filters_layout->addWidget(button_age);
+        ComboButton* buttonCountry = new ComboButton(this);
+        buttonCountry->setText(TR_("SearchFilters", "Country"));
+        filtersLayout->addWidget(buttonCountry);
 
-        QCheckBox* online_check = new QCheckBox(TR_("SearchFilters", "Online"), this);
-        online_check->setObjectName("online_check");
-        filters_layout->addWidget(online_check);
+        ComboButton* buttonAge = new ComboButton(this);
+        buttonAge->setText(TR_("SearchFilters", "Age"));
+        filtersLayout->addWidget(buttonAge);
 
-        root_layout->addLayout(filters_layout);*/
+        QCheckBox* onlineCheck = new QCheckBox(TR_("SearchFilters", "Online"), this);
+        onlineCheck->setObjectName("onlineCheck");
+        filtersLayout->addWidget(onlineCheck);
 
-        setLayout(root_layout);
+        rootLayout->addLayout(filtersLayout);*/
+
+        setLayout(rootLayout);
 
 
-        connect(search_button_, SIGNAL(clicked()), this, SLOT(onSearchButtonClicked()), Qt::QueuedConnection);
+        connect(searchButton_, SIGNAL(clicked()), this, SLOT(onSearchButtonClicked()), Qt::QueuedConnection);
         connect(keyword_, SIGNAL(enter()), this, SLOT(onSearchButtonClicked()), Qt::QueuedConnection);
     }
 
@@ -70,22 +76,22 @@ namespace Ui
     {
     }
 
-    void SearchFilters::on_search_results()
+    void SearchFilters::onSearchResults()
     {
-        search_button_->setEnabled(true);
+        searchButton_->setEnabled(true);
     }
 
-    void SearchFilters::on_focus()
+    void SearchFilters::onFocus()
     {
         keyword_->setFocus(Qt::FocusReason::MouseFocusReason);
     }
 
     void SearchFilters::onSearchButtonClicked()
     {
-        search_button_->setEnabled(false);
+        searchButton_->setEnabled(false);
 
         search_params filters;
-        filters.set_keyword(keyword_->text().trimmed());
+        filters.setKeyword(keyword_->text().trimmed());
 
         emit onSearch(filters);
     }

@@ -1,34 +1,34 @@
 #include "stdafx.h"
-
-#include "../core_dispatcher.h"
-#include "../gui_settings.h"
-#include "../constants.h"
-#include "SChar.h"
-#include "../cache/emoji/Emoji.h"
-#include "../cache/countries.h"
-#include "profiling/auto_stop_watch.h"
-#include "InterConnector.h"
-#include "../main_window/MainWindow.h"
-#include "../main_window/MainPage.h"
-#include "../main_window/ContactDialog.h"
+#include "utils.h"
 
 #include "gui_coll_helper.h"
-#include "../controls/TextEditEx.h"
-#include "../controls/GeneralDialog.h"
-#include "../main_window/contact_list/Common.h"
-#include "../controls/CustomButton.h"
+#include "InterConnector.h"
+#include "SChar.h"
+#include "profiling/auto_stop_watch.h"
+#include "translit.h"
+#include "../constants.h"
+#include "../gui_settings.h"
+#include "../core_dispatcher.h"
+#include "../cache/countries.h"
+#include "../cache/emoji/Emoji.h"
+#include "../controls/CommonStyle.h"
 #include "../controls/DpiAwareImage.h"
-
+#include "../controls/GeneralDialog.h"
+#include "../controls/TextEditEx.h"
+#include "../main_window/ContactDialog.h"
+#include "../main_window/MainPage.h"
+#include "../main_window/MainWindow.h"
+#include "../main_window/contact_list/Common.h"
+#include "../main_window/history_control/MessageStyle.h"
 #include "../theme_settings.h"
 
-#include "utils.h"
 
 #ifdef _WIN32
     #include <windows.h>
 #else
 
 #ifdef __APPLE__
-    #include "mac_support.h"
+    #include "macos/mac_support.h"
 #endif
 
 #endif
@@ -40,6 +40,9 @@ namespace
 
     const int mobile_rect_width_mini = 5;
     const int mobile_rect_height_mini = 8;
+
+    const int drag_preview_max_width = 320;
+    const int drag_preview_max_height = 240;
 
 	const QColor ColorTable[] = {
 		"#FF0000",
@@ -146,58 +149,58 @@ namespace
 		0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 	};
 
-	quint32 crc32FromIODevice( QIODevice * device )
+	quint32 crc32FromIODevice(QIODevice* _device)
 	{
 		quint32 crc32 = 0xffffffff;
-		char * buf = new char[ 256 ];
+		char* buf = new char[256];
 		qint64 n;
 
-		while( ( n = device->read( buf, 256 ) ) > 0 )
-			for ( qint64 i = 0; i < n; i++ )
-				crc32 = ( crc32 >> 8 ) ^ CRC32Table[ ( crc32 ^ buf[i] ) & 0xff ];
+		while((n = _device->read(buf, 256)) > 0)
+			for (qint64 i = 0; i < n; i++)
+				crc32 = (crc32 >> 8) ^ CRC32Table[(crc32 ^ buf[i]) & 0xff];
 		delete[] buf;
 
 		crc32 ^= 0xffffffff;
 		return crc32;
 	}
 
-	quint32 crc32FromByteArray( const QByteArray & array )
+	quint32 crc32FromByteArray(const QByteArray& _array)
 	{
 		QBuffer buffer;
-		buffer.setData( array );
-		if ( !buffer.open( QIODevice::ReadOnly ) )
+		buffer.setData(_array);
+		if (!buffer.open(QIODevice::ReadOnly))
 			return 0;
 
-		return crc32FromIODevice( &buffer );
+		return crc32FromIODevice(&buffer);
 	}
 
-	quint32 crc32FromString( const QString & text )
+	quint32 crc32FromString(const QString& _text)
 	{
-		return crc32FromByteArray( text.toLatin1() );
+		return crc32FromByteArray(_text.toLatin1());
 	}
 
 #ifdef _WIN32
-	QChar VKeyToChar( short vkey, HKL layout)
+	QChar VKeyToChar( short _vkey, HKL _layout)
 	{
-		DWORD dwScan=MapVirtualKeyEx(vkey&0x00ff,0,layout);
-		byte KeyStates[256]={0};
-		KeyStates[vkey&0x00ff]=0x80;
+		DWORD dwScan=MapVirtualKeyEx(_vkey & 0x00ff, 0, _layout);
+		byte KeyStates[256] = {0};
+		KeyStates[_vkey & 0x00ff] = 0x80;
 		DWORD dwFlag=0;
-		if(vkey&0x0100)
+		if(_vkey & 0x0100)
 		{
-			KeyStates[VK_SHIFT]=0x80;
+			KeyStates[VK_SHIFT] = 0x80;
 		}
-		if(vkey&0x0200)
+		if(_vkey & 0x0200)
 		{
-			KeyStates[VK_CONTROL]=0x80;
+			KeyStates[VK_CONTROL] = 0x80;
 		}
-		if(vkey&0x0400)
+		if(_vkey & 0x0400)
 		{
-			KeyStates[VK_MENU]=0x80;
-			dwFlag=1;
+			KeyStates[VK_MENU] = 0x80;
+			dwFlag = 1;
 		}
-		wchar_t Result=L' ';
-		if(!ToUnicodeEx(vkey&0x00ff,dwScan,KeyStates,&Result,1,dwFlag,layout)==1)
+		wchar_t Result = L' ';
+		if (!ToUnicodeEx(_vkey & 0x00ff, dwScan, KeyStates, &Result, 1, dwFlag, _layout) == 1)
 		{
 			return QChar(' ');
 		}
@@ -208,44 +211,81 @@ namespace
 
 namespace Utils
 {
-    void drawText(QPainter & painter, const QPointF & point, int flags,
-        const QString & text, QRectF * boundingRect)
+    void drawText(QPainter& _painter, const QPointF& _point, int _flags,
+        const QString& _text, QRectF* _boundingRect)
     {
         const qreal size = 32767.0;
-        QPointF corner(point.x(), point.y() - size);
-        if (flags & Qt::AlignHCenter) corner.rx() -= size/2.0;
-        else if (flags & Qt::AlignRight) corner.rx() -= size;
-        if (flags & Qt::AlignVCenter) corner.ry() += size/2.0;
-        else if (flags & Qt::AlignTop) corner.ry() += size;
-        else flags |= Qt::AlignBottom;
+        QPointF corner(_point.x(), _point.y() - size);
+
+        if (_flags & Qt::AlignHCenter)
+            corner.rx() -= size/2.0;
+        else if (_flags & Qt::AlignRight)
+            corner.rx() -= size;
+
+        if (_flags & Qt::AlignVCenter)
+            corner.ry() += size/2.0;
+        else if (_flags & Qt::AlignTop)
+            corner.ry() += size;
+        else _flags |= Qt::AlignBottom;
+
         QRectF rect(corner, QSizeF(size, size));
-        painter.drawText(rect, flags, text, boundingRect);
+        _painter.drawText(rect, _flags, _text, _boundingRect);
     }
 
-	ShadowWidgetEventFilter::ShadowWidgetEventFilter(int shadowWidth)
+	ShadowWidgetEventFilter::ShadowWidgetEventFilter(int _shadowWidth)
 		: QObject(0)
-		, ShadowWidth_(shadowWidth)
+		, ShadowWidth_(_shadowWidth)
 	{
 
 	}
 
-	bool ShadowWidgetEventFilter::eventFilter(QObject* obj, QEvent* event)
+	bool ShadowWidgetEventFilter::eventFilter(QObject* obj, QEvent* _event)
 	{
-		if (event->type() == QEvent::Paint)
+		if (_event->type() == QEvent::Paint)
 		{
 			QWidget* w = qobject_cast<QWidget*>(obj);
 
 			QRect origin = w->rect();
 
-			QRect right = QRect(QPoint(origin.width() - ShadowWidth_, origin.y() + ShadowWidth_ + 1), QPoint(origin.width(), origin.height() - ShadowWidth_ - 1));
-			QRect left = QRect(QPoint(origin.x(), origin.y() + ShadowWidth_), QPoint(origin.x() + ShadowWidth_ - 1, origin.height() - ShadowWidth_ - 1));
-			QRect top = QRect(QPoint(origin.x() + ShadowWidth_ + 1, origin.y()), QPoint(origin.width() - ShadowWidth_ - 1, origin.y() + ShadowWidth_));
-			QRect bottom = QRect(QPoint(origin.x() + ShadowWidth_ + 1, origin.height() - ShadowWidth_), QPoint(origin.width() - ShadowWidth_ - 1, origin.height()));
+			QRect right = QRect(
+                QPoint(origin.width() - ShadowWidth_, origin.y() + ShadowWidth_ + 1),
+                QPoint(origin.width(), origin.height() - ShadowWidth_ - 1)
+            );
 
-			QRect topLeft = QRect(origin.topLeft(), QPoint(origin.x() + ShadowWidth_, origin.y() + ShadowWidth_));
-			QRect topRight = QRect(QPoint(origin.width() - ShadowWidth_, origin.y()), QPoint(origin.width(), origin.y() + ShadowWidth_));
-			QRect bottomLeft = QRect(QPoint(origin.x(), origin.height() - ShadowWidth_), QPoint(origin.x() + ShadowWidth_, origin.height()));
-			QRect bottomRight = QRect(QPoint(origin.width() - ShadowWidth_, origin.height() - ShadowWidth_), origin.bottomRight());
+			QRect left = QRect(
+                QPoint(origin.x(), origin.y() + ShadowWidth_),
+                QPoint(origin.x() + ShadowWidth_ - 1, origin.height() - ShadowWidth_ - 1)
+            );
+
+			QRect top = QRect(
+                QPoint(origin.x() + ShadowWidth_ + 1, origin.y()),
+                QPoint(origin.width() - ShadowWidth_ - 1, origin.y() + ShadowWidth_)
+            );
+
+			QRect bottom = QRect(
+                QPoint(origin.x() + ShadowWidth_ + 1, origin.height() - ShadowWidth_),
+                QPoint(origin.width() - ShadowWidth_ - 1, origin.height())
+            );
+
+			QRect topLeft = QRect(
+                origin.topLeft(),
+                QPoint(origin.x() + ShadowWidth_, origin.y() + ShadowWidth_)
+            );
+
+			QRect topRight = QRect(
+                QPoint(origin.width() - ShadowWidth_, origin.y()),
+                QPoint(origin.width(), origin.y() + ShadowWidth_)
+            );
+
+			QRect bottomLeft = QRect(
+                QPoint(origin.x(), origin.height() - ShadowWidth_),
+                QPoint(origin.x() + ShadowWidth_, origin.height())
+            );
+
+			QRect bottomRight = QRect(
+                QPoint(origin.width() - ShadowWidth_, origin.height() - ShadowWidth_),
+                origin.bottomRight()
+            );
 
 			QPainter p(w);
 
@@ -284,15 +324,15 @@ namespace Utils
 			p.fillRect(bottomRight, QBrush(g));
 		}
 
-		return QObject::eventFilter(obj, event);
+		return QObject::eventFilter(obj, _event);
 	}
 
-	void ShadowWidgetEventFilter::setGradientColor(QGradient& gradient, bool isActive)
+	void ShadowWidgetEventFilter::setGradientColor(QGradient& _gradient, bool _isActive)
 	{
-		gradient.setColorAt(0, QColor(0, 0, 0, 50));
-		gradient.setColorAt(0.2, QColor(0, 0, 0, isActive ? 20 : 10));
-		gradient.setColorAt(0.6, isActive ? QColor(0, 0, 0, 5) : Qt::transparent);
-		gradient.setColorAt(1, Qt::transparent);
+		_gradient.setColorAt(0, QColor(0, 0, 0, 50));
+		_gradient.setColorAt(0.2, QColor(0, 0, 0, _isActive ? 20 : 10));
+		_gradient.setColorAt(0.6, _isActive ? QColor(0, 0, 0, 5) : Qt::transparent);
+		_gradient.setColorAt(1, Qt::transparent);
 	}
 
 
@@ -305,19 +345,19 @@ namespace Utils
         clean();
     }
 
-    void SignalsDisconnector::add(const char *key, QMetaObject::Connection &&connection)
+    void SignalsDisconnector::add(const char* _key, QMetaObject::Connection&& _connection)
     {
-        if (connections_.find(key) != connections_.end())
-            connections_.erase(key);
-        connections_.emplace(std::make_pair(key, connection));
+        if (connections_.find(_key) != connections_.end())
+            connections_.erase(_key);
+        connections_.emplace(std::make_pair(_key, _connection));
     }
 
-    void SignalsDisconnector::remove(const char *key)
+    void SignalsDisconnector::remove(const char* _key)
     {
-        if (connections_.find(key) != connections_.end())
+        if (connections_.find(_key) != connections_.end())
         {
-            QObject::disconnect(connections_[key]);
-            connections_.erase(key);
+            QObject::disconnect(connections_[_key]);
+            connections_.erase(_key);
         }
     }
 
@@ -329,48 +369,57 @@ namespace Utils
     }
 
 
+    QString getCountryNameByCode(const QString& _isoCode)
+    {
+        const auto &countries = Ui::countries::get();
+        const auto i = std::find_if(
+            countries.begin(), countries.end(), [_isoCode](const Ui::countries::country &v)
+        {
+            return v.iso_code_.toLower() == _isoCode.toLower();
+        });
+        if (i != countries.end())
+            return i->name_;
+        return "";
+    }
 
-	QMap<QString, QString> GetCountryCodes()
+	QMap<QString, QString> getCountryCodes()
 	{
 		auto countries = Ui::countries::get();
-
 		QMap<QString, QString> result;
-
 		for (const auto& country : countries)
 			result.insert(country.name_, QString("+") + QVariant(country.phone_code_).toString());
-
 		return result;
 	}
 
-	QString ScaleStyle(const QString& _style, double scale)
+	QString ScaleStyle(const QString& _style, double _scale)
 	{
-		QString out_string;
-		QTextStream result(&out_string);
+		QString outString;
+		QTextStream result(&outString);
 
 		auto tokens =  _style.split(QRegExp("\\;"));
 
-		for (auto iter_line = tokens.begin(); iter_line != tokens.end(); iter_line++)
+		for (auto iterLine = tokens.begin(); iterLine != tokens.end(); iterLine++)
 		{
-			if (iter_line != tokens.begin())
+			if (iterLine != tokens.begin())
 				result << ";";
 
-			int pos = iter_line->indexOf(QRegExp("[\\-\\d]\\d*dip"));
+			int pos = iterLine->indexOf(QRegExp("[\\-\\d]\\d*dip"));
 
 			if (pos != -1)
 			{
-				result << iter_line->left(pos);
-				QString tmp = iter_line->mid(pos, iter_line->right(pos).length());
+				result << iterLine->left(pos);
+				QString tmp = iterLine->mid(pos, iterLine->right(pos).length());
 				int size = QVariant(tmp.left(tmp.indexOf("dip"))).toInt();
-                size *= scale;
+                size *= _scale;
 				result << QVariant(size).toString();
 				result << "px";
 			}
 			else
 			{
-				pos = iter_line->indexOf("_100");
+				pos = iterLine->indexOf("_100");
 				if (pos != -1)
 				{
-					result << iter_line->left(pos);
+					result << iterLine->left(pos);
 					result << "_";
 
                     if (Utils::is_mac_retina())
@@ -379,52 +428,56 @@ namespace Utils
                     }
                     else
                     {
-                        result << QVariant(scale * 100).toString();
+                        result << QVariant(_scale * 100).toString();
                     }
-					result << iter_line->mid(pos + 4, iter_line->length());
+					result << iterLine->mid(pos + 4, iterLine->length());
 				}
 				else
 				{
-					pos = iter_line->indexOf("/100/");
+					pos = iterLine->indexOf("/100/");
 					if (pos != -1)
 					{
-						result << iter_line->left(pos);
+						result << iterLine->left(pos);
 						result << "/";
-                        result << QVariant(Utils::scale_bitmap(scale) * 100).toString();
+                        result << QVariant(Utils::scale_bitmap(_scale) * 100).toString();
 						result << "/";
-						result << iter_line->mid(pos + 5, iter_line->length());
+						result << iterLine->mid(pos + 5, iterLine->length());
 					}
 					else
 					{
-						result << *iter_line;
+						result << *iterLine;
 					}
 				}
 			}
 		}
 
-		return out_string;
+		return outString;
 	}
 
-    void ApplyPropertyParameter(QWidget *widget, const char *property, QVariant parameter)
+    void ApplyPropertyParameter(QWidget* _widget, const char* _property, QVariant _parameter)
     {
-        if (widget)
+        if (_widget)
         {
-            widget->setProperty(property, parameter);
-            widget->style()->unpolish(widget);
-            widget->style()->polish(widget);
-            widget->update();
+            _widget->setProperty(_property, _parameter);
+            _widget->style()->unpolish(_widget);
+            _widget->style()->polish(_widget);
+            _widget->update();
         }
     }
 
-    void ApplyStyle(QWidget *widget, QString style)
+    void ApplyStyle(QWidget* _widget, QString _style)
     {
-        if (widget)
-            widget->setStyleSheet(Utils::SetFont(Utils::ScaleStyle(style, Utils::get_scale_coefficient())));
+        if (_widget)
+        {
+            QString newStyle = Utils::SetFont(Utils::ScaleStyle(_style, Utils::getScaleCoefficient()));
+            if (newStyle != _widget->styleSheet())
+                _widget->setStyleSheet(newStyle);
+        }
     }
 
-	QString LoadStyle(const QString& qss_file, double scale, bool import_common_style)
+	QString LoadStyle(const QString& _qssFile)
 	{
-		QFile file(qss_file);
+		QFile file(_qssFile);
 
 		if (!file.open(QIODevice::ReadOnly))
 		{
@@ -438,43 +491,52 @@ namespace Utils
 			return "";
 		}
 
-		QString out_string;
-		QTextStream result(&out_string);
+		QString outString;
+		QTextStream result(&outString);
 
-		if (import_common_style)
-			result << LoadStyle(":/resources/qss/common.qss", scale, false);
+        result << ScaleStyle(SetFont(qss), Utils::getScaleCoefficient());
 
-        result << ScaleStyle(SetFont(qss), scale);
-
-		return out_string;
+		return outString;
 	}
 
-    QString SetFont(const QString& qss)
+    QString SetFont(const QString& _qss)
     {
-        QString result(qss);
-        result.replace("%FONT_FAMILY%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI));
-		result.replace("%FONT_FAMILY_BOLD%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_BOLD));
-		result.replace("%FONT_FAMILY_SEMIBOLD%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_SEMIBOLD));
-		result.replace("%FONT_FAMILY_LIGHT%", Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_LIGHT));
+        QString result(_qss);
 
-        result.replace("%FONT_WEIGHT%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI));
-        result.replace("%FONT_WEIGHT_BOLD%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_BOLD));
-        result.replace("%FONT_WEIGHT_SEMIBOLD%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_SEMIBOLD));
-        result.replace("%FONT_WEIGHT_LIGHT%", Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_LIGHT));
+        const auto fontFamily = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::NORMAL);
+        const auto fontFamilyBold = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::BOLD);
+        const auto fontFamilySemibold = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::SEMIBOLD);
+        const auto fontFamilyLight = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::LIGHT);
+
+        result.replace("%FONT_FAMILY%", fontFamily);
+		result.replace("%FONT_FAMILY_BOLD%", fontFamilyBold);
+		result.replace("%FONT_FAMILY_SEMIBOLD%", fontFamilySemibold);
+		result.replace("%FONT_FAMILY_LIGHT%", fontFamilyLight);
+
+        const auto fontWeightQss = Fonts::appFontWeightQss(QFont::Weight::Normal);
+        const auto fontWeightBold = Fonts::appFontWeightQss(QFont::Weight::Bold);
+        const auto fontgWeightSemibold = Fonts::appFontWeightQss(QFont::Weight::DemiBold);
+        const auto fontWeightLight = Fonts::appFontWeightQss(QFont::Weight::Light);
+
+        result.replace("%FONT_WEIGHT%", fontWeightQss);
+        result.replace("%FONT_WEIGHT_BOLD%", fontWeightBold);
+        result.replace("%FONT_WEIGHT_SEMIBOLD%", fontgWeightSemibold);
+        result.replace("%FONT_WEIGHT_LIGHT%", fontWeightLight);
+
         return result;
     }
 
-	QPixmap GetDefaultAvatar(const QString &uin, const QString &displayName, const int sizePx, const bool isFilled)
+	QPixmap getDefaultAvatar(const QString& _uin, const QString& _displayName, const int _sizePx, const bool _isFilled)
 	{
 		const auto antialiasSizeMult = 8;
-		const auto bigSizePx = (sizePx * antialiasSizeMult);
+		const auto bigSizePx = (_sizePx * antialiasSizeMult);
 		const auto bigSize = QSize(bigSizePx, bigSizePx);
 
 		QImage bigResult(bigSize, QImage::Format_ARGB32);
 
 		// evaluate colors
 
-        const auto &str = uin.isEmpty() ? QString("0") : uin;
+        const auto &str = _uin.isEmpty() ? QString("0") : _uin;
         const auto crc32 = crc32FromString(str);
         const auto colorIndex = (crc32 % ColorTableSize);
         QColor color = ColorTable[colorIndex];
@@ -494,12 +556,12 @@ namespace Utils
 
 		QPen filledAvatarPen(QColor("#ffffff"));
 
-		const QPen &avatarPen = (isFilled ? filledAvatarPen : hollowAvatarPen);
+		const QPen &avatarPen = (_isFilled ? filledAvatarPen : hollowAvatarPen);
 		painter.setPen(avatarPen);
 
 		// draw
 
-		if (isFilled)
+		if (_isFilled)
 		{
 			bigResult.fill(color);
 		}
@@ -513,9 +575,9 @@ namespace Utils
 			painter.drawEllipse(correction, correction, ellipseRadius, ellipseRadius);
 		}
 
-		auto scaledBigResult = bigResult.scaled(QSize(sizePx, sizePx), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		auto scaledBigResult = bigResult.scaled(QSize(_sizePx, _sizePx), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
-		const auto trimmedDisplayName = displayName.trimmed();
+		const auto trimmedDisplayName = _displayName.trimmed();
         if (trimmedDisplayName.isEmpty())
         {
             return QPixmap::fromImage(scaledBigResult);
@@ -525,18 +587,23 @@ namespace Utils
 		const auto firstChar = Utils::PeekNextSuperChar(trimmedDisplayName);
 		if (firstChar.IsSimple())
 		{
+            QFont font = Fonts::appFont(_sizePx / 1.5);
+
 			QPainter letterPainter(&scaledBigResult);
 			letterPainter.setRenderHint(QPainter::Antialiasing);
-
-            QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, sizePx / 1.5);
-
 			letterPainter.setFont(font);
-
 			letterPainter.setPen(avatarPen);
 
 			const auto toDisplay = trimmedDisplayName[0].toUpper();
 
-			const auto rawFont = QRawFont::fromFont(font);
+			auto rawFont = QRawFont::fromFont(font);
+            if (platform::is_apple())
+            {
+                if (!rawFont.supportsCharacter(toDisplay))
+                    rawFont = QRawFont::fromFont(QFont(QStringLiteral("AppleColorEmoji"), _sizePx / 1.5));
+                assert(rawFont.supportsCharacter(toDisplay));
+            }
+
 			quint32 glyphIndex = 0;
 			int numGlyphs = 1;
 			const auto glyphSearchSucceed = rawFont.glyphIndexesForChars(&toDisplay, 1, &glyphIndex, &numGlyphs);
@@ -548,6 +615,7 @@ namespace Utils
 			assert(numGlyphs == 1);
 
 			auto glyphPath = rawFont.pathForGlyph(glyphIndex);
+
 			const auto rawGlyphBounds = glyphPath.boundingRect();
 			glyphPath.translate(-rawGlyphBounds.x(), -rawGlyphBounds.y());
 			const auto glyphBounds = glyphPath.boundingRect();
@@ -555,10 +623,10 @@ namespace Utils
 			const auto glyphWidth = glyphBounds.width();
 
 			QFontMetrics m(font);
-			QRect pseudoRect(0, 0, sizePx, sizePx);
+			QRect pseudoRect(0, 0, _sizePx, _sizePx);
 			auto centeredRect = m.boundingRect(pseudoRect, Qt::AlignCenter, QString(toDisplay));
 
-			qreal y = (sizePx / 2.0);
+			qreal y = (_sizePx / 2.0);
 			y -= glyphHeight / 2.0;
 
 			qreal x = centeredRect.x();
@@ -570,54 +638,55 @@ namespace Utils
 		}
 		else if (firstChar.IsEmoji())
 		{
-			QPainter emojiPainter(&scaledBigResult);
-            const auto nearestSizeAvailable = Emoji::GetNearestSizeAvailable(sizePx / 2);// + (platform::is_apple() ? 8 : 0));
+            QPainter emojiPainter(&scaledBigResult);
+            const auto nearestSizeAvailable = Emoji::GetNearestSizeAvailable(_sizePx / 2);// + (platform::is_apple() ? 8 : 0));
             const auto &emoji = Ui::DpiAwareImage(Emoji::GetEmoji(firstChar.Main(), firstChar.Ext(), nearestSizeAvailable));
-            emoji.draw(emojiPainter, (sizePx - emoji.width()) / 2, (sizePx - emoji.height()) / 2 - 1);
+            emoji.draw(emojiPainter, (_sizePx - emoji.width()) / 2, (_sizePx - emoji.height()) / 2 - (platform::is_apple() ? 0 : 1));
 		}
 
 		return QPixmap::fromImage(scaledBigResult);
 	}
 
-	QStringList GetPossibleStrings(const QString& text)
+	QStringList GetPossibleStrings(const QString& _text)
 	{
 		QStringList result;
 
-        if (text.isEmpty())
+        if (_text.isEmpty())
             return result;
 
-#ifdef _WIN32
+#if defined _WIN32
 		HKL aLayouts[8] = {0};
 		int nCount = ::GetKeyboardLayoutList(8, aLayouts);
 		HKL hCurrent = ::GetKeyboardLayout(0);
 
 		for (int j = 0; j < nCount; ++j)
 		{
-			result.append(VKeyToChar(::VkKeyScanEx(text.at(0).unicode(), hCurrent), aLayouts[j]));
+			result.append(VKeyToChar(::VkKeyScanEx(_text.at(0).unicode(), hCurrent), aLayouts[j]));
 		}
 
-		for (int i = 1; i < text.length(); i++)
+		for (int i = 1; i < _text.length(); i++)
 		{
 			for (int j = 0; j < nCount; ++j)
 			{
-				result[j].append(VKeyToChar(::VkKeyScanEx(text.at(i).unicode(), hCurrent), aLayouts[j]));
+				result[j].append(VKeyToChar(::VkKeyScanEx(_text.at(i).unicode(), hCurrent), aLayouts[j]));
 			}
 		}
-#else
 
-#ifdef __APPLE__
-        MacSupport::getPossibleStrings(text, result);
-#else
-        result.push_back(text);
-#endif
-
+        result.push_front(_text);
+#elif defined __APPLE__
+        MacSupport::getPossibleStrings(_text, result);
 #endif //_WIN32
+
+#ifdef __linux__
+        result.push_front(_text);
+#endif //__Linux__
+        result += Translit::getPossibleStrings(_text);
 		return result;
 	}
 
-	QPixmap RoundImage(const QPixmap &img, const QString& state, bool isDefault, bool mini_icons)
+	QPixmap roundImage(const QPixmap& _img, const QString& _state, bool /*isDefault*/, bool _miniIcons)
 	{
-		int scale = std::min(img.height(), img.width());
+		int scale = std::min(_img.height(), _img.width());
 		QImage imageOut(QSize(scale, scale), QImage::Format_ARGB32);
 		imageOut.fill(Qt::transparent);
 
@@ -632,67 +701,86 @@ namespace Utils
 		QPainterPath path(QPointF(0, 0));
 		path.addEllipse(0, 0, scale, scale);
 
-        const auto x_rnd = 50;
-        const auto y_rnd = 36;
+        const auto xRnd = 50;
+        const auto yRnd = 36;
 
-        if (state == "mobile")
+        if (_state == "mobile")
         {
             QPainterPath stPath(QPointF(0, 0));
-            if (mini_icons)
-                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini))), x_rnd, y_rnd);
+            if (_miniIcons)
+                stPath.addRoundRect(
+                    QRect(
+                        scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)),
+                        scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini)),
+                        Utils::scale_bitmap(Utils::scale_value(mobile_rect_width_mini)),
+                        Utils::scale_bitmap(Utils::scale_value(mobile_rect_height_mini))
+                    ),
+                    xRnd,
+                    yRnd
+                );
             else
-                stPath.addRoundRect(QRect(scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)), Utils::scale_bitmap(Utils::scale_value(mobile_rect_height))), x_rnd, y_rnd);
+                stPath.addRoundRect(
+                    QRect(
+                        scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)),
+                        scale - Utils::scale_bitmap(Utils::scale_value(mobile_rect_height)),
+                        Utils::scale_bitmap(Utils::scale_value(mobile_rect_width)),
+                        Utils::scale_bitmap(Utils::scale_value(mobile_rect_height))
+                    ),
+                    xRnd,
+                    yRnd
+                );
             path -= stPath;
         }
 
-        auto added_radius = Utils::scale_value(8);
-        if (state == "photo enter" || state == "photo leave")
+        auto addedRadius = Utils::scale_value(8);
+        if (_state == "photo enter" || _state == "photo leave")
         {
             QPixmap p(Utils::parse_image_name(":/resources/content_addphoto_100.png"));
             int x = (scale - p.width());
             int y = (scale - p.height());
             QPainterPath stPath(QPointF(0, 0));
-            stPath.addEllipse(x - added_radius / 2, y - added_radius / 2, p.width() + added_radius, p.height() + added_radius);
+            stPath.addEllipse(x - addedRadius / 2, y - addedRadius / 2, p.width() + addedRadius, p.height() + addedRadius);
             path -= stPath;
         }
 
 		painter.setClipPath(path);
-		painter.drawPixmap(0, 0, img);
+		painter.drawPixmap(0, 0, _img);
 
-        if (state == "photo enter")
+        if (_state == "photo enter")
         {
             painter.setBrush(QBrush(QColor(0, 0, 0, 80)));
             painter.drawEllipse(0, 0, scale, scale);
             painter.setBrush(Qt::NoBrush);
 
-            painter.setFont(Utils::appFont(Utils::FontsFamily::SEGOE_UI, scale_value(18)));
+            const auto fontSize = Utils::scale_bitmap(18);
+            painter.setFont(Fonts::appFontScaled(fontSize));
             painter.setPen(QPen(Qt::white));
 
             painter.drawText(QRectF(0, 0, scale, scale), Qt::AlignCenter, QT_TRANSLATE_NOOP("avatar_upload", "Edit\nphoto"));
             painter.setPen(Qt::NoPen);
         }
 
-        if (state == "online" || state == "dnd")
+        if (_state == "online" || _state == "dnd")
         {
             QPainterPath stPath(QPointF(0,0));
             stPath.addRect(0, 0, scale, scale);
             painter.setClipPath(stPath);
-            QPixmap p(Utils::parse_image_name(mini_icons ? ":/resources/cl_status_online_mini_100.png" : ":/resources/cl_status_online_100.png"));
+            QPixmap p(Utils::parse_image_name(_miniIcons ? ":/resources/cl_status_online_mini_100.png" : ":/resources/cl_status_online_100.png"));
             int x = (scale - p.width());
             int y = (scale - p.height());
             painter.drawPixmap(x, y, p);
         }
-        else if (state == "mobile")
+        else if (_state == "mobile")
         {
             QPainterPath stPath(QPointF(0,0));
             stPath.addRect(0, 0, scale, scale);
             painter.setClipPath(stPath);
-            QPixmap p(Utils::parse_image_name(mini_icons ? ":/resources/cl_status_mobile_mini_100.png" : ":/resources/cl_status_mobile_100.png"));
+            QPixmap p(Utils::parse_image_name(_miniIcons ? ":/resources/cl_status_mobile_mini_100.png" : ":/resources/cl_status_mobile_100.png"));
             int x = (scale - p.width());
             int y = (scale - p.height());
             painter.drawPixmap(x, y, p);
         }
-        else if (state == "photo enter" || state == "photo leave")
+        else if (_state == "photo enter" || _state == "photo leave")
         {
             QPixmap p(Utils::parse_image_name(":/resources/content_addphoto_100.png"));
             int x = (scale - p.width());
@@ -705,7 +793,7 @@ namespace Utils
             painter.setClipPath(stPath);
 
     		painter.setBrush(Qt::transparent);
-            painter.drawEllipse(x - added_radius / 2, y - added_radius / 2, p.width() + added_radius, p.height() + added_radius);
+            painter.drawEllipse(x - addedRadius / 2, y - addedRadius / 2, p.width() + addedRadius, p.height() + addedRadius);
             painter.drawPixmap(x, y, p);
         }
 
@@ -714,92 +802,70 @@ namespace Utils
 		return pixmap;
 	}
 
-	QPixmap DrawStatus(const QString& state, int scale)
-	{
-		QImage imageOut(QSize(scale, scale),QImage::Format_ARGB32);
-		imageOut.fill(qRgba(255, 255, 255, 0));
-
-		QPainter painter(&imageOut);
-
-		painter.setRenderHint(QPainter::Antialiasing);
-		painter.setRenderHint(QPainter::TextAntialiasing);
-		painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-		painter.setPen(Qt::NoPen);
-
-		QPainterPath path(QPointF(0,0));
-		path.addRect(0, 0, scale, scale);
-		painter.setClipPath(path);
-		if (Utils::state_equals_online(state))
-            painter.setBrush(QBrush(qRgba(81, 156, 21, 1)));
-
-		painter.drawEllipse(0, 0, scale, scale);
-
-		return QPixmap::fromImage(imageOut);
-	}
-
-	QPixmap DrawUnreads(int size, QColor color, const QString unreads)
-	{
-		QPixmap pixmap(QSize(size, size));
-		QPainter painter(&pixmap);
-
-		painter.setRenderHint(QPainter::Antialiasing);
-		painter.setRenderHint(QPainter::TextAntialiasing);
-		painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI_BOLD, scale_value(12));
-		painter.setFont( font );
-		QPen penHText(QColor("#ffffff"));
-		painter.setPen(penHText);
-		pixmap.fill(color);
-
-		drawText(painter, QPointF(size/2, size/2 - 1), Qt::AlignHCenter | Qt::AlignVCenter, unreads);
-
-		return RoundImage(pixmap, QString(), false, false);
-	}
-
-	void setPropertyToWidget(QWidget* widget, char* name, bool value)
-	{
-		widget->setProperty(name, value);
-	}
-
-	void applyWidgetPropChanges(QWidget* widget)
-	{
-		assert(widget);
-
-		QApplication::style()->unpolish(widget);
-		QApplication::style()->polish(widget);
-		widget->update();
-	}
-
-    bool isValidEmailAddress(const QString &email)
+    bool isValidEmailAddress(const QString& _email)
     {
         QRegExp r("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}\\b");
         r.setCaseSensitivity(Qt::CaseInsensitive);
         r.setPatternSyntax(QRegExp::RegExp);
-        return r.exactMatch(email);
+        return r.exactMatch(_email);
     }
 
-    bool isProbablyPhoneNumber(const QString &number)
+    bool isProbablyPhoneNumber(const QString& _number)
     {
         QRegExp r("/^\\s*(?:\\+?(\\d{1,3}))?([-. (]*(\\d{3})[-. )]*)?((\\d{3})[-. ]*(\\d{2,4})(?:[-.x ]*(\\d+))?)\\s*$/gm");
         r.setCaseSensitivity(Qt::CaseInsensitive);
         r.setPatternSyntax(QRegExp::RegExp);
-        return r.exactMatch(number);
+        return r.exactMatch(_number);
+    }
+
+    double fscale_value(const double _px)
+    {
+        return (Utils::getScaleCoefficient() * _px);
     }
 
 	int scale_value(const int _px)
 	{
-		return (int)(Utils::get_scale_coefficient() * (double)_px);
+		return (int)(Utils::getScaleCoefficient() * (double)_px);
 	}
+
+    QSize scale_value(const QSize _px)
+    {
+        return QSize(
+            Utils::scale_value(_px.width()),
+            Utils::scale_value(_px.height()));
+    }
+
+    QSizeF scale_value(const QSizeF _px)
+    {
+        return QSizeF(
+            Utils::scale_value(_px.width()),
+            Utils::scale_value(_px.height()));
+    }
+
+    QRect scale_value(const QRect _px)
+    {
+        return QRect(
+            _px.left(),
+            _px.top(),
+            Utils::scale_value(_px.width()),
+            Utils::scale_value(_px.height()));
+    }
 
     int unscale_value(const int _px)
     {
-        double scale = Utils::get_scale_coefficient();
+        double scale = Utils::getScaleCoefficient();
         return (int)((double) _px / (scale == 0 ? 1.0 : scale));
     }
 
-    bool foregroundWndIsFullscreened() {
+    QSize unscale_value(const QSize& _px)
+    {
+        return QSize(
+            unscale_value(_px.width()),
+            unscale_value(_px.height()));
+    }
+
+    bool foregroundWndIsFullscreened()
+    {
 #ifdef _WIN32
         const HWND foregroundWindow = ::GetForegroundWindow();
 
@@ -809,12 +875,15 @@ namespace Utils
         RECT rcForegroundApp;
         GetWindowRect(foregroundWindow, &rcForegroundApp);
 
-        if (foregroundWindow != ::GetDesktopWindow() && foregroundWindow != ::GetShellWindow()) {
+        if (foregroundWindow != ::GetDesktopWindow() && foregroundWindow != ::GetShellWindow())
+        {
             return rcScreen.left == rcForegroundApp.left &&
                 rcScreen.top == rcForegroundApp.top &&
                 rcScreen.right == rcForegroundApp.right &&
                 rcScreen.bottom == rcForegroundApp.bottom;
         }
+#elif __APPLE__
+        return MacSupport::isFullScreen();
 #endif
         return false;
 	}
@@ -824,7 +893,12 @@ namespace Utils
 		return (_px * (is_mac_retina() ? 2 : 1));
 	}
 
-	QSize scale_bitmap(const QSize &_px)
+    int unscale_bitmap(const int _px)
+    {
+        return (_px / (is_mac_retina() ? 2 : 1));
+    }
+
+	QSize scale_bitmap(const QSize& _px)
 	{
 		return QSize(
 			scale_bitmap(_px.width()),
@@ -832,13 +906,44 @@ namespace Utils
 		);
 	}
 
-	QRect scale_bitmap(const QRect &_px)
+    QSize unscale_bitmap(const QSize& _px)
+    {
+        return QSize(
+                     unscale_bitmap(_px.width()),
+                     unscale_bitmap(_px.height())
+                     );
+    }
+
+    QRect scale_bitmap(const QRect& _px)
 	{
 		return QRect(
 			_px.left(),
 			_px.top(),
 			scale_bitmap(_px.width()),
 			scale_bitmap(_px.height())
+		);
+	}
+
+	int scale_bitmap_with_value(const int _px)
+	{
+		return scale_value(scale_bitmap(_px));
+	}
+
+	QSize scale_bitmap_with_value(const QSize& _px)
+	{
+		return QSize(
+			scale_bitmap_with_value(_px.width()),
+			scale_bitmap_with_value(_px.height())
+		);
+	}
+
+	QRect scale_bitmap_with_value(const QRect& _px)
+	{
+		return QRect(
+			_px.left(),
+			_px.top(),
+			scale_bitmap_with_value(_px.width()),
+			scale_bitmap_with_value(_px.height())
 		);
 	}
 
@@ -864,7 +969,7 @@ namespace Utils
         }
 
         QString result(_imageName);
-        double scale = Utils::get_scale_coefficient();
+        double scale = Utils::getScaleCoefficient();
         QString scaleString = QString::number(scale * 100);
         scaleString.prepend("_");
         result.replace("_100", scaleString);
@@ -876,42 +981,44 @@ namespace Utils
         return result;
     }
 
-	void addShadowToWidget(QWidget* target)
+	void addShadowToWidget(QWidget* _target)
 	{
-		QGraphicsDropShadowEffect* shadow = new QGraphicsDropShadowEffect(target);
+		QGraphicsDropShadowEffect* shadow = new QGraphicsDropShadowEffect(_target);
 		shadow->setColor(QColor(0, 0, 0, 75));
 		shadow->setBlurRadius(scale_value(16));
 		shadow->setXOffset(scale_value(0));
 		shadow->setYOffset(scale_value(2));
-		target->setGraphicsEffect(shadow);
+		_target->setGraphicsEffect(shadow);
 	}
 
-	void addShadowToWindow(QWidget* target, bool enabled)
+	void addShadowToWindow(QWidget* _target, bool _enabled)
 	{
-		int shadowWidth = enabled ? Ui::get_gui_settings()->get_shadow_width() : 0;
-		if (enabled && !target->testAttribute(Qt::WA_TranslucentBackground))
-			target->setAttribute(Qt::WA_TranslucentBackground);
+		int shadowWidth = _enabled ? Ui::get_gui_settings()->get_shadow_width() : 0;
+		if (_enabled && !_target->testAttribute(Qt::WA_TranslucentBackground))
+			_target->setAttribute(Qt::WA_TranslucentBackground);
 
-        auto old_margins = target->contentsMargins();
-		target->setContentsMargins(QMargins(old_margins.left() + shadowWidth, old_margins.top() + shadowWidth,
-            old_margins.right() + shadowWidth, old_margins.bottom() + shadowWidth));
+        auto oldMargins = _target->contentsMargins();
+		_target->setContentsMargins(QMargins(oldMargins.left() + shadowWidth, oldMargins.top() + shadowWidth,
+            oldMargins.right() + shadowWidth, oldMargins.bottom() + shadowWidth));
 
 		static QPointer<QObject> eventFilter(new ShadowWidgetEventFilter(Ui::get_gui_settings()->get_shadow_width()));
 
-		if (enabled)
-			target->installEventFilter(eventFilter);
+		if (_enabled)
+			_target->installEventFilter(eventFilter);
 		else
-			target->removeEventFilter(eventFilter);
+			_target->removeEventFilter(eventFilter);
 	}
 
-    void setWidgetPopup(QWidget* target, bool _isPopUp)
+    void setWidgetPopup(QWidget* _target, bool _isPopUp)
     {
+        return;
+
 #ifdef _WIN32
         if (_isPopUp)
-            target->setWindowFlags(Qt::Popup | Qt::NoDropShadowWindowHint | Qt::FramelessWindowHint);
+            _target->setWindowFlags(Qt::Popup | Qt::NoDropShadowWindowHint | Qt::FramelessWindowHint);
         else
         {
-            auto flags = target->windowFlags();
+            auto flags = _target->windowFlags();
             /*int framelessFlag = Qt::FramelessWindowHint;*/
             /*int popupFlag = Qt::Popup;*/
 
@@ -921,24 +1028,24 @@ namespace Utils
 
          //   flags &= ~Qt::FramelessWindowHint;
             flags &= ~Qt::Popup;
-            target->setWindowFlags(flags);
+            _target->setWindowFlags(flags);
         }
 #else
         if (_isPopUp)
-            target->setWindowFlags(Qt::Popup);
+            _target->setWindowFlags(Qt::Popup);
         else
         {
-            auto flags = target->windowFlags();
+            auto flags = _target->windowFlags();
             flags &= ~Qt::Popup;
-            target->setWindowFlags(flags);
+            _target->setWindowFlags(flags);
         }
 #endif
     }
 
-	void grabTouchWidget(QWidget* target, bool topWidget)
+	void grabTouchWidget(QWidget* _target, bool _topWidget)
 	{
 #ifdef _WIN32
-		if (topWidget)
+		if (_topWidget)
 		{
 			QScrollerProperties sp;
 			sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.6);
@@ -948,183 +1055,34 @@ namespace Utils
 			sp.setScrollMetric(QScrollerProperties::AcceleratingFlickSpeedupFactor, 1.2);
 			sp.setScrollMetric(QScrollerProperties::SnapPositionRatio, 0.2);
 			sp.setScrollMetric(QScrollerProperties::MaximumClickThroughVelocity, 0);
-			sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
+			sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.01);
 			sp.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0);
+            QVariant overshootPolicy = QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff);
+            sp.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, overshootPolicy);
+            sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, overshootPolicy);
 
-			QScroller* clScroller = QScroller::scroller(target);
-			clScroller->grabGesture(target);
+			QScroller* clScroller = QScroller::scroller(_target);
+			clScroller->grabGesture(_target);
 			clScroller->setScrollerProperties(sp);
 		}
 		else
 		{
-			QScroller::grabGesture(target);
+			QScroller::grabGesture(_target);
 		}
 #endif //WIN32
 	}
 
-	void removeLineBreaks(QString& source)
+	void removeLineBreaks(QString& _source)
 	{
-		if (source.isEmpty())
+		if (_source.isEmpty())
 			return;
 
-		bool spaceAtEnd = source.at(source.length() - 1) == QChar::Space;
-		source.replace('\n', QChar::Space);
-		source.remove('\r');
-		if (!spaceAtEnd && source.at(source.length() - 1) == QChar::Space)
-			source = source.left(source.length() - 1);
+		bool spaceAtEnd = _source.at(_source.length() - 1) == QChar::Space;
+		_source.replace('\n', QChar::Space);
+		_source.remove('\r');
+		if (!spaceAtEnd && _source.at(_source.length() - 1) == QChar::Space)
+			_source = _source.left(_source.length() - 1);
 	}
-
-    QFont appFont(const FontsFamily _fontFamily, int size)
-    {
-        QFont font(appFontFamily(_fontFamily));
-        font.setPixelSize(size);
-        font.setWeight(appFontWeight(_fontFamily));
-
-//#ifdef __APPLE__
-//        font.setLetterSpacing(QFont::SpacingType::PercentageSpacing, 106);
-//        font.setWordSpacing(scale_value(0));
-//#endif
-
-        return font;
-    }
-
-    QFont::Weight appFontWeight(const FontsFamily _fontFamily)
-    {
-#ifdef __APPLE__
-        switch (_fontFamily)
-        {
-            case FontsFamily::SEGOE_UI_BOLD:
-                return QFont::Weight::Medium;
-            case FontsFamily::SEGOE_UI_LIGHT:
-                return QFont::Weight::Thin;
-            case FontsFamily::SEGOE_UI_SEMIBOLD:
-                return QFont::Weight::Normal;
-            default:
-                return QFont::Weight::Light;
-//            case FontsFamily::SEGOE_UI_BOLD:
-//                return QFont::Weight::Bold;
-//            case FontsFamily::SEGOE_UI_LIGHT:
-//                return QFont::Weight::Light;
-//            case FontsFamily::SEGOE_UI_SEMIBOLD:
-//                return QFont::Weight::Medium;
-//            default:
-//                return QFont::Weight::Normal;
-        }
-#else
-        switch (_fontFamily)
-        {
-            case FontsFamily::SEGOE_UI_BOLD:
-                return QFont::Weight::Bold;
-            case FontsFamily::SEGOE_UI_LIGHT:
-                return QFont::Weight::Light;
-            case FontsFamily::SEGOE_UI_SEMIBOLD:
-                return QFont::Weight::DemiBold;
-            default:
-                return QFont::Weight::Normal;
-        }
-#endif
-    }
-
-    QString appFontWeightQss(const FontsFamily _fontFamily)
-    {
-#ifdef __APPLE__
-        switch (_fontFamily)
-        {
-//                Thin     = 0,    // 100
-//                ExtraLight = 12, // 200
-//                Light    = 25,   // 300
-//                Normal   = 50,   // 400
-//                Medium   = 57,   // 500
-//                DemiBold = 63,   // 600
-//                Bold     = 75,   // 700
-//                ExtraBold = 81,  // 800
-//                Black    = 87    // 900
-
-            case FontsFamily::SEGOE_UI_BOLD:
-                return "500";
-            case FontsFamily::SEGOE_UI_LIGHT:
-                return "100";
-            case FontsFamily::SEGOE_UI_SEMIBOLD:
-                return "400";
-            default:
-                return "300";
-//            case FontsFamily::SEGOE_UI_BOLD:
-//                return "700";
-//            case FontsFamily::SEGOE_UI_LIGHT:
-//                return "300";
-//            case FontsFamily::SEGOE_UI_SEMIBOLD:
-//                return "500";
-//            default:
-//                return "400";
-        }
-#else
-        switch (_fontFamily)
-        {
-            case FontsFamily::SEGOE_UI_BOLD:
-                return "600";
-            case FontsFamily::SEGOE_UI_LIGHT:
-                return "100";
-            case FontsFamily::SEGOE_UI_SEMIBOLD:
-                return "500";
-            default:
-                return "400";
-        }
-#endif
-    }
-
-    const QString& appFontFamily(const FontsFamily _fontFamily)
-    {
-		static std::map<FontsFamily, QString> font_family_map;
-		if (font_family_map.empty())
-		{
-#if defined (_WIN32)
-			if (QSysInfo().windowsVersion() >= QSysInfo::WV_VISTA)
-			{
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Segoe UI")));
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Segoe UI Bold")));
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Segoe UI Semibold")));
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Segoe UI Light")));
-			}
-			else
-			{
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Arial")));
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Arial")));
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Arial")));
-				font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Arial")));
-			}
-#elif defined (__APPLE__)
-			if (QSysInfo().macVersion() >= QSysInfo().MV_10_11)
-			{
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString(".SF NS Display")));
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString(".SF NS Display")));
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString(".SF NS Display")));
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString(".SF NS Display")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Helvetica Neue")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Helvetica Neue")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Helvetica Neue")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Helvetica Neue")));
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Open Sans")));
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Open Sans")));
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Open Sans")));
-//                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Open Sans")));
-			}
-			else
-			{
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Helvetica Neue")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Helvetica Neue Bold")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Helvetica Neue Medium")));
-                font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Helvetica Neue Light")));
-			}
-#else //linux
-            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI, QString("Arial")));
-            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_BOLD, QString("Arial")));
-            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_SEMIBOLD, QString("Arial")));
-            font_family_map.emplace(std::make_pair(FontsFamily::SEGOE_UI_LIGHT, QString("Arial")));
-#endif
-		}
-
-		return font_family_map[_fontFamily];
-    }
 
 	QColor getSelectionColor()
 	{
@@ -1139,113 +1097,113 @@ namespace Utils
         return textColorString;
     }
 
-	bool mac_retina = false;
+	bool macRetina = false;
 
 	bool is_mac_retina()
 	{
-		return mac_retina;
+		return macRetina;
 	}
 
 	void set_mac_retina(bool _val)
 	{
-		mac_retina = _val;
+        macRetina = _val;
 	}
 
-	double scale_coefficient = 1.0;
+	double scaleCoefficient = 1.0;
 
-	double get_scale_coefficient()
+	double getScaleCoefficient()
     {
-		return scale_coefficient;
+		return scaleCoefficient;
 	}
 
-	void set_scale_coefficient(double _coefficient)
+	void setScaleCoefficient(double _coefficient)
 	{
         if (platform::is_apple())
         {
-            scale_coefficient = 1.0;
+            scaleCoefficient = 1.0;
+            return;
         }
-        else if (_coefficient == 1.0 ||
-            _coefficient == 1.25 ||
-            _coefficient == 1.5 ||
-            _coefficient == 2.0)
+
+        if ((_coefficient == 1.0) ||
+            (_coefficient == 1.25) ||
+            (_coefficient == 1.5) ||
+            (_coefficient == 2.0))
         {
-            scale_coefficient = _coefficient;
+            scaleCoefficient = _coefficient;
+            return;
         }
-        else
-        {
-            assert(!"strange scale value");
-            scale_coefficient = 1.0;
-        }
+
+        assert(!"unexpected scale value");
+        scaleCoefficient = 1.0;
 	}
 
-    namespace { double basic_scale_coefficient = 1.0; }
+    namespace { double basicScaleCoefficient = 1.0; }
 
-    double get_basic_scale_coefficient()
+    double getBasicScaleCoefficient()
     {
-        return basic_scale_coefficient;
+        return basicScaleCoefficient;
     }
 
-    void init_basic_scale_coefficient(double _coefficient)
+    void initBasicScaleCoefficient(double _coefficient)
     {
-        static bool __init_basic_scale_coefficient = false;
-        if (!__init_basic_scale_coefficient)
-            basic_scale_coefficient = _coefficient;
+        static bool isInitBasicScaleCoefficient = false;
+        if (!isInitBasicScaleCoefficient)
+            basicScaleCoefficient = _coefficient;
         else
-            assert(!"init_basic_scale_coefficient should be called once.");
+            assert(!"initBasicScaleCoefficient should be called once.");
     }
 
-    void groupTaskbarIcon(bool enabled)
+    void groupTaskbarIcon(bool _enabled)
     {
 #ifdef _WIN32
         if (QSysInfo().windowsVersion() >= QSysInfo::WV_WINDOWS7)
         {
-            HMODULE lib_shell32 = ::GetModuleHandle(L"shell32.dll");
+            HMODULE libShell32 = ::GetModuleHandle(L"shell32.dll");
             typedef HRESULT  (__stdcall * SetCurrentProcessExplicitAppUserModelID_Type)(PCWSTR);
             SetCurrentProcessExplicitAppUserModelID_Type SetCurrentProcessExplicitAppUserModelID_Func;
-            SetCurrentProcessExplicitAppUserModelID_Func = (SetCurrentProcessExplicitAppUserModelID_Type)::GetProcAddress(lib_shell32,"SetCurrentProcessExplicitAppUserModelID");
-            SetCurrentProcessExplicitAppUserModelID_Func(enabled ? application_user_model_id : L"");
+            SetCurrentProcessExplicitAppUserModelID_Func = (SetCurrentProcessExplicitAppUserModelID_Type)::GetProcAddress(libShell32,"SetCurrentProcessExplicitAppUserModelID");
+            SetCurrentProcessExplicitAppUserModelID_Func(_enabled ? application_user_model_id : L"");
         }
 #endif //_WIN32
     }
 
-    bool is_start_on_startup()
+    bool isStartOnStartup()
     {
 #ifdef _WIN32
-        CRegKey key_software_run;
-        if (ERROR_SUCCESS != key_software_run.Open(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", KEY_READ))
+        CRegKey keySoftwareRun;
+        if (ERROR_SUCCESS != keySoftwareRun.Open(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", KEY_READ))
             return false;
 
-        wchar_t buffer_path[1025];
+        wchar_t bufferPath[1025];
         ULONG len = 1024;
 
-        if (key_software_run.QueryStringValue((const wchar_t*) product_name.utf16(), buffer_path, &len) != ERROR_SUCCESS)
+        if (keySoftwareRun.QueryStringValue((const wchar_t*) product_name.utf16(), bufferPath, &len) != ERROR_SUCCESS)
             return false;
 
 #endif //_WIN32
         return true;
     }
 
-    void set_start_on_startup(bool _start)
+    void setStartOnStartup(bool _start)
     {
 #ifdef _WIN32
 
-        bool current_state = is_start_on_startup();
-        if (current_state == _start)
+        bool currentState = isStartOnStartup();
+        if (currentState == _start)
             return;
 
         if (_start)
         {
-            CRegKey key_software_run;
-            if (ERROR_SUCCESS != key_software_run.Open(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", KEY_SET_VALUE))
+            CRegKey keySoftwareRun;
+            if (ERROR_SUCCESS != keySoftwareRun.Open(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", KEY_SET_VALUE))
                 return;
 
             wchar_t buffer[1025];
             if (!::GetModuleFileName(0, buffer, 1024))
                 return;
 
-            CAtlString exe_path = buffer;
-
-            if (ERROR_SUCCESS != key_software_run.SetStringValue((const wchar_t*) product_name.utf16(), CAtlString("\"") + exe_path + "\""))
+            CAtlString exePath = buffer;
+            if (ERROR_SUCCESS != keySoftwareRun.SetStringValue((const wchar_t*) product_name.utf16(), CAtlString("\"") + exePath + "\"" + " /startup"))
                 return;
         }
         else
@@ -1256,22 +1214,22 @@ namespace Utils
     }
 
 #ifdef _WIN32
-    HWND create_fake_parent_window()
+    HWND createFakeParentWindow()
     {
         HINSTANCE instance = (HINSTANCE) ::GetModuleHandle(0);
         HWND hwnd = 0;
 
-        CAtlString class_name = L"fake_parent_window";
+        CAtlString className = L"fake_parent_window";
         WNDCLASSEX wc = {0};
 
         wc.cbSize = sizeof(wc);
         wc.lpfnWndProc = DefWindowProc;
         wc.hInstance = instance;
-        wc.lpszClassName = (LPCWSTR) class_name;
+        wc.lpszClassName = (LPCWSTR)className;
         if (!::RegisterClassEx(&wc))
             return hwnd;
 
-        hwnd = ::CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT, (LPCWSTR) class_name, 0, WS_POPUP, 0, 0, 0, 0, 0, 0, instance, 0);
+        hwnd = ::CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT, (LPCWSTR)className, 0, WS_POPUP, 0, 0, 0, 0, 0, 0, instance, 0);
         if (!hwnd)
             return hwnd;
 
@@ -1286,19 +1244,19 @@ namespace Utils
     }
 #endif //WIN32
 
-    const uint get_input_maximum_chars()
+    const uint getInputMaximumChars()
     {
         return 10000;
     }
 
-    bool state_equals_online(const QString &state)
+    bool stateEqualsOnline(const QString& _state)
     {
-        auto l = state.toLower();
+        auto l = _state.toLower();
 //        return (l == "online" || l == "mobile"); // enumerate all possible states or just check if it's offline?
         return (l != "offline" && l.size());
     }
 
-    int calc_age(const QDateTime& _birthdate)
+    int calcAge(const QDateTime& _birthdate)
     {
         QDate thisdate = QDateTime::currentDateTime().date();
         QDate birthdate = _birthdate.date();
@@ -1313,7 +1271,7 @@ namespace Utils
         return age;
     }
 
-    void init_crash_handlers_in_core()
+    void initCrashHandlersInCore()
     {
 #ifdef _WIN32
         QLibrary libcore(CORELIBRARY);
@@ -1323,8 +1281,8 @@ namespace Utils
         }
 
         typedef bool (*init_handlers_function)();
-        init_handlers_function init_handlers_instance = (init_handlers_function) libcore.resolve("init_crash_handlers");
-        init_handlers_instance();
+        init_handlers_function initHandlersInstance = (init_handlers_function) libcore.resolve("init_crash_handlers");
+        initHandlersInstance();
 #endif // _WIN32
     }
 
@@ -1333,17 +1291,21 @@ namespace Utils
         static QString defaultDownloadsPath;
         if (!defaultDownloadsPath.length())
         {
-            //defaultDownloadsPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation)) + QDir::toNativeSeparators("/ICQ");
+#ifdef __APPLE__
+            defaultDownloadsPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation)) + QDir::toNativeSeparators("/ICQ");
+#else
             defaultDownloadsPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation));
-            QDir().mkpath(defaultDownloadsPath);
+#endif
+            if (Ui::get_gui_settings()->get_value(settings_download_directory, QString()).isEmpty())
+            {
+                QDir().mkpath(defaultDownloadsPath);
+            }
         }
         return defaultDownloadsPath;
     }
 
-    bool is_image_extension(const QString &ext)
+    bool is_image_extension(const QString& _ext)
     {
-        assert(!ext.isEmpty());
-
         static QStringList imagesExtensions;
 
         if (imagesExtensions.isEmpty())
@@ -1351,36 +1313,36 @@ namespace Utils
             imagesExtensions << "jpg" << "png" << "jpeg" << "gif" << "bmp" << "tif" << "tiff" << "jpeg";
         }
 
-        return imagesExtensions.contains(ext.toLower());
+        return imagesExtensions.contains(_ext.toLower());
     }
 
-    void copyFileToClipboard(const QString& path)
+    void copyFileToClipboard(const QString& _path)
     {
         QMimeData* mimeData = new QMimeData();
-        mimeData->setData("text/uri-list", QUrl::fromLocalFile(path).toString().toStdString().c_str());
+        mimeData->setData("text/uri-list", QUrl::fromLocalFile(_path).toString().toStdString().c_str());
         QApplication::clipboard()->setMimeData(mimeData);
     }
 
-    bool saveAs(const QString& inputFilename, QString& filename, QString& directory)
+    bool saveAs(const QString& _inputFilename, QString& _filename, QString& _directory)
     {
-        static auto last_directory = QDir::toNativeSeparators(Ui::get_gui_settings()->get_value(settings_download_directory, Utils::DefaultDownloadsPath()));
+        static auto lastDirectory = QDir::toNativeSeparators(Ui::get_gui_settings()->get_value(settings_download_directory, Utils::DefaultDownloadsPath()));
 
-        filename.clear();
-        directory.clear();
+        _filename.clear();
+        _directory.clear();
 
-        int dot = inputFilename.lastIndexOf('.');
-        QString ext = dot != -1 ? inputFilename.mid(dot, inputFilename.length()) : QString();
-        QString name = (inputFilename.contains(QRegExp("\\/:*?\"<>\\|\"")) || inputFilename.length() >= 128) ? QT_TRANSLATE_NOOP("filesharing_widget", "File") : inputFilename;
-        QString full_name = QDir::toNativeSeparators(QDir(last_directory).filePath(name));
-        QString destination = QFileDialog::getSaveFileName(0, QT_TRANSLATE_NOOP("context_menu", "Save as..."), full_name, "*" + ext);
+        int dot = _inputFilename.lastIndexOf('.');
+        QString ext = dot != -1 ? _inputFilename.mid(dot, _inputFilename.length()) : QString();
+        QString name = (_inputFilename.contains(QRegExp("\\/:*?\"<>\\|\"")) || _inputFilename.length() >= 128) ? QT_TRANSLATE_NOOP("chat_page", "File") : _inputFilename;
+        QString fullName = QDir::toNativeSeparators(QDir(lastDirectory).filePath(name));
+        QString destination = QFileDialog::getSaveFileName(0, QT_TRANSLATE_NOOP("context_menu", "Save as..."), fullName, "*" + ext);
         if (!destination.isEmpty())
         {
             QFileInfo info(destination);
-            last_directory = info.dir().absolutePath();
-            directory = info.dir().absolutePath();
-            filename = info.fileName();
+            lastDirectory = info.dir().absolutePath();
+            _directory = info.dir().absolutePath();
+            _filename = info.fileName();
             if (info.suffix().isEmpty() && !ext.isEmpty())
-                filename += ext;
+                _filename += ext;
 
             return true;
         }
@@ -1412,12 +1374,12 @@ namespace Utils
         props.emplace_back("Sys_CPU", processorInfo.toStdString());
         props.emplace_back("Sys_CPU_Qt", QSysInfo::currentCpuArchitecture().toStdString());
 
-        props.emplace_back(std::make_pair("Settings_Startup", std::to_string(Utils::is_start_on_startup())));
+        props.emplace_back(std::make_pair("Settings_Startup", std::to_string(Utils::isStartOnStartup())));
         props.emplace_back(std::make_pair("Settings_Taskbar", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_in_taskbar, true))));
         props.emplace_back(std::make_pair("Settings_Sounds", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_sounds_enabled, true))));
 
-        auto current_download_dir = Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath());
-        props.emplace_back(std::make_pair("Settings_Download_Folder", std::to_string(current_download_dir == Utils::DefaultDownloadsPath())));
+        auto currentDownloadDir = Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath());
+        props.emplace_back(std::make_pair("Settings_Download_Folder", std::to_string(currentDownloadDir == Utils::DefaultDownloadsPath())));
 
         QString keyToSend;
         int currentKey = Ui::get_gui_settings()->get_value<int>(settings_key1_to_send_message, Ui::KeyToSendMessage::Enter);
@@ -1429,7 +1391,7 @@ namespace Utils
         props.emplace_back(std::make_pair("Settings_Send_By", keyToSend.toStdString()));
         props.emplace_back(std::make_pair("Settings_Show_Last_Message", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true))));
         props.emplace_back(std::make_pair("Settings_Previews", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true))));
-        props.emplace_back(std::make_pair("Settings_Scale", std::to_string(Utils::get_scale_coefficient())));
+        props.emplace_back(std::make_pair("Settings_Scale", std::to_string(Utils::getScaleCoefficient())));
         props.emplace_back(std::make_pair("Settings_Language", Ui::get_gui_settings()->get_value(settings_language, QString("")).toUpper().toStdString()));
 
         if (Ui::get_qt_theme_settings()->getDefaultTheme())
@@ -1437,8 +1399,8 @@ namespace Utils
         else
             props.emplace_back(std::make_pair("Settings_Wallpaper_Global", std::to_string(-1)));
 
-        const auto& theme_counts = Ui::get_qt_theme_settings()->getThemeCounts();
-        for (auto iter = theme_counts.cbegin(); iter != theme_counts.cend(); ++iter)
+        const auto& themeCounts = Ui::get_qt_theme_settings()->getThemeCounts();
+        for (auto iter = themeCounts.cbegin(); iter != themeCounts.cend(); ++iter)
         {
             props.emplace_back(std::make_pair(std::string("Settings_Wallpaper_Local") + " " + std::to_string(iter->first), std::to_string(iter->second)));
         }
@@ -1446,11 +1408,11 @@ namespace Utils
         props.emplace_back(std::make_pair("Settings_Sounds_Outgoing", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_outgoing_message_sound_enabled, true))));
         props.emplace_back(std::make_pair("Settings_Alerts", std::to_string(Ui::get_gui_settings()->get_value<bool>(settings_notify_new_messages, true))));
 
-        auto contact_dialog_width = Ui::MainPage::getContactDialogWidth(GetMainRect().width());
-        props.emplace_back(std::make_pair("Sidebar_Type", Ui::ContactDialog::getSideBarPolicy(contact_dialog_width)));
+        auto contactDialogWidth = Ui::MainPage::getContactDialogWidth(Ui::get_gui_settings()->get_value(settings_main_window_rect, QRect()).width());
+        props.emplace_back(std::make_pair("Sidebar_Type", Ui::ContactDialog::getSideBarPolicy(contactDialogWidth)));
 
         std::stringstream stream;
-        stream << Utils::get_proxy_settings()->type;
+        stream << Utils::get_proxy_settings()->type_;
         props.emplace_back(std::make_pair("Proxy_Type", stream.str()));
 
         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::client_settings, props);
@@ -1459,27 +1421,27 @@ namespace Utils
     QRect GetMainRect()
     {
         assert(!!Utils::InterConnector::instance().getMainWindow() && "Common.cpp (ItemLength)");
-        QRect main_rect(0, 0, 0, 0);
+        QRect mainRect(0, 0, 0, 0);
         if (Utils::InterConnector::instance().getMainWindow())
         {
-            main_rect = Utils::InterConnector::instance().getMainWindow()->geometry();
+            mainRect = Utils::InterConnector::instance().getMainWindow()->geometry();
         }
         else if (auto window = qApp->activeWindow())
         {
-            main_rect = window->geometry();
+            mainRect = window->geometry();
         }
         assert("Couldn't get rect: Common.cpp (ItemLength)");
-        return main_rect;
+        return mainRect;
     }
 
     QPoint GetMainWindowCenter()
     {
-        auto main_rect = Utils::GetMainRect();
-        auto main_width = main_rect.width();
-        auto main_height = main_rect.height();
+        auto mainRect = Utils::GetMainRect();
+        auto mainWidth = mainRect.width();
+        auto mainHeight = mainRect.height();
 
-        auto x = main_rect.x() + main_width / 2;
-        auto y = main_rect.y() + main_height / 2;
+        auto x = mainRect.x() + mainWidth / 2;
+        auto y = mainRect.y() + mainHeight / 2;
         return QPoint(x, y);
     }
 
@@ -1487,8 +1449,8 @@ namespace Utils
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
 
-        core::ifptr<core::iarray> field_array(collection->create_array());
-        field_array->reserve((int)_fields.size());
+        core::ifptr<core::iarray> fieldArray(collection->create_array());
+        fieldArray->reserve((int)_fields.size());
         for (unsigned int i = 0; i < _fields.size(); ++i)
         {
             Ui::gui_coll_helper coll(Ui::GetDispatcher()->create_collection(), true);
@@ -1496,186 +1458,187 @@ namespace Utils
             auto value = _fields[i].second;
             coll.set_value_as_string("field_value", value.toUtf8().data(), value.toUtf8().size());
 
-           core::ifptr<core::ivalue> val_field(coll->create_value());
-           val_field->set_as_collection(coll.get());
-           field_array->push_back(val_field.get());
+           core::ifptr<core::ivalue> valField(coll->create_value());
+           valField->set_as_collection(coll.get());
+           fieldArray->push_back(valField.get());
         }
 
-        collection.set_value_as_array("fields", field_array.get());
+        collection.set_value_as_array("fields", fieldArray.get());
         Ui::GetDispatcher()->post_message_to_core("update_profile", collection.get());
     }
 
-    QString get_item_safe(const std::vector<QString>& _values, size_t _selected, QString _default)
+    QString getItemSafe(const std::vector<QString>& _values, size_t _selected, QString _default)
     {
         return _selected < _values.size() ? _values[_selected] : _default;
     }
 
     bool NameEditor(
         QWidget* _parent,
-        const QString& _chat_name,
-        const QString& _button_text,
-        const QString& _header_text,
-        Out QString& _result_chat_name,
+        const QString& _chatName,
+        const QString& _buttonText,
+        const QString& _headerText,
+        Out QString& _resultChatName,
         bool acceptEnter)
     {
-        QPalette palette;
-        palette.setColor(QPalette::Highlight, "#579e1c");
-        palette.setColor(QPalette::HighlightedText, Qt::white);
-        palette.setColor(QPalette::Text, "#282828");
+        auto mainWidget = new QWidget(_parent);
+        mainWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
-        auto main_widget = new QWidget(_parent);
-        main_widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-
-        auto layout = new QVBoxLayout(main_widget);
+        auto layout = new QVBoxLayout(mainWidget);
         layout->setSpacing(0);
         layout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(15), Utils::scale_value(24), 0);
 
-        auto text_edit_ = new Ui::TextEditEx(main_widget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(18), palette, true, true);
-        text_edit_->setObjectName("input_edit_control");
-        text_edit_->setPlaceholderText(_chat_name);
-        text_edit_->setPlainText(_chat_name);
-        text_edit_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-        text_edit_->setAutoFillBackground(false);
-        text_edit_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        text_edit_->setTextInteractionFlags(Qt::TextEditable | Qt::TextEditorInteraction);
-        text_edit_->setCatchEnter(acceptEnter);
-        text_edit_->setMinimumWidth(Utils::scale_value(300));
-        Utils::ApplyStyle(text_edit_, "padding: 0; margin: 0;");
-        layout->addWidget(text_edit_);
+        auto textEdit = new Ui::TextEditEx(mainWidget, Fonts::defaultAppFontFamily(), Utils::scale_value(18), Ui::MessageStyle::getTextColor(), true, true);
+        Utils::ApplyStyle(textEdit, Ui::CommonStyle::getLineEditStyle());
+        textEdit->setObjectName("input_edit_control");
+        textEdit->setPlaceholderText(_chatName);
+        textEdit->setPlainText(_chatName);
+        textEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+        textEdit->setAutoFillBackground(false);
+        textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        textEdit->setTextInteractionFlags(Qt::TextEditable | Qt::TextEditorInteraction);
+        textEdit->setCatchEnter(acceptEnter);
+        textEdit->setMinimumWidth(Utils::scale_value(300));
+        Utils::ApplyStyle(textEdit, "padding: 0; margin: 0;");
+        layout->addWidget(textEdit);
 
         auto horizontalLineWidget = new QWidget(_parent);
         horizontalLineWidget->setFixedHeight(Utils::scale_value(1));
         horizontalLineWidget->setStyleSheet("background-color: #579e1c;");
         layout->addWidget(horizontalLineWidget);
 
-        main_widget->setStyleSheet("background-color: white;");
-        std::unique_ptr<Ui::GeneralDialog> general_dialog(new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow()));
-        general_dialog->addHead();
-        general_dialog->addLabel(_header_text);
-        general_dialog->addAcceptButton(_button_text, Utils::scale_value(24));
+        std::unique_ptr<Ui::GeneralDialog> generalDialog(new Ui::GeneralDialog(mainWidget, Utils::InterConnector::instance().getMainWindow()));
+        generalDialog->addHead();
+        generalDialog->addLabel(_headerText);
+        generalDialog->addAcceptButton(_buttonText, Utils::scale_value(24), true);
 
         if (acceptEnter)
-            QObject::connect(text_edit_, SIGNAL(enter()), general_dialog.get(), SLOT(accept()));
+            QObject::connect(textEdit, SIGNAL(enter()), generalDialog.get(), SLOT(accept()));
 
-        QTextCursor cursor = text_edit_->textCursor();
+        QTextCursor cursor = textEdit->textCursor();
         cursor.select(QTextCursor::Document);
-        text_edit_->setTextCursor(cursor);
-        text_edit_->setFrameStyle(QFrame::NoFrame);
+        textEdit->setTextCursor(cursor);
+        textEdit->setFrameStyle(QFrame::NoFrame);
 
-        Utils::setWidgetPopup(general_dialog.get(), true);//platform::is_apple() ? false : true);
-        text_edit_->setFocus();
+        Utils::setWidgetPopup(generalDialog.get(), true);//platform::is_apple() ? false : true);
+        textEdit->setFocus();
 
-        auto result = general_dialog->showInPosition(-1, -1);
-        _result_chat_name = text_edit_->getPlainText();
+        auto result = generalDialog->showInPosition(-1, -1);
+        _resultChatName = textEdit->getPlainText();
 
         return result;
     }
 
-    bool GetConfirmationWithTwoButtons(const QString& _button_left_text, const QString& _button_right_text,
-        const QString& _message_text, const QString& _label_text, QWidget* _parent)
+    bool GetConfirmationWithTwoButtons(
+        const QString& _buttonLeftText,
+        const QString& _buttonRightText,
+        const QString& _messageText,
+        const QString& _labelText,
+        QWidget* _parent)
     {
-        auto main_widget = new QWidget(_parent);
-        main_widget->setStyleSheet("background-color: white;");
+        auto mainWidget = new QWidget(_parent);
 
-        auto layout = new QVBoxLayout(main_widget);
+        auto layout = new QVBoxLayout(mainWidget);
         layout->setSpacing(0);
         layout->setMargin(0);
         layout->setContentsMargins(0, 0, 0, 0);
-        main_widget->setLayout(layout);
+        mainWidget->setLayout(layout);
 
-        auto general_dialog = new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow());
-        general_dialog->addHead();
-        general_dialog->addLabel(_label_text);
-        general_dialog->addText(_message_text, Utils::scale_value(12));
-        general_dialog->addButtonsPair(_button_left_text, _button_right_text, Utils::scale_value(24), Utils::scale_value(12));
-        Utils::setWidgetPopup(general_dialog, true);//platform::is_apple() ? false : true);
+        auto generalDialog = new Ui::GeneralDialog(mainWidget, Utils::InterConnector::instance().getMainWindow());
+        generalDialog->addHead();
+        generalDialog->addLabel(_labelText);
+        generalDialog->addText(_messageText, Utils::scale_value(12));
+        generalDialog->addButtonsPair(_buttonLeftText, _buttonRightText, Utils::scale_value(24), Utils::scale_value(12));
+        Utils::setWidgetPopup(generalDialog, true);//platform::is_apple() ? false : true);
 
-        auto result = general_dialog->showInPosition(-1, -1);
-        delete general_dialog;
+        auto result = generalDialog->showInPosition(-1, -1);
+        delete generalDialog;
         return result;
     }
 
-    bool GetErrorWithTwoButtons(const QString& _button_left_text, const QString& _button_right_text,
-        const QString& _message_text, const QString& _label_text, const QString& _error_text, QWidget* _parent)
+    bool GetErrorWithTwoButtons(
+        const QString& _buttonLeftText,
+        const QString& _buttonRightText,
+        const QString& /*_messageText*/,
+        const QString& _labelText,
+        const QString& _errorText,
+        QWidget* _parent)
     {
-        auto main_widget = new QWidget(_parent);
-        main_widget->setStyleSheet("background-color: white;");
+        auto mainWidget = new QWidget(_parent);
 
-        auto layout = new QVBoxLayout(main_widget);
+        auto layout = new QVBoxLayout(mainWidget);
         layout->setSpacing(0);
         layout->setMargin(0);
         layout->setContentsMargins(0, 0, 0, 0);
-        main_widget->setLayout(layout);
+        mainWidget->setLayout(layout);
 
-        auto general_dialog = new Ui::GeneralDialog(main_widget, Utils::InterConnector::instance().getMainWindow());
-        general_dialog->addHead();
-        general_dialog->addLabel(_label_text);
-        //general_dialog->addText(_message_text, Utils::scale_value(20));
-        general_dialog->addError(_error_text);
-        general_dialog->addButtonsPair(_button_left_text, _button_right_text, Utils::scale_value(24), Utils::scale_value(12));
-        Utils::setWidgetPopup(general_dialog, true);//platform::is_apple() ? false : true);
+        auto generalDialog = new Ui::GeneralDialog(mainWidget, Utils::InterConnector::instance().getMainWindow());
+        generalDialog->addHead();
+        generalDialog->addLabel(_labelText);
+        generalDialog->addError(_errorText);
+        generalDialog->addButtonsPair(_buttonLeftText, _buttonRightText, Utils::scale_value(24), Utils::scale_value(12));
+        Utils::setWidgetPopup(generalDialog, true);//platform::is_apple() ? false : true);
 
-        auto result = general_dialog->showInPosition(-1, -1);
-        delete general_dialog;
+        auto result = generalDialog->showInPosition(-1, -1);
+        delete generalDialog;
         return result;
     }
 
     ProxySettings::ProxySettings(core::proxy_types _type, QString _username, QString _password,
-        QString _proxy_server, int _port, bool _need_auth)
-        : type(_type)
-        , username(_username)
-        , password(_password)
-        , proxy_server(_proxy_server)
-        , port(_port)
-        , need_auth(_need_auth)
+        QString _proxyServer, int _port, bool _needAuth)
+        : type_(_type)
+        , username_(_username)
+        , password_(_password)
+        , proxyServer_(_proxyServer)
+        , port_(_port)
+        , needAuth_(_needAuth)
     {}
 
     ProxySettings::ProxySettings()
-        : type(core::proxy_types::auto_proxy)
-        , username("")
-        , password("")
-        , proxy_server("")
-        , port(invalid_port)
-        , need_auth(false)
+        : type_(core::proxy_types::auto_proxy)
+        , username_("")
+        , password_("")
+        , proxyServer_("")
+        , port_(invalidPort)
+        , needAuth_(false)
     {}
 
-    void ProxySettings::post_to_core()
+    void ProxySettings::postToCore()
     {
         Ui::gui_coll_helper coll(Ui::GetDispatcher()->create_collection(), true);
 
-        coll.set_value_as_enum("settings_proxy_type", type);
-        coll.set_value_as_string("settings_proxy_server", QStringToString(proxy_server));
-        coll.set_value_as_int("settings_proxy_port", port);
-        coll.set_value_as_string("settings_proxy_username", QStringToString(username));
-        coll.set_value_as_string("settings_proxy_password", QStringToString(password));
-        coll.set_value_as_bool("settings_proxy_need_auth", need_auth);
+        coll.set_value_as_enum("settings_proxy_type", type_);
+        coll.set_value_as_string("settings_proxy_server", QStringToString(proxyServer_));
+        coll.set_value_as_int("settings_proxy_port", port_);
+        coll.set_value_as_string("settings_proxy_username", QStringToString(username_));
+        coll.set_value_as_string("settings_proxy_password", QStringToString(password_));
+        coll.set_value_as_bool("settings_proxy_need_auth", needAuth_);
 
         Ui::GetDispatcher()->post_message_to_core("set_user_proxy_settings", coll.get());
     }
 
     ProxySettings* get_proxy_settings()
     {
-        static std::shared_ptr<ProxySettings> proxy_setting(new ProxySettings());
-        return proxy_setting.get();
+        static std::shared_ptr<ProxySettings> proxySetting(new ProxySettings());
+        return proxySetting.get();
     }
 
-    bool loadPixmap(const QString &path, Out QPixmap &pixmap)
+    bool loadPixmap(const QString& _path, Out QPixmap& _pixmap)
     {
-        assert(!path.isEmpty());
+        assert(!_path.isEmpty());
 
-        if (!QFile::exists(path))
+        if (!QFile::exists(_path))
         {
             assert(!"file does not exist");
             return false;
         }
 
-        static const char *availableFormats[] = { nullptr, "jpg", "png", "gif", "bmp", "tif" };
+        static const char *availableFormats[] = { nullptr, "PNG", "JPG" };
 
         for (auto fmt : availableFormats)
         {
-            pixmap.load(path, fmt);
+            _pixmap.load(_path, fmt);
 
-            if (!pixmap.isNull())
+            if (!_pixmap.isNull())
             {
                 return true;
             }
@@ -1684,26 +1647,132 @@ namespace Utils
         return false;
     }
 
-    StatsSender::StatsSender()
-        : gui_settings_received_(false)
-        , theme_settings_received_(false)
+    bool loadPixmap(const QByteArray& _data, Out QPixmap& _pixmap)
     {
-        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::guiSettings, this, &StatsSender::recv_gui_settings, Qt::QueuedConnection);
-        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::themeSettings, this, &StatsSender::recv_theme_settings, Qt::QueuedConnection);
+        assert(!_data.isEmpty());
+
+        static const char *availableFormats[] = { nullptr, "PNG", "JPG" };
+
+        for (auto fmt : availableFormats)
+        {
+            _pixmap.loadFromData(_data, fmt);
+
+            if (!_pixmap.isNull())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    StatsSender* get_stats_sender()
+    bool dragUrl(QWidget* _parent, const QPixmap& _preview, const QString& _url)
     {
-        static std::shared_ptr<StatsSender> stats_sender(new StatsSender());
-        return stats_sender.get();
+        QDrag *drag = new QDrag(_parent);
+        QMimeData *mimeData = new QMimeData();
+        mimeData->setProperty("icq", true);
+
+        QList<QUrl> list;
+        list << _url;
+        mimeData->setUrls(list);
+        drag->setMimeData(mimeData);
+
+        QPixmap p(_preview);
+        if (!p.isNull())
+        {
+            if (p.width() > Utils::scale_value(drag_preview_max_width))
+                p = p.scaledToWidth(Utils::scale_value(drag_preview_max_width), Qt::SmoothTransformation);
+            if (p.height() > Utils::scale_value(drag_preview_max_height))
+                p = p.scaledToHeight(Utils::scale_value(drag_preview_max_height), Qt::SmoothTransformation);
+
+            QPainter painter;
+            painter.begin(&p);
+            painter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+            painter.fillRect(p.rect(), QColor(0, 0, 0, 120));
+            painter.end();
+
+            drag->setPixmap(p);
+        }
+
+        return drag->exec(Qt::CopyAction) == Qt::CopyAction;
+    }
+
+    bool extractUinFromIcqLink(const QString &_uri, Out QString &_uin)
+    {
+        auto cleanUri = _uri;
+        cleanUri = cleanUri.trimmed();
+        cleanUri.remove(QChar::SoftHyphen);
+        cleanUri.remove('-');
+
+        QRegularExpression profileLinkRe("^http(s?)://icq.com/(people/)?(?P<uin>\\d{5,9})$");
+
+        auto match = profileLinkRe.match(cleanUri);
+        if (!match.hasMatch())
+        {
+            Out _uin.resize(0);
+
+            return false;
+        }
+
+        Out _uin = match.captured("uin");
+
+        return true;
+    }
+
+    StatsSender::StatsSender()
+        : guiSettingsReceived_(false)
+        , themeSettingsReceived_(false)
+    {
+        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::guiSettings, this, &StatsSender::recvGuiSettings, Qt::QueuedConnection);
+        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::themeSettings, this, &StatsSender::recvThemeSettings, Qt::QueuedConnection);
+    }
+
+    StatsSender* getStatsSender()
+    {
+        static std::shared_ptr<StatsSender> statsSender(new StatsSender());
+        return statsSender.get();
     }
 
     void StatsSender::trySendStats() const
     {
-        if ( ( gui_settings_received_ || Ui::get_gui_settings()->getIsLoaded() )
-            && ( theme_settings_received_ || Ui::get_qt_theme_settings()->getIsLoaded() ) )
+        if ( (guiSettingsReceived_ || Ui::get_gui_settings()->getIsLoaded() )
+            && (themeSettingsReceived_ || Ui::get_qt_theme_settings()->getIsLoaded() ) )
         {
             Utils::post_stats_with_settings();
         }
+    }
+
+    int GetMinWidthOfMainWindow()
+    {
+        return Utils::scale_value(800);
+    }
+
+    int GetDragDistance()
+    {
+        return Utils::scale_value(50);
+    }
+
+    bool haveText(const QMimeData * mimedata)
+    {
+        if (!mimedata)
+            return false;
+
+        if (mimedata->hasFormat("application/x-qt-windows-mime;value=\"Csv\""))
+            return true;
+
+        if (mimedata->hasUrls())
+        {
+            QList<QUrl> urlList = mimedata->urls();
+            for (auto url : urlList)
+            {
+                if (url.isValid())
+                    return false;
+            }
+        }
+
+        auto text = mimedata->text();
+        QUrl url(text);
+
+        return !text.isEmpty() && (!url.isValid() || url.host().isEmpty());
     }
 }

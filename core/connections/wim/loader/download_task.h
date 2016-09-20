@@ -3,17 +3,18 @@
 
 #pragma once
 
-#include "loader_task.h"
+#include "fs_loader_task.h"
 
 namespace core
 {
     namespace wim
     {
         struct wim_packet_params;
-        class download_progress_handler;
+        struct download_progress_handler;
         class web_file_info;
+        enum class loader_errors;
 
-        class download_task : public loader_task, public std::enable_shared_from_this<download_task>
+        class download_task : public fs_loader_task, public std::enable_shared_from_this<download_task>
         {
             std::unique_ptr<web_file_info>		info_;
             std::ofstream						file_stream_;
@@ -58,15 +59,18 @@ namespace core
             bool is_downloaded_file_exists();
 
             void set_played(bool played);
+            
+            std::string get_file_direct_url() const;
 
             // download thread functions
-            int32_t download_metainfo();
-            int32_t open_temporary_file();
-            int32_t load_next_range();
-            int32_t get_preview_2k();
-            int32_t get_preview();
-            int32_t on_finish();
+            loader_errors download_metainfo();
+            loader_errors open_temporary_file();
+            loader_errors load_next_range();
+            loader_errors get_preview_2k();
+            loader_errors get_preview();
+            loader_errors on_finish();
             int32_t copy_if_needed();
+            bool serialize_metainfo();
 
         };
 

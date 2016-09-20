@@ -6,6 +6,8 @@ namespace core
 {
     namespace wim
     {
+        typedef std::unordered_set<std::string> ignorelist_cache;
+
         class permit_info;
 
         class fetch_event_permit: public fetch_event
@@ -17,7 +19,7 @@ namespace core
             fetch_event_permit();
             ~fetch_event_permit();
 
-            std::vector<std::string> ignore_list() const;
+            const ignorelist_cache& ignore_list() const;
 
             virtual int32_t parse(const rapidjson::Value& _node_event_data) override;
             virtual void on_im(std::shared_ptr<core::wim::im> _im, std::shared_ptr<auto_callback> _on_complete) override;

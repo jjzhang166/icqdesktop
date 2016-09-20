@@ -3,6 +3,8 @@
 namespace HistoryControl
 {
 
-	QString FormatFileSize(const int64_t size);
+	QString formatFileSize(const int64_t size);
+
+    QString formatProgressText(const int64_t bytesTotal, const int64_t bytesTransferred);
 
 }

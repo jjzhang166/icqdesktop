@@ -23,7 +23,7 @@ namespace core
 		virtual icore_factory* get_factory() override;
 
 		// iconnector interface
-		virtual void link(iconnector*) override;
+		virtual void link(iconnector*, const common::core_gui_settings&) override;
 		virtual void unlink() override;
         virtual void receive(const char *, int64_t, icollection*) override;
 

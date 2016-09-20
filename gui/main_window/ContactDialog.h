@@ -21,11 +21,11 @@ namespace Ui
         DragOverlayWindow(ContactDialog* _parent);
 
     protected:
-        virtual void paintEvent(QPaintEvent *e);
-        virtual void dragEnterEvent(QDragEnterEvent *e);
-        virtual void dragLeaveEvent(QDragLeaveEvent *e);
-        virtual void dragMoveEvent(QDragMoveEvent *e);
-        virtual void dropEvent(QDropEvent *e);
+        virtual void paintEvent(QPaintEvent* _e);
+        virtual void dragEnterEvent(QDragEnterEvent* _e);
+        virtual void dragLeaveEvent(QDragLeaveEvent* _e);
+        virtual void dragMoveEvent(QDragMoveEvent* _e);
+        virtual void dropEvent(QDropEvent* _e);
 
     private:
         ContactDialog* Parent_;
@@ -44,10 +44,12 @@ namespace Ui
     private Q_SLOTS:
         void updateDragOverlay();
         void historyControlClicked();
+        void onSendMessage(QString _contact);
 
 	Q_SIGNALS:
 		void contactSelected(QString _aimId);
 		void sendMessage(QString);
+        void clicked();
 
 	private:
 		HistoryControl*				historyControlWidget_;
@@ -56,6 +58,7 @@ namespace Ui
         DragOverlayWindow*          dragOverlayWindow_;
         Sidebar*                    sidebar_;
         QTimer*                     overlayUpdateTimer_;
+        QTimer*                     sidebarUpdateTimer_;
         QStackedWidget*             topWidget_;
         QVBoxLayout*                rootLayout_;
         QMap<QString, QWidget*>     topWidgetsCache_;
@@ -74,23 +77,29 @@ namespace Ui
         void showDragOverlay();
         void hideDragOverlay();
 
-        void showSidebar(const QString& aimId, int page);
+        void showSidebar(const QString& _aimId, int _page);
         bool isSidebarVisible() const;
-        void setSidebarVisible(bool show);
+        void setSidebarVisible(bool _show, bool _force = false);
         bool needShowSidebar() const;
+        void hideSmilesMenu();
 
-        static bool needShowSidebar(int _contact_dialog_width);
-        static bool sideBarShowSingle(int _contact_dialog_width);
-        static std::string getSideBarPolicy(int _contact_dialog_width);
+        static bool needShowSidebar(int _contactDialogWidth);
+        static bool sideBarShowSingle(int _contactDialogWidth);
+        static std::string getSideBarPolicy(int _contactDialogWidth);
 
         void takeSidebar();
         Sidebar* getSidebar() const;
 
-        void insertTopWidget(const QString& aimId, QWidget* widget);
-        void removeTopWidget(const QString& aimId);
-        
-        HistoryControlPage* getHistoryPage(const QString& aimId) const;
+        void insertTopWidget(const QString& _aimId, QWidget* _widget);
+        void removeTopWidget(const QString& _aimId);
+
+        HistoryControlPage* getHistoryPage(const QString& _aimId) const;
         const Smiles::SmilesMenu* getSmilesMenu() const;
+
+        void setFocusOnInputWidget();
+        Ui::InputWidget* getInputWidget() const;
+
+        void notifyApplicationWindowActive(const bool isActive);
 
     protected:
         virtual void dragEnterEvent(QDragEnterEvent *);

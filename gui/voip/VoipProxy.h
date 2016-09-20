@@ -2,40 +2,54 @@
 #define __VOIP_PROXY_H__
 #include "../../core/Voip/VoipManagerDefines.h"
 
-namespace core{
-	class coll_helper;
+namespace core
+{
+    class coll_helper;
 }
 
-namespace Ui{
-	class core_dispatcher;
-	class gui_coll_helper;
+namespace Ui
+{
+    class core_dispatcher;
+    class gui_coll_helper;
 }
 
-namespace voip_manager {
+namespace voip_manager
+{
     struct Contact;
     struct ContactEx;
     struct FrameSize;
 }
 
-namespace voip_proxy {
+namespace voip_proxy
+{
 
-	enum evoip_dev_types {
-        kvoip_dev_type_undefined      = 0,
-        kvoip_dev_type_audio_playback = 1,
-        kvoip_dev_type_audio_capture  = 2,
-        kvoip_dev_type_video_capture  = 3
+    enum EvoipDevTypes
+    {
+        kvoipDevTypeUndefined      = 0,
+        kvoipDevTypeAudioPlayback = 1,
+        kvoipDevTypeAudioCapture  = 2,
+        kvoipDevTypeVideoCapture  = 3
     };
 
-    struct device_desc {
+    struct device_desc
+    {
         std::string name;
         std::string uid;
-        evoip_dev_types dev_type;
+        EvoipDevTypes dev_type;
         bool isActive;
     };
 
     class VoipEmojiManager
     {
-        struct CodeMap   { size_t id; size_t codePointSize ;std::string path; unsigned sw; unsigned sh; std::vector<unsigned> codePoints; };
+        struct CodeMap
+        {
+            size_t id;
+            size_t codePointSize;
+            std::string path;
+            unsigned sw;
+            unsigned sh;
+            std::vector<unsigned> codePoints;
+        };
         
         std::vector<CodeMap>   codeMaps_;
         size_t                 activeMapId_;
@@ -46,96 +60,110 @@ namespace voip_proxy {
         ~VoipEmojiManager();
 
     public:
-        bool addMap(const unsigned sw, const unsigned sh, const std::string& path, const std::vector<unsigned>& codePoints, const size_t size);
-        bool getEmoji(const unsigned codePoint, const size_t size, QImage& image);
+        bool addMap(const unsigned _sw, const unsigned _sh, const std::string& _path, const std::vector<unsigned>& _codePoints, const size_t _size);
+        bool getEmoji(const unsigned _codePoint, const size_t _size, QImage& _image);
     };
 
-    class VoipController : public QObject {
-        
-	Q_OBJECT
-
-	Q_SIGNALS:
-        void onVoipShowVideoWindow(bool show);
-        void onVoipVolumeChanged(const std::string& device_type, int vol);
-        void onVoipMuteChanged(const std::string& device_type, bool muted);
-        void onVoipCallNameChanged(const std::vector<voip_manager::Contact>& contacts);
-        void onVoipCallIncoming(const std::string& account, const std::string& contact);
-        void onVoipCallIncomingAccepted(const voip_manager::ContactEx& contact_ex);
-        void onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>& devices);
-        void onVoipMediaLocalAudio(bool enabled);
-        void onVoipMediaLocalVideo(bool enabled);
-        void onVoipMediaRemoteVideo(bool enabled);
-        void onVoipMouseTapped(quintptr win_id, const std::string& tap_type);
-        void onVoipCallOutAccepted(const voip_manager::ContactEx& contact_ex);
-        void onVoipCallCreated(const voip_manager::ContactEx& contact_ex);
-        void onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex);
-        void onVoipCallConnected(const voip_manager::ContactEx& contact_ex);
-		void onVoipCallTimeChanged(unsigned sec_elapsed, bool have_call);
-        void onVoipFrameSizeChanged(const voip_manager::FrameSize& fs);
+    class VoipController : public QObject
+    {
+        Q_OBJECT
+            
+        Q_SIGNALS:
+        void onVoipShowVideoWindow(bool _show);
+        void onVoipVolumeChanged(const std::string& _deviceType, int _vol);
+        void onVoipMuteChanged(const std::string& _deviceType, bool _muted);
+        void onVoipCallNameChanged(const std::vector<voip_manager::Contact>& _contacts);
+        void onVoipCallIncoming(const std::string& _account, const std::string& _contact);
+        void onVoipCallIncomingAccepted(const voip_manager::ContactEx& _contactEx);
+        void onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>& _devices);
+        void onVoipMediaLocalAudio(bool _enabled);
+        void onVoipMediaLocalVideo(bool _enabled);
+        void onVoipMediaRemoteVideo(bool _enabled);
+        void onVoipMouseTapped(quintptr _winId, const std::string& _tapType);
+        void onVoipCallOutAccepted(const voip_manager::ContactEx& _contactEx);
+        void onVoipCallCreated(const voip_manager::ContactEx& _contactEx);
+        void onVoipCallDestroyed(const voip_manager::ContactEx& _contactEx);
+        void onVoipCallConnected(const voip_manager::ContactEx& _contactEx);
+        void onVoipCallTimeChanged(unsigned _secElapsed, bool _hasCall);
+        void onVoipFrameSizeChanged(const voip_manager::FrameSize& _fs);
         void onVoipResetComplete(); //hack for correct close
-        void onVoipWindowRemoveComplete(quintptr win_id);
-        void onVoipWindowAddComplete(quintptr win_id);
-        void onVoipUpdateCipherState(const voip_manager::CipherState& state);
+        void onVoipWindowRemoveComplete(quintptr _winId);
+        void onVoipWindowAddComplete(quintptr _winId);
+        void onVoipUpdateCipherState(const voip_manager::CipherState& _state);
+        void onVoipMinimalBandwidthChanged(bool _enable);
 
-	private Q_SLOTS:
-		void _updateCallTime();
-		void _checkIgnoreContact(QString contact);
+        private Q_SLOTS:
+        void _updateCallTime();
+        void _checkIgnoreContact(QString contact);
 
-	private:
-        voip_manager::CipherState _cipherState;
-		Ui::core_dispatcher& _dispatcher;
-		QTimer               _call_time_timer;
-		unsigned             _call_time_elapsed;
-        VoipEmojiManager     _voipEmojiManager;
-        std::vector<voip_manager::Contact> _activePeerList;
-		bool				 _haveEstablishedConnection;
-        bool                 _iTunesWasPaused;
+		void updateUserAvatar(const voip_manager::ContactEx& _contactEx);
+		void updateUserAvatar(const std::string& _account, const std::string& _contact);
 
-		void _loadUserBitmaps(Ui::gui_coll_helper& collection, QPixmap* avatar, const std::string& contact, int size);
+    private:
+        voip_manager::CipherState cipherState_;
+        Ui::core_dispatcher& dispatcher_;
+        QTimer               callTimeTimer_;
+        unsigned             callTimeElapsed_;
+        VoipEmojiManager     voipEmojiManager_;
+        std::vector<voip_manager::Contact> activePeerList_;
+        // It is currenlty connected contacts.
+        std::list<voip_manager::Contact> connectedPeerList_;
+        bool haveEstablishedConnection_;
+        bool                 iTunesWasPaused_;
 
-		// Load and apply volume from settings.
-		void loadPlaybackVolumeFromSettings();
+        void _loadUserBitmaps(Ui::gui_coll_helper& _collection, const std::string& _contact, int _size);
 
-		// This method is called, when you start or recive call.
-		void onStartCall();
-		// This method is called on end of call.
-		void onEndCall();
+        // Load and apply volume from settings.
+        void loadPlaybackVolumeFromSettings();
 
-	public:
-		VoipController(Ui::core_dispatcher& dispatcher);
-		virtual ~VoipController();
+        // This method is called, when you start or recive call.
+        void onStartCall(bool _bOutgoing);
+        // This method is called on end of call.
+        void onEndCall();
 
-	public:
+		// Set window background.
+		void setWindowBackground(quintptr _hwnd, char r, char g, char b, char a);
+
+    public:
+        VoipController(Ui::core_dispatcher& _dispatcher);
+        virtual ~VoipController();
+
+    public:
         void voipReset();
         void updateActivePeerList();
-        void getSecureCode(voip_manager::CipherState& state) const;
-        VoipEmojiManager& getEmojiManager() { return _voipEmojiManager; }
+        void getSecureCode(voip_manager::CipherState& _state) const;
+        VoipEmojiManager& getEmojiManager()
+        {
+            return voipEmojiManager_;
+        }
 
-		void setWindowAdd(quintptr hwnd, bool primary_wnd, bool system_wnd, int panel_height);
-		void setWindowRemove(quintptr hwnd);
-		void setWindowOffsets(quintptr hwnd, int lpx, int tpx, int rpx, int bpx);
-		void setAvatars(QPixmap& data, int size, const char* contact);
+        void setWindowAdd(quintptr hwnd, bool _primaryWnd, bool _systemWd, int _panelHeight);
+        void setWindowRemove(quintptr _hwnd);
+        void setWindowOffsets(quintptr _hwnd, int _lpx, int _tpx, int _rpx, int _bpx);
+        void setAvatars(int _size, const char* _contact);
 
-		void setStartA(const char* contact, bool attach);
-		void setStartV(const char* contact, bool attach);
-		void setHangup();
-		void setAcceptA(const char* contact);
-		void setAcceptV(const char* contact);
-		void setDecline(const char* contact, bool busy);
+        void setStartA(const char* _contact, bool _attach);
+        void setStartV(const char* _contact, bool _attach);
+        void setHangup();
+        void setAcceptA(const char* _contact);
+        void setAcceptV(const char* _contact);
+        void setDecline(const char* _contact, bool _busy);
 
-		void setSwitchAPlaybackMute();
-		void setSwitchACaptureMute();
-		void setSwitchVCaptureMute();
-		void setVolumeAPlayback(int volume);
+        void setSwitchAPlaybackMute();
+        void setSwitchACaptureMute();
+        void setSwitchVCaptureMute();
+        void setVolumeAPlayback(int _volume);
         void setRequestSettings();
-        void setActiveDevice(const device_desc& description);
-        void setMuteSounds(bool mute);
+        void setActiveDevice(const device_desc& _description);
+        void setMuteSounds(bool _mute);
 
-		void setAPlaybackMute(bool mute);
+        void setAPlaybackMute(bool _mute);
 
-		void handlePacket(core::coll_helper& coll_params);
-        static std::string formatCallName(const std::vector<std::string>& names, const char* clip);
-	};
+        void switchMinimalBandwithMode();
+
+        void handlePacket(core::coll_helper& _collParams);
+        static std::string formatCallName(const std::vector<std::string>& _names, const char* _clip);
+    };
 }
 
 #endif//__VOIP_PROXY_H__

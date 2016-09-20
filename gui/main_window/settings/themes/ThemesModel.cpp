@@ -1,24 +1,29 @@
 #include "stdafx.h"
 #include "ThemesModel.h"
+
 #include "ThemeWidget.h"
-#include "../../../utils/utils.h"
-#include "../.././../core_dispatcher.h"
-#include "../../../utils/gui_coll_helper.h"
-#include "../../../theme_settings.h"
-#include "../../../../common.shared/themes_constants.h"
 #include "ThemesWidget.h"
-#include "../../../utils/log/log.h"
+#include "../../../theme_settings.h"
 #include "../../../cache/themes/themes.h"
+#include "../../../utils/gui_coll_helper.h"
+#include "../../../utils/utils.h"
+#include "../../../utils/log/log.h"
+
+#include "../.././../core_dispatcher.h"
+#include "../../../../common.shared/themes_constants.h"
 
 namespace Ui
 {
-    ThemesModel::ThemesModel(ThemesWidget* _themes_widget) : QObject(_themes_widget), themes_widget_(_themes_widget), target_contact_("")
+    ThemesModel::ThemesModel(ThemesWidget* _themesWidget):
+        QObject(_themesWidget),
+        themesWidget_(_themesWidget),
+        targetContact_("")
     {
-        connect(GetDispatcher(), SIGNAL(on_themes_meta()), this, SLOT(on_themes_meta()));
-        connect(GetDispatcher(), SIGNAL(on_themes_meta_error()), this, SLOT(on_themes_meta_error()));
+        connect(GetDispatcher(), SIGNAL(onThemesMeta()), this, SLOT(onThemesMeta()));
+        connect(GetDispatcher(), SIGNAL(onThemesMetaError()), this, SLOT(onThemesMetaError()));
         connect(Ui::GetDispatcher(), SIGNAL(im_created()), this, SLOT(im_created()), Qt::QueuedConnection);
 
-        if (Ui::GetDispatcher()->is_im_created())
+        if (Ui::GetDispatcher()->isImCreated())
         {
             im_created();
         }
@@ -27,42 +32,42 @@ namespace Ui
     void ThemesModel::im_created()
     {
         gui_coll_helper collection(GetDispatcher()->create_collection(), true);
-        int themes_scale = (int)ThemesScale100;
+        int themesScale = (int)ThemesScale100;
         if (Utils::is_mac_retina())
         {
-            themes_scale = ThemesScaleRetina;
+            themesScale = ThemesScaleRetina;
         }
         else
         {
-            double scale_coefficient = Utils::get_scale_coefficient();
-            if (scale_coefficient == 1.0)
+            double scaleCoefficient = Utils::getScaleCoefficient();
+            if (scaleCoefficient == 1.0)
             {
-                themes_scale = ThemesScale100;
+                themesScale = ThemesScale100;
             }
-            else if (scale_coefficient == 1.25)
+            else if (scaleCoefficient == 1.25)
             {
-                themes_scale = ThemesScale125;
+                themesScale = ThemesScale125;
             }
-            else if (scale_coefficient == 1.5)
+            else if (scaleCoefficient == 1.5)
             {
-                themes_scale = ThemesScale150;
+                themesScale = ThemesScale150;
             }
-            else if (scale_coefficient == 2.0)
+            else if (scaleCoefficient == 2.0)
             {
-                themes_scale = ThemesScale200;
+                themesScale = ThemesScale200;
             }
         }
-        collection.set_value_as_int("themes_scale", themes_scale);
+        collection.set_value_as_int("themes_scale", themesScale);
         GetDispatcher()->post_message_to_core("themes/meta/get", collection.get());
     }
     
-    void ThemesModel::on_themes_meta()
+    void ThemesModel::onThemesMeta()
     {
-        auto themes_dict = themes::loaded_themes();
+        auto themesDict = themes::loadedThemes();
         
         std::vector<themes::themePtr> themesVector;
     
-        for (auto it = themes_dict.begin(); it != themes_dict.end(); ++it)
+        for (auto it = themesDict.begin(); it != themesDict.end(); ++it)
         {
             auto theme = it->second;
             if (theme)
@@ -70,29 +75,35 @@ namespace Ui
                 themesVector.push_back(theme);
             }
         }
-        std::sort(themesVector.begin(), themesVector.end(),[](themes::themePtr a, themes::themePtr b){ return a->get_position() < b->get_position(); });
+        std::sort(themesVector.begin(), themesVector.end(),[](themes::themePtr a, themes::themePtr b)
+        {
+            return a->get_position() < b->get_position();
+        });
         
         for (auto it = themesVector.begin(); it != themesVector.end(); ++it)
         {
             auto theme = *it;
-            themes_widget_->onThemeGot(theme);
+            themesWidget_->onThemeGot(theme);
         }
     }
 
-    void ThemesModel::on_themes_meta_error()
+    void ThemesModel::onThemesMetaError()
     {
         static int triesCount = 0;
         if ((triesCount++) < 5)
-            QTimer::singleShot(100, [this]() { im_created(); });
+            QTimer::singleShot(100, [this]()
+        {
+            im_created();
+        });
     }
     
-    void ThemesModel::themeSelected(int _theme_id)
+    void ThemesModel::themeSelected(int _themeId)
     {
-        get_qt_theme_settings()->themeSelected(_theme_id, target_contact_);
+        get_qt_theme_settings()->themeSelected(_themeId, targetContact_);
     }
     
-    void ThemesModel::set_target_contact(QString _aimId)
+    void ThemesModel::setTargetContact(QString _aimId)
     {
-        target_contact_ = _aimId;
+        targetContact_ = _aimId;
     }
 }

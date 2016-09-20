@@ -6,7 +6,6 @@ extern "C"
     #include <libavutil/opt.h>
 };
 
-#include <AL/al.h>
 
 namespace
 {

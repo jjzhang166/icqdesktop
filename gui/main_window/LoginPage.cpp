@@ -2,17 +2,16 @@
 #include "LoginPage.h"
 
 #include "../core_dispatcher.h"
-#include "../utils/utils.h"
+#include "../fonts.h"
 #include "../gui_settings.h"
-#include "../controls/CountrySearchCombobox.h"
-#include "../controls/LineEditEx.h"
-#include "../../corelib/core_face.h"
-#include "../utils/gui_coll_helper.h"
-#include "../controls/BackButton.h"
-#include "../controls/CustomButton.h"
-#include "../controls/PictureWidget.h"
 #include "../controls/BackButton.h"
 #include "../controls/ConnectionSettingsWidget.h"
+#include "../controls/CountrySearchCombobox.h"
+#include "../controls/CommonStyle.h"
+#include "../controls/LineEditEx.h"
+#include "../controls/PictureWidget.h"
+#include "../utils/gui_coll_helper.h"
+#include "../utils/utils.h"
 
 namespace
 {
@@ -22,399 +21,440 @@ namespace
         SUBPAGE_PHONE_CONF_INDEX = 1,
         SUBPAGE_UIN_LOGIN_INDEX = 2,
     };
+
+    qint64 phoneInfoLastRequestSpecialId_ = 0; // using for settings only (last entered uin/phone)
+    qint64 phoneInfoLastRequestId_ = 0;
+    int phoneInfoRequestsCount_ = 0;
+
+    QString getWelcomeTitleStyle()
+    {
+        return QString(
+            "min-height: 48dip; max-height: 48dip;"
+            "margin-top: 15dip;"
+            "font-size: 32dip; font-family: \"%FONT_FAMILY_LIGHT%\"; font-weight: %FONT_WEIGHT_LIGHT%;"
+            "color: %1;"
+        ).arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getTextCommonColor()));
+    }
+
+    QString getEditPhoneStyle()
+    {
+        return QString(
+            "QPushButton { background-color: white; color: %1; margin-left: 16dip; "
+            "min-height: 40dip; max-height: 40dip; min-width: 100dip;border-style: none; } "
+            "QPushButton:hover { color: %2; } QPushButton:pressed { color: %3; } ")
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColor()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorHovered()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorPressed()));
+    }
+
+    QString getResendButtonStyle()
+    {
+        return QString(
+            "QPushButton:disabled { background-color: white; min-height: 30dip; max-height: 30dip; color: #696969; border-style: none; } "
+            "QPushButton:enabled { background-color: white; min-height: 30dip; max-height: 30dip; color: %1; border-style: none; } "
+            "QPushButton:hover { color: %2; } QPushButton:pressed { color: %3; } ")
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColor()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorHovered()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorPressed()));
+    }
+
+    QString getSwitchLoginStyle()
+    {
+        return QString(
+            "QPushButton { min-width: 340dip; max-width: 340dip; min-height: 30dip; max-height: 30dip; "
+            "background-color: white;  margin-bottom: 12dip; color: %1; border-style: none; } "
+            "QPushButton:hover { color: %2; }  QPushButton:pressed { color: %3; } ")
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColor()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorHovered()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorPressed()));
+    }
+
+    QString getCountryComboboxStyle()
+    {
+        return QString(
+            "QLineEdit { background-position: right; margin-right: 12dip; background-repeat: no-repeat; font-size: 18dip; } "
+            "QLineEdit:focus { padding-left: 32dip; margin-right: 0dip; background-repeat: no-repeat; } "
+        );
+    }
+
+    QString getPasswordForgottenLabelStyle()
+    {
+        return QString(
+            "QPushButton { background-color: transparent; color: %1; margin: 0; padding: 0; margin-top: 4dip; border-style: none; } "
+            "QPushButton:hover { color: %2; } QPushButton:pressed { color: %3; } ")
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColor()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorHovered()))
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorPressed()));
+    }
 }
 
 namespace Ui
 {
-    LoginPage::LoginPage(QWidget* parent, bool is_login)
-        : QWidget(parent)
-        , country_code_(new LineEditEx(this))
+    LoginPage::LoginPage(QWidget* _parent, bool _isLogin)
+        : QWidget(_parent)
+        , countryCode_(new LineEditEx(this))
         , phone_(new LineEditEx(this))
         , combobox_(new CountrySearchCombobox(this))
-        , remaining_seconds_(0)
+        , remainingSeconds_(0)
         , timer_(new QTimer(this))
-        , is_login_(is_login)
-        , code_length_(4)
+        , isLogin_(_isLogin)
+        , codeLength_(4)
     {
-        setStyleSheet(Utils::LoadStyle(":/main_window/login_page.qss", Utils::get_scale_coefficient(), true));
-        if (objectName().isEmpty())
-            setObjectName(QStringLiteral("login_page"));
-        setProperty("LoginPageWidget", QVariant(true));
+        setStyleSheet(Utils::LoadStyle(":/main_window/login_page.qss"));
         QVBoxLayout* verticalLayout = new QVBoxLayout(this);
         verticalLayout->setSpacing(0);
-        verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
         verticalLayout->setContentsMargins(0, 0, 0, 0);
 
-        auto back_button_widget = new QWidget(this);
-        auto back_button_layout = new QHBoxLayout(back_button_widget);
-        Utils::ApplyStyle(back_button_widget, "background-color: transparent;");
-        back_button_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-        back_button_layout->setSpacing(0);
-        back_button_layout->setContentsMargins(Utils::scale_value(14), Utils::scale_value(14), Utils::scale_value(14), Utils::scale_value(14));
+        auto backButtonWidget = new QWidget(this);
+        auto backButtonLayout = new QHBoxLayout(backButtonWidget);
+        Utils::ApplyStyle(backButtonWidget, "background-color: transparent;");
+        backButtonWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        backButtonLayout->setSpacing(0);
+        backButtonLayout->setContentsMargins(Utils::scale_value(14), Utils::scale_value(14), Utils::scale_value(14), Utils::scale_value(14));
 
         {
-            prev_page_link_ = new BackButton(back_button_widget);
-            prev_page_link_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            prev_page_link_->setFlat(true);
-            prev_page_link_->setFocusPolicy(Qt::NoFocus);
-            prev_page_link_->setCursor(Qt::PointingHandCursor);
-            back_button_layout->addWidget(prev_page_link_);
+            backButton = new BackButton(backButtonWidget);
+            backButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            backButton->setFlat(true);
+            backButton->setFocusPolicy(Qt::NoFocus);
+            backButton->setCursor(Qt::PointingHandCursor);
+            backButtonLayout->addWidget(backButton);
         }
 
         {
             auto buttonsSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-            back_button_layout->addItem(buttonsSpacer);
+            backButtonLayout->addItem(buttonsSpacer);
         }
 
         {
-            proxy_settings_link_ = new QPushButton(back_button_widget);
-            proxy_settings_link_->setProperty("SettingsButton", QVariant(true));
-     //   settingsTabButton_->setContentsMargins(Utils::scale_value(28), Utils::scale_value(24), Utils::scale_value(28), Utils::scale_value(24));
-
-            proxy_settings_link_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            proxy_settings_link_->setFlat(true);
-            proxy_settings_link_->setFocusPolicy(Qt::NoFocus);
-            proxy_settings_link_->setCursor(Qt::PointingHandCursor);
-            back_button_layout->addWidget(proxy_settings_link_);
+            proxySettingsButton = new QPushButton(backButtonWidget);
+            proxySettingsButton->setObjectName("settingsButton");
+            proxySettingsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            proxySettingsButton->setFlat(true);
+            proxySettingsButton->setFocusPolicy(Qt::NoFocus);
+            proxySettingsButton->setCursor(Qt::PointingHandCursor);
+            backButtonLayout->addWidget(proxySettingsButton);
         }
 
-        verticalLayout->addWidget(back_button_widget);
+        verticalLayout->addWidget(backButtonWidget);
 
-        if (is_login_)
+        if (isLogin_)
         {
             QSpacerItem* verticalSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
             verticalLayout->addItem(verticalSpacer);
         }
 
-        QWidget* main_widget = new QWidget(this);
-        main_widget->setObjectName(QStringLiteral("main_widget"));
-        main_widget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
-        main_widget->setProperty("CenterControlWidgetBack", QVariant(true));
-        QHBoxLayout* main_layout = new QHBoxLayout(main_widget);
-        main_layout->setSpacing(0);
-        main_layout->setObjectName(QStringLiteral("main_layout"));
-        main_layout->setContentsMargins(0, 0, 0, 0);
+        QWidget* mainWidget = new QWidget(this);
+        mainWidget->setObjectName("mainWidget");
+        mainWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
+        QHBoxLayout* mainLayout = new QHBoxLayout(mainWidget);
+        mainLayout->setSpacing(0);
+        mainLayout->setContentsMargins(0, 0, 0, 0);
 
-        if (is_login_)
+        if (isLogin_)
         {
             QSpacerItem* horizontalSpacer_6 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-            main_layout->addItem(horizontalSpacer_6);
+            mainLayout->addItem(horizontalSpacer_6);
         }
 
-        QWidget* controls_widget = new QWidget(main_widget);
-        controls_widget->setObjectName(QStringLiteral("controls_widget"));
-        controls_widget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        controls_widget->setProperty("CenterContolWidget", QVariant(true));
-        QVBoxLayout* controls_layout = new QVBoxLayout(controls_widget);
-        controls_layout->setSpacing(0);
-        controls_layout->setObjectName(QStringLiteral("controls_layout"));
-        controls_layout->setContentsMargins(0, 0, 0, 0);
+        QWidget* controlsWidget = new QWidget(mainWidget);
+        controlsWidget->setObjectName("controlsWidget");
+        controlsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        QVBoxLayout* controlsLayout = new QVBoxLayout(controlsWidget);
+        controlsLayout->setSpacing(0);
+        controlsLayout->setContentsMargins(0, 0, 0, 0);
 
-        PictureWidget* logo_widget = new PictureWidget(controls_widget, ":/resources/main_window/content_logo_100.png");
-        logo_widget->setFixedHeight(Utils::scale_value(80));
-        logo_widget->setFixedWidth(Utils::scale_value(80));
-        controls_layout->addWidget(logo_widget);
-        controls_layout->setAlignment(logo_widget, Qt::AlignHCenter);
-        logo_widget->setVisible(is_login_);
+        PictureWidget* logoWidget = new PictureWidget(controlsWidget, ":/resources/main_window/content_logo_100.png");
+        logoWidget->setFixedHeight(Utils::scale_value(80));
+        logoWidget->setFixedWidth(Utils::scale_value(80));
+        controlsLayout->addWidget(logoWidget);
+        controlsLayout->setAlignment(logoWidget, Qt::AlignHCenter);
+        logoWidget->setVisible(isLogin_);
 
-        QLabel* welcome_label = new QLabel(controls_widget);
-        welcome_label->setObjectName(QStringLiteral("welcome_label"));
-        welcome_label->setAlignment(Qt::AlignCenter);
-        welcome_label->setProperty("WelcomeTitle", QVariant(true));
-        welcome_label->setVisible(is_login_);
+        QLabel* welcomeLabel = new QLabel(controlsWidget);
+        welcomeLabel->setAlignment(Qt::AlignCenter);
+        Utils::ApplyStyle(welcomeLabel, getWelcomeTitleStyle());
+        welcomeLabel->setVisible(isLogin_);
 
-        controls_layout->addWidget(welcome_label);
+        controlsLayout->addWidget(welcomeLabel);
 
-        hint_label_ = new QLabel(controls_widget);
-        hint_label_->setObjectName(QStringLiteral("hint_label"));
-    
-        if (is_login_)
-            hint_label_->setAlignment(Qt::AlignCenter);
-        hint_label_->setProperty("ActionHintLabel", QVariant(true));
+        hintLabel = new QLabel(controlsWidget);
+        hintLabel->setObjectName("hint");
 
-        controls_layout->addWidget(hint_label_);
+        passwordForgottenLabel = new QPushButton(controlsWidget);
+        passwordForgottenLabel->setObjectName("passwordForgotten");
+        passwordForgottenLabel->setFlat(true);
+        passwordForgottenLabel->setCursor(Qt::PointingHandCursor);
+        Utils::ApplyStyle(passwordForgottenLabel, getPasswordForgottenLabelStyle());
+        connect(passwordForgottenLabel, &QPushButton::clicked, this, []()
+        {
+            QDesktopServices::openUrl(QUrl("https://icq.com/password/"));
+        });
 
-        QWidget * center_widget = new QWidget(controls_widget);
-        center_widget->setObjectName(QStringLiteral("center_widget"));
-        center_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        QHBoxLayout * horizontalLayout = new QHBoxLayout(center_widget);
+        if (isLogin_)
+        {
+            hintLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+        }
+
+        controlsLayout->addWidget(hintLabel);
+        controlsLayout->addWidget(passwordForgottenLabel);
+
+        QWidget* centerWidget = new QWidget(controlsWidget);
+        centerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        QHBoxLayout* horizontalLayout = new QHBoxLayout(centerWidget);
         horizontalLayout->setSpacing(0);
-        horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
         horizontalLayout->setContentsMargins(0, 0, 0, 0);
 
-        if (is_login_)
+        if (isLogin_)
         {
             QSpacerItem* horizontalSpacer_9 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
             horizontalLayout->addItem(horizontalSpacer_9);
         }
 
-        login_staked_widget_ = new QStackedWidget(center_widget);
-        login_staked_widget_->setObjectName(QStringLiteral("login_staked_widget"));
-        login_staked_widget_->setProperty("LoginStackedWidget", QVariant(true));
-        login_staked_widget_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        QWidget* phone_login_widget = new QWidget();
-        phone_login_widget->setObjectName(QStringLiteral("phone_login_widget"));
-        phone_login_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        QVBoxLayout* phone_login_layout = new QVBoxLayout(phone_login_widget);
-        phone_login_layout->setSpacing(0);
-        phone_login_layout->setObjectName(QStringLiteral("phone_login_layout"));
-        phone_login_layout->setContentsMargins(0, 0, 0, 0);
+        loginStakedWidget = new QStackedWidget(centerWidget);
+        loginStakedWidget->setObjectName("stackedWidget");
+        loginStakedWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        QWidget* phoneLoginWidget = new QWidget();
+        phoneLoginWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        QVBoxLayout* phoneLoginLayout = new QVBoxLayout(phoneLoginWidget);
+        phoneLoginLayout->setSpacing(0);
+        phoneLoginLayout->setContentsMargins(0, 0, 0, 0);
 
-        country_search_widget_ = new QWidget(phone_login_widget);
-        country_search_widget_->setObjectName(QStringLiteral("country_search_widget"));
-        country_search_widget_->setProperty("CountrySearchWidget", QVariant(true));
-        QVBoxLayout* country_search_layout = new QVBoxLayout(country_search_widget_);
-        country_search_layout->setSpacing(0);
-        country_search_layout->setObjectName(QStringLiteral("country_search_layout"));
-        country_search_layout->setContentsMargins(0, 0, 0, 0);
+        countrySearchWidget = new QWidget(phoneLoginWidget);
+        countrySearchWidget->setObjectName("countryWidget");
+        QVBoxLayout* countrySearchLayout = new QVBoxLayout(countrySearchWidget);
+        countrySearchLayout->setSpacing(0);
+        countrySearchLayout->setContentsMargins(0, 0, 0, 0);
 
-        phone_login_layout->addWidget(country_search_widget_);
+        phoneLoginLayout->addWidget(countrySearchWidget);
 
-        phone_widget_ = new QFrame(phone_login_widget);
-        phone_widget_->setObjectName(QStringLiteral("phone_widget"));
-        phone_widget_->setFocusPolicy(Qt::ClickFocus);
-        phone_widget_->setFrameShape(QFrame::NoFrame);
-        phone_widget_->setFrameShadow(QFrame::Plain);
-        phone_widget_->setLineWidth(0);
-        phone_widget_->setProperty("EnterPhoneWidget", QVariant(true));
-        QHBoxLayout* phone_widget_layout = new QHBoxLayout(phone_widget_);
-        phone_widget_layout->setSpacing(0);
-        phone_widget_layout->setObjectName(QStringLiteral("phone_widget_layout"));
-        phone_widget_layout->setContentsMargins(0, 0, 0, 0);
+        phoneWidget = new QFrame(phoneLoginWidget);
+        phoneWidget->setObjectName("phoneWidget");
+        phoneWidget->setFocusPolicy(Qt::ClickFocus);
+        phoneWidget->setFrameShape(QFrame::NoFrame);
+        phoneWidget->setFrameShadow(QFrame::Plain);
+        phoneWidget->setLineWidth(0);
+        phoneWidget->setProperty("Common", QVariant(true));
+        QHBoxLayout* phoneWidgetLayout = new QHBoxLayout(phoneWidget);
+        phoneWidgetLayout->setSpacing(0);
+        phoneWidgetLayout->setContentsMargins(0, 0, 0, 0);
 
-        phone_login_layout->addWidget(phone_widget_);
+        phoneLoginLayout->addWidget(phoneWidget);
 
         QSpacerItem* verticalSpacer_3 = new QSpacerItem(20, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
-        phone_login_layout->addItem(verticalSpacer_3);
+        phoneLoginLayout->addItem(verticalSpacer_3);
 
-        login_staked_widget_->addWidget(phone_login_widget);
-        QWidget* phone_confirm_widget = new QWidget();
-        phone_confirm_widget->setObjectName(QStringLiteral("phone_confirm_widget"));
-        phone_confirm_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        QVBoxLayout* phone_confirm_layout = new QVBoxLayout(phone_confirm_widget);
-        phone_confirm_layout->setSpacing(0);
-        phone_confirm_layout->setObjectName(QStringLiteral("phone_confirm_layout"));
-        phone_confirm_layout->setContentsMargins(0, 0, 0, 0);
+        loginStakedWidget->addWidget(phoneLoginWidget);
+        QWidget* phoneConfirmWidget = new QWidget();
+        phoneConfirmWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        QVBoxLayout* phoneConfirmLayout = new QVBoxLayout(phoneConfirmWidget);
+        phoneConfirmLayout->setSpacing(0);
+        phoneConfirmLayout->setContentsMargins(0, 0, 0, 0);
 
-        QWidget* entered_phone_widget = new QWidget(phone_confirm_widget);
-        entered_phone_widget->setObjectName(QStringLiteral("entered_phone_widget"));
-        entered_phone_widget->setProperty("EnteredPhoneWidget", QVariant(true));
-        QHBoxLayout* horizontalLayout_6 = new QHBoxLayout(entered_phone_widget);
-        horizontalLayout_6->setSpacing(0);
-        horizontalLayout_6->setObjectName(QStringLiteral("horizontalLayout_6"));
-        horizontalLayout_6->setContentsMargins(0, 0, 0, 0);
+        QWidget* enteredPhoneWidget = new QWidget(phoneConfirmWidget);
+        enteredPhoneWidget->setObjectName("enteredPhone");
+        QHBoxLayout* enteredPhoneLayout = new QHBoxLayout(enteredPhoneWidget);
+        enteredPhoneLayout->setSpacing(0);
+        enteredPhoneLayout->setContentsMargins(0, 0, 0, 0);
         QSpacerItem* horizontalSpacer_4 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-        horizontalLayout_6->addItem(horizontalSpacer_4);
+        enteredPhoneLayout->addItem(horizontalSpacer_4);
 
-        entered_phone_ = new QLabel(entered_phone_widget);
-        entered_phone_->setObjectName(QStringLiteral("entered_phone"));
-        entered_phone_->setProperty("EnteredPhoneNumber", QVariant(true));
+        enteredPhone = new QLabel(enteredPhoneWidget);
+        enteredPhone->setObjectName("enteredPhoneLabel");
 
-        horizontalLayout_6->addWidget(entered_phone_);
+        enteredPhoneLayout->addWidget(enteredPhone);
 
-        edit_phone_button_ = new QPushButton(entered_phone_widget);
-        edit_phone_button_->setObjectName(QStringLiteral("edit_phone_button"));
-        edit_phone_button_->setCursor(QCursor(Qt::PointingHandCursor));
-        edit_phone_button_->setProperty("EditPhoneButton", QVariant(true));
+        editPhoneButton = new QPushButton(enteredPhoneWidget);
+        editPhoneButton->setCursor(QCursor(Qt::PointingHandCursor));
+        editPhoneButton->setFont(Fonts::appFontScaled(18));
+        Utils::ApplyStyle(editPhoneButton, getEditPhoneStyle());
 
-        horizontalLayout_6->addWidget(edit_phone_button_);
+        enteredPhoneLayout->addWidget(editPhoneButton);
 
         QSpacerItem* horizontalSpacer_5 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-        horizontalLayout_6->addItem(horizontalSpacer_5);
+        enteredPhoneLayout->addItem(horizontalSpacer_5);
 
-        phone_confirm_layout->addWidget(entered_phone_widget);
+        phoneConfirmLayout->addWidget(enteredPhoneWidget);
 
-        resend_button_ = new QPushButton(phone_confirm_widget);
-        resend_button_->setObjectName(QStringLiteral("resendButton"));
-        resend_button_->setCursor(QCursor(Qt::PointingHandCursor));
-        resend_button_->setFocusPolicy(Qt::StrongFocus);
-        resend_button_->setProperty("ResendCodeButton", QVariant(true));
+        resendButton = new QPushButton(phoneConfirmWidget);
+        resendButton->setCursor(QCursor(Qt::PointingHandCursor));
+        resendButton->setFocusPolicy(Qt::StrongFocus);
+        resendButton->setFont(Fonts::appFontScaled(15));
+        Utils::ApplyStyle(resendButton, getResendButtonStyle());
 
-        phone_confirm_layout->addWidget(resend_button_);
+        phoneConfirmLayout->addWidget(resendButton);
 
-        code_edit_ = new QLineEdit(phone_confirm_widget);
-        code_edit_->setObjectName(QStringLiteral("code_edit"));
-        code_edit_->setProperty("EnteredCode", QVariant(true));
-        code_edit_->setAttribute(Qt::WA_MacShowFocusRect, false);
-        code_edit_->setAlignment(Qt::AlignCenter);
-        Testing::setAccessibleName(code_edit_, "StartWindowSMScodeField");
-        
-        phone_confirm_layout->addWidget(code_edit_);
+        codeEdit = new QLineEdit(phoneConfirmWidget);
+        codeEdit->setObjectName("code");
+        codeEdit->setFont(Fonts::appFontScaled(18));
+        Utils::ApplyStyle(codeEdit, Ui::CommonStyle::getLineEditStyle());
+        codeEdit->setAttribute(Qt::WA_MacShowFocusRect, false);
+        codeEdit->setAlignment(Qt::AlignCenter);
+        Testing::setAccessibleName(codeEdit, "StartWindowSMScodeField");
+
+        phoneConfirmLayout->addWidget(codeEdit);
 
         QSpacerItem* verticalSpacer_4 = new QSpacerItem(20, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
-        phone_confirm_layout->addItem(verticalSpacer_4);
+        phoneConfirmLayout->addItem(verticalSpacer_4);
 
-        login_staked_widget_->addWidget(phone_confirm_widget);
-        QWidget* uin_login_widget = new QWidget();
-        uin_login_widget->setObjectName(QStringLiteral("uin_login_widget"));
-        uin_login_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        QVBoxLayout * uin_login_layout = new QVBoxLayout(uin_login_widget);
-        uin_login_layout->setSpacing(0);
-        uin_login_layout->setObjectName(QStringLiteral("uin_login_layout"));
-        uin_login_layout->setContentsMargins(0, 0, 0, 0);
+        loginStakedWidget->addWidget(phoneConfirmWidget);
+        QWidget* uinLoginWidget = new QWidget();
+        uinLoginWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        QVBoxLayout * uinLoginLayout = new QVBoxLayout(uinLoginWidget);
+        uinLoginLayout->setSpacing(0);
+        uinLoginLayout->setContentsMargins(0, 0, 0, 0);
 
-        uin_login_edit_ = new QLineEdit(uin_login_widget);
-        uin_login_edit_->setObjectName(QStringLiteral("uin_login_edit"));
-        uin_login_edit_->setProperty("Uin", QVariant(true));
-        Testing::setAccessibleName(uin_login_edit_, "StartWindowUinField");
+        uinEdit = new QLineEdit(uinLoginWidget);
+        uinEdit->setFont(Fonts::appFontScaled(18));
+        Utils::ApplyStyle(uinEdit, Ui::CommonStyle::getLineEditStyle());
+        Testing::setAccessibleName(uinEdit, "StartWindowUinField");
 
-        uin_login_layout->addWidget(uin_login_edit_);
+        uinLoginLayout->addWidget(uinEdit);
 
-        uin_password_edit_ = new QLineEdit(uin_login_widget);
-        uin_password_edit_->setObjectName(QStringLiteral("uin_password_edit"));
-        uin_password_edit_->setEchoMode(QLineEdit::Password);
-        uin_password_edit_->setProperty("Password", QVariant(true));
+        passwordEdit = new QLineEdit(uinLoginWidget);
+        passwordEdit->setEchoMode(QLineEdit::Password);
+        passwordEdit->setFont(Fonts::appFontScaled(18));
+        Utils::ApplyStyle(passwordEdit, Ui::CommonStyle::getLineEditStyle());
 
-        Testing::setAccessibleName(uin_password_edit_, "StartWindowPasswordField");
+        Testing::setAccessibleName(passwordEdit, "StartWindowPasswordField");
 
-        uin_login_layout->addWidget(uin_password_edit_);
+        uinLoginLayout->addWidget(passwordEdit);
 
-        keep_logged_ = new QCheckBox(uin_login_widget);
-        keep_logged_->setObjectName(QStringLiteral("keep_logged"));
-        Utils::ApplyPropertyParameter(keep_logged_, "GreenCheckbox", true);
-        keep_logged_->setVisible(is_login_);
-        uin_login_layout->addWidget(keep_logged_);
+        keepLogged = new QCheckBox(uinLoginWidget);
+        keepLogged->setObjectName("greenCheckBox");
+        keepLogged->setVisible(isLogin_);
+        uinLoginLayout->addWidget(keepLogged);
 
-        uin_login_layout->addStretch();
+        uinLoginLayout->addStretch();
 
-        login_staked_widget_->addWidget(uin_login_widget);
+        loginStakedWidget->addWidget(uinLoginWidget);
 
-        horizontalLayout->addWidget(login_staked_widget_);
+        horizontalLayout->addWidget(loginStakedWidget);
 
         QSpacerItem* horizontalSpacer_8 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
         horizontalLayout->addItem(horizontalSpacer_8);
 
-        controls_layout->addWidget(center_widget);
+        controlsLayout->addWidget(centerWidget);
 
-        QWidget* next_button_widget = new QWidget(controls_widget);
+        QWidget* nextButtonWidget = new QWidget(controlsWidget);
+        nextButtonWidget->setObjectName("nextButton");
 
-        next_button_widget->setObjectName(QStringLiteral("next_button_widget"));
-        next_button_widget->setProperty("NextButtonWidget", QVariant(true));
-        QVBoxLayout* verticalLayout_8 = new QVBoxLayout(next_button_widget);
+        QVBoxLayout* verticalLayout_8 = new QVBoxLayout(nextButtonWidget);
         verticalLayout_8->setSpacing(0);
-        verticalLayout_8->setObjectName(QStringLiteral("verticalLayout_8"));
         verticalLayout_8->setContentsMargins(0, 0, 0, 0);
-        next_page_link_ = new QPushButton(next_button_widget);
-        next_page_link_->setObjectName(QStringLiteral("next_page_link"));
-        next_page_link_->setCursor(QCursor(Qt::PointingHandCursor));
-        next_page_link_->setAutoDefault(true);
-        next_page_link_->setDefault(false);
-        Utils::ApplyStyle(next_page_link_, main_button_style);
-        Testing::setAccessibleName(next_page_link_, "StartWindowLoginButton");
+        nextButton = new QPushButton(nextButtonWidget);
+        nextButton->setCursor(QCursor(Qt::PointingHandCursor));
+        nextButton->setAutoDefault(true);
+        nextButton->setDefault(false);
+        Utils::ApplyStyle(nextButton, CommonStyle::getGreenButtonStyle());
+        Testing::setAccessibleName(nextButton, "StartWindowLoginButton");
 
-        verticalLayout_8->addWidget(next_page_link_);
+        verticalLayout_8->addWidget(nextButton);
 
-        controls_layout->addWidget(next_button_widget);
-        
-        if (is_login_)
+        controlsLayout->addWidget(nextButtonWidget);
+
+        if (isLogin_)
         {
-            controls_layout->setAlignment(next_button_widget, Qt::AlignHCenter);
+            controlsLayout->setAlignment(nextButtonWidget, Qt::AlignHCenter);
         }
         else
         {
-            controls_layout->setAlignment(next_button_widget, Qt::AlignLeft);
+            controlsLayout->setAlignment(nextButtonWidget, Qt::AlignLeft);
         }
 
-        QWidget* widget = new QWidget(controls_widget);
-        widget->setObjectName(QStringLiteral("widget"));
-        widget->setProperty("ErrorWidget", QVariant(true));
+        QWidget* widget = new QWidget(controlsWidget);
+        widget->setObjectName("errorWidget");
         QVBoxLayout* verticalLayout_7 = new QVBoxLayout(widget);
         verticalLayout_7->setSpacing(0);
-        verticalLayout_7->setObjectName(QStringLiteral("verticalLayout_7"));
         verticalLayout_7->setContentsMargins(0, 0, 0, 0);
-        error_label_ = new QLabel(widget);
-        error_label_->setObjectName(QStringLiteral("error_label"));
-        error_label_->setWordWrap(true);
+        errorLabel = new QLabel(widget);
+        errorLabel->setObjectName("errorLabel");
+        errorLabel->setWordWrap(true);
 
-        if (is_login_)
+        if (isLogin_)
         {
-            error_label_->setAlignment(Qt::AlignCenter);
+            errorLabel->setAlignment(Qt::AlignCenter);
         }
         else
         {
-            error_label_->setAlignment(Qt::AlignLeft);
+            errorLabel->setAlignment(Qt::AlignLeft);
         }
 
-        error_label_->setProperty("ErrorLabel", QVariant(true));
+        verticalLayout_7->addWidget(errorLabel);
 
-        verticalLayout_7->addWidget(error_label_);
+        controlsLayout->addWidget(widget);
 
-        controls_layout->addWidget(widget);
+        mainLayout->addWidget(controlsWidget);
 
-        main_layout->addWidget(controls_widget);
-
-        if (is_login_)
+        if (isLogin_)
         {
             QSpacerItem* horizontalSpacer_7 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-            main_layout->addItem(horizontalSpacer_7);
+            mainLayout->addItem(horizontalSpacer_7);
         }
         else
         {
-            main_layout->setAlignment(Qt::AlignLeft);
+            mainLayout->setAlignment(Qt::AlignLeft);
         }
 
-        verticalLayout->addWidget(main_widget);
+        verticalLayout->addWidget(mainWidget);
 
         QSpacerItem* verticalSpacer_2 = new QSpacerItem(0, 3, QSizePolicy::Minimum, QSizePolicy::Expanding);
         verticalLayout->addItem(verticalSpacer_2);
-        
+
         {
-            QWidget* switch_login_widget = new QWidget(this);
-            switch_login_widget->setObjectName(QStringLiteral("switch_login_widget"));
-            switch_login_widget->setProperty("LoginButtonWidget", QVariant(true));
-            QHBoxLayout* switch_login_layout = new QHBoxLayout(switch_login_widget);
-            switch_login_layout->setSpacing(0);
-            switch_login_layout->setObjectName(QStringLiteral("switch_login_layout"));
-            switch_login_layout->setContentsMargins(0, 0, 0, 0);
+            QWidget* switchLoginWidget = new QWidget(this);
+            switchLoginWidget->setObjectName("switchLogin");
+            QHBoxLayout* switchLoginLayout = new QHBoxLayout(switchLoginWidget);
+            switchLoginLayout->setSpacing(0);
+            switchLoginLayout->setContentsMargins(0, 0, 0, 0);
             QSpacerItem* horizontalSpacer = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-            switch_login_layout->addItem(horizontalSpacer);
+            switchLoginLayout->addItem(horizontalSpacer);
 
-            switch_login_link_ = new QPushButton(switch_login_widget);
-            switch_login_link_->setObjectName(QStringLiteral("switch_login_link"));
-            switch_login_link_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-            switch_login_link_->setCursor(QCursor(Qt::PointingHandCursor));
-            switch_login_link_->setProperty("SwitchLoginButton", QVariant(true));
-            switch_login_link_->setVisible(is_login_);
-            Testing::setAccessibleName(switch_login_link_, "StartWindowChangeLoginType");
-            switch_login_layout->addWidget(switch_login_link_);
+            switchButton = new QPushButton(switchLoginWidget);
+            switchButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+            switchButton->setCursor(QCursor(Qt::PointingHandCursor));
+            switchButton->setFont(Fonts::appFontScaled(15));
+            Utils::ApplyStyle(switchButton, getSwitchLoginStyle());
+            switchButton->setVisible(isLogin_);
+            Testing::setAccessibleName(switchButton, "StartWindowChangeLoginType");
+            switchLoginLayout->addWidget(switchButton);
 
             QSpacerItem* horizontalSpacer_2 = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-            switch_login_layout->addItem(horizontalSpacer_2);
-            verticalLayout->addWidget(switch_login_widget);
+            switchLoginLayout->addItem(horizontalSpacer_2);
+            verticalLayout->addWidget(switchLoginWidget);
         }
 
-        login_staked_widget_->setCurrentIndex(2);
+        loginStakedWidget->setCurrentIndex(2);
 
         QMetaObject::connectSlotsByName(this);
 
-        //prev_page_link_->setText(QString());
-        welcome_label->setText(QT_TRANSLATE_NOOP("login_page","Welcome to ICQ"));
-        edit_phone_button_->setText(QT_TRANSLATE_NOOP("login_page","Edit"));
-        code_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","Code from SMS"));
-        uin_login_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","UIN or Email"));
-        uin_login_edit_->setAttribute(Qt::WA_MacShowFocusRect, false);
-        uin_password_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","Password"));
-        uin_password_edit_->setAttribute(Qt::WA_MacShowFocusRect, false);
+        welcomeLabel->setText(QT_TRANSLATE_NOOP("login_page","Welcome to ICQ"));
+        editPhoneButton->setText(QT_TRANSLATE_NOOP("login_page","Edit"));
+        codeEdit->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","Code from SMS"));
+        uinEdit->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","UIN or Email"));
+        uinEdit->setAttribute(Qt::WA_MacShowFocusRect, false);
+        passwordEdit->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","Password"));
+        passwordEdit->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-        keep_logged_->setText(QT_TRANSLATE_NOOP("login_page","Keep me signed in"));
-        keep_logged_->setChecked(get_gui_settings()->get_value(settings_keep_logged_in, true));
-        connect(keep_logged_, &QCheckBox::toggled, [](bool v)
+        keepLogged->setText(QT_TRANSLATE_NOOP("login_page","Keep me signed in"));
+        keepLogged->setChecked(get_gui_settings()->get_value(settings_keep_logged_in, true));
+        connect(keepLogged, &QCheckBox::toggled, [](bool v)
         {
             if (get_gui_settings()->get_value(settings_keep_logged_in, true) != v)
                 get_gui_settings()->set_value(settings_keep_logged_in, v);
         });
 
-        next_page_link_->setText(QT_TRANSLATE_NOOP("login_page","Continue"));
+        nextButton->setText(QT_TRANSLATE_NOOP("login_page","Continue"));
         Q_UNUSED(this);
 
-        login_staked_widget_->setCurrentIndex(2);
-        next_page_link_->setDefault(false);
+        loginStakedWidget->setCurrentIndex(2);
+        nextButton->setDefault(false);
 
         QMetaObject::connectSlotsByName(this);
         init();
@@ -424,74 +464,88 @@ namespace Ui
     {
     }
 
-    void LoginPage::enableKeepLogedIn()
+    void LoginPage::keyPressEvent(QKeyEvent* _event)
     {
-        //get_gui_settings()->set_value(settings_keep_logged_in, true);
-    }
-
-    void LoginPage::keyPressEvent(QKeyEvent* event)
-    {
-        if (event->key() == Qt::Key_Return &&
-            (login_staked_widget_->currentIndex() == SUBPAGE_PHONE_LOGIN_INDEX ||
-            login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX))
+        if (_event->key() == Qt::Key_Return &&
+            (loginStakedWidget->currentIndex() == SUBPAGE_PHONE_LOGIN_INDEX ||
+                loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX))
         {
-            next_page_link_->click();
+            nextButton->click();
         }
-        return QWidget::keyPressEvent(event);
+        return QWidget::keyPressEvent(_event);
     }
 
-    void LoginPage::paintEvent(QPaintEvent* event)
+    void LoginPage::paintEvent(QPaintEvent* _event)
     {
         QStyleOption opt;
         opt.init(this);
         QPainter p(this);
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
-        return QWidget::paintEvent(event);
+        return QWidget::paintEvent(_event);
+    }
+
+    void LoginPage::showEvent(QShowEvent *_event)
+    {
+        if (isLogin_)
+        {
+            uinEdit->setText(get_gui_settings()->get_value(login_page_last_entered_uin, QString()));
+            auto lastPhone = get_gui_settings()->get_value(login_page_last_entered_phone, QString());
+            if (!lastPhone.isEmpty())
+            {
+                phoneInfoRequestsCount_++;
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_string("phone", lastPhone.toStdString());
+                collection.set_value_as_string("gui_locale", get_gui_settings()->get_value(settings_language, QString("")).toStdString());
+                phoneInfoLastRequestSpecialId_ = GetDispatcher()->post_message_to_core("phoneinfo", collection.get());
+            }
+        }
     }
 
     void LoginPage::init()
     {
-        QMap<QString, QString> countryCodes = Utils::GetCountryCodes();
-        combobox_->setEditBoxClass("CountrySearchEdit");
+        QMap<QString, QString> countryCodes = Utils::getCountryCodes();
+        combobox_->setFont(Fonts::appFontScaled(18));
+        Utils::ApplyStyle(combobox_, Ui::CommonStyle::getLineEditStyle() + getCountryComboboxStyle());
         combobox_->setComboboxViewClass("CountrySearchView");
         combobox_->setClass("CountySearchWidgetInternal");
         combobox_->setPlaceholder(QT_TRANSLATE_NOOP("login_page","Type country or code"));
-        country_search_widget_->layout()->addWidget(combobox_);
+        countrySearchWidget->layout()->addWidget(combobox_);
         combobox_->setSources(countryCodes);
 
         connect(combobox_, SIGNAL(selected(QString)), this, SLOT(countrySelected(QString)), Qt::QueuedConnection);
         connect(this, SIGNAL(country(QString)), this, SLOT(redrawCountryCode()), Qt::QueuedConnection);
-        connect(next_page_link_, SIGNAL(clicked()), this, SLOT(nextPage()), Qt::QueuedConnection);
-        connect(prev_page_link_, SIGNAL(clicked()), this, SLOT(prevPage()), Qt::QueuedConnection);
-        connect(edit_phone_button_, SIGNAL(clicked()), this, SLOT(prevPage()), Qt::QueuedConnection);
-        connect(edit_phone_button_, SIGNAL(clicked()), this, SLOT(stats_edit_phone()), Qt::QueuedConnection);
-        connect(switch_login_link_, SIGNAL(clicked()), this, SLOT(switchLoginType()), Qt::QueuedConnection);
-        connect(resend_button_, SIGNAL(clicked()), this, SLOT(sendCode()), Qt::QueuedConnection);
-        connect(resend_button_, SIGNAL(clicked()), this, SLOT(stats_resend_sms()), Qt::QueuedConnection);
+        connect(nextButton, SIGNAL(clicked()), this, SLOT(nextPage()), Qt::QueuedConnection);
+        connect(backButton, SIGNAL(clicked()), this, SLOT(prevPage()), Qt::QueuedConnection);
+        connect(editPhoneButton, SIGNAL(clicked()), this, SLOT(prevPage()), Qt::QueuedConnection);
+        connect(editPhoneButton, SIGNAL(clicked()), this, SLOT(stats_edit_phone()), Qt::QueuedConnection);
+        connect(switchButton, SIGNAL(clicked()), this, SLOT(switchLoginType()), Qt::QueuedConnection);
+        connect(resendButton, SIGNAL(clicked()), this, SLOT(sendCode()), Qt::QueuedConnection);
+        connect(resendButton, SIGNAL(clicked()), this, SLOT(stats_resend_sms()), Qt::QueuedConnection);
         connect(timer_, SIGNAL(timeout()), this, SLOT(updateTimer()), Qt::QueuedConnection);
 
-        connect(proxy_settings_link_, SIGNAL(clicked()), this, SLOT(openProxySettings()), Qt::QueuedConnection);
+        connect(proxySettingsButton, SIGNAL(clicked()), this, SLOT(openProxySettings()), Qt::QueuedConnection);
 
-        country_code_->setProperty("CountryCodeEdit", true);
-        phone_->setProperty("PhoneNumberEdit", true);
+        countryCode_->setObjectName("countryCodeEdit");
+        phone_->setObjectName("phoneEdit");
+        phone_->setProperty("Common", true);
         phone_->setAttribute(Qt::WA_MacShowFocusRect, false);
         phone_->setPlaceholderText(QT_TRANSLATE_NOOP("login_page","your phone number"));
-        phone_widget_->layout()->addWidget(country_code_);
-        phone_widget_->layout()->addWidget(phone_);
+        phoneWidget->layout()->addWidget(countryCode_);
+        phoneWidget->layout()->addWidget(phone_);
         Testing::setAccessibleName(phone_, "StartWindowPhoneNumberField");
 
-        connect(country_code_, SIGNAL(focusIn()), this, SLOT(setPhoneFocusIn()), Qt::QueuedConnection);
-        connect(country_code_, SIGNAL(focusOut()), this, SLOT(setPhoneFocusOut()), Qt::QueuedConnection);
+        connect(countryCode_, SIGNAL(focusIn()), this, SLOT(setPhoneFocusIn()), Qt::QueuedConnection);
+        connect(countryCode_, SIGNAL(focusOut()), this, SLOT(setPhoneFocusOut()), Qt::QueuedConnection);
         connect(phone_, SIGNAL(focusIn()), this, SLOT(setPhoneFocusIn()), Qt::QueuedConnection);
         connect(phone_, SIGNAL(focusOut()), this, SLOT(setPhoneFocusOut()), Qt::QueuedConnection);
 
-        connect(uin_login_edit_, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
-        connect(uin_password_edit_, SIGNAL(textEdited(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
-        connect(code_edit_, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
-        connect(code_edit_, SIGNAL(textChanged(QString)), this, SLOT(codeEditChanged(QString)), Qt::QueuedConnection);
-        connect(country_code_, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
-        connect(country_code_, SIGNAL(textEdited(QString)), this, SLOT(countryCodeChanged(QString)), Qt::QueuedConnection);
+        connect(uinEdit, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
+        connect(passwordEdit, SIGNAL(textEdited(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
+        connect(codeEdit, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
+        connect(codeEdit, SIGNAL(textChanged(QString)), this, SLOT(codeEditChanged(QString)), Qt::QueuedConnection);
+        connect(countryCode_, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
+        connect(countryCode_, SIGNAL(textEdited(QString)), this, SLOT(countryCodeChanged(QString)), Qt::QueuedConnection);
         connect(phone_, SIGNAL(textChanged(QString)), this, SLOT(clearErrors()), Qt::QueuedConnection);
         connect(phone_, SIGNAL(emptyTextBackspace()), this, SLOT(emptyPhoneRemove()), Qt::QueuedConnection);
 
@@ -499,114 +553,125 @@ namespace Ui
         QObject::connect(Ui::GetDispatcher(), SIGNAL(loginResult(int64_t, int)), this, SLOT(loginResult(int64_t, int)), Qt::DirectConnection);
         QObject::connect(Ui::GetDispatcher(), SIGNAL(loginResultAttachUin(int64_t, int)), this, SLOT(loginResultAttachUin(int64_t, int)), Qt::DirectConnection);
         QObject::connect(Ui::GetDispatcher(), SIGNAL(loginResultAttachPhone(int64_t, int)), this, SLOT(loginResultAttachPhone(int64_t, int)), Qt::DirectConnection);
+        QObject::connect(Ui::GetDispatcher(), SIGNAL(phoneInfoResult(qint64, Data::PhoneInfo)), this, SLOT(phoneInfoResult(qint64, Data::PhoneInfo)), Qt::DirectConnection);
 
-        country_code_->setValidator(new QRegExpValidator(QRegExp("[\\+\\d]\\d*")));
+        countryCode_->setValidator(new QRegExpValidator(QRegExp("[\\+\\d]\\d*")));
         phone_->setValidator(new QRegExpValidator(QRegExp("\\d*")));
-        code_edit_->setValidator(new QRegExpValidator(QRegExp("\\d*")));
+        codeEdit->setValidator(new QRegExpValidator(QRegExp("\\d*")));
 
         combobox_->selectItem(Utils::GetTranslator()->getCurrentPhoneCode());
-        error_label_->hide();
+        errorLabel->hide();
         phone_->setFocus();
-        country_code_->setFocusPolicy(Qt::ClickFocus);
+        countryCode_->setFocusPolicy(Qt::ClickFocus);
+        countryCode_->setAttribute(Qt::WA_MacShowFocusRect, false);
+
         initLoginSubPage(SUBPAGE_PHONE_LOGIN_INDEX);
     }
 
     void LoginPage::updateFocus()
     {
-        uin_login_edit_->setFocus();
+        uinEdit->setFocus();
     }
 
-    void LoginPage::initLoginSubPage(int index)
+    void LoginPage::initLoginSubPage(int _index)
     {
         setFocus();
-        prev_page_link_->setVisible(is_login_ && index == SUBPAGE_PHONE_CONF_INDEX);
-        proxy_settings_link_->setVisible(is_login_ && index != SUBPAGE_PHONE_CONF_INDEX);
-        next_page_link_->setVisible(index != SUBPAGE_PHONE_CONF_INDEX);
+        backButton->setVisible(isLogin_ && _index == SUBPAGE_PHONE_CONF_INDEX);
+        proxySettingsButton->setVisible(isLogin_ && _index != SUBPAGE_PHONE_CONF_INDEX);
+        nextButton->setVisible(_index != SUBPAGE_PHONE_CONF_INDEX);
 
-        QString next_page_text;
-        if (is_login_)
+        QString nextPageText;
+        if (isLogin_)
         {
-           next_page_text = index == SUBPAGE_PHONE_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Continue") : QT_TRANSLATE_NOOP("login_page","Start messaging");
+            nextPageText = _index == SUBPAGE_PHONE_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Continue") : QT_TRANSLATE_NOOP("login_page","Start messaging");
         }
         else
         {
-           next_page_text = index == SUBPAGE_PHONE_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Continue") : QT_TRANSLATE_NOOP("login_page","Continue");
+            nextPageText = _index == SUBPAGE_PHONE_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Continue") : QT_TRANSLATE_NOOP("login_page","Continue");
         }
 
-        next_page_link_->setText(next_page_text);
-        switch_login_link_->setText(index == SUBPAGE_UIN_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Login via phone") : QT_TRANSLATE_NOOP("login_page","Login with UIN/Email"));
-        switch (index)
+        nextButton->setText(nextPageText);
+        switchButton->setText(_index == SUBPAGE_UIN_LOGIN_INDEX ? QT_TRANSLATE_NOOP("login_page","Login via phone") : QT_TRANSLATE_NOOP("login_page","Login with UIN/Email"));
+        switch (_index)
         {
         case SUBPAGE_PHONE_LOGIN_INDEX:
-            hint_label_->setText(QT_TRANSLATE_NOOP("login_page","Please confirm your country code and enter\nyour phone number"));
+            hintLabel->setText(QT_TRANSLATE_NOOP("login_page","Please confirm your country code and enter\nyour phone number"));
+            passwordForgottenLabel->setText("");
+            passwordForgottenLabel->setFixedHeight(0);
             phone_->setFocus();
             break;
 
         case SUBPAGE_PHONE_CONF_INDEX:
-            hint_label_->setText(QT_TRANSLATE_NOOP("login_page","Please enter the code you've just received in your phone"));
-            code_edit_->setFocus();
+            hintLabel->setText(QT_TRANSLATE_NOOP("login_page","Please enter the code you've just received in your phone"));
+            passwordForgottenLabel->setText("");
+            passwordForgottenLabel->setFixedHeight(QFontMetrics(passwordForgottenLabel->font()).height());
+            codeEdit->setFocus();
             break;
 
         case SUBPAGE_UIN_LOGIN_INDEX:
-            if (is_login_)
+            if (isLogin_)
             {
-                hint_label_->setText(QT_TRANSLATE_NOOP("login_page","Enter your UIN or Email to get started"));
+                hintLabel->setText(QT_TRANSLATE_NOOP("login_page","Enter your UIN or Email to get started"));
+                passwordForgottenLabel->setText(QT_TRANSLATE_NOOP("login_page","Forgot password?"));
+                passwordForgottenLabel->setFixedHeight(QFontMetrics(passwordForgottenLabel->font()).height() * 2);
             }
             else
             {
-                hint_label_->setVisible(false);
+                hintLabel->setVisible(false);
+                passwordForgottenLabel->setText("");
+                passwordForgottenLabel->setFixedHeight(0);
             }
-            uin_login_edit_->setFocus();
-            break; 
+            uinEdit->setFocus();
+            break;
         }
-        login_staked_widget_->setCurrentIndex(index);
+        loginStakedWidget->setCurrentIndex(_index);
     }
 
     void LoginPage::setPhoneFocusIn()
     {
-        phone_widget_->setProperty("EnterPhoneWidgetFocused", true);
-        phone_widget_->setProperty("EnterPhoneWidgetError", false);
-        phone_widget_->setProperty("EnterPhoneWidget", false);
-        phone_widget_->setStyle(QApplication::style());
-        emit country(country_code_->text());
+        phoneWidget->setProperty("Focused", true);
+        phoneWidget->setProperty("Error", false);
+        phoneWidget->setProperty("Common", false);
+        phoneWidget->setStyle(QApplication::style());
+        emit country(countryCode_->text());
     }
 
     void LoginPage::setPhoneFocusOut()
     {
-        phone_widget_->setProperty("EnterPhoneWidgetFocused", false);
-        phone_widget_->setProperty("EnterPhoneWidgetError", false);
-        phone_widget_->setProperty("EnterPhoneWidget", true);
-        phone_widget_->setStyle(QApplication::style());
-        emit country(country_code_->text());
+        phoneWidget->setProperty("Focused", false);
+        phoneWidget->setProperty("Error", false);
+        phoneWidget->setProperty("Common", true);
+        phoneWidget->setStyle(QApplication::style());
+        emit country(countryCode_->text());
     }
 
     void LoginPage::redrawCountryCode()
     {
-        QFontMetrics fm = country_code_->fontMetrics();
-        int w = fm.boundingRect(country_code_->text()).width() + 5;
+        QFontMetrics fm = countryCode_->fontMetrics();
+        int w = fm.boundingRect(countryCode_->text()).width() + 5;
 
-        QRect content = phone_widget_->contentsRect();
-        country_code_->resize(w, country_code_->height());
+        QRect content = phoneWidget->contentsRect();
+        countryCode_->resize(w, countryCode_->height());
         phone_->resize(content.width() - w, phone_->height());
-        country_code_->move(content.x(), content.y());
+        countryCode_->move(content.x(), content.y());
         phone_->move(content.x() + w, content.y());
     }
 
-    void LoginPage::countrySelected(QString code)
+    void LoginPage::countrySelected(QString _code)
     {
-        if (prev_country_code_ == code)
+        if (prevCountryCode_ == _code)
             return;
 
-        if (!prev_country_code_.isEmpty())
+        if (!prevCountryCode_.isEmpty())
         {
             core::stats::event_props_type props;
-            props.push_back(std::make_pair("prev_code", prev_country_code_.toStdString()));
-            props.push_back(std::make_pair("next_code", code.toStdString()));
+            props.push_back(std::make_pair("prev_code", prevCountryCode_.toStdString()));
+            props.push_back(std::make_pair("next_code", _code.toStdString()));
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::reg_edit_country, props);
         }
 
-        prev_country_code_ = code;
-        country_code_->setText(code);
+        prevCountryCode_ = _code;
+        countryCode_->setText(_code);
         redrawCountryCode();
 
         phone_->setFocus();
@@ -614,33 +679,69 @@ namespace Ui
 
     void LoginPage::nextPage()
     {
-        setFocus();
-        clearErrors();
-        if (login_staked_widget_->currentIndex() == SUBPAGE_PHONE_LOGIN_INDEX)
+        if (isEnabled())
         {
-            entered_phone_->setText(country_code_->text() + phone_->text());
-            entered_phone_->adjustSize();
-            country_code_->setEnabled(false);
-            phone_->setEnabled(false);
-            sendCode();
+            setEnabled(false);
         }
-        else if (login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX)
+        if (phoneInfoRequestsCount_ > 0)
         {
-            uin_login_edit_->setEnabled(false);
-            uin_password_edit_->setEnabled(false);
-            gui_coll_helper collection(GetDispatcher()->create_collection(), true);
-            collection.set_value_as_qstring("login", uin_login_edit_->text());
-            collection.set_value_as_qstring("password", uin_password_edit_->text());
-            collection.set_value_as_bool("save_auth_data", keep_logged_->isChecked());
-            collection.set_value_as_bool("not_log", true);
-
-            if (is_login_)
+            QTimer::singleShot(500, this, SLOT(nextPage()));
+            return;
+        }
+        setEnabled(true);
+        if (loginStakedWidget->currentIndex() == SUBPAGE_PHONE_LOGIN_INDEX && receivedPhoneInfo_.isValid())
+        {
+            bool isMobile = false;
+            for (auto status: receivedPhoneInfo_.prefix_state_)
             {
-                send_seq_ = GetDispatcher()->post_message_to_core("login_by_password", collection.get());
+                if (QString(status.c_str()).toLower() == "mobile")
+                {
+                    isMobile = true;
+                    break;
+                }
+            }
+            const auto isOk = (QString(receivedPhoneInfo_.status_.c_str()).toLower() == "ok");
+            const auto message = QString(!receivedPhoneInfo_.printable_.empty() ? receivedPhoneInfo_.printable_[0].c_str() : "");
+            if ((!isMobile || !isOk) && !message.isEmpty())
+            {
+                errorLabel->setVisible(true);
+                setErrorText(message);
+                phone_->setFocus();
+                return;
             }
             else
             {
-                send_seq_ = GetDispatcher()->post_message_to_core("login_by_password_for_attach_uin", collection.get());
+                errorLabel->setVisible(false);
+            }
+        }
+
+        setFocus();
+        clearErrors();
+        if (loginStakedWidget->currentIndex() == SUBPAGE_PHONE_LOGIN_INDEX)
+        {
+            enteredPhone->setText(countryCode_->text() + phone_->text());
+            enteredPhone->adjustSize();
+            countryCode_->setEnabled(false);
+            phone_->setEnabled(false);
+            sendCode();
+        }
+        else if (loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX)
+        {
+            uinEdit->setEnabled(false);
+            passwordEdit->setEnabled(false);
+            gui_coll_helper collection(GetDispatcher()->create_collection(), true);
+            collection.set_value_as_qstring("login", uinEdit->text());
+            collection.set_value_as_qstring("password", passwordEdit->text());
+            collection.set_value_as_bool("save_auth_data", keepLogged->isChecked());
+            collection.set_value_as_bool("not_log", true);
+
+            if (isLogin_)
+            {
+                sendSeq_ = GetDispatcher()->post_message_to_core("login_by_password", collection.get());
+            }
+            else
+            {
+                sendSeq_ = GetDispatcher()->post_message_to_core("login_by_password_for_attach_uin", collection.get());
             }
         }
     }
@@ -655,8 +756,8 @@ namespace Ui
     {
         setFocus();
         clearErrors();
-        initLoginSubPage(login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX ? SUBPAGE_PHONE_LOGIN_INDEX : SUBPAGE_UIN_LOGIN_INDEX);
-        GetDispatcher()->post_stats_to_core(login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX 
+        initLoginSubPage(loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX ? SUBPAGE_PHONE_LOGIN_INDEX : SUBPAGE_UIN_LOGIN_INDEX);
+        GetDispatcher()->post_stats_to_core(loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX
             ? core::stats::stats_event_names::reg_page_uin : core::stats::stats_event_names::reg_page_phone);
     }
 
@@ -672,25 +773,25 @@ namespace Ui
 
     void LoginPage::updateTimer()
     {
-        resend_button_->setEnabled(false);
-        QString text = remaining_seconds_ ? QT_TRANSLATE_NOOP("login_page","Resend code in ") : QT_TRANSLATE_NOOP("login_page","Resend code");
-        if (remaining_seconds_ == 60)
+        resendButton->setEnabled(false);
+        QString text = remainingSeconds_ ? QT_TRANSLATE_NOOP("login_page","Resend code in ") : QT_TRANSLATE_NOOP("login_page","Resend code");
+        if (remainingSeconds_ == 60)
         {
             text += "1:00";
         }
-        else if (remaining_seconds_ > 0)
+        else if (remainingSeconds_ > 0)
         {
-            text += QString(remaining_seconds_ >= 10 ? "0:%1" : "0:0%1").arg(remaining_seconds_);
+            text += QString(remainingSeconds_ >= 10 ? "0:%1" : "0:0%1").arg(remainingSeconds_);
         }
         else
         {
-            resend_button_->setEnabled(true);
+            resendButton->setEnabled(true);
         }
-        resend_button_->setText(text);
+        resendButton->setText(text);
 
-        if (remaining_seconds_)
+        if (remainingSeconds_)
         {
-            --remaining_seconds_;
+            --remainingSeconds_;
             timer_->start(1000);
         }
         else
@@ -703,82 +804,80 @@ namespace Ui
     {
         timer_->stop();
         gui_coll_helper collection(GetDispatcher()->create_collection(), true);
-        collection.set_value_as_qstring("country", country_code_->text());
+        collection.set_value_as_qstring("country", countryCode_->text());
         collection.set_value_as_qstring("phone", phone_->text());
         collection.set_value_as_qstring("locale", Utils::GetTranslator()->getCurrentLang());
-        collection.set_value_as_bool("is_login", is_login_);
+        collection.set_value_as_bool("is_login", isLogin_);
 
-        send_seq_ = GetDispatcher()->post_message_to_core("login_get_sms_code", collection.get());
-        remaining_seconds_ = 60;
+        sendSeq_ = GetDispatcher()->post_message_to_core("login_get_sms_code", collection.get());
+        remainingSeconds_ = 60;
         updateTimer();
     }
 
-    void LoginPage::getSmsResult(int64_t _seq, int result, int _code_length)
+    void LoginPage::getSmsResult(int64_t _seq, int _result, int _codeLength)
     {
-        if (_seq != send_seq_)
+        if (_seq != sendSeq_)
             return;
 
-        country_code_->setEnabled(true);
+        countryCode_->setEnabled(true);
         phone_->setEnabled(true);
-        setErrorText(result);
-        error_label_->setVisible(result);
-        if (result == core::le_success)
+        setErrorText(_result);
+        errorLabel->setVisible(_result);
+        if (_result == core::le_success)
         {
-            if (_code_length != 0)
-                code_length_ = _code_length;
+            if (_codeLength != 0)
+                codeLength_ = _codeLength;
             clearErrors();
             return initLoginSubPage(SUBPAGE_PHONE_CONF_INDEX);
         }
 
-        phone_widget_->setProperty("EnterPhoneWidgetError", true);
-        phone_widget_->setProperty("EnterPhoneWidgetFocused", false);
-        phone_widget_->setProperty("EnterPhoneWidget", false);
-        phone_widget_->setStyle(QApplication::style());
-        phone_->setProperty("PhoneNumberError", true);
+        phoneWidget->setProperty("Error", true);
+        phoneWidget->setProperty("Focused", false);
+        phoneWidget->setProperty("Common", false);
+        phoneWidget->setStyle(QApplication::style());
+        phone_->setProperty("Error", true);
         phone_->setStyle(QApplication::style());
-        emit country(country_code_->text());
+        emit country(countryCode_->text());
     }
 
-    void LoginPage::updateErrors(int result)
+    void LoginPage::updateErrors(int _result)
     {
-        code_edit_->setEnabled(true);
-        uin_login_edit_->setEnabled(true);
-        uin_password_edit_->setEnabled(true);
-        setErrorText(result);
-        error_label_->setVisible(result);
+        codeEdit->setEnabled(true);
+        uinEdit->setEnabled(true);
+        passwordEdit->setEnabled(true);
+        setErrorText(_result);
+        errorLabel->setVisible(_result);
 
-        if (login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX)
+        if (loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX)
         {
-            uin_login_edit_->setProperty("UinError", true);
-            uin_login_edit_->setProperty("Uin", false);
-            uin_login_edit_->setStyle(QApplication::style());
-            uin_password_edit_->clear();
-            uin_login_edit_->setFocus();
+            Utils::ApplyStyle(uinEdit, Ui::CommonStyle::getLineEditErrorStyle());
+            passwordEdit->clear();
+            uinEdit->setFocus();
         }
         else
         {
-            code_edit_->setProperty("EnteredCodeError", true);
-            code_edit_->setProperty("EnteredCode", false);
-            code_edit_->setStyle(QApplication::style());
-            code_edit_->setFocus();
+            codeEdit->setProperty("Error", true);
+            codeEdit->setProperty("EnteredCode", false);
+            codeEdit->setStyle(QApplication::style());
+            codeEdit->setFocus();
         }
     }
 
-    void LoginPage::loginResult(int64_t _seq, int result)
+    void LoginPage::loginResult(int64_t _seq, int _result)
     {
-        if (_seq != send_seq_)
+        if (_seq != sendSeq_)
             return;
 
-        updateErrors(result);
-        if (result == 0)
+        updateErrors(_result);
+        if (_result == 0)
         {
-            if (login_staked_widget_->currentIndex() == SUBPAGE_PHONE_CONF_INDEX)
+            if (loginStakedWidget->currentIndex() == SUBPAGE_PHONE_CONF_INDEX)
             {
-                code_edit_->setText("");
+                codeEdit->setText("");
                 initLoginSubPage(SUBPAGE_PHONE_LOGIN_INDEX);
             }
 
-            GetDispatcher()->post_stats_to_core(login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX 
+            GetDispatcher()->post_stats_to_core(loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX
                 ? core::stats::stats_event_names::reg_login_uin
                 : core::stats::stats_event_names::reg_login_phone);
 
@@ -787,23 +886,23 @@ namespace Ui
         }
     }
 
-    void LoginPage::loginResultAttachUin(int64_t _seq, int result)
+    void LoginPage::loginResultAttachUin(int64_t _seq, int _result)
     {
-        if (_seq != send_seq_)
+        if (_seq != sendSeq_)
             return;
-        updateErrors(result);
-        if (result == 0)
+        updateErrors(_result);
+        if (_result == 0)
         {
             emit attached();
         }
     }
 
-    void LoginPage::loginResultAttachPhone(int64_t _seq, int result)
+    void LoginPage::loginResultAttachPhone(int64_t _seq, int _result)
     {
-        if (_seq != send_seq_)
+        if (_seq != sendSeq_)
             return;
-        updateErrors(result);
-        if (result == 0)
+        updateErrors(_result);
+        if (_result == 0)
         {
             emit attached();
         }
@@ -811,91 +910,147 @@ namespace Ui
 
     void LoginPage::clearErrors()
     {
-        error_label_->hide();
+        errorLabel->hide();
 
-        uin_login_edit_->setProperty("UinError", false);
-        uin_login_edit_->setProperty("Uin", true);
-        uin_login_edit_->setStyle(QApplication::style());
+        Utils::ApplyStyle(uinEdit, Ui::CommonStyle::getLineEditStyle());
 
-        code_edit_->setProperty("EnteredCodeError", false);
-        code_edit_->setProperty("EnteredCode", true);
-        code_edit_->setStyle(QApplication::style());
+        codeEdit->setProperty("Error", false);
+        codeEdit->setProperty("EnteredCode", true);
+        codeEdit->setStyle(QApplication::style());
 
-        phone_->setProperty("PhoneNumberError", false);
-        phone_->setProperty("PhoneNumberEdit", true);
+        phone_->setProperty("Error", false);
+        phone_->setProperty("Common", true);
         phone_->setStyle(QApplication::style());
 
-        emit country(country_code_->text());
+        emit country(countryCode_->text());
+
+        if (loginStakedWidget->currentIndex() == SUBPAGE_PHONE_LOGIN_INDEX)
+        {
+            if (phone_->text().length() >= 3)
+            {
+                phoneInfoRequestsCount_++;
+
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_string("phone", (countryCode_->text() + phone_->text()).toStdString());
+                collection.set_value_as_string("gui_locale", get_gui_settings()->get_value(settings_language, QString("")).toStdString());
+                phoneInfoLastRequestId_ = GetDispatcher()->post_message_to_core("phoneinfo", collection.get());
+            }
+            else
+            {
+                phoneInfoLastRequestId_ = 0;
+                receivedPhoneInfo_ = Data::PhoneInfo();
+            }
+        }
+        else
+        {
+            phoneInfoRequestsCount_ = 0;
+            phoneInfoLastRequestId_ = 0;
+        }
     }
 
-    void LoginPage::setErrorText(int result)
+    void LoginPage::phoneInfoResult(qint64 _seq, Data::PhoneInfo _data)
+    {
+        phoneInfoRequestsCount_--;
+
+        if (phoneInfoLastRequestId_ == _seq || phoneInfoLastRequestSpecialId_ == _seq)
+        {
+            receivedPhoneInfo_ = _data;
+
+            if (receivedPhoneInfo_.isValid() && !receivedPhoneInfo_.modified_phone_number_.empty())
+            {
+                auto code = countryCode_->text();
+                if (!receivedPhoneInfo_.modified_prefix_.empty() && code != receivedPhoneInfo_.modified_prefix_.c_str())
+                {
+                    code = QString(receivedPhoneInfo_.modified_prefix_.c_str());
+                    combobox_->selectItem(QString(code).remove('+'));
+                }
+                else if (!receivedPhoneInfo_.info_iso_country_.empty())
+                {
+                    combobox_->selectItem(Utils::getCountryNameByCode(receivedPhoneInfo_.info_iso_country_.c_str()));
+                }
+                phone_->setText(QString(receivedPhoneInfo_.modified_phone_number_.c_str()).remove(0, code.length()));
+            }
+        }
+
+        if (phoneInfoLastRequestSpecialId_ == _seq)
+        {
+            phoneInfoLastRequestSpecialId_ = 0;
+        }
+    }
+
+    void LoginPage::setErrorText(int _result)
     {
         setFocus();
-        switch (result)
+        switch (_result)
         {
         case core::le_wrong_login:
-            error_label_->setText(login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX ? 
+            errorLabel->setText(loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX ?
                 QT_TRANSLATE_NOOP("login_page","Wrong UIN/Email or password. Please try again.")
                 : QT_TRANSLATE_NOOP("login_page","You have entered an invalid code. Please try again."));
-            GetDispatcher()->post_stats_to_core(login_staked_widget_->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX
-                ? core::stats::stats_event_names::reg_error_uin 
+            GetDispatcher()->post_stats_to_core(loginStakedWidget->currentIndex() == SUBPAGE_UIN_LOGIN_INDEX
+                ? core::stats::stats_event_names::reg_error_uin
                 : core::stats::stats_event_names::reg_error_code);
             break;
         case core::le_error_validate_phone:
-            error_label_->setText(QT_TRANSLATE_NOOP("login_page","Invalid phone number. Please try again."));
+            errorLabel->setText(QT_TRANSLATE_NOOP("login_page","Invalid phone number. Please try again."));
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::reg_error_phone);
             break;
         case core::le_success:
-            error_label_->setText("");
+            errorLabel->setText("");
             break;
         case core::le_attach_error_busy_phone:
-            error_label_->setText(QT_TRANSLATE_NOOP("sidebar","This phone number is already attached to another account.\nPlease edit phone number and try again."));
+            errorLabel->setText(QT_TRANSLATE_NOOP("sidebar","This phone number is already attached to another account.\nPlease edit phone number and try again."));
             break;
         default:
-            error_label_->setText(QT_TRANSLATE_NOOP("login_page","Error occured, try again later"));
+            errorLabel->setText(QT_TRANSLATE_NOOP("login_page","Error occured, try again later"));
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::reg_error_other);
             break;
         }
     }
 
-    void LoginPage::codeEditChanged(QString code)
+    void LoginPage::setErrorText(const QString& _customError)
     {
-        if (code.length() == code_length_)
+        errorLabel->setText(_customError);
+    }
+
+    void LoginPage::codeEditChanged(QString _code)
+    {
+        if (_code.length() == codeLength_)
         {
             setFocus();
-            code_edit_->setEnabled(false);
+            codeEdit->setEnabled(false);
             get_gui_settings()->set_value(settings_keep_logged_in, true);
             gui_coll_helper collection(GetDispatcher()->create_collection(), true);
             collection.set_value_as_qstring("phone", phone_->text());
-            collection.set_value_as_qstring("sms_code", code);
+            collection.set_value_as_qstring("sms_code", _code);
             collection.set_value_as_bool("save_auth_data", true);
-            collection.set_value_as_bool("is_login", is_login_);
-            send_seq_ = GetDispatcher()->post_message_to_core("login_by_phone", collection.get());
+            collection.set_value_as_bool("is_login", isLogin_);
+            sendSeq_ = GetDispatcher()->post_message_to_core("login_by_phone", collection.get());
         }
     }
 
-    void LoginPage::countryCodeChanged(QString text)
+    void LoginPage::countryCodeChanged(QString _text)
     {
-        if (!text.isEmpty() && text != "+")
+        if (!_text.isEmpty() && _text != "+")
         {
-            combobox_->selectItem(text);
-            if (!combobox_->containsCode(text))
+            combobox_->selectItem(_text);
+            if (!combobox_->containsCode(_text))
             {
-                country_code_->setText(prev_country_code_);
+                countryCode_->setText(prevCountryCode_);
                 if (phone_->text().isEmpty())
-                    phone_->setText(text.mid(prev_country_code_.length(), text.length() - prev_country_code_.length()));
+                    phone_->setText(_text.mid(prevCountryCode_.length(), _text.length() - prevCountryCode_.length()));
                 phone_->setFocus();
             }
         }
 
-        prev_country_code_ = text;
+        prevCountryCode_ = _text;
     }
 
     void LoginPage::emptyPhoneRemove()
     {
-        country_code_->setFocus();
-        QString code = country_code_->text();
-        country_code_->setText(code.isEmpty() ? code : code.left(code.length() - 1));
+        countryCode_->setFocus();
+        QString code = countryCode_->text();
+        countryCode_->setText(code.isEmpty() ? code : code.left(code.length() - 1));
     }
 
     void LoginPage::openProxySettings()

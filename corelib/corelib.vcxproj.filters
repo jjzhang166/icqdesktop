@@ -39,9 +39,6 @@
     <ClInclude Include="enumerations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="cp_afxres.h">
       <Filter>Header Files</Filter>
     </ClInclude>

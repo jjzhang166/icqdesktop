@@ -21,7 +21,7 @@ namespace Ui
     public:
         InfoPlate(QWidget* parent, int leftMargin);
         void setHeader(const QString& header);
-        void setInfo(const QString& info);
+        void setInfo(const QString& info, const QString& prefix = QString());
         void elideText(int width);
         void setAttachPhone(bool value);
 
@@ -51,7 +51,6 @@ namespace Ui
 
     private Q_SLOTS:
         void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
-        void moreClicked();
         void removeFromIgnore();
         void contactChanged(QString);
         void contactRemoved(QString);
@@ -61,10 +60,6 @@ namespace Ui
         void callClicked();
         void videoClicked();
         void back();
-        void ignore();
-        void spam();
-        void remove();
-        void quit();
         void rename();
         void menuStateOnline();
         void menuStateDoNotDisturb();
@@ -74,30 +69,30 @@ namespace Ui
         void attachOld();
         void recvFlags(int);
         void statusClicked();
-        void changeDesc();
-        void publicChanged(int);
+        void saveClicked();
         void avatarChanged();
+        void touchScrollStateChanged(QScroller::State);
 
     private:
         void init();
-        void initDescription(const QString& description, bool full = false);
         void updateStatus();
         void setState(const core::profile_state _state);
 
     private:
         QString currentAimId_;
+        QWidget* mainWidget_;
         ContactAvatarWidget* avatar_;
         CustomButton* backButton_;
         TextEditEx* name_;
-        TextEditEx* description_;
-        LabelEx* moreLabel_;
+        TextEditEx* nameEdit_;
+        TextEditEx* descriptionEdit_;
         QWidget* buttonsMargin_;
         QWidget* ignoreWidget_;
         QWidget* buttonWidget_;
-        LineWidget* firstLine_;
-        LineWidget* secondLine_;
+        LineWidget* Line_;
         QWidget* rightWidget_;
         QWidget* avatarBottomSpace_;
+        QWidget* chatEditWidget_;
         LabelEx* ignoreLabel_;
         LabelEx* editLabel_;
         std::shared_ptr<Data::ChatInfo> info_;
@@ -106,30 +101,23 @@ namespace Ui
         CustomButton* callButton_;
         CustomButton* videoCall_button_;
         ActionButton* renameContact_;
-        ActionButton* ignoreButton_;
-        ActionButton* spamButton_;
-        ActionButton* deleteButton_;
         ActionButton* quiAndDelete;
-        ActionButton* renameButton_;
         ActionButton* ignoreListButton;
         ActionButton* attachOldAcc;
-        ActionButton* changeDescription;
-        CustomButton* publicButton_;
-        QCheckBox* publicCheckBox_;
         InfoPlate* uin_;
         InfoPlate* phone_;
         InfoPlate* firstName_;
         InfoPlate* lastName_;
         InfoPlate* nickName_;
-        LiveChatMembersControl* members_;
-        QWidget* membersTopSpace_;
-        QWidget* membersBottomSpace_;
+        InfoPlate* birthday_;
+        InfoPlate* city_;
+        InfoPlate* country_;
         QWidget* nameMargin_;
         QWidget* statusWidget_;
         QPushButton* statusButton_;
+        QPushButton* saveButton_;
         FlatMenu* statusMenu_;
         LabelEx* statusLabel_;
-        QLabel* membersLabel_;
         QVBoxLayout* subBackButtonLayout_;
         QVBoxLayout* subAvatarLayout_;
         QVBoxLayout* mainBackButtonLayout_;
@@ -137,6 +125,8 @@ namespace Ui
         QHBoxLayout* nameLayout_;
         QVBoxLayout* editLayout_;
         QVBoxLayout* subEditLayout_;
+        QWidget* saveButtonMargin_;
+        QWidget* saveButtonSpace_;
         bool connectOldVisible_;
     };
 }

@@ -1,40 +1,15 @@
 #pragma once
 
 #include "Common.h"
+#include "../../types/contact.h"
 
 namespace ContactList
 {
-	struct ContactListVisualData : VisualDataBase
-	{
-		ContactListVisualData(
-			const QString &aimId,
-			const QPixmap &avatar,
-			const QString &state,
-			const QString &status,
-			const bool isHovered,
-			const bool isSelected,
-			const QString &contactName,
-			const bool haveLastSeen,
-			const QDateTime &lastSeen,
-			bool isWithCheckBox,
-            bool isChatMember,
-            bool official,
-            int width,
-            int leftMaregin,
-            int rightMargin,
-            const QString& role);
+	void RenderServiceContact(QPainter &painter, const bool _isHovered, const bool _isActive, QString _name, Data::ContactType _type, int leftMargin, const ViewParams& viewParams_);
 
-        int width_;
-        int leftMargin_;
-        int rightMargin_;
-        QString role_;
-	};
+	void RenderContactItem(QPainter &painter, VisualDataBase item, ViewParams _viewParams);
 
-	void RenderServiceContact(QPainter &painter, const bool _isHovered, const bool _isActive, int _regim, QString _name, Data::ContactType _type, int leftMargin);
-
-	void RenderContactItem(QPainter &painter, ContactListVisualData item, int _regim, bool _shortView);
-
-	void RenderGroupItem(QPainter &painter, const QString &groupName, int leftMargin);
+	void RenderGroupItem(QPainter &painter, const QString &groupName, const ViewParams& viewParams_);
 
     void RenderContactsDragOverlay(QPainter& painter);
 

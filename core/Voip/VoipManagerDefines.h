@@ -5,8 +5,10 @@
 #include <string>
 #include <vector>
 
-namespace voip_manager {
-    enum eNotificationTypes {
+namespace voip_manager
+{
+    enum eNotificationTypes
+    {
         kNotificationType_Undefined = 0,
 
         kNotificationType_CallCreated,
@@ -48,10 +50,14 @@ namespace voip_manager {
         kNotificationType_VoipWindowRemoveComplete,
         kNotificationType_VoipWindowAddComplete,
         kNotificationType_CipherStateChanged,
+
+		kNotificationType_MinimalBandwidthChanged,
     };
 
-    struct VoipProxySettings {
-        enum eProxyType {
+    struct VoipProxySettings
+    {
+        enum eProxyType
+        {
             kProxyType_None = 0,
             kProxyType_Http,
             kProxyType_Socks4,
@@ -67,13 +73,15 @@ namespace voip_manager {
         VoipProxySettings() : type(kProxyType_None) { }
     };
 
-    struct DeviceState {
+    struct DeviceState
+    {
         voip2::DeviceType type;
         std::string       uid;
         bool              success;
     };
 
-    struct DeviceMute {
+    struct DeviceMute
+    {
         voip2::DeviceType type;
         bool              mute;
     };
@@ -90,17 +98,20 @@ namespace voip_manager {
         std::string secureCode;
     };
 
-    struct DeviceVol {
+    struct DeviceVol
+    {
         voip2::DeviceType type;
         float             volume;
     };
 
-    struct DeviceInterrupt {
+    struct DeviceInterrupt
+    {
         voip2::DeviceType type;
         bool              interrupt;
     };
 
-    struct MouseTap {
+    struct MouseTap
+    {
         std::string account;
         std::string contact;
 
@@ -110,52 +121,67 @@ namespace voip_manager {
         voip2::ViewArea area;
     };
 
-    struct ButtonTap {
+    struct ButtonTap
+    {
         std::string account;
         std::string contact;
 
         voip2::ButtonType type;
     };
 
-    struct MissedCall {
+    struct MissedCall
+    {
         std::string account;
         std::string contact;
 
         unsigned   ts;
     };
 
-    struct LayoutChanged {
+    struct LayoutChanged
+    {
         bool              tray;
         voip2::LayoutType layout_type;
     };
 
-    struct FrameSize {
+    struct FrameSize
+    {
         intptr_t hwnd;
         float    aspect_ratio;
     };
 
-    struct Contact {
+    struct Contact
+    {
         std::string account;
         std::string contact;
 
-        Contact() {
+        Contact()
+        {
         }
 
-        Contact(const std::string& account_, const std::string& contact_) : account(account_), contact(contact_) {
+        Contact(const std::string& account_, const std::string& contact_) : account(account_), contact(contact_)
+        {
         }
+
+		bool operator==(const Contact& otherContact) const
+		{
+			return otherContact.account == account && otherContact.contact == contact;
+		}
     };
 
-    struct ContactEx {
+    struct ContactEx
+    {
         Contact  contact;
         unsigned call_count;
         bool     incoming;
 
-        ContactEx() : call_count(0), incoming(false) {
+        ContactEx() : call_count(0), incoming(false)
+        {
 
         }
     };
 
-    struct device_description {
+    struct device_description
+    {
         std::string uid;
         std::string name;
         voip2::DeviceType type;
@@ -166,12 +192,14 @@ namespace voip_manager {
     enum { kAvatarDefaultSize        = 140                    };
 	enum { kAvatarRequestSize        = 650                    };
     enum { kNickTextW                = kAvatarDefaultSize * 2 };
-    enum { kNickTextH                = 25                     };
+    enum { kNickTextH                = 32                     };
     enum { kDetachedWndAvatarSize    = 180                    };
     enum { kLogoFromBoundOffset      = 15                     };
     enum { kUseVoipProtocolAsDefault = 1                      };
+	enum { kIncomingWndAvatarSize	 = 120					  };
 
-    struct BitmapDescription {
+    struct BitmapDescription
+    {
         void*    data;
         unsigned size;
 
@@ -179,7 +207,8 @@ namespace voip_manager {
         unsigned h;
     };
 
-    struct VoipProtoMsg {
+    struct VoipProtoMsg
+    {
         voip2::VoipOutgoingMsg msg;
         std::string            request;
 
@@ -187,18 +216,21 @@ namespace voip_manager {
         unsigned messageId;
     };
 
-    struct UserBitmap {
+    struct UserBitmap
+    {
         voip2::AvatarType type;
         std::string       contact;
         BitmapDescription bitmap;
     };
 
-    struct WindowBitmap {
+    struct WindowBitmap
+    {
         void* hwnd;
         BitmapDescription bitmap;
     };
 
-    struct WindowParams {
+    struct WindowParams
+    {
         void* hwnd;
         WindowBitmap watermark;
         WindowBitmap cameraStatus;
@@ -207,7 +239,14 @@ namespace voip_manager {
         float scale;
     };
 
-    class ICallManager {
+    struct MinimalBandwidth
+    {
+        bool  enable;
+    };
+
+
+    class ICallManager
+    {
     public:
         virtual ~ICallManager() { }
     public:
@@ -227,9 +266,12 @@ namespace voip_manager {
         virtual bool        phone_call_send_dtmf(int num)                           = 0;
 
         virtual void        mute_incoming_call_sounds(bool mute)                    = 0;
+
+		virtual void        minimal_bandwidth_switch()								= 0;
     };
 
-    class IDeviceManager {
+    class IDeviceManager
+    {
     public:
         virtual ~IDeviceManager() { }
     public:
@@ -248,7 +290,8 @@ namespace voip_manager {
         virtual void     update            ()                                                                                                  = 0;
     };
 
-    class IWindowManager {
+    class IWindowManager
+    {
     public:
         virtual ~IWindowManager() { }
     public:
@@ -265,7 +308,8 @@ namespace voip_manager {
         virtual void window_add_button   (voip2::ButtonType type, voip2::ButtonPosition position) = 0;
     };
 
-    class IConnectionManager {
+    class IConnectionManager
+    {
     public:
         virtual ~IConnectionManager() { }
     public:
@@ -273,7 +317,8 @@ namespace voip_manager {
         virtual void ProcessVoipAck(const std::string& account_uid, const voip_manager::VoipProtoMsg& msg, bool success) = 0;
     };
 
-    class IMediaManager {
+    class IMediaManager
+    {
     public:
         virtual ~IMediaManager() { }
     public:
@@ -290,7 +335,8 @@ namespace voip_manager {
         virtual bool remote_audio_enabled(const std::string& account, const std::string& contact) = 0;
     };
 
-    class IVoipManager {
+    class IVoipManager
+    {
     public:
         virtual ~IVoipManager() { }
     public:

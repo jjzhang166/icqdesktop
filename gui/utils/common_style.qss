@@ -1,0 +1,118 @@
+QWidget
+{
+	font-family: "%FONT_FAMILY%";
+	font-weight: %FONT_WEIGHT%;
+}
+
+QScrollBar
+{
+	background-color: #7fd9dddd;
+	width: 10dip;
+	margin-top: 4dip;
+	margin-bottom: 4dip;
+	margin-right: 4dip;
+}
+
+QScrollBar:hover
+{
+	background-color: #7fd9dddd;
+	margin-top: 4dip;
+	margin-bottom: 4dip;
+	margin-right: 4dip;
+}
+
+QScrollBar::handle
+{
+	background-color: #7f696969;
+	min-height: 50dip;
+}
+QScrollBar::handle:hover
+{
+	background-color: #696969;
+	min-height: 50dip;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line
+{
+	background-color: transparent;
+}
+
+QScrollBar::sub-page, QScrollBar::add-page
+{
+	background: none;
+}
+
+Ui--SemitransparentWindow
+{
+	background: rgba(0, 0, 0, 40%);
+}
+
+QPushButton[SettingsButton="true"]
+{
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/tabs_settings_100.png);
+}
+
+QPushButton[SettingsButton="true"]:hover
+{
+	border-image: url(:/resources/tabs_settings_100_hover.png);
+}
+
+QPushButton[SettingsButton="true"]:checked
+{
+	border-image: url(:/resources/tabs_settings_100_active.png);
+}
+
+QPushButton[SettingsButton="true"]:checked:hover
+{
+	border-image: url(:/resources/tabs_settings_100_active.png);
+}
+
+QCheckBox#greenCheckBox
+{
+    height: 40dip;
+    font-size: 15dip;
+    font-family: "%FONT_FAMILY_LIGHT%";
+    font-weight: %FONT_WEIGHT_LIGHT%;
+    color: #696969;
+	padding-top: 4dip;
+    spacing: 8dip;
+}
+QCheckBox#greenCheckBox::indicator
+{
+    width: 20dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_uncheck_100.png");
+	image-position: left;
+}
+QCheckBox#greenCheckBox::indicator::checked
+{
+    width: 20dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_check_100.png");
+	image-position: left;
+}
+
+QCheckBox#greenSwitcher
+{
+    font-size: 16dip;
+	padding-top: 4dip;
+    spacing: 8dip;
+}
+QCheckBox#greenSwitcher::indicator
+{
+    width: 44dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_switch_off_100.png");
+
+}
+QCheckBox#greenSwitcher::indicator::checked
+{
+    width: 44dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_switch_on_100.png");
+
+}

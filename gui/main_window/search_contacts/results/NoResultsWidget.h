@@ -8,7 +8,7 @@ namespace Ui
 
 	private:
 
-		QVBoxLayout*	root_layout_;
+		QVBoxLayout*	rootLayout_;
 
 	protected:
 

@@ -324,10 +324,11 @@ void statistics::send_async()
 
     auto user_proxy = g_core->get_user_proxy_settings();
 
-    stats_thread_->run_async_function([post_data_vector, user_proxy]
+    auto file_name = file_name_;
+    stats_thread_->run_async_function([post_data_vector, user_proxy, file_name]
     {
         for (auto& post_data : post_data_vector)
-            statistics::send(user_proxy, post_data);
+            statistics::send(user_proxy, post_data, file_name);
         return 0;
 
     })->on_result_ = [wr_this](int32_t _error)
@@ -436,7 +437,7 @@ std::vector<std::string> statistics::get_post_data() const
     return result;
 }
 
-bool statistics::send(const proxy_settings& _user_proxy, const std::string& post_data)
+bool statistics::send(const proxy_settings& _user_proxy, const std::string& post_data, const std::wstring& _file_name)
 {
     const std::weak_ptr<stop_objects> wr_stop(stop_objects_);
 
@@ -454,6 +455,18 @@ bool statistics::send(const proxy_settings& _user_proxy, const std::string& post
     post_request.set_connect_timeout(1000);
     post_request.set_timeout(1000);
     post_request.set_keep_alive();
+
+#ifdef DEBUG
+    {
+        auto path = _file_name + L".txt";
+        boost::system::error_code e;
+        boost::filesystem::ofstream fOut;
+        
+        fOut.open(path.c_str(), std::ios::out);
+        fOut << post_data;
+        fOut.close();
+    }
+#endif // DEBUG
 
     auto result_url = flurry_url
         + "?d=" + core::tools::base64::encode64(post_data)

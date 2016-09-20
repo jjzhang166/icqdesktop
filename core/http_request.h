@@ -28,8 +28,11 @@ namespace core
     public:
         typedef std::function<bool()> stop_function;
 
+        typedef std::function<void(int64_t _bytes_total, int64_t _bytes_transferred, int32_t _pct_transferred)> progress_function;
+
     private:
-        stop_function must_stop_;
+        stop_function stop_func_;
+        progress_function progress_func_;
         replace_log_function replace_log_function_;
         std::map<std::string, std::string> post_parameters_;
         std::map<std::string, std::string> post_form_parameters_;
@@ -68,7 +71,7 @@ namespace core
         std::string user_agent_;
 
     public:
-        http_request_simple(proxy_settings _proxy_settings, const std::string &_user_agent, stop_function _stop_func = stop_function());
+        http_request_simple(proxy_settings _proxy_settings, const std::string &_user_agent, stop_function _stop_func = nullptr, progress_function _progress_func = nullptr);
         virtual ~http_request_simple();
 
         static ithread_callback* create_http_handlers();
@@ -99,7 +102,7 @@ namespace core
         void set_keep_alive();
         void set_etag(const char *etag);
         void set_replace_log_function(replace_log_function _func);
-        
+
         void get_post_parameters(std::map<std::string, std::string>& params);
 
         void set_range(int64_t _from, int64_t _to);

@@ -1,54 +1,61 @@
 #include "stdafx.h"
 #include "LineEditEx.h"
+#include "ContextMenu.h"
+#include "../utils/utils.h"
 
 
 namespace Ui
 {
-	LineEditEx::LineEditEx(QWidget* parent)
-		: QLineEdit(parent)
+	LineEditEx::LineEditEx(QWidget* _parent)
+		: QLineEdit(_parent)
 	{
 
 	}
 
-	void LineEditEx::focusInEvent(QFocusEvent* event)
+	void LineEditEx::focusInEvent(QFocusEvent* _event)
 	{
 		emit focusIn();
-		QLineEdit::focusInEvent(event);
+		QLineEdit::focusInEvent(_event);
 	}
 
-	void LineEditEx::focusOutEvent(QFocusEvent* event)
+	void LineEditEx::focusOutEvent(QFocusEvent* _event)
 	{
 		emit focusOut();
-		QLineEdit::focusOutEvent(event);
+		QLineEdit::focusOutEvent(_event);
 	}
 
-	void LineEditEx::mousePressEvent(QMouseEvent* event)
+	void LineEditEx::mousePressEvent(QMouseEvent* _event)
 	{
 		emit clicked();
-		QLineEdit::mousePressEvent(event);
+		QLineEdit::mousePressEvent(_event);
 	}
 
-	void LineEditEx::keyPressEvent(QKeyEvent* event)
+	void LineEditEx::keyPressEvent(QKeyEvent* _event)
 	{
-		if (event->key() == Qt::Key_Backspace && text().isEmpty())
+		if (_event->key() == Qt::Key_Backspace && text().isEmpty())
 			emit emptyTextBackspace();
 
-		if (event->key() == Qt::Key_Escape)
-        {
+		if (_event->key() == Qt::Key_Escape)
 			emit escapePressed();
-            return;
-        }
 
-		if (event->key() == Qt::Key_Up)
+		if (_event->key() == Qt::Key_Up)
 			emit upArrow();
 
-		if (event->key() == Qt::Key_Down)
+		if (_event->key() == Qt::Key_Down)
 			emit downArrow();
 
-		if (event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier)
+		if (_event->key() == Qt::Key_Return && _event->modifiers() == Qt::NoModifier)
 			emit enter();
 
-		QLineEdit::keyPressEvent(event);
+		QLineEdit::keyPressEvent(_event);
 	}
+
+    void LineEditEx::contextMenuEvent(QContextMenuEvent *e)
+    {
+        auto menu = createStandardContextMenu();
+        ContextMenu::applyStyle(menu, false, Utils::scale_value(14), Utils::scale_value(24));
+        menu->exec(e->globalPos());
+        menu->deleteLater();
+    }
 
 }

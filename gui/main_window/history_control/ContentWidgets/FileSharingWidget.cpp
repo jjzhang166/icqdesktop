@@ -1,45 +1,57 @@
 #include "stdafx.h"
 
-#include "../../../../corelib/enumerations.h"
-
-#include "../../../utils/utils.h"
-#include "../../../utils/log/log.h"
-#include "../../../utils/profiling/auto_stop_watch.h"
-#include "../../../utils/InterConnector.h"
-#include "../../../gui_settings.h"
-#include "../../../core_dispatcher.h"
-#include "../../../themes/ThemePixmap.h"
-#include "../../../themes/ResourceIds.h"
-#include "../../../utils/LoadPixmapFromFileTask.h"
-#include "../../../previewer/Previewer.h"
-
-#include "../../MainPage.h"
-#include "../HistoryControlPage.h"
-
-#include "../KnownFileTypes.h"
-#include "../FileSharingInfo.h"
-#include "../FileSizeFormatter.h"
 #include "FileSharingWidget.h"
 
+#include "../ActionButtonWidget.h"
+#include "../FileSharingInfo.h"
+#include "../FileSizeFormatter.h"
+#include "../HistoryControlPage.h"
+#include "../KnownFileTypes.h"
+#include "../MessageItem.h"
+#include "../MessageStatusWidget.h"
+#include "../MessageStyle.h"
+
+#include "../complex_message/Style.h"
+
+#include "../../contact_list/ContactList.h"
+#include "../../contact_list/ContactListModel.h"
+#include "../../contact_list/SelectionContactsForGroupChat.h"
+#include "../../MainPage.h"
+#include "../../MainWindow.h"
+
+#include "../../../controls/CommonStyle.h"
+#include "../../../core_dispatcher.h"
+#include "../../../previewer/GalleryWidget.h"
+#include "../../../gui_settings.h"
+#include "../../../previewer/Previewer.h"
+#include "../../../themes/ThemePixmap.h"
+#include "../../../themes/ResourceIds.h"
+#include "../../../utils/InterConnector.h"
+#include "../../../utils/LoadMovieFromFileTask.h"
+#include "../../../utils/LoadPixmapFromFileTask.h"
+#include "../../../utils/utils.h"
+#include "../../../utils/log/log.h"
+
+#include "../../../../corelib/enumerations.h"
+
+
 #ifdef __APPLE__
-#include "mac_support.h"
+#include "../../../utils/macos/mac_support.h"
 #endif
 
 namespace
 {
-	const Themes::IThemePixmap& downloadButton();
+	Themes::IThemePixmapSptr downloadButton();
 
-	const Themes::IThemePixmap& downloadCancelButton();
+	Themes::IThemePixmapSptr downloadCancelButton(const bool isImage);
 
-	const QSizeF& getMaxPreviewSize();
+    int32_t getCtrlButtonTopOffset();
 
-	const QSizeF& getMinPreviewSize();
+    Themes::IThemePixmapSptr playStartButton(const bool isGif, const bool isHovered);
 
 	const auto DOWNLOADING_BAR_BASE_ANGLE_MIN = 90;
 
 	const auto DOWNLOADING_BAR_BASE_ANGLE_MAX = 450;
-
-	const auto PROGRESS_PEN_WIDTH = 1;
 
     const auto RETRY_MAX = 5;
 
@@ -153,8 +165,9 @@ namespace HistoryControl
 		return DownloadingBarBaseAngle_;
 	}
 
-    FileSharingWidget::FileSharingWidget(const FileSharingInfoSptr& fsInfo, QString _aimId)
-        : PreviewContentWidget(0, false, QString(), false, _aimId)
+    FileSharingWidget::FileSharingWidget(const FileSharingInfoSptr& fsInfo, const QString& contactUin)
+        : PreviewContentWidget(nullptr, false, QString(), false, contactUin)
+        , ParentItem_(nullptr)
         , FsInfo_(fsInfo)
         , CopyFile_(false)
         , SaveAs_(false)
@@ -164,17 +177,19 @@ namespace HistoryControl
         , PreviewMetainfoDownloadId_(-1)
         , FileDownloadId_(-1)
         , CheckLocalCopyExistenceId_(-1)
+        , IsCtrlButtonHovered_(false)
+        , ShareButton_(nullptr)
     {
     }
 
 	FileSharingWidget::FileSharingWidget(
-        QWidget *parent,
+        Ui::MessageItem* parent,
         const bool isOutgoing,
         const QString &contactUin,
         const FileSharingInfoSptr& fsInfo,
         const bool previewsEnabled)
 		: PreviewContentWidget(parent, isOutgoing, QString(), previewsEnabled, contactUin)
-		, ContactUin_(contactUin)
+        , ParentItem_(parent)
 		, FsInfo_(fsInfo)
 		, BytesTransferred_(0)
 		, DownloadingBarBaseAngle_(DOWNLOADING_BAR_BASE_ANGLE_MIN)
@@ -187,8 +202,10 @@ namespace HistoryControl
         , PreviewMetainfoDownloadId_(-1)
         , FileDownloadId_(-1)
         , CheckLocalCopyExistenceId_(-1)
+        , IsCtrlButtonHovered_(false)
+        , ShareButton_(nullptr)
 	{
-		assert(!ContactUin_.isEmpty());
+		assert(!contactUin.isEmpty());
 		assert(FsInfo_);
 		assert(isOutgoing == FsInfo_->IsOutgoing());
 
@@ -200,45 +217,28 @@ namespace HistoryControl
         {
 		    setPreviewGenuineSize(FsInfo_->GetSize());
         }
-	}
-
-	FileSharingWidget::~FileSharingWidget()
-	{
-	}
-
-	void FileSharingWidget::initializeInternal()
-	{
-        PreviewContentWidget::initializeInternal();
-
-		__TRACE(
-            "fs",
-            "initializing file sharing widget\n" <<
-            FsInfo_->ToLogString()
-        );
-
-		setMouseTracking(true);
-
-		setInitialWidgetSizeAndState();
 
         connectSignals();
+
+        setInitialWidgetSizeAndState();
 
         const auto isImageFileInitial = isState(State::ImageFile_Initial);
         const auto isPlainFileInitial = isState(State::PlainFile_Initial);
         assert(isImageFileInitial || isPlainFileInitial);
 
-		if (FsInfo_->IsOutgoing())
-		{
-			const auto &uploadingProcessId = FsInfo_->GetUploadingProcessId();
-			if (!uploadingProcessId.isEmpty())
-			{
-				assert(FsInfo_->IsOutgoing());
-				assert(FsInfo_->HasLocalPath());
+        if (FsInfo_->IsOutgoing())
+        {
+            const auto &uploadingProcessId = FsInfo_->GetUploadingProcessId();
+            if (!uploadingProcessId.isEmpty())
+            {
+                assert(FsInfo_->IsOutgoing());
+                assert(FsInfo_->HasLocalPath());
 
-				resumeUploading();
+                resumeUploading();
 
-				return;
-			}
-		}
+                return;
+            }
+        }
 
         if (isImageFileInitial)
         {
@@ -246,6 +246,42 @@ namespace HistoryControl
         }
 
         requestFileMetainfo();
+	}
+
+	FileSharingWidget::~FileSharingWidget()
+	{
+    }
+
+    void FileSharingWidget::enterEvent(QEvent *event)
+    {
+        PreviewContentWidget::enterEvent(event);
+
+        const auto isUploading = (
+            isState(State::ImageFile_Uploading) ||
+            isState(State::PlainFile_Uploading));
+        if (ShareButton_ && !isUploading)
+        {
+            updateShareButtonGeometry();
+
+            ShareButton_->setVisible(true);
+        }
+    }
+
+	void FileSharingWidget::initialize()
+	{
+        PreviewContentWidget::initialize();
+
+		__TRACE(
+            "fs",
+            "initializing file sharing widget\n" <<
+            FsInfo_->ToLogString());
+
+        assert(!CurrentCtrlIcon_);
+        CurrentCtrlIcon_ = downloadButton();
+
+		setMouseTracking(true);
+
+        initializeShareButton();
 
         invalidateSizes();
         update();
@@ -276,35 +312,22 @@ namespace HistoryControl
 
     QString FileSharingWidget::toRecentsString() const
     {
-        return QT_TRANSLATE_NOOP("filesharing_widget", "File");
+        return QT_TRANSLATE_NOOP("contact_list", "File");
     }
 
 	QString FileSharingWidget::toString() const
 	{
-		QString result;
-		result.reserve(512);
-
-		result = FsInfo_->GetUri();
-		if (result.isEmpty())
-        {
-			result = FsInfo_->GetLocalPath();
-        }
-
-		return result;
+		return toLink();
 	}
 
     QString FileSharingWidget::toLink() const
     {
-        QString result;
-        result.reserve(512);
-
-        result = FsInfo_->GetUri();
-        if (result.isEmpty())
+        if (!FsInfo_->HasUri())
         {
-            result = FsInfo_->GetLocalPath();
+            return FsInfo_->GetLocalPath();
         }
 
-        return result;
+        return FsInfo_->GetUri();
     }
 
     void FileSharingWidget::copyFile()
@@ -347,7 +370,7 @@ namespace HistoryControl
         startDataTransferAnimation();
 
         const auto procId = Ui::GetDispatcher()->downloadSharedFile(
-            ContactUin_,
+            ParentItem_->getAimid(),
             FsInfo_->GetUri(),
             dir,
             file,
@@ -376,7 +399,7 @@ namespace HistoryControl
 		assert(isState(State::PlainFile_CheckingLocalCopy));
 
 		const auto procId = (int)Ui::GetDispatcher()->downloadSharedFile(
-			ContactUin_,
+			ParentItem_->getAimid(),
 			FsInfo_->GetUri(),
             Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()),
             QString(),
@@ -460,7 +483,10 @@ namespace HistoryControl
 
         connectFileDownloadSignals();
 
-        connectFileUploadingSignals();
+        if (isOutgoing())
+        {
+            connectFileUploadingSignals();
+        }
 
         connectMetainfoSignal();
 
@@ -532,11 +558,21 @@ namespace HistoryControl
         return !isDataTransferProgressVisible();
     }
 
+    void FileSharingWidget::leaveEvent(QEvent *event)
+    {
+        PreviewContentWidget::leaveEvent(event);
+
+        if (ShareButton_)
+        {
+            ShareButton_->setVisible(false);
+        }
+    }
+
 	void FileSharingWidget::mouseMoveEvent(QMouseEvent *event)
 	{
         const auto mousePos = event->pos();
 
-		if (isControlButtonVisible())
+        if (isControlButtonVisible())
 		{
 			if (isOverControlButton(mousePos) &&
 				!isState(State::PlainFile_Downloaded) &&
@@ -544,9 +580,22 @@ namespace HistoryControl
 				!isState(State::ImageFile_Uploaded))
 			{
 				setCursor(Qt::PointingHandCursor);
+
+                if (!IsCtrlButtonHovered_)
+                {
+                    IsCtrlButtonHovered_ = true;
+                    update();
+                }
+
 				return;
 			}
 		}
+
+        if (IsCtrlButtonHovered_)
+        {
+            IsCtrlButtonHovered_ = false;
+            update();
+        }
 
 		if (isOpenDownloadsDirButtonVisible())
 		{
@@ -562,7 +611,7 @@ namespace HistoryControl
             isState(State::ImageFile_Downloaded) ||
             isState(State::ImageFile_Uploaded)
         );
-		if (isClickable)
+		if (isClickable && isOverPreview(mousePos))
 		{
 			setCursor(Qt::PointingHandCursor);
 			return;
@@ -570,13 +619,15 @@ namespace HistoryControl
 
 		setCursor(Qt::ArrowCursor);
 		event->ignore();
+
+        return PreviewContentWidget::mouseMoveEvent(event);
 	}
 
 	void FileSharingWidget::mouseReleaseEvent(QMouseEvent *event)
 	{
         event->ignore();
 
-        Ui::HistoryControlPage* page = Utils::InterConnector::instance().getHistoryPage(ContactUin_);
+        Ui::HistoryControlPage* page = Utils::InterConnector::instance().getHistoryPage(ParentItem_->getAimid());
         if (page && page->touchScrollInProgress())
         {
             return;
@@ -625,26 +676,22 @@ namespace HistoryControl
 
         const auto fullImageReady = (
             isState(State::ImageFile_Downloaded) ||
-            isState(State::ImageFile_Uploaded)
-        );
-		if (fullImageReady && isOverPreview(mousePos))
+            isState(State::ImageFile_Uploaded));
+
+		if (isOverPreview(mousePos))
 		{
-            if (platform::is_apple())
+            const auto openPreviewer = (fullImageReady && !isGifImage());
+            if (openPreviewer)
             {
-                auto path = DownloadedFileLocalPath_;
-                if (path.isEmpty() && FsInfo_.get())
-                {
-                    path = FsInfo_->GetLocalPath();
-                }
-                assert(QFile::exists(path));
-                openPreviewMac(path, event->globalX(), event->globalY());
-            }
-            else
-            {
-                openPreview();
+                showPreviewer(event->globalPos());
+                return;
             }
 
-            return;
+            if (isGifImage() && GifImage_)
+            {
+                onGifImageClicked();
+                return;
+            }
 		}
 
         if (canStartImageDownloading(mousePos))
@@ -653,54 +700,92 @@ namespace HistoryControl
 
             startDownloadingFullImage();
         }
-	}
 
-	const QRect& FileSharingWidget::getControlButtonRect() const
+        return PreviewContentWidget::mouseReleaseEvent(event);
+    }
+
+    QString FileSharingWidget::elideFilename(const QString &text, const QFont &font, const int32_t maxTextWidth)
+    {
+        assert(maxTextWidth > 0);
+        assert(!text.isEmpty());
+
+        QFontMetrics fontMetrics(font);
+        return fontMetrics.elidedText(text, Qt::ElideRight, maxTextWidth);
+    }
+
+    void FileSharingWidget::formatFileSizeStr()
+    {
+        if (!Metainfo_.FileSizeStr_.isEmpty())
+        {
+            return;
+        }
+
+        assert(Metainfo_.FileSize_ > 0);
+
+        Metainfo_.FileSizeStr_ = formatFileSize(Metainfo_.FileSize_);
+
+        assert(!Metainfo_.FileSizeStr_.isEmpty());
+    }
+
+	const QRect& FileSharingWidget::getControlButtonRect(const QSize &iconSize) const
 	{
+        assert(!iconSize.isEmpty());
+
 		if (isState(State::PlainFile_MetainfoLoaded) ||
 			isState(State::PlainFile_Downloading) ||
 			isState(State::PlainFile_Downloaded) ||
 			isState(State::PlainFile_Uploading) ||
 			isState(State::PlainFile_Uploaded))
 		{
-			return getControlButtonPlainRect();
+			return getControlButtonPlainRect(iconSize);
 		}
 
-		return getControlButtonPreviewRect();
+		return getControlButtonPreviewRect(iconSize);
 	}
 
-	const QRect& FileSharingWidget::getControlButtonPlainRect() const
+	const QRect& FileSharingWidget::getControlButtonPlainRect(const QSize &iconSize) const
 	{
-		if (Private_.ControlButtonPlainRect_.isEmpty())
-		{
-			auto x = Utils::scale_value(PROGRESS_PEN_WIDTH);
-			auto y = Utils::scale_value(8);
+        assert(!iconSize.isEmpty());
 
-			const auto &btn = downloadButton();
+        auto &btnRect = Private_.ControlButtonPlainRect_;
 
-			Private_.ControlButtonPlainRect_ = QRect(x, y, btn.GetWidth(), btn.GetHeight());
+        const auto resetRect = (
+            btnRect.isEmpty() ||
+            (btnRect.size() != iconSize));
+        if (resetRect)
+        {
+			const auto x = Ui::MessageStyle::getRotatingProgressBarPenWidth();
+			const auto y = getCtrlButtonTopOffset();
+
+			btnRect = QRect(QPoint(x, y), iconSize);
 		}
 
-		return Private_.ControlButtonPlainRect_;
+		return btnRect;
 	}
 
-	const QRect& FileSharingWidget::getControlButtonPreviewRect() const
+	const QRect& FileSharingWidget::getControlButtonPreviewRect(const QSize &iconSize) const
 	{
+        assert(!iconSize.isEmpty());
 		assert(isState(State::ImageFile_Downloading) ||
-			   isState(State::ImageFile_Uploading));
+               isState(State::ImageFile_Downloaded) ||
+               isState(State::ImageFile_MetainfoLoaded) ||
+			   isState(State::ImageFile_Uploading) ||
+               isState(State::ImageFile_Uploaded));
 
-		if (Private_.ControlButtonPreviewRect_.isEmpty())
+        auto &btnRect = Private_.ControlButtonPreviewRect_;
+
+        const auto resetRect = (
+            btnRect.isEmpty() ||
+            (btnRect.size() != iconSize));
+		if (resetRect)
 		{
-			const auto &btn = downloadCancelButton();
-
-			auto buttonRect = btn.GetRect();
-
+			QRect buttonRect(QPoint(), iconSize);
 			buttonRect.moveCenter(getPreviewScaledRect().center());
 
-			Private_.ControlButtonPreviewRect_ = buttonRect;
+			btnRect = buttonRect;
 		}
 
-		return Private_.ControlButtonPreviewRect_;
+		return btnRect;
 	}
 
 	bool FileSharingWidget::getLocalFileMetainfo()
@@ -721,7 +806,8 @@ namespace HistoryControl
 
 		Metainfo_.Filename_ = info.fileName();
 		Metainfo_.FileSize_ = info.size();
-		Metainfo_.FileSizeStr_ = FormatFileSize(Metainfo_.FileSize_);
+
+		formatFileSizeStr();
 
 		return true;
 	}
@@ -734,8 +820,37 @@ namespace HistoryControl
 		return Private_.State_;
 	}
 
+    void FileSharingWidget::initializeShareButton()
+    {
+        assert(!ShareButton_);
+
+        ShareButton_ = new Ui::ActionButtonWidget(Ui::ActionButtonWidget::ResourceSet::ShareContent_, this);
+        ShareButton_->setVisible(false);
+
+        const auto success = QObject::connect(
+            ShareButton_,
+            &Ui::ActionButtonWidget::startClickedSignal,
+            this,
+            &FileSharingWidget::onShareButtonClicked);
+        assert(success);
+    }
+
 	bool FileSharingWidget::isControlButtonVisible() const
 	{
+        if (isState(State::ImageFile_MetainfoLoaded) ||
+            isState(State::ImageFile_Downloaded) ||
+            isState(State::ImageFile_Uploaded))
+        {
+            const auto isGif = (FsInfo_->getContentType() == core::file_sharing_content_type::gif);
+            if (isGif)
+            {
+                return !isGifPlaying();
+            }
+
+            const auto isVideo = (FsInfo_->getContentType() == core::file_sharing_content_type::video);
+            return isVideo;
+        }
+
 		return isState(State::PlainFile_MetainfoLoaded) ||
 			   isState(State::PlainFile_Downloading) ||
 			   isState(State::PlainFile_Downloaded) ||
@@ -752,6 +867,30 @@ namespace HistoryControl
 			   isState(State::ImageFile_Downloading) ||
 			   isState(State::ImageFile_Uploading);
 	}
+
+    bool FileSharingWidget::isFullImageDownloading() const
+    {
+        assert(isImagePreview());
+        assert(FileDownloadId_ >= -1);
+
+        return (FileDownloadId_ > 0);
+    }
+
+    bool FileSharingWidget::isGifImage() const
+    {
+        return (
+            isImagePreview() &&
+            FsInfo_ &&
+            (FsInfo_->getContentType() == core::file_sharing_content_type::gif));
+    }
+
+    bool FileSharingWidget::isGifPlaying() const
+    {
+        assert(isGifImage());
+
+        return (GifImage_ &&
+                (GifImage_->state() == QMovie::Running));
+    }
 
     bool FileSharingWidget::isImagePreview() const
     {
@@ -778,7 +917,9 @@ namespace HistoryControl
 
 	bool FileSharingWidget::isOverControlButton(const QPoint &p) const
 	{
-		auto downloadButtonRect = getControlButtonRect();
+        assert(CurrentCtrlIcon_);
+
+		auto downloadButtonRect = getControlButtonRect(CurrentCtrlIcon_->GetSize());
 		const auto margins = contentsMargins();
 		downloadButtonRect.translate(margins.left(), margins.top());
 
@@ -817,6 +958,38 @@ namespace HistoryControl
 		return (Private_.State_ == state);
 	}
 
+    void FileSharingWidget::loadGifImage(const QString &localPath)
+    {
+        assert(isGifImage());
+        assert(!localPath.isEmpty());
+
+        std::unique_ptr<Utils::LoadMovieFromFileTask> task(
+            new Utils::LoadMovieFromFileTask(localPath));
+
+        QObject::connect(
+            task.get(),
+            &Utils::LoadMovieFromFileTask::loadedSignal,
+            this,
+            [this]
+            (QSharedPointer<QMovie> movie)
+            {
+                assert(movie);
+                assert(!GifImage_);
+
+                GifImage_ = movie;
+
+                QObject::connect(
+                    GifImage_.data(),
+                    &QMovie::frameChanged,
+                    this,
+                    &FileSharingWidget::onGifFrameUpdated);
+
+                GifImage_->start();
+            });
+
+        task->run();
+    }
+
 	bool FileSharingWidget::loadPreviewFromLocalFile()
 	{
 		assert(isState(State::ImageFile_Initial));
@@ -840,11 +1013,13 @@ namespace HistoryControl
 		return true;
 	}
 
-	void FileSharingWidget::renderPreview(QPainter &p)
+	void FileSharingWidget::renderPreview(QPainter &p, const bool isAnimating)
 	{
+        isAnimating;
+
         if (isImagePreview())
         {
-            PreviewContentWidget::renderPreview(p);
+            PreviewContentWidget::renderPreview(p, isDataTransferProgressVisible());
         }
 
         if (isFilenameAndSizeVisible())
@@ -861,6 +1036,11 @@ namespace HistoryControl
 		if (isDataTransferProgressVisible())
 		{
 			renderDataTransferProgress(p);
+
+            if (isImagePreview())
+            {
+                renderDataTransferProgressText(p);
+            }
 		}
 
 		if (isOpenDownloadsDirButtonVisible())
@@ -871,7 +1051,74 @@ namespace HistoryControl
 
     void FileSharingWidget::resizeEvent(QResizeEvent *e)
     {
+        Private_.ControlButtonPreviewRect_ = QRect();
+
         PreviewContentWidget::resizeEvent(e);
+    }
+
+    bool FileSharingWidget::drag()
+    {
+        QPixmap p = Preview_.FullImg_;
+        if (p.isNull() && FileTypeIcon_)
+            p = FileTypeIcon_->GetPixmap();
+
+        return Utils::dragUrl(this, p, FsInfo_ ? FsInfo_->GetUri() : Metainfo_.DownloadUri_);
+    }
+
+    void FileSharingWidget::onGifFrameUpdated(int frameNumber)
+    {
+        frameNumber;
+
+        assert(GifImage_);
+        const auto frame = GifImage_->currentPixmap();
+
+        setPreview(frame);
+    }
+
+    void FileSharingWidget::onGifImageClicked()
+    {
+        assert(isGifImage());
+        assert(GifImage_);
+
+        if (!GifImage_)
+        {
+            return;
+        }
+
+        GifImage_->setPaused(isGifPlaying());
+
+        update();
+    }
+
+    void FileSharingWidget::onShareButtonClicked()
+    {
+        assert(FsInfo_->HasUri());
+
+        Ui::SelectContactsWidget shareDialog(
+            nullptr,
+            Logic::MembersWidgetRegim::SHARE_LINK,
+            QT_TRANSLATE_NOOP("popup_window", "Share link"),
+            QT_TRANSLATE_NOOP("popup_window", "Copy link and close"),
+            FsInfo_->GetUri(),
+            Ui::MainPage::instance(),
+            true);
+
+        const auto action = shareDialog.show();
+        if (action != QDialog::Accepted)
+        {
+            return;
+        }
+
+        const auto contact = shareDialog.getSelectedContact();
+        if (contact != "")
+        {
+            Logic::getContactListModel()->setCurrent(contact, true);
+            Ui::GetDispatcher()->sendMessageToContact(contact, FsInfo_->GetUri());
+        }
+        else
+        {
+            QApplication::clipboard()->setText(FsInfo_->GetUri());
+        }
     }
 
 	void FileSharingWidget::openDownloadsDir() const
@@ -895,33 +1142,6 @@ namespace HistoryControl
 #endif //_WIN32
 	}
 
-    void FileSharingWidget::openPreviewMac(const QString &path, int x, int y)
-    {
-        Q_UNUSED(x);
-        Q_UNUSED(y);
-
-        assert(QFile::exists(path));
-
-#ifdef __APPLE__
-        MacSupport::showPreview(path, x, y);
-#endif
-    }
-
-	void FileSharingWidget::openPreview()
-	{
-        Ui::MainPage::instance()->cancelSelection();
-
-        if (Preview_.FullImg_.isNull())
-        {
-            Utils::loadPixmap(DownloadedFileLocalPath_, Out Preview_.FullImg_);
-        }
-
-        if (!Preview_.FullImg_.isNull())
-		{
-			Previewer::ShowPreview(Preview_.FullImg_);
-		}
-	}
-
 	void FileSharingWidget::renderControlButton(QPainter &p)
 	{
 		assert(isControlButtonVisible());
@@ -931,24 +1151,54 @@ namespace HistoryControl
 			isState(State::ImageFile_Downloading) ||
 			isState(State::ImageFile_Uploading))
 		{
-			downloadCancelButton().Draw(p, getControlButtonRect());
+            CurrentCtrlIcon_ = downloadCancelButton(isImagePreview());
+
+            const auto btnRect = getControlButtonRect(CurrentCtrlIcon_->GetSize());
+			CurrentCtrlIcon_->Draw(p, btnRect);
+
 			return;
 		}
 
-		if (isState(State::PlainFile_Downloaded) ||
-			isState(State::PlainFile_Uploaded))
+        const auto isMetainfoReady = (
+            isState(State::PlainFile_Downloaded) ||
+            isState(State::PlainFile_Uploaded) ||
+            isState(State::PlainFile_MetainfoLoaded));
+        const auto isFilenameReady = (isMetainfoReady && !Metainfo_.Filename_.isEmpty());
+		if (isFilenameReady)
 		{
 			if (!FileTypeIcon_)
 			{
-				FileTypeIcon_ = GetIconByFilename(Metainfo_.Filename_);
+				FileTypeIcon_ = History::GetIconByFilename(Metainfo_.Filename_);
 			}
 
-			FileTypeIcon_->Draw(p, getControlButtonRect());
+            CurrentCtrlIcon_ = FileTypeIcon_;
+
+            const auto btnRect = getControlButtonRect(CurrentCtrlIcon_->GetSize());
+			FileTypeIcon_->Draw(p, btnRect);
 
 			return;
 		}
 
-		downloadButton().Draw(p, getControlButtonRect());
+        if (isState(State::ImageFile_MetainfoLoaded) ||
+            isState(State::ImageFile_Downloaded) ||
+            isState(State::ImageFile_Uploaded))
+        {
+            const auto isGif = (FsInfo_->getContentType() == core::file_sharing_content_type::gif);
+
+            assert(isGif || (FsInfo_->getContentType() == core::file_sharing_content_type::video));
+
+            CurrentCtrlIcon_ = playStartButton(isGif, IsCtrlButtonHovered_);
+
+            const auto btnRect = getControlButtonRect(CurrentCtrlIcon_->GetSize());
+            CurrentCtrlIcon_->Draw(p, btnRect);
+
+            return;
+        }
+
+        CurrentCtrlIcon_ = downloadButton();
+
+        const auto btnRect = getControlButtonRect(CurrentCtrlIcon_->GetSize());
+        CurrentCtrlIcon_->Draw(p, btnRect);
 	}
 
 	void FileSharingWidget::renderDataTransferProgress(QPainter &p)
@@ -971,33 +1221,60 @@ namespace HistoryControl
 		const auto angle = (int)std::ceil(percents * 360 * 16);
 		assert(angle <= (361 * 16));
 
-		const auto penWidth = Utils::scale_value(PROGRESS_PEN_WIDTH);
-		QPen pen(QBrush(Qt::black), penWidth);
+		const auto pen = Ui::MessageStyle::getRotatingProgressBarPen();
 		p.setPen(pen);
 
+        assert(CurrentCtrlIcon_);
+        auto arcRect(
+            getControlButtonRect(
+                CurrentCtrlIcon_->GetSize()));
+
+        const auto argRectMargin = (Ui::MessageStyle::getRotatingProgressBarPenWidth() / 2);
+        const QMargins arcRectMargins(argRectMargin, argRectMargin, argRectMargin, argRectMargin);
+        arcRect = arcRect.marginsRemoved(arcRectMargins);
+
 		const auto baseAngle = (DownloadingBarBaseAngle_ * 16);
-		p.drawArc(getControlButtonRect(), -baseAngle, -angle);
+		p.drawArc(arcRect, -baseAngle, -angle);
 
 		p.restore();
 	}
 
-	void FileSharingWidget::renderFilename(QPainter &p)
+    void FileSharingWidget::renderFilename(QPainter &p)
 	{
-		assert(!Metainfo_.Filename_.isEmpty());
+        assert(CurrentCtrlIcon_);
+
+        auto textX = CurrentCtrlIcon_->GetWidth();
+        textX += Utils::scale_value(12);
+
+        const auto textY = Utils::scale_value(29);
+
+        auto font = Fonts::appFontScaled(16);
+
+        QString filename;
+
+        if (!Metainfo_.Filename_.isEmpty())
+        {
+            const auto maxTextWidth = (
+                width() -
+                textX -
+                Ui::MessageStatusWidget::getMaxWidth() -
+                Ui::MessageStyle::getTimeMargin() -
+                Ui::MessageStyle::getBubbleHorPadding());
+            filename = elideFilename(Metainfo_.Filename_, font, maxTextWidth);
+        }
+        else
+        {
+            filename = QT_TRANSLATE_NOOP("contact_list", "File");
+        }
+
+        assert(!filename.isEmpty());
 
 		p.save();
 
-        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16));
-
 		p.setFont(font);
-		p.setPen(QColor(0x282828));
+		p.setPen(Ui::CommonStyle::getTextCommonColor());
 
-		auto x = downloadButton().GetWidth();
-		x += Utils::scale_value(12);
-
-		auto y = Utils::scale_value(29);
-
-		p.drawText(x, y, Metainfo_.Filename_);
+		p.drawText(textX, textY, filename);
 
 		p.restore();
 	}
@@ -1005,20 +1282,24 @@ namespace HistoryControl
 	void FileSharingWidget::renderFileSizeAndProgress(QPainter &p)
 	{
 		assert(Metainfo_.FileSize_ >= 0);
+        assert(CurrentCtrlIcon_);
 
-		if (Metainfo_.FileSizeStr_.isEmpty())
-		{
-			Metainfo_.FileSizeStr_ = FormatFileSize(Metainfo_.FileSize_);
-		}
+        const auto isFileSizeUnknown = (Metainfo_.FileSize_ == 0);
+        if (isFileSizeUnknown)
+        {
+            return;
+        }
+
+		formatFileSizeStr();
 
 		p.save();
 
-        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(12));
+        QFont font = Fonts::appFontScaled(12);
 
 		p.setFont(font);
 		p.setPen(QColor(0x979797));
 
-		auto x = downloadButton().GetWidth();
+		auto x = CurrentCtrlIcon_->GetWidth();
 		x += Utils::scale_value(12);
 
 		auto y = Utils::scale_value(47);
@@ -1026,7 +1307,7 @@ namespace HistoryControl
 		QString text;
 		if (isState(State::PlainFile_Downloading) || isState(State::PlainFile_Uploading))
 		{
-			text = FormatFileSize(BytesTransferred_);
+			text = formatFileSize(BytesTransferred_);
 			text += " of ";
 		}
 
@@ -1039,25 +1320,72 @@ namespace HistoryControl
 		p.restore();
 	}
 
+    void FileSharingWidget::renderDataTransferProgressText(QPainter &p)
+    {
+        assert(isImagePreview());
+        assert(CurrentCtrlIcon_);
+
+        formatFileSizeStr();
+
+        QString text;
+        text.reserve(128);
+
+        text += formatFileSize(BytesTransferred_);
+        text += " of ";
+        text += Metainfo_.FileSizeStr_;
+
+        const auto font = Ui::MessageStyle::getRotatingProgressBarTextFont();
+        const auto pen = Ui::MessageStyle::getRotatingProgressBarTextPen();
+
+        const auto isTextChanged = (text != LastProgressText_);
+        if (isTextChanged)
+        {
+            const auto &iconRect = getControlButtonRect(CurrentCtrlIcon_->GetSize());
+
+            QFontMetrics m(font);
+            const auto textSize = m.boundingRect(text).size();
+
+            ProgressTextRect_ = QRect(QPoint(), textSize);
+
+            ProgressTextRect_.moveCenter(iconRect.center());
+
+            ProgressTextRect_.moveTop(
+                iconRect.bottom() + 1 +
+                Ui::MessageStyle::getRotatingProgressBarTextTopMargin());
+
+            LastProgressText_ = text;
+        }
+
+        p.save();
+
+        p.setFont(font);
+        p.setPen(pen);
+        assert(!ProgressTextRect_.isEmpty());
+        p.drawText(ProgressTextRect_, Qt::AlignHCenter, text);
+
+        p.restore();
+    }
+
 	void FileSharingWidget::renderOpenDownloadsDirButton(QPainter &p)
 	{
 		assert(!FileSizeAndProgressStr_.isEmpty());
+        assert(CurrentCtrlIcon_);
 
 		p.save();
 
-		QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(12));
+		QFont font = Fonts::appFontScaled(12);
 
 		QFontMetrics m(font);
 		const auto fileSizeAndProgressWidth = m.tightBoundingRect(FileSizeAndProgressStr_).width();
 
-		auto x = downloadButton().GetWidth();
+		auto x = CurrentCtrlIcon_->GetWidth();
 		x += Utils::scale_value(12);
 		x += fileSizeAndProgressWidth;
 		x += Utils::scale_value(16);
 
 		auto y = Utils::scale_value(47);
 
-        static const QString TEXT = QT_TRANSLATE_NOOP("filesharing_widget","Show in folder");
+        static const QString TEXT = QT_TRANSLATE_NOOP("chat_page","Show in folder");
 
 		auto controlRect = m.boundingRect(TEXT);
 		controlRect.translate(x, y);
@@ -1065,7 +1393,7 @@ namespace HistoryControl
 		OpenDownloadsDirButtonRect_ = controlRect;
 
 		p.setFont(font);
-		p.setPen(QPen(0x579e1c));
+		p.setPen(QPen(Ui::CommonStyle::getLinkColor()));
 		p.drawText(controlRect, TEXT);
 
 		p.restore();
@@ -1077,7 +1405,7 @@ namespace HistoryControl
 		assert(isState(State::PlainFile_Initial) || isState(State::ImageFile_Initial));
 
 		const auto procId = Ui::GetDispatcher()->downloadSharedFile(
-			ContactUin_,
+			ParentItem_->getAimid(),
 			FsInfo_->GetUri(),
             Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()),
             QString(),
@@ -1108,7 +1436,7 @@ namespace HistoryControl
 		}
 
         assert(PreviewDownloadId_ == -1);
-		PreviewDownloadId_ = Ui::GetDispatcher()->downloadImage(previewUri, QString(), false);
+        PreviewDownloadId_ = Ui::GetDispatcher()->downloadImage(previewUri, "#", QString(), false, 0, 0);
 	}
 
     void FileSharingWidget::requestPreviewMetainfo()
@@ -1117,7 +1445,7 @@ namespace HistoryControl
         assert(isState(State::ImageFile_Initial));
 
         const auto procId = Ui::GetDispatcher()->downloadSharedFile(
-            ContactUin_,
+            ParentItem_->getAimid(),
             FsInfo_->GetUri(),
             Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()),
             QString(),
@@ -1261,7 +1589,9 @@ namespace HistoryControl
 		Private_.State_ = state;
         emit stateChanged();
 
-        if ((state == State::PlainFile_Initial) || (state == State::PlainFile_MetainfoLoaded))
+        if ((state == State::PlainFile_Initial) ||
+            (state == State::PlainFile_MetainfoLoaded) ||
+            (state == State::PlainFile_Uploading))
         {
             setBlockSizePolicy();
         }
@@ -1303,7 +1633,8 @@ namespace HistoryControl
                     assert(isState(State::ImageFile_MetainfoLoaded) ||
 						   isState(State::ImageFile_Uploading) ||
 						   isState(State::ImageFile_Uploaded) ||
-                           isState(State::ImageFile_Downloading));
+                           isState(State::ImageFile_Downloading) ||
+                           isState(State::PlainFile_Uploading));
 				}
 				break;
 
@@ -1313,33 +1644,24 @@ namespace HistoryControl
 				break;
 
 			case State::ImageFile_Downloading:
-				{
-					const auto isImageDownloaded = isState(State::ImageFile_Downloaded);
+                {
+                    const auto isImageDownloaded = isState(State::ImageFile_Downloaded);
                     const auto isImageMetainfoLoaded = isState(State::ImageFile_MetainfoLoaded);
+
                     if (!isImageDownloaded && !isImageMetainfoLoaded)
                     {
                         assert(false);
                     }
-					if (isImageDownloaded)
-                    {
-                        if (platform::is_apple())
-                        {
-                            auto path = DownloadedFileLocalPath_;
-                            if (path.isEmpty() && FsInfo_.get())
-                            {
-                                path = FsInfo_->GetLocalPath();
-                            }
-                            assert(QFile::exists(path));
-                            openPreviewMac(path, -1, -1);
-                        }
-                        else
-                        {
-                            openPreview();
-                        }
-					}
-				}
 
-				break;
+                    if (isGifImage() || SaveAs_ || CopyFile_ || !isImageDownloaded)
+                    {
+                        break;
+                    }
+
+                    showPreviewer(QPoint());
+                }
+
+                break;
 
 			case State::ImageFile_Uploading:
 				assert(isState(State::ImageFile_Uploaded) ||
@@ -1362,7 +1684,7 @@ namespace HistoryControl
 		startDataTransferAnimation();
 
 		const auto procId = Ui::GetDispatcher()->downloadSharedFile(
-			ContactUin_,
+			ParentItem_->getAimid(),
 			FsInfo_->GetUri(),
             Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()), QString(),
 			core::file_sharing_function::download_file);
@@ -1384,7 +1706,7 @@ namespace HistoryControl
         // start image downloading
 
 		const auto procId = Ui::GetDispatcher()->downloadSharedFile(
-			ContactUin_,
+			ParentItem_->getAimid(),
 			FsInfo_->GetUri(),
             Ui::get_gui_settings()->get_value<QString>(
                 settings_download_directory,
@@ -1400,7 +1722,29 @@ namespace HistoryControl
         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::filesharing_download_file);
 	}
 
-	void FileSharingWidget::startDataTransferAnimation()
+    void FileSharingWidget::showPreviewer(const QPoint& globalPos)
+    {
+        Q_UNUSED(globalPos);
+
+        assert(!isGifImage());
+
+        Ui::MainPage::instance()->cancelSelection();
+
+        if (FsInfo_ && FsInfo_->getContentType() == core::file_sharing_content_type::video)
+        {
+            if (aimId_ != Logic::getContactListModel()->selectedContact())
+                return;
+
+            Utils::InterConnector::instance().getMainWindow()->playVideo(DownloadedFileLocalPath_);
+
+            return;
+        }
+
+        Utils::InterConnector::instance().getMainWindow()->openGallery(
+            getContact(), Data::Image(ParentItem_->getId(), FsInfo_->GetUri(), true), DownloadedFileLocalPath_);
+    }
+
+    void FileSharingWidget::startDataTransferAnimation()
 	{
 		if (!BaseAngleAnimation_)
 		{
@@ -1441,11 +1785,7 @@ namespace HistoryControl
             setState(State::ImageFile_MetainfoLoaded);
         }
 
-		Ui::GetDispatcher()->abortSharedFileDownloading(
-			ContactUin_,
-			FsInfo_->GetUri(),
-			getCurrentProcessId()
-		);
+		Ui::GetDispatcher()->abortSharedFileDownloading(getCurrentProcessId());
 
 		resetCurrentProcessId();
 
@@ -1463,7 +1803,7 @@ namespace HistoryControl
 		setState(State::Deleted);
 
 		Ui::GetDispatcher()->abortSharedFileUploading(
-			ContactUin_,
+			ParentItem_->getAimid(),
 			FsInfo_->GetLocalPath(),
 			FsInfo_->GetUploadingProcessId()
 		);
@@ -1473,6 +1813,39 @@ namespace HistoryControl
 		BytesTransferred_ = 0;
         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::filesharing_cancel);
 	}
+
+    void FileSharingWidget::updateShareButtonGeometry()
+    {
+        assert(ShareButton_);
+
+        const auto &widgetContentRect = (isImagePreview() ? getLastPreviewGeometry() : rect());
+
+        if (widgetContentRect.isEmpty())
+        {
+            return;
+        }
+
+        auto buttonX = (widgetContentRect.right() + 1);
+
+        if (isImagePreview())
+        {
+            buttonX += Ui::ComplexMessage::Style::getShareButtonLeftMargin();
+        }
+        else
+        {
+            buttonX -= ShareButton_->sizeHint().width();
+        }
+
+        const auto buttonY = widgetContentRect.top();
+
+        const QPoint buttonPos(buttonX, buttonY);
+
+        const auto isButtonPosChanged = (ShareButton_->geometry().topLeft() != buttonPos);
+        if (isButtonPosChanged)
+        {
+            ShareButton_->move(buttonPos);
+        }
+    }
 
 	void FileSharingWidget::onFileMetainfo(qint64 seq, QString filename, QString downloadUri, qint64 size)
 	{
@@ -1576,34 +1949,36 @@ namespace HistoryControl
 
 		DownloadedFileLocalPath_ = localPath;
 
-        const auto isPlainFileDownloading = isState(State::PlainFile_Downloading);
-		if (isPlainFileDownloading)
-		{
-			setState(State::PlainFile_Downloaded);
-		}
-
-		const auto isImageDownloading = isState(State::ImageFile_Downloading);
-		if (isImageDownloading)
-		{
-            setState(State::ImageFile_Downloaded);
-		}
-
-        if (CopyFile_)
-        {
-            CopyFile_ = false;
-            copyFile();
-        }
-
-        if (SaveAs_)
-        {
-            SaveAs_ = false;
-        }
-
         FileDownloadId_ = -1;
         Retry_.FileDownload_ = false;
         Retry_.FileMetainfoRetryCount_ = 0;
 
         stopDataTransferAnimation();
+
+        const auto isPlainFileDownloading = isState(State::PlainFile_Downloading);
+        if (isPlainFileDownloading)
+        {
+            setState(State::PlainFile_Downloaded);
+        }
+
+        const auto isImageDownloading = isState(State::ImageFile_Downloading);
+        if (isImageDownloading)
+        {
+            setState(State::ImageFile_Downloaded);
+
+            if (isGifImage())
+            {
+                loadGifImage(DownloadedFileLocalPath_);
+            }
+        }
+
+        if (CopyFile_)
+        {
+            copyFile();
+        }
+
+        SaveAs_ = false;
+        CopyFile_ = false;
 
         invalidateSizes();
         update();
@@ -1722,11 +2097,12 @@ namespace HistoryControl
         update();
 	}
 
-    void FileSharingWidget::fileSharingUploadingResult(QString uploadingProcessId, bool success, QString link, bool tooLargeFile)
+    void FileSharingWidget::fileSharingUploadingResult(
+        QString seq, bool success, QString localPath, QString uri, int contentType, bool isFileTooBig)
     {
         (void)success;
 
-        const auto isMyProcessId = (uploadingProcessId == FsInfo_->GetUploadingProcessId());
+        const auto isMyProcessId = (seq == FsInfo_->GetUploadingProcessId());
         if (!isMyProcessId)
         {
             return;
@@ -1736,10 +2112,13 @@ namespace HistoryControl
             "fs",
             "uploading finished\n" <<
             "    succeed=<" << logutils::yn(success) << ">\n"
-            "    link=<" << link << ">"
+            "    link=<" << uri << ">"
         );
 
-        FsInfo_->SetUri(link);
+        DownloadedFileLocalPath_ = localPath;
+
+        FsInfo_->SetUri(uri);
+        FsInfo_->setContentType(static_cast<core::file_sharing_content_type>(contentType));
 
         if (isState(State::ImageFile_Uploading))
         {
@@ -1752,10 +2131,27 @@ namespace HistoryControl
 
         stopDataTransferAnimation();
 
-        if (tooLargeFile)
+        if (isFileTooBig)
         {
             emit removeMe();
             return;
+        }
+
+        if (ShareButton_)
+        {
+            updateShareButtonGeometry();
+
+            const auto cursorPos = mapFromGlobal(QCursor::pos());
+
+            if (isOverPreview(cursorPos))
+            {
+                ShareButton_->setVisible(true);
+            }
+        }
+
+        if (isGifImage())
+        {
+            loadGifImage(FsInfo_->GetLocalPath());
         }
 
         update();
@@ -1820,6 +2216,12 @@ namespace HistoryControl
         PreviewDownloadId_ = -1;
         Retry_.PreviewDownload_ = false;
         Retry_.PreviewDownloadRetryCount_ = 0;
+
+        if (isGifImage() && !isFullImageDownloading())
+        {
+            setState(State::ImageFile_Downloading);
+            startDownloadingFullImage();
+        }
     }
 
     void FileSharingWidget::previewDownloadError(int64_t seq, QString rawUri)
@@ -1852,16 +2254,42 @@ namespace HistoryControl
 
 namespace
 {
-	const Themes::IThemePixmap& downloadButton()
+    using namespace Themes;
+
+	IThemePixmapSptr downloadButton()
 	{
-		static const auto btn = Themes::GetPixmap(Themes::PixmapResourceId::FileSharingDownload);
-		return *btn;
+		return GetPixmap(PixmapResourceId::FileSharingDownload);
 	}
 
-	const Themes::IThemePixmap& downloadCancelButton()
+	IThemePixmapSptr downloadCancelButton(const bool isImage)
 	{
-		static const auto btn = Themes::GetPixmap(Themes::PixmapResourceId::FileSharingPlainCancel);
-		return *btn;
+        if (isImage)
+        {
+            return GetPixmap(PixmapResourceId::FileSharingMediaCancel);
+        }
+
+		return GetPixmap(PixmapResourceId::FileSharingPlainCancel);
 	}
+
+    int32_t getCtrlButtonTopOffset()
+    {
+        return Utils::scale_value(8);
+    }
+
+    IThemePixmapSptr playStartButton(const bool isGif, const bool isHovered)
+    {
+        if (isGif)
+        {
+            return GetPixmap(PixmapResourceId::FileSharingGifPlay);
+        }
+
+        if (isHovered)
+        {
+            return GetPixmap(PixmapResourceId::FileSharingMediaPlayHover);
+        }
+
+        return GetPixmap(PixmapResourceId::FileSharingMediaPlay);
+    }
+
 }
 

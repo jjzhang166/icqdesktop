@@ -3,192 +3,206 @@
 #include "../core_dispatcher.h"
 #include "../utils/gui_coll_helper.h"
 
-Ui::VideoSettings::VideoSettings(QWidget* parent)
-: QWidget(parent) {
-    if (this->objectName().isEmpty())
-        this->setObjectName(QStringLiteral("videoSetting"));
-    this->resize(493, 101);
+Ui::VideoSettings::VideoSettings(QWidget* _parent)
+    : QWidget(_parent)
+{
     QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     sizePolicy.setHorizontalStretch(0);
     sizePolicy.setVerticalStretch(0);
     sizePolicy.setHeightForWidth(this->sizePolicy().hasHeightForWidth());
     this->setSizePolicy(sizePolicy);
-    cb_video_capture_ = new QComboBox(this);
-    cb_video_capture_->setObjectName(QStringLiteral("cbVideoCapture"));
-    cb_video_capture_->setGeometry(QRect(10, 10, 301, 22));
+    cbVideoCapture_ = new QComboBox(this);
     QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Fixed);
     sizePolicy1.setHorizontalStretch(255);
     sizePolicy1.setVerticalStretch(0);
-    sizePolicy1.setHeightForWidth(cb_video_capture_->sizePolicy().hasHeightForWidth());
-    cb_video_capture_->setSizePolicy(sizePolicy1);
-    cb_audio_playback_ = new QComboBox(this);
-    cb_audio_playback_->setObjectName(QStringLiteral("cbAudioPlayback"));
-    cb_audio_playback_->setGeometry(QRect(10, 40, 301, 22));
-    sizePolicy1.setHeightForWidth(cb_audio_playback_->sizePolicy().hasHeightForWidth());
-    cb_audio_playback_->setSizePolicy(sizePolicy1);
-    cb_audio_capture_ = new QComboBox(this);
-    cb_audio_capture_->setObjectName(QStringLiteral("cbAudioCapture"));
-    cb_audio_capture_->setGeometry(QRect(10, 70, 301, 22));
-    sizePolicy1.setHeightForWidth(cb_audio_capture_->sizePolicy().hasHeightForWidth());
-    cb_audio_capture_->setSizePolicy(sizePolicy1);
-    button_audio_playback_set_ = new QPushButton(this);
-    button_audio_playback_set_->setObjectName(QStringLiteral("btnAudioPlaybackSet"));
-    button_audio_playback_set_->setGeometry(QRect(320, 40, 141, 23));
-    button_audio_capture_set_ = new QPushButton(this);
-    button_audio_capture_set_->setObjectName(QStringLiteral("btnAudioCaptureSet"));
-    button_audio_capture_set_->setGeometry(QRect(320, 70, 141, 23));
-    button_audio_playback_set_->setText(QApplication::translate("voip_pages", "Settings", 0));
+    sizePolicy1.setHeightForWidth(cbVideoCapture_->sizePolicy().hasHeightForWidth());
+    cbVideoCapture_->setSizePolicy(sizePolicy1);
+    cbAudioPlayback_ = new QComboBox(this);
+    sizePolicy1.setHeightForWidth(cbAudioPlayback_->sizePolicy().hasHeightForWidth());
+    cbAudioPlayback_->setSizePolicy(sizePolicy1);
+    cbAudioCapture_ = new QComboBox(this);
+    sizePolicy1.setHeightForWidth(cbAudioCapture_->sizePolicy().hasHeightForWidth());
+    cbAudioCapture_->setSizePolicy(sizePolicy1);
+    buttonAudioPlaybackSet_ = new QPushButton(this);
+    buttonAudioCaptureSet_ = new QPushButton(this);
+    buttonAudioPlaybackSet_->setText(QApplication::translate("voip_pages", "Settings", 0));
     QMetaObject::connectSlotsByName(this);
     
 
-    connect(cb_audio_capture_, SIGNAL(currentIndexChanged(int)), this, SLOT(audioCaptureDevChanged(int)), Qt::QueuedConnection);
-    connect(cb_audio_playback_, SIGNAL(currentIndexChanged(int)), this, SLOT(audioPlaybackDevChanged(int)), Qt::QueuedConnection);
-    connect(cb_video_capture_, SIGNAL(currentIndexChanged(int)), this, SLOT(videoCaptureDevChanged(int)), Qt::QueuedConnection);
+    connect(cbAudioCapture_, SIGNAL(currentIndexChanged(int)), this, SLOT(audioCaptureDevChanged(int)), Qt::QueuedConnection);
+    connect(cbAudioPlayback_, SIGNAL(currentIndexChanged(int)), this, SLOT(audioPlaybackDevChanged(int)), Qt::QueuedConnection);
+    connect(cbVideoCapture_, SIGNAL(currentIndexChanged(int)), this, SLOT(videoCaptureDevChanged(int)), Qt::QueuedConnection);
 
-    connect(button_audio_playback_set_, SIGNAL(clicked()), this, SLOT(audioPlaybackSettings()), Qt::QueuedConnection);
-    connect(button_audio_capture_set_, SIGNAL(clicked()), this, SLOT(audioCaptureSettings()), Qt::QueuedConnection);
+    connect(buttonAudioPlaybackSet_, SIGNAL(clicked()), this, SLOT(audioPlaybackSettings()), Qt::QueuedConnection);
+    connect(buttonAudioCaptureSet_, SIGNAL(clicked()), this, SLOT(audioCaptureSettings()), Qt::QueuedConnection);
 
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), this, SLOT(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), Qt::DirectConnection);
     Ui::GetDispatcher()->getVoipController().setRequestSettings();
 }
 
-Ui::VideoSettings::~VideoSettings() {
+Ui::VideoSettings::~VideoSettings()
+{
 
 }
 
-void Ui::VideoSettings::onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>& devices) {
-    devices_ = devices;
+void Ui::VideoSettings::onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>& _devices)
+{
+    devices_ = _devices;
 
-    bool video_ca_upd = false;
-    bool audio_pl_upd = false;
-    bool audio_ca_upd = false;
+    bool videoCaUpd = false;
+    bool audioPlUpd = false;
+    bool audioCaUpd = false;
 
     using namespace voip_proxy;
-    for (unsigned ix = 0; ix < devices_.size(); ix++) {
+    for (unsigned ix = 0; ix < devices_.size(); ix++)
+    {
         const device_desc& desc = devices_[ix];
 
-        QComboBox* cb  = NULL;
-        bool* flag_ptr = NULL;
+        QComboBox* comboBox  = NULL;
+        bool* flagPtr = NULL;
 
-        switch (desc.dev_type) {
-        case kvoip_dev_type_audio_capture:
-            cb = cb_audio_capture_;
-            flag_ptr = &audio_ca_upd;
+        switch (desc.dev_type)
+        {
+        case kvoipDevTypeAudioCapture:
+            comboBox = cbAudioCapture_;
+            flagPtr = &audioCaUpd;
             break;
 
-        case kvoip_dev_type_audio_playback:
-            cb = cb_audio_playback_;
-            flag_ptr = &audio_pl_upd;
+        case kvoipDevTypeAudioPlayback:
+            comboBox = cbAudioPlayback_;
+            flagPtr = &audioPlUpd;
             break;
 
-        case  kvoip_dev_type_video_capture:
-            cb = cb_video_capture_;
-            flag_ptr = &video_ca_upd;
+        case  kvoipDevTypeVideoCapture:
+            comboBox = cbVideoCapture_;
+            flagPtr = &videoCaUpd;
             break;
 
-        case kvoip_dev_type_undefined:
+        case kvoipDevTypeUndefined:
         default:
             assert(false);
             continue;
         }
 
-        assert(cb && flag_ptr);
-        if (!cb || !flag_ptr) { continue; }
-
-        if (!*flag_ptr) {
-            *flag_ptr = true;
-            cb->clear();
+        assert(comboBox && flagPtr);
+        if (!comboBox || !flagPtr)
+        {
+            continue;
         }
-        cb->addItem(QIcon (":/resources/main_window/appicon.ico"), desc.name.c_str(), desc.uid.c_str());
+
+        if (!*flagPtr)
+        {
+            *flagPtr = true;
+            comboBox->clear();
+        }
+        comboBox->addItem(QIcon (":/resources/main_window/appicon.ico"), desc.name.c_str(), desc.uid.c_str());
     }
 }
 
-void Ui::VideoSettings::audioPlaybackSettings() {
+void Ui::VideoSettings::audioPlaybackSettings()
+{
 #ifdef _WIN32
-    SHELLEXECUTEINFOA shell_info;
-    memset(&shell_info, 0, sizeof(shell_info));
+    SHELLEXECUTEINFOA shellInfo;
+    memset(&shellInfo, 0, sizeof(shellInfo));
 
-    shell_info.cbSize = sizeof(SHELLEXECUTEINFOA);
-    shell_info.fMask  = SEE_MASK_NOCLOSEPROCESS;
-    shell_info.hwnd   = (HWND)winId();
-    shell_info.lpVerb = "";
-    shell_info.lpFile = "mmsys.cpl";
-    shell_info.lpParameters = ",0";
-    shell_info.lpDirectory  = NULL;
-    shell_info.nShow        = SW_SHOWDEFAULT;
+    shellInfo.cbSize = sizeof(SHELLEXECUTEINFOA);
+    shellInfo.fMask  = SEE_MASK_NOCLOSEPROCESS;
+    shellInfo.hwnd   = (HWND)winId();
+    shellInfo.lpVerb = "";
+    shellInfo.lpFile = "mmsys.cpl";
+    shellInfo.lpParameters = ",0";
+    shellInfo.lpDirectory  = NULL;
+    shellInfo.nShow        = SW_SHOWDEFAULT;
 
-    BOOL ret = ShellExecuteExA(&shell_info);
-	if (!ret)
-	{
-		assert(ret);
-	}
+    BOOL ret = ShellExecuteExA(&shellInfo);
+    if (!ret)
+    {
+        assert(ret);
+    }
 #else//WIN32
     #warning audioPlaybackSettings
 #endif//WIN32
 }
 
-void Ui::VideoSettings::audioCaptureSettings() {
+void Ui::VideoSettings::audioCaptureSettings()
+{
 #ifdef _WIN32
-    SHELLEXECUTEINFOA shell_info;
-    memset(&shell_info, 0, sizeof(shell_info));
+    SHELLEXECUTEINFOA shellInfo;
+    memset(&shellInfo, 0, sizeof(shellInfo));
 
-    shell_info.cbSize = sizeof(SHELLEXECUTEINFOA);
-    shell_info.fMask  = SEE_MASK_NOCLOSEPROCESS;
-    shell_info.hwnd   = (HWND)winId();
-    shell_info.lpVerb = "";
-    shell_info.lpFile = "mmsys.cpl";
-    shell_info.lpParameters = ",1";
-    shell_info.lpDirectory  = NULL;
-    shell_info.nShow        = SW_SHOWDEFAULT;
+    shellInfo.cbSize = sizeof(SHELLEXECUTEINFOA);
+    shellInfo.fMask  = SEE_MASK_NOCLOSEPROCESS;
+    shellInfo.hwnd   = (HWND)winId();
+    shellInfo.lpVerb = "";
+    shellInfo.lpFile = "mmsys.cpl";
+    shellInfo.lpParameters = ",1";
+    shellInfo.lpDirectory  = NULL;
+    shellInfo.nShow        = SW_SHOWDEFAULT;
 
-    BOOL ret = ShellExecuteExA(&shell_info);
-	if (!ret)
-	{
-		assert(false);
-	}
+    BOOL ret = ShellExecuteExA(&shellInfo);
+    if (!ret)
+    {
+        assert(false);
+    }
     
 #else//WIN32
     #warning audioPlaybackSettings
 #endif//WIN32
 }
 
-void Ui::VideoSettings::_onComboBoxItemChanged(QComboBox& cb, int ix, const std::string& dev_type) {
-    assert(ix >= 0 && ix < cb.count());
-    if (ix < 0 || ix >= cb.count()) { return; }
+void Ui::VideoSettings::_onComboBoxItemChanged(QComboBox& _cb, int _ix, const std::string& _devType)
+{
+    assert(_ix >= 0 && _ix < _cb.count());
+    if (_ix < 0 || _ix >= _cb.count())
+    {
+        return;
+    }
 
-    auto var = cb.itemData(ix);
+    auto var = _cb.itemData(_ix);
     assert(var.type() == QVariant::String);
-    if ((var.type() != QVariant::String)) { return; }
+    if ((var.type() != QVariant::String))
+    {
+        return;
+    }
 
     std::string uid = var.toString().toUtf8().constData();
     assert(!uid.empty());
-    if (uid.empty()) { return; }
+    if (uid.empty())
+    {
+        return;
+    }
 
     Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
     collection.set_value_as_string("type", "device_change");
-    collection.set_value_as_string("dev_type", dev_type);
+    collection.set_value_as_string("dev_type", _devType);
     collection.set_value_as_string("uid", uid);
 
     Ui::GetDispatcher()->post_message_to_core("voip_call", collection.get());
 }
 
-void Ui::VideoSettings::audioCaptureDevChanged(int ix) {
-    assert(cb_audio_capture_);
-    if (cb_audio_capture_) {
-        _onComboBoxItemChanged(*cb_audio_capture_, ix, "audio_capture");
+void Ui::VideoSettings::audioCaptureDevChanged(int _ix)
+{
+    assert(cbAudioCapture_);
+    if (cbAudioCapture_)
+    {
+        _onComboBoxItemChanged(*cbAudioCapture_, _ix, "audio_capture");
     }
 }
 
-void Ui::VideoSettings::audioPlaybackDevChanged(int ix) {
-    assert(cb_audio_playback_);
-    if (cb_audio_playback_) {
-        _onComboBoxItemChanged(*cb_audio_playback_, ix, "audio_playback");
+void Ui::VideoSettings::audioPlaybackDevChanged(int _ix)
+{
+    assert(cbAudioPlayback_);
+    if (cbAudioPlayback_)
+    {
+        _onComboBoxItemChanged(*cbAudioPlayback_, _ix, "audio_playback");
     }
 }
 
-void Ui::VideoSettings::videoCaptureDevChanged(int ix) {
-    assert(cb_video_capture_);
-    if (cb_video_capture_) {
-        _onComboBoxItemChanged(*cb_video_capture_, ix, "video_capture");
+void Ui::VideoSettings::videoCaptureDevChanged(int _ix)
+{
+    assert(cbVideoCapture_);
+    if (cbVideoCapture_)
+    {
+        _onComboBoxItemChanged(*cbVideoCapture_, _ix, "video_capture");
     }
 }

@@ -18,11 +18,11 @@ namespace Ui
     class SettingsSlider: public QSlider
     {
     private:
-        void mousePressEvent(QMouseEvent *event) override;
-        void wheelEvent(QWheelEvent *e) override;
+        void mousePressEvent(QMouseEvent* _event) override;
+        void wheelEvent(QWheelEvent* _e) override;
 
     public:
-        explicit SettingsSlider(Qt::Orientation orientation, QWidget *parent = nullptr);
+        explicit SettingsSlider(Qt::Orientation _orientation, QWidget* _parent = nullptr);
         ~SettingsSlider();
     };
 
@@ -30,6 +30,13 @@ namespace Ui
     {
         struct addSwitcherWidgets
         {
+            addSwitcherWidgets() 
+                : text_(0)
+                , check_(0)
+            {
+
+            }
+
             TextEmojiWidget *text_;
             QCheckBox *check_;
         };
@@ -41,52 +48,52 @@ namespace Ui
         };
 
         static void addHeader(
-                              QWidget* parent,
-                              QLayout* layout,
-                              const QString& text
+                              QWidget* _parent,
+                              QLayout* _layout,
+                              const QString& _text
                               );
         
         static GeneralCreator::addSwitcherWidgets addSwitcher(
-                                                              std::map<std::string, Synchronizator> *collector,
-                                                              QWidget* parent,
-                                                              QLayout* layout,
-                                                              const QString& text,
-                                                              bool switched,
-                                                              std::function< QString(bool) > slot
+                                                              std::map<std::string, Synchronizator>* _collector,
+                                                              QWidget* _parent,
+                                                              QLayout* _layout,
+                                                              const QString& _text,
+                                                              bool _switched,
+                                                              std::function< QString(bool) > _slot
                                                               );
         
         static TextEmojiWidget* addChooser(
-                                           QWidget* parent,
-                                           QLayout* layout,
-                                           const QString& info,
-                                           const QString& value,
-                                           std::function< void(TextEmojiWidget*) > slot
+                                           QWidget* _parent,
+                                           QLayout* _layout,
+                                           const QString& _info,
+                                           const QString& _value,
+                                           std::function< void(TextEmojiWidget*) > _slot
                                            );
         
         static DropperInfo addDropper(
-                                      QWidget* parent,
-                                      QLayout* layout,
-                                      const QString& info,
-                                      const std::vector< QString >& values,
-                                      int selected,
-                                      int width,
-                                      std::function< void(QString, int, TextEmojiWidget*) > slot1,
-                                      bool isCheckable,
-                                      bool switched,
-                                      std::function< QString(bool) > slot2
+                                      QWidget* _parent,
+                                      QLayout* _layout,
+                                      const QString& _info,
+                                      const std::vector< QString >& _values,
+                                      int _selected,
+                                      int _width,
+                                      std::function< void(QString, int, TextEmojiWidget*) > _slot1,
+                                      bool _isCheckable,
+                                      bool _switched,
+                                      std::function< QString(bool) > _slot2
                                       );
         
         static void addProgresser(
-                                  QWidget* parent,
-                                  QLayout* layout,
-                                  const std::vector< QString >& values,
-                                  int selected,
-                                  std::function< void(TextEmojiWidget*, TextEmojiWidget*, int) > slot
+                                  QWidget* _parent,
+                                  QLayout* _layout,
+                                  const std::vector< QString >& _values,
+                                  int _selected,
+                                  std::function< void(TextEmojiWidget*, TextEmojiWidget*, int) > _slot
                                   );
         
         static void addBackButton(
-                                  QWidget* parent,
-                                  QLayout* layout,
+                                  QWidget* _parent,
+                                  QLayout* _layout,
                                   std::function<void()> _on_button_click = [](){}
                                   );
         

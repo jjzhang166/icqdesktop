@@ -1,9 +1,9 @@
 ﻿#include "stdafx.h"
 #include "secureCallWnd.h"
 #include "VoipTools.h"
-#include "../controls/CustomButton.h"
-#include "../utils/gui_coll_helper.h"
+#include "../controls/CommonStyle.h"
 #include "../main_window/settings/themes/ThemesWidget.h"
+#include "../utils/gui_coll_helper.h"
 #include "../utils/InterConnector.h"
 #include "../utils/SChar.h"
 
@@ -17,24 +17,33 @@
 
 #define DETAILS_URL "https://icq.com/security-calls"
 
-const QString detailsButton = 
-" \
-QPushButton \
-{ \
-    text-align: bottom; \
-    border-style: none; \
-    background-color: transparent; \
-    color:#579e1c; \
-    margin-bottom:21dip; \
-	vertical-align: text-bottom; \
-} \
-";
+const QString TEXT_STYLE = QString(
+    "QLabel { color : %1; }"
+).arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getTextCommonColor()));
 
-const QString whiteWidget = "QWidget { background: rgba(255,255,255,100%); }";
+const QString HINT_STYLE = "QLabel { color : #696969; }";
 
-Ui::ImageContainer::ImageContainer(QWidget* parent)
-: QWidget(parent)
-, kerning_(0)
+const QString DETAILS_BUTTON_STYLE = QString(
+    "QPushButton { text-align: bottom; vertical-align: text-bottom; color: %1;"
+    "border-style: none; background-color: transparent; margin-bottom: 21dip; }"
+).arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColor()));
+
+const QString BACKGROUND_COLOR = "QWidget { background: #ffffff; }";
+
+
+class WidgetWithBorder : public QWidget
+{
+public:
+	WidgetWithBorder(QWidget* parent);
+
+protected:
+
+	virtual void paintEvent(QPaintEvent* _e) override;
+};
+
+Ui::ImageContainer::ImageContainer(QWidget* _parent)
+    : QWidget(_parent)
+    , kerning_(0)
 {
 
 }
@@ -44,9 +53,9 @@ Ui::ImageContainer::~ImageContainer()
 
 }
 
-void Ui::ImageContainer::setKerning(int kerning)
+void Ui::ImageContainer::setKerning(int _kerning)
 {
-    kerning_ = kerning;
+    kerning_ = _kerning;
     calculateRectDraw();
 }
 
@@ -56,10 +65,12 @@ void Ui::ImageContainer::calculateRectDraw()
     int width  = images_.empty() ? 0 : (images_.size() - 1) * kerning_;
 
     std::shared_ptr<QImage> image;
-    for (unsigned ix = 0; ix < images_.size(); ++ix) {
+    for (unsigned ix = 0; ix < images_.size(); ++ix)
+    {
         image = images_[ix];
         assert(!!image);
-        if (!!image) {
+        if (!!image)
+        {
             width += image->width();
             height = std::max(image->height(), height);
         }
@@ -74,13 +85,14 @@ void Ui::ImageContainer::calculateRectDraw()
     rcDraw_ = QRect(center.x() - w*0.5f, center.y() - h*0.5f, w, h);
 }
 
-void Ui::ImageContainer::resizeEvent(QResizeEvent* e)
+void Ui::ImageContainer::resizeEvent(QResizeEvent* _e)
 {
-    QWidget::resizeEvent(e);
+    QWidget::resizeEvent(_e);
     calculateRectDraw();
 }
 
-void Ui::ImageContainer::paintEvent(QPaintEvent*) {
+void Ui::ImageContainer::paintEvent(QPaintEvent*)
+{
     QPainter painter(this);
     painter.save();
 
@@ -88,9 +100,11 @@ void Ui::ImageContainer::paintEvent(QPaintEvent*) {
 
     std::shared_ptr<QImage> image;
     QRect rcDraw = rcDraw_;
-    for (unsigned ix = 0; ix < images_.size(); ++ix) {
+    for (unsigned ix = 0; ix < images_.size(); ++ix)
+    {
         image = images_[ix];
-        if (!!image) {
+        if (!!image)
+        {
             QRect r(rcDraw.left(), rcDraw.top(), image->width(), image->height());
             painter.drawImage(r, *image);
             rcDraw.setLeft(rcDraw.left() + kerning_ + image->width());
@@ -100,38 +114,73 @@ void Ui::ImageContainer::paintEvent(QPaintEvent*) {
     painter.restore();
 }
 
-void Ui::ImageContainer::swapImagePack(std::vector<std::shared_ptr<QImage> >& images)
+void Ui::ImageContainer::swapImagePack(std::vector<std::shared_ptr<QImage> >& _images)
 {
-    images_.swap(images);
+    images_.swap(_images);
     calculateRectDraw();
 }
 
-QLabel* Ui::SecureCallWnd::createUniformLabel_(const QString& text, const unsigned fontSize, QSizePolicy policy)
+
+QPolygon getPolygon(const QRect& rc)
+{
+	const int cx = (rc.left() + rc.right()) * 0.5f;
+	const int cy = rc.y();
+
+	int polygon[7][2];
+	polygon[0][0] = cx - SECURE_CALL_WINDOW_UP_ARROW;
+	polygon[0][1] = cy + SECURE_CALL_WINDOW_UP_ARROW;
+
+	polygon[1][0] = cx;
+	polygon[1][1] = cy;
+
+	polygon[2][0] = cx + SECURE_CALL_WINDOW_UP_ARROW;
+	polygon[2][1] = cy + SECURE_CALL_WINDOW_UP_ARROW;
+
+	polygon[3][0] = rc.right();
+	polygon[3][1] = rc.y() + SECURE_CALL_WINDOW_UP_ARROW;
+
+	polygon[4][0] = rc.bottomRight().x();
+	polygon[4][1] = rc.bottomRight().y();
+
+	polygon[5][0] = rc.bottomLeft().x() + 1;
+	polygon[5][1] = rc.bottomLeft().y();
+
+	polygon[6][0] = rc.left() + 1;
+	polygon[6][1] = rc.y() + SECURE_CALL_WINDOW_UP_ARROW;
+
+	QPolygon arrow;
+	arrow.setPoints(7, &polygon[0][0]);
+
+	return arrow;
+}
+
+
+QLabel* Ui::SecureCallWnd::createUniformLabel_(const QString& _text, const unsigned _fontSize, QSizePolicy _policy)
 {
     assert(rootWidget_);
 
     QFont f = QApplication::font();
-    f.setPixelSize(fontSize);
+    f.setPixelSize(_fontSize);
     f.setStyleStrategy(QFont::PreferAntialias);
 
     QLabel* label = new voipTools::BoundBox<QLabel>(rootWidget_);
     label->setFont(f);
-    label->setSizePolicy(policy);
-    label->setText(text);
+    label->setSizePolicy(_policy);
+    label->setText(_text);
     label->setWordWrap(true);
     label->setAlignment(Qt::AlignCenter);
 
     return label;
 }
 
-Ui::SecureCallWnd::SecureCallWnd(QWidget* parent)
-: QMenu(parent)
-, rootLayout_(new QVBoxLayout())
-, rootWidget_(new voipTools::BoundBox<QWidget>(this))
-, textSecureCode_ (new voipTools::BoundBox<ImageContainer>(rootWidget_))
+Ui::SecureCallWnd::SecureCallWnd(QWidget* _parent)
+    : QMenu(_parent)
+    , rootLayout_(new QVBoxLayout())
+    , rootWidget_(new voipTools::BoundBox<WidgetWithBorder>(this))
+    , textSecureCode_ (new voipTools::BoundBox<ImageContainer>(rootWidget_))
 {
     setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
-    Utils::ApplyStyle(this, whiteWidget);
+    Utils::ApplyStyle(this, BACKGROUND_COLOR);
 
     {
         QVBoxLayout* k = new QVBoxLayout();
@@ -149,8 +198,9 @@ Ui::SecureCallWnd::SecureCallWnd(QWidget* parent)
     { // window header text
         QLabel* label = createUniformLabel_(QT_TRANSLATE_NOOP("voip_pages", "Call is secured"), Utils::scale_value(24), QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred));
         assert(label);
-        if (label) {
-            label->setStyleSheet("QLabel { color : #282828; }");
+        if (label)
+        {
+            Utils::ApplyStyle(label, TEXT_STYLE);
 			label->setContentsMargins(0, 0, 0, Utils::scale_value(18));
             rootLayout_->addWidget(label);
         }
@@ -165,8 +215,9 @@ Ui::SecureCallWnd::SecureCallWnd(QWidget* parent)
 
     { // invitation description
         QLabel* label = createUniformLabel_(QT_TRANSLATE_NOOP("voip_pages", "For security check, you can verify your images with your partner"), Utils::scale_value(15));
-        if (label) {
-            label->setStyleSheet("QLabel { color : #696969; }");
+        if (label)
+        {
+            Utils::ApplyStyle(label, HINT_STYLE);
             rootLayout_->addWidget(label);
         }
     }
@@ -189,14 +240,13 @@ Ui::SecureCallWnd::SecureCallWnd(QWidget* parent)
         underBtnLayout->addSpacerItem(new QSpacerItem(1, 1, QSizePolicy::Expanding));
 
         QPushButton* referenceBtn = new voipTools::BoundBox<QPushButton>(rootWidget_);
-        referenceBtn->setObjectName(QStringLiteral("detailedButton_"));
         referenceBtn->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred));
         referenceBtn->setFlat(true);
         referenceBtn->setFont(f);
         referenceBtn->setText(QT_TRANSLATE_NOOP("voip_pages", "How it works"));
         connect(referenceBtn, SIGNAL(clicked()), this, SLOT(onDetailsButtonClicked()), Qt::QueuedConnection);
 
-        Utils::ApplyStyle(referenceBtn, detailsButton);
+        Utils::ApplyStyle(referenceBtn, DETAILS_BUTTON_STYLE);
         referenceBtn->setFocusPolicy(Qt::NoFocus);
         referenceBtn->setCursor(Qt::CursorShape::PointingHandCursor);
         underBtnLayout->addWidget(referenceBtn);
@@ -222,7 +272,7 @@ Ui::SecureCallWnd::SecureCallWnd(QWidget* parent)
 
         QPushButton* btnOk = new voipTools::BoundBox<QPushButton>(underBtnWidget);
         btnOk->setCursor(QCursor(Qt::PointingHandCursor));
-        Utils::ApplyStyle(btnOk, Ui::grey_button_style);
+        Utils::ApplyStyle(btnOk, CommonStyle::getGrayButtonStyle());
         btnOk->setText(QT_TRANSLATE_NOOP("voip_pages", "Ok"));
         connect(btnOk, SIGNAL(clicked()), this, SLOT(onBtnOkClicked()), Qt::QueuedConnection);
         underBtnLayout->addWidget(btnOk);
@@ -236,23 +286,25 @@ Ui::SecureCallWnd::SecureCallWnd(QWidget* parent)
     updateMask();
 }
 
-void Ui::SecureCallWnd::setSecureCode(const std::string& text)
+void Ui::SecureCallWnd::setSecureCode(const std::string& _text)
 {
     assert(textSecureCode_);
-    assert(!text.empty());
+    assert(!_text.empty());
 
     voip_proxy::VoipEmojiManager& voipEmojiManager = Ui::GetDispatcher()->getVoipController().getEmojiManager();
 
     std::vector<std::shared_ptr<QImage> > images;
     images.reserve(5);
 
-    auto decoded = QString::fromUtf8(text.c_str());
+    auto decoded = QString::fromUtf8(_text.c_str());
     QTextStream textStream(&decoded, QIODevice::ReadOnly);
 
     unsigned codepoint;
-    while (true) {
+    while (true)
+    {
         const Utils::SChar superChar = Utils::ReadNextSuperChar(textStream);
-        if (superChar.IsNull()) {
+        if (superChar.IsNull())
+        {
             break;
         }
 
@@ -273,7 +325,8 @@ void Ui::SecureCallWnd::setSecureCode(const std::string& text)
         codepoint |= ((*dataPtr & 0xff) <<  0) * (dataSz >= 1); dataPtr += 1 * (dataSz >= 1);
 
         std::shared_ptr<QImage> image(new QImage());
-        if (voipEmojiManager.getEmoji(codepoint, Utils::scale_value(64), *image)) {
+        if (voipEmojiManager.getEmoji(codepoint, Utils::scale_value(64), *image))
+        {
             images.push_back(image);
         }
     }
@@ -283,34 +336,7 @@ void Ui::SecureCallWnd::setSecureCode(const std::string& text)
 
 void Ui::SecureCallWnd::updateMask()
 {
-    const QRect rc = rect();
-    const int cx = (rc.left() + rc.right()) * 0.5f;
-    const int cy = rc.y();
-
-    int polygon[7][2];
-    polygon[0][0] = cx - SECURE_CALL_WINDOW_UP_ARROW;
-    polygon[0][1] = cy + SECURE_CALL_WINDOW_UP_ARROW;
-    
-    polygon[1][0] = cx;
-    polygon[1][1] = cy;
-    
-    polygon[2][0] = cx + SECURE_CALL_WINDOW_UP_ARROW;
-    polygon[2][1] = cy + SECURE_CALL_WINDOW_UP_ARROW;
-
-    polygon[3][0] = rc.right();
-    polygon[3][1] = rc.y() + SECURE_CALL_WINDOW_UP_ARROW;
-
-    polygon[4][0] = rc.bottomRight().x();
-    polygon[4][1] = rc.bottomRight().y();
-
-    polygon[5][0] = rc.bottomLeft().x() + 1;
-    polygon[5][1] = rc.bottomLeft().y();
-
-    polygon[6][0] = rc.left() + 1;
-    polygon[6][1] = rc.y() + SECURE_CALL_WINDOW_UP_ARROW;
-
-    QPolygon arrow;
-    arrow.setPoints(7, &polygon[0][0]);
+	auto arrow = getPolygon(rect());
 
     QPainterPath path(QPointF(0, 0));
     path.addPolygon(arrow);
@@ -324,23 +350,25 @@ Ui::SecureCallWnd::~SecureCallWnd()
 
 }
 
-void Ui::SecureCallWnd::showEvent(QShowEvent* e)
+void Ui::SecureCallWnd::showEvent(QShowEvent* _e)
 {
-    QMenu::showEvent(e);
+    QMenu::showEvent(_e);
     emit onSecureCallWndOpened();
 }
 
-void Ui::SecureCallWnd::hideEvent(QHideEvent* e)
+void Ui::SecureCallWnd::hideEvent(QHideEvent* _e)
 {
-    QMenu::hideEvent(e);
+    QMenu::hideEvent(_e);
     emit onSecureCallWndClosed();
 }
 
-void Ui::SecureCallWnd::changeEvent(QEvent* e)
+void Ui::SecureCallWnd::changeEvent(QEvent* _e)
 {
-    QMenu::changeEvent(e);
-    if (QEvent::ActivationChange == e->type()) {
-        if (!isActiveWindow()) {
+    QMenu::changeEvent(_e);
+    if (QEvent::ActivationChange == _e->type())
+    {
+        if (!isActiveWindow())
+        {
             hide();
         }
     }
@@ -360,5 +388,26 @@ void Ui::SecureCallWnd::onDetailsButtonClicked()
     
     // On Mac it does not hide automatically, we make it manually.
     hide();
+}
+
+WidgetWithBorder::WidgetWithBorder(QWidget* parent) : QWidget (parent) {}
+
+void WidgetWithBorder::paintEvent(QPaintEvent* _e) 
+{
+	QWidget::paintEvent(_e);
+
+	if (parentWidget())
+	{
+		// Draw the border.
+		QPolygon polygon = getPolygon(parentWidget()->rect());
+		polygon.push_back(polygon.point(0));
+
+		QPainterPath path(QPointF(0, 0));
+		path.addPolygon(polygon);
+
+		QPainter painter(this);
+
+		painter.strokePath(path, QPen(QColor(0x28, 0x28, 0x28, (int32_t)(0.5 * 255)), Utils::scale_value(2)));
+	}
 }
 

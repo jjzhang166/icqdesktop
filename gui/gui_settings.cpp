@@ -8,7 +8,7 @@ namespace Ui
 {
     qt_gui_settings::qt_gui_settings()
         : 
-        shadow_width_(0)
+        shadowWidth_(0)
     {
 
     }
@@ -25,11 +25,11 @@ namespace Ui
         set_value_simple_data(_name, arr.data(), arr.size() + 1);
     }
 
-    template<> QString qt_gui_settings::get_value<QString>(const QString& _name, const QString& _default_value) const
+    template<> QString qt_gui_settings::get_value<QString>(const QString& _name, const QString& _defaultValue) const
     {
         std::vector<char> data;
         if (!get_value_simple_data(_name, data))
-            return _default_value;
+            return _defaultValue;
 
         return &data[0];
     }
@@ -39,9 +39,9 @@ namespace Ui
         set_value_simple(_name, _value);
     }
 
-    template <> int qt_gui_settings::get_value<int>(const QString& _name, const int& _default_value) const
+    template <> int qt_gui_settings::get_value<int>(const QString& _name, const int& _defaultValue) const
     {
-        return get_value_simple(_name, _default_value);
+        return get_value_simple(_name, _defaultValue);
     }
 
     template<> void qt_gui_settings::set_value<double>(const QString& _name, const double& _value)
@@ -49,9 +49,9 @@ namespace Ui
         set_value_simple(_name, _value);
     }
 
-    template <> double qt_gui_settings::get_value<double>(const QString& _name, const double& _default_value) const
+    template <> double qt_gui_settings::get_value<double>(const QString& _name, const double& _defaultValue) const
     {
-        return get_value_simple(_name, _default_value);
+        return get_value_simple(_name, _defaultValue);
     }
 
     template<> void qt_gui_settings::set_value<bool>(const QString& _name, const bool& _value)
@@ -59,9 +59,9 @@ namespace Ui
         set_value_simple(_name, _value);
     }
 
-    template <> bool qt_gui_settings::get_value<bool>(const QString& _name, const bool& _default_value) const
+    template <> bool qt_gui_settings::get_value<bool>(const QString& _name, const bool& _defaultValue) const
     {
-        return get_value_simple(_name, _default_value);
+        return get_value_simple(_name, _defaultValue);
     }
 
     template<> void qt_gui_settings::set_value<std::vector<int32_t>>(const QString& _name, const std::vector<int32_t>& _value)
@@ -69,19 +69,19 @@ namespace Ui
         set_value_simple_data(_name, (const char*) &_value[0], (int)_value.size()*sizeof(int32_t));
     }
 
-    template<> std::vector<int32_t> qt_gui_settings::get_value<std::vector<int32_t>>(const QString& _name, const std::vector<int32_t>& _default_value) const
+    template<> std::vector<int32_t> qt_gui_settings::get_value<std::vector<int32_t>>(const QString& _name, const std::vector<int32_t>& _defaultValue) const
     {
         std::vector<char> data;
         if (!get_value_simple_data(_name, data))
-            return _default_value;
+            return _defaultValue;
 
         if (data.size() == 0)
-            return _default_value;
+            return _defaultValue;
 
         if ((data.size() % sizeof(int32_t)) != 0)
         {
             assert(false);
-            return _default_value;
+            return _defaultValue;
         }
 
         std::vector<int32_t> out_data(data.size()/sizeof(int32_t));
@@ -97,16 +97,16 @@ namespace Ui
         set_value_simple_data(_name, (const char*) buffer, sizeof(buffer));
     }
 
-    template<> QRect qt_gui_settings::get_value<QRect>(const QString& _name, const QRect& _default_value) const
+    template<> QRect qt_gui_settings::get_value<QRect>(const QString& _name, const QRect& _defaultValue) const
     {
         std::vector<char> data;
         if (!get_value_simple_data(_name, data))
-            return _default_value;
+            return _defaultValue;
 
         if (data.size() != sizeof(int32_t[4]))
         {
             assert(false);
-            return _default_value;
+            return _defaultValue;
         }
 
         int32_t* buffer = (int32_t*) &data[0];
@@ -117,17 +117,17 @@ namespace Ui
 
     void qt_gui_settings::set_shadow_width(int _width)
     {
-        shadow_width_ = _width;
+        shadowWidth_ = _width;
     }
 
     int qt_gui_settings::get_shadow_width() const
     {
-        return shadow_width_;
+        return shadowWidth_;
     }
 
     int qt_gui_settings::get_current_shadow_width() const
     {
-        return (get_value<bool>(settings_window_maximized, false) == true ? 0 : shadow_width_);
+        return (get_value<bool>(settings_window_maximized, false) == true ? 0 : shadowWidth_);
     }
 
     void qt_gui_settings::unserialize(core::coll_helper _collection)
@@ -179,8 +179,8 @@ namespace Ui
         return settings.get();
     }
 
-    const std::string get_account_setting_name(const std::string& setting_name)
+    const std::string get_account_setting_name(const std::string& _settingName)
     {
-        return MyInfo()->aimId().toUtf8().constData() + std::string("/") + setting_name;
+        return MyInfo()->aimId().toUtf8().constData() + std::string("/") + _settingName;
     }
 }

@@ -12,10 +12,10 @@ QString Logic::TypingFires::getChatterName() const
             return chatterName_;
         }
 
-        return Logic::GetContactListModel()->getDisplayName(chatterAimId_);
+        return Logic::getContactListModel()->getDisplayName(chatterAimId_);
     }
     else
     {
-        return Logic::GetContactListModel()->getDisplayName(aimId_);
+        return Logic::getContactListModel()->getDisplayName(aimId_);
     }
 }

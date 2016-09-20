@@ -26,16 +26,24 @@ Q_SIGNALS:
 
         void setImage(const QString& image);
         void setText(const QString& text);
+        void setLink(const QString& text, const QColor& color);
 
     protected:
         virtual void paintEvent(QPaintEvent*);
         virtual void enterEvent(QEvent*);
         virtual void leaveEvent(QEvent*);
         virtual void mouseReleaseEvent(QMouseEvent*);
+        virtual void resizeEvent(QResizeEvent *);
+
+    private:
+        void elideLink();
 
     private:
         bool Hovered_;
+        int Height_;
         CustomButton* Button_;
+        QLabel* Link_;
+        QString LinkText_;
     };
 
 
@@ -47,6 +55,7 @@ Q_SIGNALS:
 
     public:
         ClickedWidget(QWidget* parent);
+        void setEnabled(bool value);
 
     protected:
         virtual void paintEvent(QPaintEvent*);
@@ -56,6 +65,7 @@ Q_SIGNALS:
 
     private:
         bool Hovered_;
+        bool Enabled_;
     };
 
     QHBoxLayout* emptyHLayout(QWidget* parent = 0);

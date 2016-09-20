@@ -15,11 +15,12 @@ namespace Ui {
 
 	public:
 
-		PictureWidget(QWidget* _parent, const QString& _imageName);
+		PictureWidget(QWidget* _parent, const QString& _imageName = QString());
 
 		void setAlign(int flags);
 		void setOffsets(int _x, int _y);
 		void setImage(const QString& _imageName);
+        void setImage(const QPixmap& _pixmap, int radius);
 	};
 
 }

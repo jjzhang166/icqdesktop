@@ -1,25 +1,17 @@
-QWidget[ContactList="true"]
-{
-	background-color: rgba(255, 255, 255, 95%);
-	border-right-style: solid;
-	border-right-color: #dadada;
-	border-right-width: 1dip;
-}
-
 QWidget[ContactListWidget="true"]
 {
 	background: transparent;
 }
 
-QLineEdit[SearchEdit="true"]
+QLineEdit#searchEdit
 {
 	font-size: 15dip;
 	border-style: none;
 }
 
-QFrame[ButtonsWidget="true"]
+QFrame#bottomPanel
 {
-	min-height:72dip;
+	min-height: 72dip;
 	background-color: #ebebeb;
 	border-style: solid;
 	border-width: 1dip;
@@ -28,7 +20,7 @@ QFrame[ButtonsWidget="true"]
 	border-bottom: none;
 }
 
-QPushButton[RecentButton="true"]
+QPushButton#recentsButton
 {
 	min-width: 24dip;
 	max-width: 24dip;
@@ -40,23 +32,20 @@ QPushButton[RecentButton="true"]
 	margin-top: 24dip;
 	margin-bottom: 24dip;
 }
-
-QPushButton[RecentButton="true"]:hover
+QPushButton#recentsButton:hover
 {
 	border-image: url(:/resources/tabs_recents_100_hover.png);
 }
-
-QPushButton[RecentButton="true"]:checked
+QPushButton#recentsButton:checked
+{
+	border-image: url(:/resources/tabs_recents_100_active.png);
+}
+QPushButton#recentsButton:checked:hover
 {
 	border-image: url(:/resources/tabs_recents_100_active.png);
 }
 
-QPushButton[RecentButton="true"]:checked:hover
-{
-	border-image: url(:/resources/tabs_recents_100_active.png);
-}
-
-QPushButton[LiveChatButton="true"]
+QPushButton#liveChatsButton
 {
 	min-width: 24dip;
 	max-width: 24dip;
@@ -68,23 +57,20 @@ QPushButton[LiveChatButton="true"]
 	margin-top: 24dip;
 	margin-bottom: 24dip;
 }
-
-QPushButton[LiveChatButton="true"]:hover
+QPushButton#liveChatsButton:hover
 {
 	border-image: url(:/resources/tabs_livechats_100_hover.png);
 }
-
-QPushButton[LiveChatButton="true"]:checked
+QPushButton#liveChatsButton:checked
+{
+	border-image: url(:/resources/tabs_livechats_100_active.png);
+}
+QPushButton#liveChatsButton:checked:hover
 {
 	border-image: url(:/resources/tabs_livechats_100_active.png);
 }
 
-QPushButton[LiveChatButton="true"]:checked:hover
-{
-	border-image: url(:/resources/tabs_livechats_100_active.png);
-}
-
-QLabel[LiveChatTitle="true"]
+QLabel#liveChatsTitle
 {
     text-align: left baseline;
     font-family: "%FONT_FAMILY_LIGHT%";
@@ -93,22 +79,10 @@ QLabel[LiveChatTitle="true"]
     color: #282828;
     margin-left: 16dip;
     margin-bottom: 6dip;
-    margin-top: 22dip;
-}
-
-QLabel[MyLiveChatsLabel="true"]
-{
-    text-align: left baseline;
-    font-family: "%FONT_FAMILY_BOLD%";
-    font-weight: %FONT_WEIGHT_BOLD%;
-    font-size: 12dip;
-    color: #579e1c;
-    margin-left: 16dip;
-    margin-bottom: 12dip;
     margin-top: 12dip;
 }
 
-QPushButton[AllButton="true"]
+QPushButton#contactListButton
 {
 	min-width: 24dip;
 	max-width: 24dip;
@@ -120,18 +94,64 @@ QPushButton[AllButton="true"]
 	margin-top: 24dip;
 	margin-bottom: 24dip;
 }
-
-QPushButton[AllButton="true"]:hover
+QPushButton#contactListButton:hover
 {
 	border-image: url(:/resources/tabs_contacts_100_hover.png);
 }
-
-QPushButton[AllButton="true"]:checked
+QPushButton#contactListButton:checked
+{
+	border-image: url(:/resources/tabs_contacts_100_active.png);
+}
+QPushButton#contactListButton:checked:hover
 {
 	border-image: url(:/resources/tabs_contacts_100_active.png);
 }
 
-QPushButton[AllButton="true"]:checked:hover
+QPushButton#settingsButton
 {
-	border-image: url(:/resources/tabs_contacts_100_active.png);
+	min-width: 24dip;
+	max-width: 24dip;
+	min-height: 24dip;
+	max-height: 24dip;
+	border-image: url(:/resources/tabs_settings_100.png);
+	margin-left: 24dip;
+	margin-top: 24dip;
+	margin-bottom: 24dip;
+}
+QPushButton#settingsButton:hover
+{
+	border-image: url(:/resources/tabs_settings_100_hover.png);
+}
+QPushButton#settingsButton:checked
+{
+	border-image: url(:/resources/tabs_settings_100_active.png);
+}
+QPushButton#settingsButton:checked:hover
+{
+	border-image: url(:/resources/tabs_settings_100_active.png);
+}
+
+QWidget#noContacts
+{
+	image: url(:/resources/placeholders/content_placeholder_cl_100.png);
+	background-color: transparent;
+	margin: 0;
+}
+QLabel#noContactsLabel
+{
+	color: #696969; font-size: 15dip;
+	margin: 0; padding: 0;
+	padding-left: 16dip; padding-right: 16dip; 
+}
+
+QWidget#noRecents
+{
+	image: url(:/resources/placeholders/content_placeholder_recents_100.png);
+	background-color: transparent;
+	margin: 0;
+}
+QLabel#noRecentsLabel
+{
+	color: #696969; font-size: 15dip;
+	margin: 0; padding: 0;
 }

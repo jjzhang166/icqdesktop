@@ -7,24 +7,24 @@
 
 namespace Ui
 {
-	class tew_lex
+	class TewLex
 	{
 	protected:
 		int		width_;
 		int     height_;
 
 	public:
-		tew_lex() : width_(-1), height_(-1) {}
+        TewLex() : width_(-1), height_(-1) {}
 
 		virtual int draw(QPainter& _painter, int _x, int _y) = 0;
 		virtual int width(QPainter& _painter) = 0;
 		virtual int height(QPainter& _painter) = 0;
 
-		virtual bool is_space() const = 0;
-		virtual bool is_eol() const = 0;
+		virtual bool isSpace() const = 0;
+		virtual bool isEol() const = 0;
 	};
 
-	class tew_lex_text : public tew_lex
+	class TewLexText : public TewLex
 	{
 		QString		text_;
 
@@ -49,19 +49,19 @@ namespace Ui
 			return height_;
 		}
 
-		virtual bool is_space() const override
+		virtual bool isSpace() const override
 		{
 			return text_ == " ";
 		}
 
-		virtual bool is_eol() const override
+		virtual bool isEol() const override
 		{
 			return text_ == "\n";
 		}
 
 	public:
 
-		tew_lex_text()
+        TewLexText()
 		{
 			text_.reserve(50);
 		}
@@ -72,34 +72,34 @@ namespace Ui
 		}
 	};
 
-	class tew_lex_emoji : public tew_lex
+	class TewLexEmoji : public TewLex
 	{
-		int			main_code_;
-		int			ext_code_;
+		int			mainCode_;
+		int			extCode_;
 
 		QImage		image_;
 
-		const QImage& get_image(const QFontMetrics& _m)
+		const QImage& getImage(const QFontMetrics& _m)
 		{
 			if (image_.isNull())
 			{
-				image_ = Emoji::GetEmoji(main_code_, ext_code_, Emoji::GetFirstLesserOrEqualSizeAvailable(_m.ascent() - _m.descent()));
+				image_ = Emoji::GetEmoji(mainCode_, extCode_, Emoji::GetFirstLesserOrEqualSizeAvailable(_m.ascent() - _m.descent()));
 			}
 			return image_;
 		}
 
 		virtual int draw(QPainter& _painter, int _x, int _y) override
 		{
-			int image_height = width(_painter);
+			int imageHeight = width(_painter);
 
-			QRect draw_rect(_x, _y - image_height, image_height, image_height);
+			QRect drawRect(_x, _y - imageHeight, imageHeight, imageHeight);
 
 			QFontMetrics m(_painter.font());
 
-			_painter.fillRect(draw_rect, _painter.brush());
-			_painter.drawImage(draw_rect, get_image(m));
+			_painter.fillRect(drawRect, _painter.brush());
+			_painter.drawImage(drawRect, getImage(m));
 
-			return image_height;
+			return imageHeight;
 		}
 
 		virtual int width(QPainter& _painter) override
@@ -107,11 +107,11 @@ namespace Ui
 			if (width_ == -1)
 			{
 				QFontMetrics m(_painter.font());
-				int image_max_height = m.ascent();
-				int image_height = get_image(m).height();
-				if (image_height > image_max_height)
-					image_height = image_max_height;
-				width_ = image_height;
+				int imageMaxHeight = m.ascent();
+				int imageHeight = getImage(m).height();
+				if (imageHeight > imageMaxHeight)
+                    imageHeight = imageMaxHeight;
+				width_ = imageHeight;
 			}
 			return width_;
 		}
@@ -121,43 +121,45 @@ namespace Ui
 			if (height_ == -1)
 			{
 				QFontMetrics m(_painter.font());
-				int image_max_height = m.ascent();
-				int image_height = get_image(m).height();
-				if (image_height > image_max_height)
-					image_height = image_max_height;
-				height_ = image_height;
+				int imageMaxHeight = m.ascent();
+				int imageHeight = getImage(m).height();
+				if (imageHeight > imageMaxHeight)
+                    imageHeight = imageMaxHeight;
+				height_ = imageHeight;
 			}
 			return height_;
 		}
 
-		virtual bool is_space() const override
+		virtual bool isSpace() const override
 		{
 			return false;
 		}
 
-		virtual bool is_eol() const override
+		virtual bool isEol() const override
 		{
 			return false;
 		}
 
 	public:
 
-		tew_lex_emoji(int _main_code, int _ext_code)
-			:	main_code_(_main_code),
-			ext_code_(_ext_code)
+        TewLexEmoji(int _mainCode, int _extCode)
+			:	mainCode_(_mainCode),
+			extCode_(_extCode)
 		{
 		}
 	};
 
-	compiled_text::compiled_text()
+    CompiledText::CompiledText()
 		:	width_(-1), height_(-1), kerning_(0)
 	{
 	}
 
-	int compiled_text::width(QPainter& _painter)
+	int CompiledText::width(QPainter& _painter)
 	{
-		if (width_ == -1){
-			for (auto lex : lexs_) {
+		if (width_ == -1)
+        {
+			for (auto lex : lexs_)
+            {
 				width_ += lex->width(_painter);
             }
             width_ += lexs_.empty() ? 0 : (lexs_.size() - 1) * kerning_;
@@ -165,7 +167,7 @@ namespace Ui
 		return width_ + 1;
 	}
 
-	int compiled_text::height(QPainter& _painter)
+	int CompiledText::height(QPainter& _painter)
 	{
 		if (height_ == -1)
 			for (auto lex : lexs_)
@@ -173,12 +175,12 @@ namespace Ui
 		return height_ + 1;
 	}
 
-	void compiled_text::push_back(std::shared_ptr<tew_lex> _lex)
+	void CompiledText::push_back(std::shared_ptr<TewLex> _lex)
 	{
 		lexs_.push_back(_lex);
 	}
 
-	int compiled_text::draw(QPainter& _painter, int _x, int _y, int _w)
+	int CompiledText::draw(QPainter& _painter, int _x, int _y, int _w)
 	{
 		auto xmax = _w;
 		if (_w > 0)
@@ -199,92 +201,92 @@ namespace Ui
 		return _x;
 	}
 
-	int compiled_text::draw(QPainter& _painter, int _x, int _y, int _w, int _dh)
+	int CompiledText::draw(QPainter& _painter, int _x, int _y, int _w, int _dh)
 	{
 		auto h = _y + _dh;
 		for (auto lex : lexs_)
 		{
 			auto lexw = lex->width(_painter);
-			if ((_x + lexw) >= _w || lex->is_eol())
+			if ((_x + lexw) >= _w || lex->isEol())
 			{
 				_x = 0;
 				_y += height(_painter);
 			}
 			h = _y + _dh;
-			if (!(lex->is_space() && _x == 0))
+			if (!(lex->isSpace() && _x == 0))
 				_x += lex->draw(_painter, _x, _y) + kerning_;
 		}
 		return h;
 	}
 
-	bool compile_text(const QString& _text, compiled_text& _result, bool multiline)
+	bool compileText(const QString& _text, CompiledText& _result, bool _multiline)
 	{
-		QTextStream input_stream(const_cast<QString*>(&_text), QIODevice::ReadOnly);
+		QTextStream inputStream(const_cast<QString*>(&_text), QIODevice::ReadOnly);
 
-		std::shared_ptr<tew_lex_text> last_text_lex;
+		std::shared_ptr<TewLexText> lastTextLex;
 
 		auto is_eos = [&](int _offset)
 		{
 			assert(_offset >= 0);
-			assert(input_stream.string());
+			assert(inputStream.string());
 
-			const auto &text = *input_stream.string();
-			return ((input_stream.pos() + _offset) >= text.length());
+			const auto &text = *inputStream.string();
+			return ((inputStream.pos() + _offset) >= text.length());
 		};
 
-		auto peek_schar = [&]
+		auto peekSchar = [&]
 		{
-			return Utils::PeekNextSuperChar(input_stream);
+			return Utils::PeekNextSuperChar(inputStream);
 		};
 
-		auto read_schar = [&]
+		auto readSchar = [&]
 		{
-			return Utils::ReadNextSuperChar(input_stream);
+			return Utils::ReadNextSuperChar(inputStream);
 		};
 
-		auto convert_plain_character = [&]
+		auto convertPlainCharacter = [&]
 		{
-			if (!last_text_lex)
+			if (!lastTextLex)
 			{
-				last_text_lex = std::make_shared<tew_lex_text>();
-				_result.push_back(last_text_lex);
+                lastTextLex = std::make_shared<TewLexText>();
+				_result.push_back(lastTextLex);
 			}
-			last_text_lex->append(read_schar().ToQString());
+            lastTextLex->append(readSchar().ToQString());
 		};
 
-		auto convert_eol_space = [&]
+		auto convertEolSpace = [&]
 		{
-			const auto ch = peek_schar();
+			const auto ch = peekSchar();
 			if (ch.IsNull())
 			{
-				read_schar();
-				last_text_lex.reset();
+                readSchar();
+                lastTextLex.reset();
 				return true;
 			}
 			if (ch.IsNewline() || ch.IsSpace())
 			{
-				read_schar();
-				last_text_lex.reset();
-				last_text_lex = std::make_shared<tew_lex_text>();
-				_result.push_back(last_text_lex);
-				last_text_lex->append(ch.ToQString());
-				last_text_lex.reset();
+                readSchar();
+                lastTextLex.reset();
+                lastTextLex = std::make_shared<TewLexText>();
+				_result.push_back(lastTextLex);
+                lastTextLex->append(ch.ToQString());
+                lastTextLex.reset();
 				return true;
 			}
 			return false;
 		};
 
-		auto convert_emoji = [&]()
+		auto convertEmoji = [&]()
 		{
-			const auto ch = peek_schar();
+			const auto ch = peekSchar();
 			if (ch.IsEmoji())
 			{
 #ifdef __APPLE__
-                last_text_lex.reset();
+                lastTextLex.reset();
 #else
-                read_schar();
-				_result.push_back(std::make_shared<tew_lex_emoji>(ch.Main(), ch.Ext()));
-                last_text_lex.reset();
+                readSchar();
+				_result.push_back(std::make_shared<TewLexEmoji>(ch.Main(), ch.Ext()));
+                lastTextLex.reset();
                 return true;
 #endif
 			}
@@ -293,13 +295,13 @@ namespace Ui
 
 		while (!is_eos(0))
 		{
-			if (multiline && convert_eol_space())
+			if (_multiline && convertEolSpace())
 				continue;
 
-			if (convert_emoji())
+			if (convertEmoji())
 				continue;
             
-			convert_plain_character();
+			convertPlainCharacter();
 		}
 
 		return true;
@@ -311,16 +313,16 @@ namespace Ui
 		return e;
 	}
 
-    TextEmojiWidget::TextEmojiWidget(QWidget* _parent, Utils::FontsFamily _font_family, int _font_size, const QColor& _color, int _size_to_baseline)
+    TextEmojiWidget::TextEmojiWidget(QWidget* _parent, Fonts::FontFamily _fontFamily, Fonts::FontStyle _fontStyle, int _fontSize, const QColor& _color, int _sizeToBaseline)
 		:	QWidget(_parent),
 		align_(TextEmojiAlign::allign_left),
 		color_(_color),
-		size_to_baseline_(_size_to_baseline),
+		sizeToBaseline_(_sizeToBaseline),
 		ellipsis_(false),
 		multiline_(false),
 		selectable_(false)
 	{
-        font_ = Utils::appFont(_font_family, _font_size);
+        font_ = Fonts::appFont(_fontSize, _fontFamily, _fontStyle);
 
 		QFontMetrics metrics = QFontMetrics(font_);
 
@@ -329,16 +331,16 @@ namespace Ui
 
 		int height = metrics.height();
 
-		if (_size_to_baseline != -1)
+		if (_sizeToBaseline != -1)
 		{
-			if (_size_to_baseline > ascent)
+			if (_sizeToBaseline > ascent)
 			{
-				height = size_to_baseline_ + descent_;
+				height = sizeToBaseline_ + descent_;
 			}
 		}
 		else
 		{
-			size_to_baseline_ = ascent;
+            sizeToBaseline_ = ascent;
 		}
 
 		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -349,7 +351,7 @@ namespace Ui
 
 	int TextEmojiWidget::ascent()
 	{
-		return size_to_baseline_;
+		return sizeToBaseline_;
 	}
 
 	int TextEmojiWidget::descent()
@@ -357,15 +359,15 @@ namespace Ui
 		return descent_;
 	}
 
-    void TextEmojiWidget::set_size_to_baseline(int v)
+    void TextEmojiWidget::setSizeToBaseline(int _v)
     {
-        size_to_baseline_ = v;
+        sizeToBaseline_ = _v;
         auto metrics = QFontMetrics(font_);
         auto ascent = metrics.ascent();
         auto height = metrics.height();
-        if (v > ascent)
+        if (_v > ascent)
         {
-            height = size_to_baseline_ + descent_;
+            height = sizeToBaseline_ + descent_;
         }
         setFixedHeight(height);
     }
@@ -378,13 +380,13 @@ namespace Ui
 	{
 		align_ = _align;
 		text_ = _text;
-		compiled_text_.reset(new compiled_text());
-		if (!compile_text(text_, *compiled_text_, multiline_))
+		compiledText_.reset(new CompiledText());
+		if (!compileText(text_, *compiledText_, multiline_))
 			assert(!"TextEmojiWidget: couldn't compile text.");
         QWidget::update();
 	}
 
-    void TextEmojiWidget::setText(const QString &_text, const QColor &_color, TextEmojiAlign _align)
+    void TextEmojiWidget::setText(const QString& _text, const QColor& _color, TextEmojiAlign _align)
     {
         color_ = _color;
         setText(_text, _align);
@@ -396,7 +398,7 @@ namespace Ui
         setText(text_);
     }
 
-	void TextEmojiWidget::set_ellipsis(bool _v)
+	void TextEmojiWidget::setEllipsis(bool _v)
 	{
         if (ellipsis_ != _v)
         {
@@ -405,7 +407,7 @@ namespace Ui
         }
 	}
 
-	void TextEmojiWidget::set_multiline(bool _v)
+	void TextEmojiWidget::setMultiline(bool _v)
 	{
 		if (multiline_ != _v)
 		{
@@ -416,15 +418,15 @@ namespace Ui
 		}
 	}
 
-	void TextEmojiWidget::set_selectable(bool _v)
+	void TextEmojiWidget::setSelectable(bool _v)
 	{
 		if (selectable_ != _v)
 		{
 			if (_v)
 			{
-				disconnector_.add("selected", connect(&events(), &TextEmojiWidgetEvents::selected, [this](TextEmojiWidget* obj)
+				disconnector_.add("selected", connect(&events(), &TextEmojiWidgetEvents::selected, [this](TextEmojiWidget* _obj)
 				{
-					if ((TextEmojiWidget*)this != obj)
+					if ((TextEmojiWidget*)this != _obj)
 					{
 						selection_ = QPoint();
                         QWidget::update();
@@ -441,16 +443,21 @@ namespace Ui
 		}
 	}
 
-	void TextEmojiWidget::setSizePolicy(QSizePolicy::Policy hor, QSizePolicy::Policy ver)
+	void TextEmojiWidget::setSizePolicy(QSizePolicy::Policy _hor, QSizePolicy::Policy _ver)
 	{
-		if (hor == QSizePolicy::Preferred)
+		if (_hor == QSizePolicy::Preferred)
         {
             setFixedWidth(geometry().width());
             QWidget::update();
         }
 
-		return QWidget::setSizePolicy(hor, ver);
+		return QWidget::setSizePolicy(_hor, _ver);
 	}
+
+    void TextEmojiWidget::setSourceText(const QString& source)
+    {
+        sourceText_ = source;
+    }
 
 	void TextEmojiWidget::paintEvent(QPaintEvent* _e)
 	{
@@ -465,29 +472,29 @@ namespace Ui
 		opt.init(this);
 		style()->drawPrimitive(QStyle::PE_Widget, &opt, &painter, this);
 
-		int offset_x = 0;
+		int offsetX = 0;
 
-		int width = compiled_text_->width(painter);
+		int width = compiledText_->width(painter);
 
 		QRect rc = geometry();
 
 		switch (align_)
 		{
 		case Ui::allign_left:
-			offset_x = 0;
+            offsetX = 0;
 			break;
 		case Ui::allign_right:
-			offset_x = rc.width() - width;
+            offsetX = rc.width() - width;
 			break;
 		case Ui::allign_center:
-			offset_x = (rc.width() - width)/2;
+            offsetX = (rc.width() - width)/2;
 			break;
 		default:
 			assert(false);
 			break;
 		}
 
-		int offset_y = size_to_baseline_;
+		int offsetY = sizeToBaseline_;
 
 		if (ellipsis_ || !multiline_)
 		{
@@ -500,13 +507,13 @@ namespace Ui
                 pen.setBrush(QBrush(gradient));
                 painter.setPen(pen);
             }
-			auto w = compiled_text_->draw(painter, offset_x, offset_y, ellipsis_ ? geometry().width() : -1);
+			auto w = compiledText_->draw(painter, offsetX, offsetY, ellipsis_ ? geometry().width() : -1);
 			if (sizePolicy().horizontalPolicy() == QSizePolicy::Preferred && w != geometry().width())
 				setFixedWidth(w);
 		}
 		else
 		{
-			auto h = compiled_text_->draw(painter, offset_x, offset_y, geometry().width(), descent());
+			auto h = compiledText_->draw(painter, offsetX, offsetY, geometry().width(), descent());
 			if (h != geometry().height())
             {
                 QFontMetrics metrics = QFontMetrics(font_);
@@ -561,13 +568,14 @@ namespace Ui
 		{
 			if (_e->matches(QKeySequence::Copy))
 			{
-				qApp->clipboard()->setText(text());
+				qApp->clipboard()->setText(sourceText_.isEmpty() ? text() : sourceText_);
 				selection_ = QPoint();
                 QWidget::update();
 				return;
 			}
 		}
-		return QWidget::keyPressEvent(_e);
+
+        return QWidget::keyPressEvent(_e);
 	}
 
 	void TextEmojiWidget::focusOutEvent(QFocusEvent *_e)
@@ -595,78 +603,82 @@ namespace Ui
 		//
 	}
 
-    void TextEmojiLabel::setSizeToOffset(int size)
+    void TextEmojiLabel::setSizeToOffset(int _size)
     {
-       left_offset_ = size;
+       leftOffset_ = _size;
     }
 
-	void TextEmojiLabel::setSizeToBaseline(int size)
+	void TextEmojiLabel::setSizeToBaseline(int _size)
 	{
 		QFontMetrics metrics = QFontMetrics(QLabel::font());
 		int height = metrics.height();
 		ascent_ = metrics.ascent();
 		descent_ = metrics.descent();
 
-		size_to_baseline_ = size;
-		if (size != -1)
+        sizeToBaseline_ = _size;
+		if (_size != -1)
 		{
-			if (size > ascent_)
-				height = size_to_baseline_ + descent_;
+			if (_size > ascent_)
+				height = sizeToBaseline_ + descent_;
 		}
 		else
-			size_to_baseline_ = ascent_;
+            sizeToBaseline_ = ascent_;
 
         QWidget::update();
 	}
 
-	void TextEmojiLabel::setText(const QString& text)
+	void TextEmojiLabel::setText(const QString& _text)
 	{
-		QLabel::setText(text);
-		compiled_text_.reset(new compiled_text());
-        compiled_text_->setKerning(kerning_);
-		if (!compile_text(QLabel::text(), *compiled_text_, false))
+		QLabel::setText(_text);
+        compiledText_.reset(new CompiledText());
+        compiledText_->setKerning(kerning_);
+		if (!compileText(QLabel::text(), *compiledText_, false))
 			assert(false && "TextEmojiLabel::setText: couldn't compile text.");
 	}
 
-	void TextEmojiLabel::paintEvent(QPaintEvent* event)
+	void TextEmojiLabel::paintEvent(QPaintEvent* _event)
 	{
 		QPainter painter(this);
 		internalDraw(painter, geometry());
-		QWidget::paintEvent(event);
+		QWidget::paintEvent(_event);
 	}
 
-	int TextEmojiLabel::internalWidth(QPainter& painter) {
-		return !!compiled_text_ ? compiled_text_->width(painter) + 5 : 0;
+	int TextEmojiLabel::internalWidth(QPainter& _painter)
+    {
+		return !!compiledText_ ? compiledText_->width(_painter) + 5 : 0;
 	}
 
-	void TextEmojiLabel::internalDraw(QPainter& painter, const QRect& rectDraw) {
-		if (!compiled_text_) {
+	void TextEmojiLabel::internalDraw(QPainter& _painter, const QRect& _rectDraw)
+    {
+		if (!compiledText_)
+        {
 			//assert(!"error: compiled text is not initialized");
 			return;
 		}
 
 		QStyleOption opt;
 		opt.init(this);
-		style()->drawPrimitive(QStyle::PE_Widget, &opt, &painter, this);
+		style()->drawPrimitive(QStyle::PE_Widget, &opt, &_painter, this);
 
-		int width = compiled_text_->width(painter);
+		int width = compiledText_->width(_painter);
 
-		int offset_x = left_offset_;//geometry().x();
+		int offsetX = leftOffset_;//geometry().x();
 		if (alignment() == Qt::AlignRight)
-			offset_x = rectDraw.width() - width;
+            offsetX = _rectDraw.width() - width;
 		else if (alignment() == Qt::AlignCenter)
-			offset_x = (rectDraw.width() - width)/2;
+            offsetX = (_rectDraw.width() - width)/2;
 
-		int offset_y = size_to_baseline_;
+		int offsetY = sizeToBaseline_;
 
-		compiled_text_->draw(painter, offset_x, offset_y, -1);
+        compiledText_->draw(_painter, offsetX, offsetY, -1);
 	}
 
-    void TextEmojiLabel::setKerning(int kerning) 
+    void TextEmojiLabel::setKerning(int _kerning) 
     {
-        kerning_ = kerning;
-        if (!!compiled_text_) {
-            compiled_text_->setKerning(kerning);
+        kerning_ = _kerning;
+        if (!!compiledText_)
+        {
+            compiledText_->setKerning(_kerning);
         }
     }
 }

@@ -11,6 +11,7 @@ namespace Ui
 		Q_OBJECT
 
 	public:
+
 		ServiceMessageItem(QWidget* parent, bool overlay = false);
 		~ServiceMessageItem();
 

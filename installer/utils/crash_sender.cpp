@@ -2,7 +2,7 @@
 
 #ifdef _WIN32
 
-#include "../../common.shared/common_crash_sender.h"
+#include "../../common.shared/win32/common_crash_sender.h"
 
 #include "../../external/curl/include/curl.h"
 #include "../../common.shared/keys.h"

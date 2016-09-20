@@ -8,7 +8,7 @@ namespace Ui
 	{
 	public:
 
-		gui_coll_helper(core::icollection* _collection, bool _auto_release);
+		gui_coll_helper(core::icollection* _collection, bool _autoRelease);
 
 		void set_value_as_qstring(const char* _name, const QString& _value);
 	};

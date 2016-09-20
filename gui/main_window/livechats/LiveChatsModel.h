@@ -11,15 +11,19 @@ namespace Logic
         void selected(Data::ChatInfo);
 
 	public:
-		explicit LiveChatsModel(QObject *parent);
+		explicit LiveChatsModel(QObject* _parent);
 
         void initIfNeeded();
 
-		int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-		QVariant data(const QModelIndex &index, int role) const override;
-		Qt::ItemFlags flags(const QModelIndex &index) const override;
+		int rowCount(const QModelIndex& _parent = QModelIndex()) const override;
+		QVariant data(const QModelIndex& _index, int _role) const override;
+		Qt::ItemFlags flags(const QModelIndex& _index) const override;
 
-        void select(const QModelIndex& index);
+        void select(const QModelIndex& _index);
+
+        void pending(const QString& _aimId);
+
+        void joined(const QString& _aimId);
 
     private Q_SLOTS:
         void chatsHome(QList<Data::ChatInfo> _chats, QString _newTag, bool _restart, bool _finished);

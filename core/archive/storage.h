@@ -54,6 +54,8 @@ namespace core
 
             archive::error get_last_error() { return last_error_; }
 
+            const std::wstring& get_file_name() const { return file_name_; }
+
             storage(const std::wstring& _file_name);
             virtual ~storage();
         };

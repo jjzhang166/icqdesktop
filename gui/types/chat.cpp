@@ -32,12 +32,16 @@ namespace Data
     ChatInfo::ChatInfo()
         : YouBlocked_(false)
         , Public_(false)
+        , ApprovedJoin_(false)
         , Live_(false)
         , Controlled_(false)
+        , YouPending_(false)
+        , YouMember_(false)
         , CreateTime_(-1)
         , MembersCount_(-1)
         , FriendsCount(-1)
         , BlockedCount_(-1)
+        , PendingCount_(-1)
     {
     }
 
@@ -72,17 +76,22 @@ namespace Data
 		info.About_ = helper->get_value_as_string("about");
 		info.YourRole_ = helper->get_value_as_string("your_role");
 		info.Owner_ = helper->get_value_as_string("owner");
+        info.Creator_ = helper->get_value_as_string("creator");
 		info.MembersVersion_ = helper->get_value_as_string("members_version");
 		info.InfoVersion_ = helper->get_value_as_string("info_version");
 		info.CreateTime_ =  helper->get_value_as_int("create_time");
 		info.MembersCount_ =  helper->get_value_as_int("members_count");
 		info.FriendsCount =  helper->get_value_as_int("friend_count");
 		info.BlockedCount_ =  helper->get_value_as_int("blocked_count");
+        info.PendingCount_ =  helper->get_value_as_int("pending_count");
 		info.YouBlocked_ = helper->get_value_as_bool("you_blocked");
+        info.YouPending_ = helper->get_value_as_bool("you_pending");
+        info.YouMember_ = helper->get_value_as_bool("you_member");
 		info.Public_ = helper->get_value_as_bool("public");
 		info.Live_ = helper->get_value_as_bool("live");
 		info.Controlled_ = helper->get_value_as_bool("controlled");
         info.Stamp_ = helper->get_value_as_string("stamp");
+        info.ApprovedJoin_ = helper->get_value_as_bool("joinModeration");
         UnserializeChatMembers(helper, info.Members_);
 	}
 

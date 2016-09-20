@@ -9,17 +9,26 @@ namespace Ui
     class HistoryControlPageItem;
     class MessagesScrollAreaLayout;
 
+    enum ScrollDerection
+    {
+        UP = 0,
+        DOWN,
+    };
+
     class MessagesScrollArea : public QWidget
     {
         Q_OBJECT
 
     Q_SIGNALS:
-
         void fetchRequestedEvent();
 
         void needCleanup(QList<Logic::MessageKey> keysToUnload);
 
         void scrollMovedToBottom();
+
+        void messagesSelected();
+
+        void messagesDeselected();
 
     public:
         typedef std::function<bool(Ui::MessageItem*, const bool)> MessageItemVisitor;
@@ -50,11 +59,15 @@ namespace Ui
 
         QString getSelectedText() const;
 
+        QList<Data::Quote> getQuotes() const;
+
         QList<Logic::MessageKey> getKeysToUnload() const;
 
         void insertWidget(const Logic::MessageKey &key, QWidget *widget);
 
         void insertWidgets(const WidgetsList& _widgets);
+
+        bool isScrolling() const;
 
         bool isSelecting() const;
 
@@ -76,6 +89,18 @@ namespace Ui
 
         bool isScrollAtBottom() const;
 
+        void clearSelection();
+
+        void scroll(ScrollDerection direction, int delta);
+
+        bool contains(const QString& _aimId) const;
+
+        void resumeVisibleItems();
+
+        void suspendVisibleItems();
+
+    public slots:
+        void notifySelectionChanges();
 
     protected:
         virtual void mouseMoveEvent(QMouseEvent *e) override;
@@ -114,6 +139,10 @@ namespace Ui
 
         QPoint LastMouseGlobalPos_;
 
+        QPoint SelectionBeginAbsPos_;
+
+        QPoint SelectionEndAbsPos_;
+
         ScrollingMode Mode_;
 
         MessagesScrollbar *Scrollbar_;
@@ -136,9 +165,7 @@ namespace Ui
 
         QTimer WheelEventsBufferResetTimer_;
 
-        void applySelection(bool forShit = false);
-
-        void clearSelection();
+        void applySelection(const bool forShift = false);
 
         bool enqueWheelEvent(const int32_t delta);
 
@@ -148,8 +175,6 @@ namespace Ui
 
         int32_t evaluateWheelHistorySign() const;
 
-        bool isScrolling() const;
-
         void scheduleWheelBufferReset();
 
         void startScrollAnimation(const ScrollingMode mode);
@@ -157,6 +182,8 @@ namespace Ui
         void stopScrollAnimation();
 
         void resetUserActivityTimer();
+
+        std::set<QString> contacts_;
     };
 
 }

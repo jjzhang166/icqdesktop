@@ -214,6 +214,8 @@ struct ChannelStatusContext {
     #define WebrtcRenderView RenderViewOSX
     #import <Cocoa/Cocoa.h>
     @interface WebrtcRenderView : NSView {}
+    -(void)startFullScreenAnimation;
+    -(void)finishFullScreenAnimation;
     @end
   #endif
 #endif

@@ -9,10 +9,13 @@ chat_info::chat_info()
     , members_count_(0)
     , friend_count_(0)
     , blocked_count_(0)
+    , pending_count_(0)
     , you_blocked_(false)
+    , you_member_(false)
     , public_(false)
     , live_(false)
     , controlled_(false)
+    , you_pending_(false)
 {
 }
 
@@ -50,16 +53,33 @@ int32_t chat_info::unserialize(const rapidjson::Value& _node)
     if (iter_friends_count != _node.MemberEnd() && iter_friends_count->value.IsInt())
         friend_count_ =  iter_friends_count->value.GetInt();
 
+    auto iter_join_moderation = _node.FindMember("joinModeration");
+    if (iter_join_moderation != _node.MemberEnd() && iter_join_moderation->value.IsBool())
+        joinModeration_ = iter_join_moderation->value.GetBool();
+    else
+        joinModeration_ = false;
+
     auto iter_yours = _node.FindMember("you");
     if (iter_yours != _node.MemberEnd())
     {
         auto iter_your_role = iter_yours->value.FindMember("role");
         if (iter_your_role != iter_yours->value.MemberEnd() && iter_your_role->value.IsString())
+        {
             your_role_ = iter_your_role->value.GetString();
+            you_member_ = true;
+        }
+        else
+        {
+            you_member_ = false;
+        }
 
         auto iter_you_blocked = iter_yours->value.FindMember("blocked");
         if (iter_you_blocked != iter_yours->value.MemberEnd() && iter_you_blocked->value.IsBool())
             you_blocked_ = iter_you_blocked->value.GetBool();
+
+        auto iter_you_pending_ = iter_yours->value.FindMember("pending");
+        if (iter_you_pending_ != iter_yours->value.MemberEnd() && iter_you_pending_->value.IsBool())
+            you_pending_ = iter_you_pending_->value.GetBool();
     }
 
     auto iter_public = _node.FindMember("public");
@@ -78,6 +98,10 @@ int32_t chat_info::unserialize(const rapidjson::Value& _node)
     if (iter_blocked_count != _node.MemberEnd() && iter_blocked_count->value.IsInt())
         blocked_count_ =  iter_blocked_count->value.GetInt();
 
+    auto iter_pending_count = _node.FindMember("pendingCount");
+    if (iter_pending_count != _node.MemberEnd() && iter_pending_count->value.IsInt())
+        pending_count_ =  iter_pending_count->value.GetInt();
+
     auto iter_members_version = _node.FindMember("membersVersion");
     if (iter_members_version != _node.MemberEnd() && iter_members_version->value.IsString())
         members_version_ =  iter_members_version->value.GetString();
@@ -85,6 +109,10 @@ int32_t chat_info::unserialize(const rapidjson::Value& _node)
     auto iter_info_version = _node.FindMember("infoVersion");
     if (iter_info_version != _node.MemberEnd() && iter_info_version->value.IsString())
         info_version_ =  iter_info_version->value.GetString();
+
+    auto iter_info_creator = _node.FindMember("creator");
+    if (iter_info_creator != _node.MemberEnd() && iter_info_creator->value.IsString())
+        creator_ =  iter_info_creator->value.GetString();
 
     auto iter_members = _node.FindMember("members");
     if (iter_members != _node.MemberEnd() && iter_members->value.IsArray())
@@ -154,11 +182,16 @@ void chat_info::serialize(core::coll_helper _coll) const
     _coll.set_value_as_int("members_count", members_count_);
     _coll.set_value_as_int("friend_count", friend_count_);
     _coll.set_value_as_int("blocked_count", blocked_count_);
+    _coll.set_value_as_int("pending_count", pending_count_);
     _coll.set_value_as_bool("you_blocked", you_blocked_);
+    _coll.set_value_as_bool("you_pending", you_pending_);
+    _coll.set_value_as_bool("you_member", you_member_);
     _coll.set_value_as_bool("public", public_);
     _coll.set_value_as_bool("live", live_);
     _coll.set_value_as_bool("controlled", controlled_);
     _coll.set_value_as_string("stamp", stamp_);
+    _coll.set_value_as_bool("joinModeration", joinModeration_);
+    _coll.set_value_as_string("creator", creator_);
 
     ifptr<iarray> members_array(_coll->create_array());
 

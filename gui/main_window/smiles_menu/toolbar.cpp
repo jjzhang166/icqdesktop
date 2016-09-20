@@ -1,11 +1,10 @@
 #include "stdafx.h"
-
-#include "../../main_window/MainWindow.h"
 #include "toolbar.h"
-#include "../../core_dispatcher.h"
-#include "../../utils/utils.h"
+
 #include "../../controls/CustomButton.h"
 #include "../../controls/PictureWidget.h"
+#include "../../main_window/MainWindow.h"
+#include "../../utils/utils.h"
 
 namespace Ui
 {

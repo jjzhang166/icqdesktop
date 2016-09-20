@@ -4,10 +4,11 @@
 
 namespace Ui
 {
-    BackButton::BackButton(QWidget* parent)
-        : QPushButton(parent)
+    BackButton::BackButton(QWidget* _parent)
+        : QPushButton(_parent)
     {
-		setStyleSheet(Utils::LoadStyle(":/controls/back_button.qss", Utils::get_scale_coefficient(), true));
+		setStyleSheet(Utils::LoadStyle(":/controls/controls_style.qss"));
+        setObjectName("backButton");
     }
     BackButton::~BackButton()
     {

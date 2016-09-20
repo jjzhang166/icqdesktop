@@ -20,10 +20,11 @@ namespace core
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
             virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
 
-            std::string	about_;
             std::string name_;
             std::string	aimid_;
+            boost::optional<std::string> about_;
             boost::optional<bool> public_;
+            boost::optional<bool> approved_;
 
         public:
 
@@ -32,6 +33,7 @@ namespace core
             void set_about(const std::string& _about);
             void set_name(const std::string& _name);
             void set_public(bool _public);
+            void set_join(bool _approved);
 
             virtual ~mod_chat_alpha();
         };

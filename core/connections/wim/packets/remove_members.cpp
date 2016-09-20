@@ -28,7 +28,7 @@ int32_t remove_members::init_request(std::shared_ptr<core::http_request_simple> 
     ss_url << c_wim_host << "mchat/DelMembers" <<
         "?f=json" <<
         "&chat_id=" <<  aimid_ <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&r=" << core::tools::system::generate_guid() <<
         "&members=" << m_chat_members_to_remove;
 

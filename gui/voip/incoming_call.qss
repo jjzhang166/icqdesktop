@@ -1,0 +1,70 @@
+QWidget[IncomingCallControls="true"]
+{
+	min-height: 70dip;
+	max-height: 70dip;
+	background: transparent;
+}
+
+QPushButton[IncomingCall_hangup="true"]
+{
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+
+	border-image: url(:/resources/contr_endcall_100.png);
+}
+QPushButton[IncomingCall_hangup="true"]:hover
+{
+	border-image: url(:/resources/contr_endcall_100_hover.png);
+}
+QPushButton[IncomingCall_hangup="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_endcall_100_active.png);
+}
+
+QPushButton[IncomingCall_video="true"]
+{
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+
+	border-image: url(:/resources/contr_videocall_100.png);
+}
+QPushButton[IncomingCall_video="true"]:hover
+{
+	border-image: url(:/resources/contr_videocall_100_hover.png);
+}
+QPushButton[IncomingCall_video="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_videocall_100_active.png);
+}
+
+QPushButton[IncomingCall_audio="true"]
+{
+	min-width: 40dip;
+	max-width: 40dip;
+	min-height: 40dip;
+	max-height: 40dip;
+
+	border-image: url(:/resources/contr_call_100.png);
+}
+QPushButton[IncomingCall_audio="true"]:hover
+{
+	border-image: url(:/resources/contr_call_100_hover.png);
+}
+QPushButton[IncomingCall_audio="true"]:hover:pressed
+{
+	border-image: url(:/resources/contr_call_100_active.png);
+}
+
+QWidget[VoipPanel_Has_Video="true"]
+{
+  	color: #ffffff;
+}
+
+QWidget[VoipPanel_Has_Video="false"]
+{
+  	color: #000000;
+}

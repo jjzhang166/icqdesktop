@@ -17,12 +17,14 @@ Q_SIGNALS:
 		void enter();
 
 	public:
-		LineEditEx(QWidget* parent);
+		LineEditEx(QWidget* _parent);
 
 	protected:
 		virtual void focusInEvent(QFocusEvent*);
 		virtual void focusOutEvent(QFocusEvent*);
 		virtual void mousePressEvent(QMouseEvent*);
 		virtual void keyPressEvent(QKeyEvent*);
+        virtual void contextMenuEvent(QContextMenuEvent *);
+
 	};
 }

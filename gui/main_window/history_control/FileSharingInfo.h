@@ -2,45 +2,54 @@
 
 namespace core
 {
-	class coll_helper;
+    class coll_helper;
+    enum class file_sharing_content_type;
 }
 
 namespace HistoryControl
 {
-	class FileSharingInfo
-	{
-	public:
-		FileSharingInfo(const core::coll_helper &info);
+    class FileSharingInfo
+    {
+    public:
+        FileSharingInfo(const core::coll_helper &info);
 
-		const QString& GetLocalPath();
+        const QString& GetLocalPath();
 
-		const QString& GetUploadingProcessId() const;
+        const QString& GetUploadingProcessId() const;
 
-		QSize GetSize() const;
+        QSize GetSize() const;
 
-		const QString& GetUri() const;
+        const QString& GetUri() const;
 
-		bool IsOutgoing() const;
+        bool IsOutgoing() const;
 
-		bool HasLocalPath() const;
+        bool HasLocalPath() const;
 
-		bool HasSize() const;
+        bool HasSize() const;
+
+        bool HasUri() const;
 
         void SetUri(const QString &uri);
 
-		QString ToLogString() const;
+        QString ToLogString() const;
 
-	private:
-		bool IsOutgoing_;
+        core::file_sharing_content_type getContentType() const;
 
-		QString LocalPath_;
+        void setContentType(core::file_sharing_content_type type);
 
-		std::unique_ptr<QSize> Size_;
+    private:
+        bool IsOutgoing_;
 
-		QString Uri_;
+        QString LocalPath_;
 
-		QString UploadingProcessId_;
-	};
+        std::unique_ptr<QSize> Size_;
 
-	typedef std::shared_ptr<FileSharingInfo> FileSharingInfoSptr;
+        QString Uri_;
+
+        QString UploadingProcessId_;
+
+        core::file_sharing_content_type ContentType_;
+    };
+
+    typedef std::shared_ptr<FileSharingInfo> FileSharingInfoSptr;
 }

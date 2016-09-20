@@ -15,7 +15,10 @@ namespace core
         struct dlg_state_changes;
         class archive_hole;
         class archive_state;
+        class image_cache;
+        class image_data;
 
+        typedef std::list<image_data>                               image_list;
         typedef std::vector<std::shared_ptr<history_message>>		history_block;
         typedef std::shared_ptr<history_block>                      history_block_sptr;
         typedef std::list<int64_t>									msgids_list;
@@ -28,12 +31,25 @@ namespace core
             std::unique_ptr<archive_index>		index_;
             std::unique_ptr<messages_data>		data_;
             std::unique_ptr<archive_state>		state_;
+            std::unique_ptr<image_cache>		images_;
 
             bool								local_loaded_;
 
             bool update_dlg_state_last_message();
 
+            mutable std::mutex                  mutex_;
+            std::thread                         image_cache_thread_;
+
         public:
+            void get_images(int64_t _from, int64_t _count, image_list& _images) const;
+            bool repair_images() const;
+
+            enum class get_message_policy
+            {
+                get_all,
+                skip_patches_and_deleted
+            };
+            void get_messages(int64_t _from, int64_t _count, history_block& _messages, get_message_policy policy) const;
             void get_messages_index(int64_t _from, int64_t _count, headers_list& _headers) const;
             bool get_messages_buddies(std::shared_ptr<archive::msgids_list> _ids, std::shared_ptr<history_block> _messages) const;
 
@@ -47,8 +63,7 @@ namespace core
                 history_block_sptr _data,
                 Out headers_list& _inserted_messages,
                 Out dlg_state& _updated_state,
-                Out dlg_state_changes& _state_changes
-                );
+                Out dlg_state_changes& _state_changes);
 
             int load_from_local();
 

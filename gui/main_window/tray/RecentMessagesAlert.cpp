@@ -2,10 +2,13 @@
 #include "MessageAlertWidget.h"
 #include "RecentMessagesAlert.h"
 #include "../contact_list/RecentItemDelegate.h"
+#include "../../utils/InterConnector.h"
 #include "../../utils/utils.h"
+#include "../../controls/CommonStyle.h"
 #include "../../controls/LabelEx.h"
 #include "../../core_dispatcher.h"
 #include "../../gui_settings.h"
+#include "../../main_window/MainWindow.h"
 
 namespace
 {
@@ -14,7 +17,12 @@ namespace
 	const int alert_hide_animation_time = 2000; //2 sec
 	const int view_all_widget_height = 40;
 	const int bottom_space_height = 16;
-	const int header_height = 32;
+	const int header_height = 28;
+
+    const QString NOTIFICATION_STYLE =
+        "QWidget { background: rgba(255,255,255,94%); } ";
+    const QString LINE_STYLE =
+        "QWidget { background: #cccccc; } ";
 }
 
 namespace Ui
@@ -82,12 +90,12 @@ namespace Ui
 		topLayout->setSpacing(0);
 		topLayout->addWidget(topWidget);
 
-		topWidget->setProperty("RecentMessageAlert", true);
+        Utils::ApplyStyle(topWidget, NOTIFICATION_STYLE);
 		topWidget->setStyle(QApplication::style());
 		topWidget->setLayout(Layout_);
 
 		QHBoxLayout* layout = new QHBoxLayout();
-		CloseButton_->setProperty("TrayCloseButton", true);
+        Utils::ApplyStyle(CloseButton_, Ui::CommonStyle::getCloseButtonStyle());
 		CloseButton_->setStyle(QApplication::style());
 		CloseButton_->setFixedHeight(Utils::scale_value(header_height));
 		layout->setAlignment(Qt::AlignRight);
@@ -111,7 +119,7 @@ namespace Ui
 
 		QWidget* lineWidget = new QWidget();
 		lineWidget->setFixedSize(ViewAllWidget_->contentsRect().width(), Utils::scale_value(1));
-		lineWidget->setProperty("Line", true);
+        Utils::ApplyStyle(lineWidget, LINE_STYLE);
 		lineWidget->setStyle(QApplication::style());
 
 		QVBoxLayout* widgetLayout = new QVBoxLayout();
@@ -121,8 +129,10 @@ namespace Ui
 		widgetLayout->addWidget(lineWidget);
 
 		LabelEx* viewAllLabel = new LabelEx(this);
-		viewAllLabel->setProperty("ViewAllLink", true);
-		viewAllLabel->setStyle(QApplication::style());
+        viewAllLabel->setFont(Fonts::appFontScaled(15));
+        QPalette p;
+        p.setColor(QPalette::Foreground, CommonStyle::getLinkColor());
+        viewAllLabel->setPalette(p);
 		viewAllLabel->setText(QT_TRANSLATE_NOOP("notifications_alert", "View all"));
 		viewAllLabel->setCursor(QCursor(Qt::PointingHandCursor));
 		widgetLayout->addWidget(viewAllLabel);
@@ -169,6 +179,8 @@ namespace Ui
     void RecentMessagesAlert::messageAlertClicked(QString aimId)
     {
         closeAlert();
+        Utils::InterConnector::instance().getMainWindow()->closeGallery();
+        Utils::InterConnector::instance().getMainWindow()->closeVideo();
         emit messageClicked(aimId);
     }
 

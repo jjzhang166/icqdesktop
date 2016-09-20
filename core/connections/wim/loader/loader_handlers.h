@@ -1,7 +1,6 @@
-#ifndef __LOADER_HANDLERS_H_
-#define __LOADER_HANDLERS_H_
-
 #pragma once
+
+#include "../../../namespaces.h"
 
 namespace core
 {
@@ -16,32 +15,67 @@ namespace core
     {
         class web_file_info;
 
-        class upload_progress_handler
+        namespace PREVIEW_PROXY_NS
         {
-        public:
+            class link_meta;
 
-            std::function<void(int32_t, const web_file_info& _info)>	on_result;
-            std::function<void(const web_file_info& _info)>			on_progress;
+            typedef std::unique_ptr<link_meta> link_meta_uptr;
+        }
+
+        namespace SNAPS_NS
+        {
+            class snap_metainfo;
+
+            typedef std::unique_ptr<snap_metainfo> snap_metainfo_uptr;
+        }
+
+        struct upload_progress_handler
+        {
+            std::function<void(int32_t, const web_file_info& _info)> on_result;
+            std::function<void(const web_file_info& _info)> on_progress;
         };
 
-
-        class download_progress_handler
+        struct download_progress_handler
         {
-        public:
-
-            std::function<void(int32_t, const web_file_info& _info)>	on_result;
-            std::function<void(const web_file_info& _info)>			on_progress;
+            std::function<void(int32_t, const web_file_info& _info)> on_result;
+            std::function<void(const web_file_info& _info)> on_progress;
         };
 
-        class download_image_handler
+        struct download_image_handler
         {
-        public:
+            typedef std::function<
+                void(
+                    int32_t _error,
+                    std::shared_ptr<core::tools::binary_stream> _image_data,
+                    const std::string &_local_path)
+            > image_callback_t;
 
-            std::function<void(int32_t _error, std::shared_ptr<core::tools::binary_stream>, const std::string&)>	on_result;
+            typedef std::function<
+                void(
+                    int32_t _preview_width,
+                    int32_t _preview_height,
+                    const std::string &_download_uri,
+                    const int64_t _file_size)
+            > meta_callback_t;
 
+            image_callback_t on_image_result;
+
+            meta_callback_t on_meta_result;
+        };
+
+        struct download_link_metainfo_handler
+        {
+            std::function<void(int32_t _error, const preview_proxy::link_meta_uptr &_meta)> on_result;
+        };
+
+        struct download_snap_metainfo_handler
+        {
+            std::function<void(int32_t _error, const snaps::snap_metainfo_uptr &_meta)> on_result;
+        };
+
+        struct get_file_direct_uri_handler
+        {
+            std::function<void(int32_t _error, const std::string& _uri)> on_result;
         };
     }
 }
-
-
-#endif // __LOADER_HANDLERS_H_

@@ -27,6 +27,7 @@ namespace core
             std::wstring avatar_file_path_;
             core::tools::binary_stream avatar_data_;
             bool avatar_exist_;
+            bool force_;
             
             avatar_context(int32_t _avatar_size, std::string _contact, std::wstring _im_data_path) 
                 :
@@ -34,7 +35,8 @@ namespace core
                 contact_(_contact),
                 im_data_path_(_im_data_path),
                 write_time_(0),
-                avatar_exist_(false){}
+                avatar_exist_(false),
+                force_(false){}
         };
 
         struct avatar_load_handlers

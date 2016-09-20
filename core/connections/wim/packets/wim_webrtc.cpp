@@ -34,7 +34,7 @@ namespace core {
             randNum << msNow.count() << '_' << rand();;
 			
             std::map<std::string, std::string> params;
-            params["a"] = params_.a_token_;
+            params["a"] = escape_symbols(params_.a_token_);
             params["f"] = "json";
             params["k"] = params_.dev_id_;
             params["r"] = escape_symbols(randNum.str());
@@ -116,7 +116,7 @@ namespace core {
             std::string host = "https://" SESSION_SERVER "/voip/webrtcMsg";
             std::stringstream ss_url;
             ss_url << host.c_str()
-                << "?aimsid=" << params_.aimsid_.c_str()
+                << "?aimsid=" << escape_symbols(params_.aimsid_.c_str())
                 << "&f=json"
                 << "&r=" << escape_symbols(_internal_params.requestId);
 

@@ -19,6 +19,7 @@ namespace core
         class message_header;
         class history_message;
         struct person;
+        class quote;
 
         typedef std::vector<std::shared_ptr<history_message>> history_block;
 
@@ -27,6 +28,8 @@ namespace core
         typedef std::map<std::string, person> persons_map;
 
         typedef std::vector<class message_header> message_header_vec;
+
+        typedef std::vector<quote> quotes_vec;
 
         //////////////////////////////////////////////////////////////////////////
         // message_header class
@@ -294,6 +297,7 @@ namespace core
             {
                 std::string new_name_;
                 std::string new_description_;
+                std::string new_rules_;
             } chat_;
 
             std::string generic_;
@@ -320,6 +324,7 @@ namespace core
             std::unique_ptr<chat_data>			chat_;
             file_sharing_data_uptr				file_sharing_;
             chat_event_data_uptr				chat_event_;
+            quotes_vec                          quotes_;
 
             void copy(const history_message& _message);
 
@@ -398,6 +403,9 @@ namespace core
             void apply_header_flags(const message_header &_header);
             void apply_modifications(const history_block &_modifications);
 
+            quotes_vec get_quotes() const;
+            void attach_quotes(quotes_vec _quotes);
+
             bool is_sms() const { return false; }
             bool is_sticker() const { return (bool)sticker_; }
             bool is_file_sharing() const { return (bool)file_sharing_; }
@@ -409,14 +417,45 @@ namespace core
             void init_sticker_from_text(const std::string &_text);
             const file_sharing_data_uptr& get_file_sharing_data() const;
 
-            static bool is_image(const std::string& _id);
-
             chat_event_data_uptr& get_chat_event_data();
             voip_data_uptr& get_voip_data();
 
             message_type get_type() const;
 
             bool contents_equal(const history_message& _msg) const;
+            
+            void apply_persons_to_quotes(const archive::persons_map & _persons);
+        };
+
+        class quote
+        {
+            std::string text_;
+            std::string sender_;
+            std::string chat_;
+            std::string senderFriendly_;
+            int32_t time_;
+            int64_t msg_id_;
+            bool is_forward_;
+
+        public:
+            quote();
+
+            void serialize(icollection* _collection) const;
+            void serialize(core::tools::tlvpack& _pack) const;
+            void unserialize(icollection* _coll);
+            void unserialize(const rapidjson::Value& _node, bool _is_forward);
+            void unserialize(const core::tools::tlvpack &_pack);
+
+            std::string get_text() const { return text_; }
+            std::string get_sender() const { return sender_; }
+            std::string get_chat() const { return chat_; }
+            std::string get_sender_friendly() const { return senderFriendly_; }
+            bool is_forward() const { return is_forward_; }
+            void set_sender_friendly(const std::string& _friendly) { senderFriendly_ = _friendly; }
+            int32_t get_time() const { return time_; }
+            void set_time(const int32_t _time) { time_ = _time; }
+            int64_t get_msg_id() const { return msg_id_; }
+            std::string get_type() const { return is_forward_ ? "forward" : "quote"; }
         };
     }
 }

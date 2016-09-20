@@ -1,9 +1,9 @@
 #include "stdafx.h"
-
 #include "LiveChatItemDelegate.h"
-#include "LiveChatMembersControl.h"
 
+#include "LiveChatMembersControl.h"
 #include "../contact_list/Common.h"
+#include "../../controls/CommonStyle.h"
 #include "../../controls/ContactAvatarWidget.h"
 #include "../../types/chat.h"
 #include "../../utils/utils.h"
@@ -36,36 +36,36 @@ namespace
     const int max_desc_chars = 60;
 
 
-    QString getChatNameStylesheet(const QString& color)
+    QString getChatNameStylesheet(const QString& _color)
     {
         return QString("font: %1 %2px \"%3\"; color: %4; background-color: transparent")
-            .arg(Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI))
+            .arg(Fonts::appFontWeightQss(QFont::Weight::Normal))
             .arg(Utils::scale_value(18))
-            .arg(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI))
-            .arg(color);
+            .arg(Fonts::defaultAppFontQssName())
+            .arg(_color);
     };
 
-    QString getChatDescriptionStylesheet(const QString& color)
+    QString getChatDescriptionStylesheet(const QString& _color)
     {
         return QString("font: %1 %2px \"%3\"; color: %4; background-color: transparent")
-            .arg(Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI))
-            .arg(Utils::scale_value(15))
-            .arg(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI))
-            .arg(color);
+            .arg(Fonts::appFontWeightQss(QFont::Weight::Normal))
+            .arg(Utils::scale_value(14))
+            .arg(Fonts::defaultAppFontQssName())
+            .arg(_color);
     };
 
-    QString getFriendsStylesheet(const QString& color)
+    QString getFriendsStylesheet(const QString& _color)
     {
         return QString("font: %1 %2px \"%3\"; color: %4; background-color: transparent")
-            .arg(Utils::appFontWeightQss(Utils::FontsFamily::SEGOE_UI_SEMIBOLD))
+            .arg(Fonts::appFontWeightQss(QFont::Weight::DemiBold))
             .arg(Utils::scale_value(12))
-            .arg(Utils::appFontFamily(Utils::FontsFamily::SEGOE_UI_SEMIBOLD))
-            .arg(color);
+            .arg(Fonts::defaultAppFontQssName())
+            .arg(_color);
     };
 
-    QString formatMembersCount(int members, int avatarsVisible)
+    QString formatMembersCount(int _members, int _avatarsVisible)
     {
-        int resultInt = members - avatarsVisible;
+        int resultInt = _members - _avatarsVisible;
         if (resultInt <= 0)
             return QString();
 
@@ -87,52 +87,53 @@ namespace
 
 namespace Logic
 {
-    LiveChatItemDelegate::LiveChatItemDelegate(QWidget* parent)
-        : QItemDelegate(parent)
-        , parent_(parent)
+    LiveChatItemDelegate::LiveChatItemDelegate(QWidget* _parent)
+        : QItemDelegate(_parent)
+        , parent_(_parent)
+        , stateBlocked_(false)
     {
     }
 
 
-    void LiveChatItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+    void LiveChatItemDelegate::paint(QPainter* _painter, const QStyleOptionViewItem& _option, const QModelIndex & _index) const
     {
-        QVariant data = index.model()->data(index);
+        QVariant data = _index.model()->data(_index);
         if (data.isValid())
         {
-            painter->save();
-            painter->setRenderHint(QPainter::Antialiasing);
-            painter->translate(option.rect.topLeft());
+            _painter->save();
+            _painter->setRenderHint(QPainter::Antialiasing);
+            _painter->translate(_option.rect.topLeft());
 
-            static QColor baseColor(255, 255, 255, 0.95 * 255);
-            static QColor hoverColor("#ECEAE9");
-            static QColor selectedColor("#D5E8C3");
-
-            QSize size = sizeHint(option, index);
-            if (option.state & QStyle::State_MouseOver)
+            QSize size = sizeHint(_option, _index);
+            if (_option.state & QStyle::State_MouseOver && !stateBlocked_)
             {
-                static QBrush hoverBrush(hoverColor);
-                painter->fillRect(0, 0, size.width(), size.height(), hoverBrush);
+                static QBrush hoverBrush(Ui::CommonStyle::getContactListHoveredColor());
+                _painter->fillRect(0, 0, size.width(), size.height(), hoverBrush);
             }
 
-            if (option.state & QStyle::State_Selected)
+            if (_option.state & QStyle::State_Selected && !stateBlocked_)
             {
-                static QBrush selectedBrush(selectedColor);
-                painter->fillRect(0, 0, size.width(), size.height(), selectedBrush);
+                static QBrush selectedBrush(Ui::CommonStyle::getContactListSelectedColor());
+                _painter->fillRect(0, 0, size.width(), size.height(), selectedBrush);
             }
 
             Data::ChatInfo info = data.value<Data::ChatInfo>();
             static Ui::ContactAvatarWidget avatar(0, info.AimId_, info.Name_, Utils::scale_value(avatar_size), false);
             avatar.UpdateParams(info.AimId_, info.Name_);
-            avatar.render(painter, QPoint(Utils::scale_value(avatar_left_margin), Utils::scale_value(top_margin)), QRegion(), QWidget::DrawChildren);
+            avatar.render(_painter, QPoint(Utils::scale_value(avatar_left_margin), Utils::scale_value(top_margin)), QRegion(), QWidget::DrawChildren);
 
-            static auto name = ContactList::CreateTextBrowser("chat_name", getChatNameStylesheet("#282828"), 0);
+            static auto name = ContactList::CreateTextBrowser(
+                "chat_name",
+                getChatNameStylesheet(Utils::rgbaStringFromColor(Ui::CommonStyle::getTextCommonColor())),
+                0
+            );
             name->clear();
             QTextCursor cursorName = name->textCursor();
             Logic::Text2Doc(info.Name_, cursorName, Logic::Text2DocHtmlMode::Pass, false);
             int margin = Utils::scale_value(avatar_size) + Utils::scale_value(avatar_left_margin) + Utils::scale_value(avatar_right_margin);
-            int max_width = ContactList::ItemWidth(false, false, false).px() - margin - Utils::scale_value(right_margin);
-            name->setFixedWidth(max_width);
-            name->render(painter, QPoint(margin, Utils::scale_value(top_margin - spacing)));
+            int maxWidth = ContactList::ItemWidth(false, false, false).px() - margin - Utils::scale_value(right_margin);
+            name->setFixedWidth(maxWidth);
+            name->render(_painter, QPoint(margin, Utils::scale_value(top_margin - spacing)));
 
             static auto description = ContactList::CreateTextBrowser("chat_info", getChatDescriptionStylesheet("#696969"), 0);
             description->clear();
@@ -153,8 +154,8 @@ namespace Logic
             }
 
             Logic::Text2Doc(about, cursorDescription, Logic::Text2DocHtmlMode::Pass, false);
-            description->setFixedWidth(max_width);
-            description->render(painter, QPoint(margin, Utils::scale_value(top_margin) + name->document()->size().height() - Utils::scale_value(desc_spacing)));
+            description->setFixedWidth(maxWidth);
+            description->render(_painter, QPoint(margin, Utils::scale_value(top_margin) + name->document()->size().height() - Utils::scale_value(desc_spacing)));
 
             QString friendsInfoStr;
             if (!info.Location_.isEmpty())
@@ -182,9 +183,9 @@ namespace Logic
                 QTextCursor cursorFriend = friends->textCursor();
                 Logic::Text2Doc(friendsInfoStr, cursorFriend, Logic::Text2DocHtmlMode::Pass, false);
                 int margin = Utils::scale_value(avatar_size) + Utils::scale_value(avatar_left_margin) + Utils::scale_value(avatar_right_margin);
-                int max_width = ContactList::ItemWidth(false, false, false).px() - margin - Utils::scale_value(right_margin);
-                friends->setFixedWidth(max_width);
-                friends->render(painter, QPoint(margin, Utils::scale_value(top_margin) + name->document()->size().height() + description->document()->size().height() - Utils::scale_value(friends_spacing)));
+                int maxWidth = ContactList::ItemWidth(false, false, false).px() - margin - Utils::scale_value(right_margin);
+                friends->setFixedWidth(maxWidth);
+                friends->render(_painter, QPoint(margin, Utils::scale_value(top_margin) + name->document()->size().height() + description->document()->size().height() - Utils::scale_value(friends_spacing)));
             }
 
             Ui::LiveChatMembersControl avatarsCollection_(parent_, std::make_shared<Data::ChatInfo>(info), 4);
@@ -196,42 +197,47 @@ namespace Logic
 
             avatarsCollection_.adjustWidth();
 
-            if (option.state & QStyle::State_Selected)
-                avatarsCollection_.setColor(selectedColor);
-            else if (option.state & QStyle::State_MouseOver)
-                avatarsCollection_.setColor(hoverColor);
+            if (_option.state & QStyle::State_Selected)
+                avatarsCollection_.setColor(Ui::CommonStyle::getContactListSelectedColor());
+            else if (_option.state & QStyle::State_MouseOver)
+                avatarsCollection_.setColor(Ui::CommonStyle::getContactListHoveredColor());
             else
-                avatarsCollection_.setColor(baseColor);
+                avatarsCollection_.setColor(Ui::CommonStyle::getFrameTransparency());
 
-            avatarsCollection_.render(painter, QPoint(margin, y), QRegion(), QWidget::DrawChildren);
+            avatarsCollection_.render(_painter, QPoint(margin, y), QRegion(), QWidget::DrawChildren);
 
             int height = y + avatarsCollection_.height() + Utils::scale_value(bottom_margin);
-            if (height_[index.row()] != height)
+            if (height_[_index.row()] != height)
             {
-                height_[index.row()] = height;
-                emit const_cast<QAbstractItemModel*>(index.model())->dataChanged(index, index);
+                height_[_index.row()] = height;
+                emit const_cast<QAbstractItemModel*>(_index.model())->dataChanged(_index, _index);
             }
 
             y += Utils::scale_value(k_count_spacing);
 
             static QLabel kCount_;
             kCount_.setText(formatMembersCount(info.MembersCount_, avatarsCollection_.getRealCount()));
-            kCount_.setFont(Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(12)));
+            kCount_.setFont(Fonts::appFontScaled(12));
             QPalette p;
             p.setColor(QPalette::Foreground, QColor(0x69, 0x69, 0x69));
             kCount_.setPalette(p);
             kCount_.adjustSize();
-            kCount_.render(painter, QPoint(margin + avatarsCollection_.width(), y), QRegion(), QWidget::DrawChildren);
+            kCount_.render(_painter, QPoint(margin + avatarsCollection_.width(), y), QRegion(), QWidget::DrawChildren);
 
-            painter->restore();
+            _painter->restore();
         }
     }
 
-    QSize LiveChatItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+    QSize LiveChatItemDelegate::sizeHint(const QStyleOptionViewItem &/*option*/, const QModelIndex& _index) const
     {
-        if (!height_.contains(index.row()))
-            height_[index.row()] = 200;
+        if (!height_.contains(_index.row()))
+            height_[_index.row()] = 200;
 
-        return QSize(ContactList::ItemWidth(false, false, false).px(), height_[index.row()]);
+        return QSize(ContactList::ItemWidth(false, false, false).px(), height_[_index.row()]);
+    }
+
+    void LiveChatItemDelegate::blockState(bool _value)
+    {
+        stateBlocked_ = _value;
     }
 }

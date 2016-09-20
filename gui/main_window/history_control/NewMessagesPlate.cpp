@@ -12,21 +12,16 @@ namespace Ui
 		, unreads_(0)
 	{
         aimId_ = "";
-		setStyleSheet(Utils::LoadStyle(":/main_window/history_control/history_control.qss", Utils::get_scale_coefficient(), true));
-        if (this->objectName().isEmpty())
-            this->setObjectName(QStringLiteral("new_messages_plate"));
-        this->resize(796, 437);
+		setStyleSheet(Utils::LoadStyle(":/main_window/history_control/history_control.qss"));
         this->setProperty("NewMessages", QVariant(true));
         horizontal_layout_ = new QHBoxLayout(this);
         horizontal_layout_->setSpacing(0);
-        horizontal_layout_->setObjectName(QStringLiteral("horizontalLayout"));
         horizontal_layout_->setContentsMargins(0, 0, 0, 0);
         horizontal_spacer_ = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
         
         horizontal_layout_->addItem(horizontal_spacer_);
         
         widget_ = new QWidget(this);
-        widget_->setObjectName(QStringLiteral("widget"));
         QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
@@ -36,14 +31,12 @@ namespace Ui
         widget_->setProperty("NewMessagesWidget", QVariant(true));
         vertical_layout_ = new QVBoxLayout(widget_);
         vertical_layout_->setSpacing(0);
-        vertical_layout_->setObjectName(QStringLiteral("verticalLayout"));
         vertical_layout_->setContentsMargins(0, 0, 0, 0);
         vertical_spacer_ = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
         
         vertical_layout_->addItem(vertical_spacer_);
         
         message_ = new QLabel(widget_);
-        message_->setObjectName(QStringLiteral("message"));
         QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Maximum);
         sizePolicy1.setHorizontalStretch(0);
         sizePolicy1.setVerticalStretch(0);
@@ -149,12 +142,17 @@ namespace Ui
         QString bgPressedColorString = Utils::rgbaStringFromColor(backgroundPressedColor);
         QString textColorString = Utils::rgbaStringFromColor(textColor);
         
-        QString widgetStyleSheet = QString("QWidget[NewMessagesWidget=\"true\"] { background: %1; } QWidget[NewMessagesWidgetHover=\"true\"] { background: %2; } QWidget[NewMessagesWidgetPressed=\"true\"] { background: %3; }").arg(bgColorString).arg(bgHoverColorString).arg(bgPressedColorString);
+        QString widgetStyleSheet = QString("QWidget[NewMessagesWidget=\"true\"] { background: %1; } QWidget[NewMessagesWidgetHover=\"true\"] { background: %2; } QWidget[NewMessagesWidgetPressed=\"true\"] { background: %3; }")
+            .arg(bgColorString)
+            .arg(bgHoverColorString)
+            .arg(bgPressedColorString);
         
-        QString messageStyleSheet = QString("QLabel[NewMessagesLabel=\"true\"] { color: %1; } QLabel[NewMessagesLabelHover=\"true\"] { color: %2; }").arg(textColorString).arg(textColorString);
+        QString messageStyleSheet = QString("QLabel[NewMessagesLabel=\"true\"] { color: %1; } QLabel[NewMessagesLabelHover=\"true\"] { color: %2; }")
+            .arg(textColorString)
+            .arg(textColorString);
         
-        widget_->setStyleSheet(widgetStyleSheet);
-        message_->setStyleSheet(messageStyleSheet);
+        Utils::ApplyStyle(widget_, widgetStyleSheet);
+        Utils::ApplyStyle(message_, messageStyleSheet);
     }
 	
 	void NewMessagesPlate::setUnreadCount(int _count)

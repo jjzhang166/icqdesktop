@@ -110,7 +110,7 @@ namespace {
         ws.lentaBetweenChannelOffset = 20 * scale;
         ws.blocksBetweenChannelOffset = 60 * scale;
 
-        ws.animation_curve_len = 0;
+        ws.avatarAnimationCurveLen = 0;
         ws.previewDisable      = false;
         ws.previewSelfieMode   = true;
         ws.avatarMain[voip2::WindowTheme_One].offsetLeft = ws.avatarMain[voip2::WindowTheme_One].offsetRight  = 12 * scale;
@@ -120,9 +120,9 @@ namespace {
         ws.previewBorderWidth = 2 * scale;
 
         // gray
-        ws.previewBorderColorBGRA[0] = 0;
-        ws.previewBorderColorBGRA[1] = 0;
-        ws.previewBorderColorBGRA[2] = 0;
+        ws.previewBorderColorBGRA[0] = 255;
+        ws.previewBorderColorBGRA[1] = 255;
+        ws.previewBorderColorBGRA[2] = 255;
         ws.previewBorderColorBGRA[3] = 100;
 
         ws.highlight_border_pix = 0;
@@ -135,7 +135,7 @@ namespace {
         ws.normal_color_bgra[0] = 0;
         ws.normal_color_bgra[1] = 0;
         ws.normal_color_bgra[2] = 0;
-        ws.normal_color_bgra[3] = 120;
+        ws.normal_color_bgra[3] = 100;
 
         ws.header_height_pix = 45 * scale;
         ws.gap_width_pix = 30 * scale;
@@ -155,7 +155,7 @@ namespace {
         ws.avatarMain[voip2::WindowTheme_One].height = voip_manager::kDetachedWndAvatarSize * scale;
         ws.avatarMain[voip2::WindowTheme_One].width  = voip_manager::kDetachedWndAvatarSize * scale;
         ws.previewIsButton  = false;
-        ws.animation_curve_len = 0;
+        ws.avatarAnimationCurveLen = 0;
         ws.previewDisable     = true;
         ws.disable_mouse_events_handler = true;
 
@@ -165,8 +165,13 @@ namespace {
     void getSysWindowSettings(voip2::WindowSettings& ws, const float scale) {
         ::memset(&ws, 0, sizeof(ws));
 
+		ws.avatarMain[voip2::WindowTheme_One].height = voip_manager::kIncomingWndAvatarSize * scale;
+		ws.avatarMain[voip2::WindowTheme_One].width  = voip_manager::kIncomingWndAvatarSize * scale;
+		ws.avatarAnimationCurveLen = 0;
+
         ws.disable_mouse_events_handler = true;
         ws.previewSolo = true;
+		ws.previewSelfieMode = true;
         ws.desired_aspect_ration_in_videoconf = 4.f/3;
     }
 }
@@ -242,7 +247,7 @@ namespace {
         }
         ReleaseDC(NULL, hdc);
         return (void*)hBitmap;
-#else
+#elif defined (__APPLE__)
         
         // We need to premultiply alpha and swap red and green channel, becuase apple does not support our format.
         unsigned bytesPerRow = (bps>>3)*width;
@@ -294,7 +299,7 @@ namespace {
     void bitmapReleaseHandle(void* hbmp) {
 #ifdef _WIN32
         DeleteObject((HBITMAP)hbmp);
-#else
+#elif defined (__APPLE__)
         CFRelease(hbmp);
 #endif//WIN32
     }
@@ -327,13 +332,15 @@ namespace {
     const std::string getProtoName(const std::string& account_uid) {
         if (account_uid.empty()) { return ""; }
 
-        if(account_uid.find('@') == std::string::npos || account_uid.find("@uin.icq") != std::string::npos) {
-            return protoNameICQ;
-        } else if(account_uid.find(PSTN_POSTFIX) != std::string::npos) {
-            return protoNamePstn;
-        } else {
-            return protoNameAgent;
-        }
+		return protoNameICQ;
+
+        //if(account_uid.find('@') == std::string::npos || account_uid.find("@uin.icq") != std::string::npos) {
+        //    return protoNameICQ;
+        //} else if(account_uid.find(PSTN_POSTFIX) != std::string::npos) {
+        //    return protoNamePstn;
+        //} else {
+        //    return protoNameAgent;
+        //}
     }
 
     std::string normalizeUid(const std::string& uid) {
@@ -540,7 +547,9 @@ namespace voip_manager {
             std::string aCaptureDefDevice;
             std::string vCaptureDefDevice;
 
-            VoipDesc() : local_aud_en(true), local_cam_en(true), mute_en(false), incomingSoundsMuted(false)
+			bool		minimalBandwidth;
+
+            VoipDesc() : local_aud_en(true), local_cam_en(false), mute_en(false), incomingSoundsMuted(false), minimalBandwidth(false)
             {
                 volume[kVolumePos_Pre] = 0.0f; 
                 volume[kVolumePos_Cur] = 0.0f;
@@ -583,6 +592,8 @@ namespace voip_manager {
 
 		// temp value of mute fix, we load it from settings once and reuse.
 		bool _voipMuteFix;
+            
+        std::shared_ptr<core::async_executer> _async_tasks;
     private:
         std::shared_ptr<voip2::Voip2> _get_engine(bool skipCreation = false);
 
@@ -626,6 +637,12 @@ namespace voip_manager {
 		void check_mute_compatibility(); // Make mute compatible with prev versions.
 
 		void set_speaker_volume_from_settings(); // Set mute or not, depends of sound enable settings.
+
+		void start_video();
+
+		void setupAvatarForeground(); // Setup fade for video.
+            
+        void update_media_video_en(bool enable); // Update local camera state.
             
     public:
         //=========================== ICallManager API ===========================
@@ -645,6 +662,7 @@ namespace voip_manager {
         bool phone_call_send_dtmf         (int num) override;
 
         void mute_incoming_call_sounds    (bool mute) override;
+		void minimal_bandwidth_switch() override;
 
         //=========================== IWindowManager API ===========================
         void window_add           (voip_manager::WindowParams& windowParams) override;
@@ -735,6 +753,7 @@ namespace voip_manager {
         , _defaultDevicesStored(false)
         , _dispatcher(dispatcher)
 		, _voipMuteFix(false)
+        , _async_tasks(new core::async_executer())
 	{
 
         srand(time(NULL));
@@ -967,11 +986,12 @@ namespace voip_manager {
     }
 
     std::shared_ptr<voip2::Voip2> VoipManagerImpl::_get_engine(bool skipCreation/* = false*/) {
-        if (_voipDestroyed) {
-            return NULL;
-        }
-
         if (!_engine) {
+
+            if (_voipDestroyed) {
+                return NULL;
+            }
+            
             if (skipCreation) {
                 return NULL;
             }
@@ -1010,6 +1030,7 @@ namespace voip_manager {
             _update_device_list(AudioRecording);
             _update_device_list(VideoCapturing);            
         }
+
         return _engine;
     }
 
@@ -1087,6 +1108,14 @@ namespace voip_manager {
 
             if (call->call_key == key) {
                 _calls.erase(it);
+
+				// Reset flag if last call was removed.
+				if (_calls.empty())
+				{
+					std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
+					_voip_desc.local_cam_en = false;
+				}
+
                 return true;
             }
         }
@@ -1121,11 +1150,23 @@ namespace voip_manager {
 
         engine->EnableOutgoingVideo(enable);
 
+        update_media_video_en(enable);
+    }
+
+	void VoipManagerImpl::start_video()
+	{
+		auto engine = _get_engine();
+		VOIP_ASSERT_RETURN(!!engine);
+
+		engine->EnableOutgoingVideo(true);
+	}
+    
+    void VoipManagerImpl::update_media_video_en(bool enable) {
         {
             std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
             _voip_desc.local_cam_en = enable;
         }
-
+        
         SIGNAL_NOTIFICATOION(kNotificationType_MediaLocVideoChanged, &enable);
         _update_video_window_state();
     }
@@ -1177,9 +1218,16 @@ namespace voip_manager {
         
     }
 
-    void VoipManagerImpl::MinimalBandwidthMode_StateChanged(bool /*mbmEnabled*/)
+    void VoipManagerImpl::MinimalBandwidthMode_StateChanged(bool mbmEnabled)
     {
-        
+		{
+            std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
+			_voip_desc.minimalBandwidth = mbmEnabled;
+        }
+
+		MinimalBandwidth minimalBandwidth;
+		minimalBandwidth.enable = mbmEnabled;
+        SIGNAL_NOTIFICATOION(kNotificationType_MinimalBandwidthChanged, &minimalBandwidth);
     }
 
     bool VoipManagerImpl::remote_audio_enabled() {
@@ -1530,11 +1578,14 @@ namespace voip_manager {
             }
         }
 
+		setupAvatarForeground();
+
         engine->WindowAdd(windowParams.hwnd, ws);
         const intptr_t winId = (intptr_t)windowParams.hwnd;
         SIGNAL_NOTIFICATOION(kNotificationType_VoipWindowAddComplete, &winId)
 
         if (windowParams.isSystem) {
+			engine->WindowSetAvatarPosition(windowParams.hwnd, voip2::Position_HCenter | voip2::Position_VCenter);
             _set_layout(windowParams.hwnd, voip2::LayoutType_Two);
         } else if (windowParams.isPrimary) {
             engine->WindowSetAvatarPosition(windowParams.hwnd, voip2::Position_HCenter | voip2::Position_VCenter);
@@ -1559,22 +1610,29 @@ namespace voip_manager {
             return;
         }
         
-        engine->WindowRemove(hwnd);
-        const intptr_t winId = (intptr_t)hwnd;
-        SIGNAL_NOTIFICATOION(kNotificationType_VoipWindowRemoveComplete, &winId)
-
-        std::lock_guard<std::recursive_mutex> __wlock(_windowsMx);
-        WindowDesc* desc = _find_window(hwnd);
-        if (NULL == desc) {
-	        return;
-        }
-
-        for (auto it = _windows.begin(); it != _windows.end(); ++it) {
-            if (&*it == desc) {
-                _windows.erase(it);
+		// Call WindowRemove async for Mac.
+        _async_tasks->run_async_function([engine, hwnd]{
+            engine->WindowRemove(hwnd);
+            return 0;
+            }
+        )->on_result_ = [this, hwnd] (int32_t error)
+        {
+            const intptr_t winId = (intptr_t)hwnd;
+            SIGNAL_NOTIFICATOION(kNotificationType_VoipWindowRemoveComplete, &winId)
+            
+            std::lock_guard<std::recursive_mutex> __wlock(_windowsMx);
+            WindowDesc* desc = _find_window(hwnd);
+            if (NULL == desc) {
                 return;
             }
-        }
+            
+            for (auto it = _windows.begin(); it != _windows.end(); ++it) {
+                if (&*it == desc) {
+                    _windows.erase(it);
+                    return;
+                }
+            }
+        };
     }
 
     void VoipManagerImpl::_window_set_bg(void* hwnd, void* hbmp) {
@@ -1608,7 +1666,7 @@ namespace voip_manager {
         auto engine = _get_engine(true);
         VOIP_ASSERT_RETURN(!!engine);
 
-        if (voip2::AvatarType_Camera == type || voip2::AvatarType_CameraCrossed == type) {
+        if (voip2::AvatarType_Camera == type || voip2::AvatarType_CameraCrossed == type || voip2::AvatarType_Foreground == type) {
             engine->WindowSetAvatar(PREVIEW_RENDER_NAME, hbmp, type);
         } else {
             engine->WindowSetAvatar(contact.c_str(), hbmp, type);
@@ -1622,7 +1680,8 @@ namespace voip_manager {
         VOIP_ASSERT_RETURN(bmp.bitmap.data);
 
         std::lock_guard<std::recursive_mutex> __lock(_callsMx);
-        bool loadAvatar = (voip2::AvatarType_Camera == bmp.type) || (voip2::AvatarType_CameraCrossed == bmp.type);
+        bool loadAvatar = (voip2::AvatarType_Camera == bmp.type) || (voip2::AvatarType_CameraCrossed == bmp.type) || 
+			(voip2::AvatarType_UserMain == bmp.type) || (voip2::AvatarType_Foreground == bmp.type);
         for (unsigned ix = 0; ix < _calls.size(); ++ix) {
             CallDescPtr call = _calls[ix];
             VOIP_ASSERT_ACTION(!!call, continue);
@@ -1791,6 +1850,10 @@ namespace voip_manager {
 
     void VoipManagerImpl::DeviceStatusChanged(voip2::DeviceType deviceType, const char *uid, voip2::DeviceStatus deviceStatus) {
 
+		if (deviceType == voip2::VideoCapturing)
+		{
+			update_media_video_en(deviceStatus == voip2::DeviceStatus_Started || deviceStatus == voip2::DeviceStatus_Resumed);
+		}
     }
     
     void VoipManagerImpl::AudioDeviceVolumeChanged(voip2::DeviceType deviceType, float volume) {
@@ -1986,7 +2049,7 @@ namespace voip_manager {
                     _notify_remote_video_state_changed();
                     _update_peer_list(account_uid, user_id);
 
-                    media_video_en(true);
+					start_video();
                 }
                 break;
 
@@ -2137,24 +2200,27 @@ namespace voip_manager {
             _update_video_window_state();
 
             if (call_get_count() == 1) {
-                DeviceVol vol;
-                DeviceMute dm;
-                {
-                    std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
-                    auto e = _get_engine();
-                    _voip_desc.mute_en = e->GetDeviceMute(voip2::AudioPlayback);
-                    _voip_desc.volume[kVolumePos_Pre] = _voip_desc.volume[1];
-                    _voip_desc.volume[kVolumePos_Cur] = e->GetDeviceVolume(voip2::AudioPlayback);
+				DeviceVol vol;
+				DeviceMute dm;
+				{
+					std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
+					auto engine = _get_engine();
+					if (!!engine)
+					{
+						_voip_desc.mute_en = engine->GetDeviceMute(voip2::AudioPlayback);
+						_voip_desc.volume[kVolumePos_Pre] = _voip_desc.volume[1];
+						_voip_desc.volume[kVolumePos_Cur] = engine->GetDeviceVolume(voip2::AudioPlayback);
+					}
 
-                    vol.type   = voip2::AudioPlayback;
-                    vol.volume = _voip_desc.volume[kVolumePos_Cur];
+					vol.type   = voip2::AudioPlayback;
+					vol.volume = _voip_desc.volume[kVolumePos_Cur];
 
-                    dm.mute = _voip_desc.mute_en;
-                    dm.type = voip2::AudioPlayback;
-                }
+					dm.mute = _voip_desc.mute_en;
+					dm.type = voip2::AudioPlayback;
 
-                SIGNAL_NOTIFICATOION(kNotificationType_DeviceMuted, &dm);
-                SIGNAL_NOTIFICATOION(kNotificationType_DeviceVolChanged, &vol);
+					SIGNAL_NOTIFICATOION(kNotificationType_DeviceMuted, &dm);
+					SIGNAL_NOTIFICATOION(kNotificationType_DeviceVolChanged, &vol);
+				}
             }
 
             const bool audio_enabled = local_audio_enabled();
@@ -2195,6 +2261,21 @@ namespace voip_manager {
             engine->MuteAllIncomingSoundNotifications(mute);
         }
     }
+
+	void VoipManagerImpl::minimal_bandwidth_switch()
+	{
+		bool mode = false;
+        {
+            std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
+            _voip_desc.minimalBandwidth = !_voip_desc.minimalBandwidth;
+			mode = _voip_desc.minimalBandwidth;
+        }
+
+		auto engine = _get_engine(true);
+        if (!!engine) {
+            engine->EnableMinimalBandwithMode(mode);
+        }
+	}
 
     void VoipManagerImpl::_protocolSendAlloc(const char* data, unsigned size) {
         core::core_dispatcher& dispatcher = _dispatcher;
@@ -2375,7 +2456,7 @@ namespace voip_manager {
             auto im = _dispatcher.find_im_by_id(0);
             assert(!!im);
 
-            im->get_contact_avatar(0, user_uid, kAvatarRequestSize);
+            im->get_contact_avatar(0, user_uid, kAvatarRequestSize, false);
         });
     }
 
@@ -2484,7 +2565,17 @@ namespace voip_manager {
 
     void VoipManagerImpl::reset() {
         _voipDestroyed = true;
+        // Use this temp shared ptr to wait, while other threads finish to use engine.
+        // It fixed crash, when we try to destry voip from voip signal thread.
+        std::shared_ptr<voip2::Voip2> tempVoipPtr = _engine;
         _engine.reset();
+        
+        // Wait until other threads release engine.
+        while (tempVoipPtr && !tempVoipPtr.unique())
+        {
+            std::this_thread::yield();
+        }
+        
         SIGNAL_NOTIFICATOION(kNotificationType_VoipResetComplete, &_voipDestroyed);
     }
 
@@ -2521,8 +2612,22 @@ namespace voip_manager {
 			});
 		}
 #endif
-	}    
-    
+	}
+
+	void VoipManagerImpl::setupAvatarForeground()
+	{
+		unsigned char foreground[] = { 0, 0, 0, 255 / 3 };
+		voip_manager::UserBitmap bmp;
+		bmp.bitmap.data = (void*)foreground;
+		bmp.bitmap.size = 4;
+		bmp.bitmap.w = 1;
+		bmp.bitmap.h = 1;
+		bmp.contact = PREVIEW_RENDER_NAME;
+		bmp.type = voip2::AvatarType_Foreground;
+
+		window_set_bitmap(bmp);
+	}
+
     VoipManager::VoipManager(core::core_dispatcher& dispatcher) {
         _impl.reset(new(std::nothrow) VoipManagerImpl(dispatcher));
     }

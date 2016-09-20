@@ -5,6 +5,11 @@ namespace Logic
     class ChatMembersModel;
 }
 
+namespace Data
+{
+    struct Quote;
+}
+
 namespace Ui
 {
     void createGroupChat(QStringList _members_aimIds);
@@ -14,4 +19,6 @@ namespace Ui
     void postAddChatMembersFromCLModelToCore(QString _aimId);
 
     void deleteMemberDialog(Logic::ChatMembersModel* _model, const QString& current, int _regim, QWidget* _parent);
+    
+    void forwardMessage(QList<Data::Quote> quotes);
 }

@@ -43,8 +43,6 @@ namespace HistoryControl
 
         virtual bool hasTextBubble() const;
 
-        void initialize();
-
         bool isSelected() const;
 
         virtual void select(const bool value);
@@ -53,12 +51,15 @@ namespace HistoryControl
 
         virtual void clearSelection();
 
+        virtual void onVisibilityChanged(const bool isVisible);
+
         virtual QString selectedText() const;
 
         virtual QString toRecentsString() const;
 
         virtual int maxWidgetWidth() const;
 
+        const QString& getContact() { return aimId_; }
         void setContact(QString _aimId) { aimId_ = _aimId; }
 
 	protected:
@@ -76,12 +77,16 @@ namespace HistoryControl
 
 		void setFixedSize(const int32_t w, const int32_t h);
 
+        virtual bool drag() { return false; }
+
+        virtual void mouseMoveEvent(QMouseEvent *) override;
+
         QString aimId_;
 
     protected:
         bool Selected_;
 
-        virtual void initializeInternal();
+        virtual void initialize() = 0;
 
 	private:
         int64_t CurrentProcessId_;
@@ -89,6 +94,8 @@ namespace HistoryControl
         bool Initialized_;
 
 		const bool IsOutgoing_;
+
+        QPoint mousePos_;
 
         virtual void paintEvent(QPaintEvent*) override final;
 

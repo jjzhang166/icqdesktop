@@ -11,7 +11,7 @@ namespace Ui
 		const int	size_;
 		
 		QString		aimid_;
-		QString		display_name_;
+		QString		displayName_;
 
 		virtual void paintEvent(QPaintEvent* _e) override;
         virtual void mouseReleaseEvent(QMouseEvent*) override;
@@ -35,7 +35,7 @@ namespace Ui
 
     private Q_SLOTS:
         void avatarChanged(QString);
-        void frameChanged(int frame);
+        void frameChanged(int _frame);
 
         void selectFileForAvatar();
         void cropAvatar();
@@ -43,17 +43,17 @@ namespace Ui
 
         void avatarEnter();
         void avatarLeave();
-        void setAvatar(int _error);
+        void setAvatar(qint64 _seq, int _error);
 
 	public:
 
-		ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _display_name, int _size, bool _autoUpdate);
+		ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _displayName, int _size, bool _autoUpdate);
         ~ContactAvatarWidget();
 
-        void UpdateParams(const QString& _aimid, const QString& _display_name);
-        void SetIsInMyProfile(bool _is_in_my_profile);
-        void SetVisibleShadow(bool _is_visible_shadow);
-        void SetVisibleSpinner(bool _is_visible_spinner);
+        void UpdateParams(const QString& _aimid, const QString& _displayName);
+        void SetIsInMyProfile(bool _isInMyProfile);
+        void SetVisibleShadow(bool _isVisibleShadow);
+        void SetVisibleSpinner(bool _isVisibleSpinner);
 
     private:
         QString GetState();
@@ -61,11 +61,12 @@ namespace Ui
         void ResetInfoForSetAvatar();
 
     private:
-        bool is_in_my_profile_;
-        bool is_visible_shadow_;
-	    bool is_visible_spinner_;
+        bool isInMyProfile_;
+        bool isVisibleShadow_;
+	    bool isVisibleSpinner_;
         bool connected_;
-        QMovie* spinner_movie_;
+        QMovie* spinnerMovie_;
         InfoForSetAvatar infoForSetAvatar_;
+        qint64 seq_;
     };
 }

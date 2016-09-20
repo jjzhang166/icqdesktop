@@ -17,18 +17,18 @@ namespace Ui
     void createGroupChat(QStringList _members_aimIds)
     {
         SelectContactsWidget select_members_dialog(nullptr, Logic::MembersWidgetRegim::SELECT_MEMBERS,
-            QT_TRANSLATE_NOOP("groupchat_pages", "Create Groupchat"), QT_TRANSLATE_NOOP("groupchat_pages", "Next"), Ui::MainPage::instance());
+            QT_TRANSLATE_NOOP("groupchat_pages", "Create Groupchat"), QT_TRANSLATE_NOOP("groupchat_pages", "Next"), QString(), Ui::MainPage::instance());
 
         for (auto& member_aimId : _members_aimIds)
         {
-            Logic::GetContactListModel()->setChecked(member_aimId);
+            Logic::getContactListModel()->setChecked(member_aimId, true /* is_checked */);
         }
 
         if (select_members_dialog.show() == QDialog::Accepted)
         {
-            if (Logic::GetContactListModel()->GetCheckedContacts().size() == 1)
+            if (Logic::getContactListModel()->GetCheckedContacts().size() == 1)
             {
-                const auto& aimid = Logic::GetContactListModel()->GetCheckedContacts()[0].get_aimid();
+                const auto& aimid = Logic::getContactListModel()->GetCheckedContacts()[0].get_aimid();
                 Ui::MainPage::instance()->selectRecentChat(aimid);
             }
             else
@@ -45,13 +45,13 @@ namespace Ui
                 }
             }
         }
-        Logic::GetContactListModel()->clearChecked();
+        Logic::getContactListModel()->clearChecked();
         Ui::MainPage::instance()->clearSearchMembers();
     }
 
     bool callChatNameEditor(QWidget* _parent, QString& chat_name)
     {
-        auto selectedContacts = Logic::GetContactListModel()->GetCheckedContacts();
+        auto selectedContacts = Logic::getContactListModel()->GetCheckedContacts();
         chat_name = MyInfo()->friendlyName();
         if (chat_name.isEmpty())
             chat_name = MyInfo()->aimId();
@@ -82,7 +82,7 @@ namespace Ui
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
 
         QStringList chat_members;
-        auto selectedContacts = Logic::GetContactListModel()->GetCheckedContacts();
+        auto selectedContacts = Logic::getContactListModel()->GetCheckedContacts();
         for (const auto& contact : selectedContacts)
         {
             chat_members.push_back(contact.get_aimid());
@@ -105,8 +105,8 @@ namespace Ui
 
     void postAddChatMembersFromCLModelToCore(QString _aimId)
     {
-        auto selectedContacts = Logic::GetContactListModel()->GetCheckedContacts();
-        Logic::GetContactListModel()->clearChecked();
+        auto selectedContacts = Logic::getContactListModel()->GetCheckedContacts();
+        Logic::getContactListModel()->clearChecked();
 
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
 
@@ -133,6 +133,11 @@ namespace Ui
         auto right_button_text = QT_TRANSLATE_NOOP("popup_window", "Delete");
 
         auto member = _model->getMemberItem(current);
+        if (!member)
+        {
+            assert(!"member not found in model, probably it need to refresh");
+            return;
+        }
         auto user_name = member->NickName_;
         auto label = user_name.isEmpty() ? member->AimId_ : user_name;
 
@@ -140,7 +145,7 @@ namespace Ui
         {
             if (_regim == Logic::MembersWidgetRegim::DELETE_MEMBERS || _regim == Logic::MembersWidgetRegim::SELECT_MEMBERS)
             {
-                auto aimId_ = _model->get_chat_aimid();
+                auto aimId_ = _model->getChatAimId();
                 ::Ui::gui_coll_helper collection(::Ui::GetDispatcher()->create_collection(), true);
                 collection.set_value_as_string("aimid", aimId_.toUtf8().data(), aimId_.toUtf8().size());
                 collection.set_value_as_string("m_chat_members_to_remove", current.toStdString());
@@ -148,10 +153,50 @@ namespace Ui
             }
             else if (_regim == Logic::MembersWidgetRegim::IGNORE_LIST)
             {
-                Logic::GetContactListModel()->ignore_contact(current, false);
+                Logic::getContactListModel()->ignoreContact(current, false);
                 GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::ignorelist_remove);
                 // NOTE : when delete from ignore list, we don't need add contact to CL
             }
         }
     }
+    
+    void forwardMessage(QList<Data::Quote> quotes)
+    {
+        SelectContactsWidget shareDialog(QT_TRANSLATE_NOOP("popup_window", "Forward"), Ui::MainPage::instance());
+        shareDialog.setSort(false /* isClSorting */);
+        
+        const auto action = shareDialog.show();
+        if (action == QDialog::Accepted)
+        {
+            const auto contact = shareDialog.getSelectedContact();
+            
+            if (contact != "")
+            {
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set<QString>("contact", contact);
+                collection.set_value_as_string("message", "");
+                if (!quotes.isEmpty())
+                {
+                    core::ifptr<core::iarray> quotesArray(collection->create_array());
+                    quotesArray->reserve(quotes.size());
+                    for (auto quote : quotes)
+                    {
+                        core::ifptr<core::icollection> quoteCollection(collection->create_collection());
+                        quote.isForward_ = true;
+                        quote.serialize(quoteCollection.get());
+                        core::coll_helper coll(collection->create_collection(), true);
+                        core::ifptr<core::ivalue> val(collection->create_value());
+                        val->set_as_collection(quoteCollection.get());
+                        quotesArray->push_back(val.get());
+                    }
+                    collection.set_value_as_array("quotes", quotesArray.get());
+                }
+                
+                Ui::GetDispatcher()->post_message_to_core("send_message", collection.get());
+                
+                Logic::getContactListModel()->setCurrent(contact, true);
+            }
+        }
+    }
+
 }

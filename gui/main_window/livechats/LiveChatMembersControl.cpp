@@ -86,7 +86,7 @@ namespace Ui
             painter.drawEllipse(xOffset, 0, sv(avatarWithFrameHeight), sv(avatarWithFrameHeight));
 
             bool isDefault = false;
-            const auto &avatar = Logic::GetAvatarStorage()->GetRounded(chat.first, chat.second, Utils::scale_bitmap(sv(avatarHeight)), QString(), true, isDefault, false);
+            const auto &avatar = Logic::GetAvatarStorage()->GetRounded(chat.first, chat.second, Utils::scale_bitmap(sv(avatarHeight)), QString(), true, isDefault, false, false);
 
             if (!avatar->isNull())
             {

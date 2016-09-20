@@ -21,10 +21,11 @@ namespace
 {
     enum not_sent_message_fields
     {
-        min,
+        min = 0,
 
-        contact,
-        message,
+        contact = 1,
+        message = 2,
+        duplicated = 3,
 
         max
     };
@@ -66,8 +67,7 @@ not_sent_message_sptr not_sent_message::make_outgoing_file_sharing(
     assert(!_local_path.empty());
 
     not_sent_message_sptr not_sent(
-        new not_sent_message(_aimid, "", message_type::file_sharing, _time, "")
-        );
+        new not_sent_message(_aimid, std::string(), message_type::file_sharing, _time, std::string()));
 
     not_sent->get_message()->init_file_sharing_from_local_path(_local_path);
 
@@ -95,7 +95,8 @@ not_sent_message_sptr not_sent_message::make_incoming_file_sharing(
 }
 
 not_sent_message::not_sent_message()
-    : message_(new history_message())
+    :   message_(new history_message()),
+        duplicated_(false)
 {
 }
 
@@ -107,6 +108,7 @@ not_sent_message::not_sent_message(
     const std::string& _internal_id)
     : message_(new history_message())
     , aimid_(_aimid)
+    , duplicated_(false)
 {
     auto internal_id = _internal_id;
     if (internal_id.empty())
@@ -116,15 +118,6 @@ not_sent_message::not_sent_message(
 
     message_->set_outgoing(true);
     message_->set_time(_time);
-
-    if (!_message.empty() &&
-        tools::is_new_file_sharing_uri(_message) &&
-        _type != message_type::file_sharing)
-    {
-        message_->init_file_sharing_from_link(_message);
-        message_->set_text(_message);
-        return;
-    }
 
     if (_type == message_type::sticker)
     {
@@ -142,7 +135,8 @@ not_sent_message::not_sent_message(
 }
 
 not_sent_message::not_sent_message(const not_sent_message_sptr& _message, const std::string& _wimid, const uint64_t time)
-    : message_(new history_message())
+    :   message_(new history_message()),
+        duplicated_(false)
 {
     copy_from(_message);
     message_->set_wimid(_wimid);
@@ -158,6 +152,8 @@ void not_sent_message::copy_from(const not_sent_message_sptr& _message)
     assert(_message);
 
     aimid_ = _message->aimid_;
+    duplicated_ = _message->duplicated_;
+    post_time_ = _message->post_time_;
     message_ = _message->message_;
 }
 
@@ -183,10 +179,25 @@ const std::string& not_sent_message::get_file_sharing_local_path() const
     return message_->get_file_sharing_data()->get_local_path();
 }
 
+core::archive::quotes_vec not_sent_message::get_quotes() const
+{
+    return message_->get_quotes();
+}
+
+void not_sent_message::attach_quotes(core::archive::quotes_vec _quotes)
+{
+    message_->attach_quotes(_quotes);
+}
+
 bool not_sent_message::is_ready_to_send() const
 {
     const auto &message = get_message();
     assert(message);
+
+    if (duplicated_)
+    {
+        return false;
+    }
 
     const auto &fs_data = message->get_file_sharing_data();
     if (fs_data && !fs_data->get_local_path().empty())
@@ -200,6 +211,7 @@ bool not_sent_message::is_ready_to_send() const
 void not_sent_message::serialize(core::tools::tlvpack& _pack) const
 {
     _pack.push_child(tools::tlv(not_sent_message_fields::contact, aimid_));
+    _pack.push_child(tools::tlv(not_sent_message_fields::duplicated, duplicated_));
 
     core::tools::binary_stream bs_message;
     message_->serialize(bs_message);
@@ -215,15 +227,44 @@ bool not_sent_message::unserialize(const core::tools::tlvpack& _pack)
 {
     auto tlv_aimid = _pack.get_item(not_sent_message_fields::contact);
     auto tlv_message = _pack.get_item(not_sent_message_fields::message);
+    auto tlv_duplicated = _pack.get_item(not_sent_message_fields::duplicated);
 
     if (!tlv_message || !tlv_aimid)
         return false;
 
     aimid_ = tlv_aimid->get_value<std::string>();
 
+    if (tlv_duplicated)
+    {
+        duplicated_ = tlv_duplicated->get_value<bool>();
+    }
+
     core::tools::binary_stream stream = tlv_message->get_value<core::tools::binary_stream>();
     return !message_->unserialize(stream);
 }
+
+void not_sent_message::mark_duplicated()
+{
+    duplicated_ = true;
+}
+
+
+
+void not_sent_message::set_failed()
+{
+    duplicated_ = false;
+}
+
+void not_sent_message::update_post_time(const std::chrono::system_clock::time_point& _time_point)
+{
+    post_time_ = _time_point;
+}
+
+const std::chrono::system_clock::time_point& not_sent_message::get_post_time() const
+{
+    return post_time_;
+}
+
 
 not_sent_messages::not_sent_messages(const std::wstring& _file_name)
     :	storage_(new storage(_file_name)),
@@ -301,6 +342,33 @@ void not_sent_messages::load_if_need()
     is_loaded_ = true;
 }
 
+void not_sent_messages::remove(const std::string& _internal_id)
+{
+    for (auto& _messages_pair : messages_by_aimid_)
+    {
+        for (auto iter = _messages_pair.second.begin(); iter != _messages_pair.second.end();)
+        {
+            const auto &not_sent_message = **iter;
+
+            const auto &message = *not_sent_message.get_message();
+
+            const auto same_internal_id =
+                (message.get_internal_id() == _internal_id);
+
+            if (same_internal_id)
+            {
+                save();
+
+                iter = _messages_pair.second.erase(iter);
+
+                break;
+            }
+
+            ++iter;
+        }
+    }
+}
+
 void not_sent_messages::remove(const std::string &_aimid, const history_block_sptr &_data)
 {
     assert(!_aimid.empty());
@@ -352,6 +420,70 @@ void not_sent_messages::remove(const std::string &_aimid, const history_block_sp
     {
         messages_by_aimid_.erase(_aimid);
     }
+}
+
+void not_sent_messages::mark_duplicated(const std::string& _message_internal_id)
+{
+    auto msg = get_by_internal_id(_message_internal_id);
+
+    if (msg)
+    {
+        msg->mark_duplicated();
+
+        save();
+    }
+}
+
+void not_sent_messages::update_message_post_time(
+    const std::string& _message_internal_id, 
+    const std::chrono::system_clock::time_point& _time_point)
+{
+    auto msg = get_by_internal_id(_message_internal_id);
+
+    if (msg)
+    {
+        msg->update_post_time(_time_point);
+    }
+}
+
+not_sent_message_sptr not_sent_messages::update_with_imstate(const std::string& _message_internal_id,
+                                                             const int64_t& _hist_msg_id,
+                                                             const int64_t& _before_hist_msg_id)
+{
+    auto msg = get_by_internal_id(_message_internal_id);
+
+    if (!msg)
+    {
+        return nullptr;
+    }
+
+    if (_hist_msg_id > 0)
+    {
+        msg->get_message()->set_msgid(_hist_msg_id);
+        msg->get_message()->set_prev_msgid(_before_hist_msg_id);
+
+        remove(_message_internal_id);
+
+        save();
+
+        return msg;
+    }
+
+    return nullptr;
+}
+
+void not_sent_messages::failed_pending_message(const std::string& _message_internal_id)
+{
+    auto msg = get_by_internal_id(_message_internal_id);
+
+    if (!msg)
+    {
+        return;
+    }
+
+    msg->set_failed();
+
+    save();
 }
 
 bool not_sent_messages::exist(const std::string& _aimid) const
@@ -417,7 +549,7 @@ not_sent_message_sptr not_sent_messages::get_first_ready_to_send() const
     return not_sent_message_sptr();
 }
 
-not_sent_message_sptr not_sent_messages::get_by_iid(const std::string& _iid) const
+not_sent_message_sptr not_sent_messages::get_by_internal_id(const std::string& _iid) const
 {
     assert(!_iid.empty());
 

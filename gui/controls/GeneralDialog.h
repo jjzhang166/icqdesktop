@@ -24,48 +24,57 @@ namespace Ui
 
     public Q_SLOTS:
         void setButtonActive(bool _active);
+        virtual void reject() override;
 
     public:
-        GeneralDialog(QWidget* _main_widget, QWidget* _parent);
+        GeneralDialog(QWidget* _mainWidget, QWidget* _parent, bool _ignoreKeyPressEvents = false);
         ~GeneralDialog();
         bool showInPosition(int _x, int _y);
 
-        void addAcceptButton(QString _button_text, int _button_margin_px);
-        void addButtonsPair(QString _button_text_left, QString _button_text_right, int _margin_px, int _button_between_px);
+        void addAcceptButton(QString _buttonText, int _buttonMarginPx, const bool _isEnabled);
+        void addButtonsPair(QString _buttonTextLeft, QString _buttonTextRight, int _marginPx, int _buttonBetweenPx);
 
-        void addLabel(QString _text_label);
+        QPushButton* takeAcceptButton();
+
+        void addBottomLabel(const QString& _text, const int32_t _marginPx);
+        void addLabel(const QString& _text);
         void addHead();
-        void addText(QString _message_text, int _upper_margin_px);
-        void addError(QString _message_text);
-        void setKeepCenter(bool _is_keep_center);
+        void addText(QString _messageText, int _upperMarginPx);
+        void addError(QString _messageText);
+        void setKeepCenter(bool _isKeepCenter);
 
     protected:
-       virtual void resizeEvent(QResizeEvent *);
+       virtual void resizeEvent(QResizeEvent *) override;
 
     private:
+        QLayout *initBottomLayout(const int32_t _buttonMarginPx);
+
         void moveToPosition(int _x, int _y);
 
     private:
-        double              koeff_height_;
-        double              koeff_width_;
-        QWidget*            main_widget_;
-        int                 addWidth_;
-        QPushButton*        next_button_;
-        SemitransparentWindow* semi_window_;
-        QWidget*            bottom_widget_;
-        QWidget*            label_host_;
-        QWidget*            text_host_;
-        QWidget*            error_host_;
-        QWidget*            head_host_;
-        bool                keep_center_;
-        int x_;
-        int y_;
+        double                  koeffHeight_;
+        double                  koeffWidth_;
+        QWidget*                mainWidget_;
+        int                     addWidth_;
+        QPushButton*            nextButton_;
+        SemitransparentWindow*  semiWindow_;
+        QWidget*                bottomWidget_;
+        QWidget*                labelHost_;
+        QWidget*                textHost_;
+        QWidget*                errorHost_;
+        QWidget*                headHost_;
+        bool                    keepCenter_;
+        int                     x_;
+        int                     y_;
+        QLabel*                 bottomLabel_;
+        
+        bool                    ignoreKeyPressEvents_;
 
         std::unique_ptr<Utils::SignalsDisconnector> disconnector_;
 
     protected:
-        virtual void mousePressEvent(QMouseEvent *e) override;
-        virtual void keyPressEvent(QKeyEvent *e) override;
+        virtual void mousePressEvent(QMouseEvent* _e) override;
+        virtual void keyPressEvent(QKeyEvent* _e) override;
 
     };
 }

@@ -2,21 +2,22 @@
 
 #include "../../../core_dispatcher.h"
 
-#include "../../../previewer/Previewer.h"
+#include "../../../main_window/MainWindow.h"
 
+#include "../../../utils/InterConnector.h"
 #include "../../../utils/log/log.h"
 #include "../../../utils/utils.h"
 
-#include "../../MainPage.h"
+#include "../../../previewer/GalleryWidget.h"
 
-#ifdef __APPLE__
-#include "mac_support.h"
-#endif
+#include "../../MainPage.h"
 
 #include "ImagePreviewWidget.h"
 
 namespace
 {
+    int32_t getPreviewHeight();
+
     QString uri2Filename(const QString &uri);
 }
 
@@ -58,7 +59,6 @@ namespace HistoryControl
 
 	ImagePreviewWidget::~ImagePreviewWidget()
 	{
-
 	}
 
     void ImagePreviewWidget::leaveEvent(QEvent *e)
@@ -106,6 +106,11 @@ namespace HistoryControl
         }
 
         LeftButtonPressed_ = false;
+    }
+
+    bool ImagePreviewWidget::drag()
+    {
+        return Utils::dragUrl(this, getPreview(), Uri_);;
     }
 
     void ImagePreviewWidget::onImageDownloadError(qint64 seq, QString rawUri)
@@ -247,7 +252,7 @@ namespace HistoryControl
 
         const auto dstPath = (QDir::temp().absolutePath() + "/" + filename);
 
-        FullImageDownloadSeq_ = Ui::GetDispatcher()->downloadImage(Uri_, dstPath, false);
+        FullImageDownloadSeq_ = Ui::GetDispatcher()->downloadImage(Uri_, getContact(), dstPath, false, 0, 0);
     }
 
     void ImagePreviewWidget::saveAs()
@@ -279,12 +284,12 @@ namespace HistoryControl
             return;
         }
 
-        FullImageDownloadSeq_ = Ui::GetDispatcher()->downloadImage(Uri_, dir, false);
+        FullImageDownloadSeq_ = Ui::GetDispatcher()->downloadImage(Uri_, getContact(), dir, false, 0, 0);
     }
 
-    void ImagePreviewWidget::initializeInternal()
+    void ImagePreviewWidget::initialize()
     {
-        PreviewContentWidget::initializeInternal();
+        PreviewContentWidget::initialize();
 
         if (!PreviewsEnabled_)
         {
@@ -299,7 +304,7 @@ namespace HistoryControl
             setTextVisible(true);
         }
 
-        PreviewImageDownloadSeq_ = Ui::GetDispatcher()->downloadImage(Uri_, QString(), true);
+        PreviewImageDownloadSeq_ = Ui::GetDispatcher()->downloadImage(Uri_, getContact(), QString(), true, 0, getPreviewHeight());
     }
 
     bool ImagePreviewWidget::isPlaceholderVisible() const
@@ -391,7 +396,7 @@ namespace HistoryControl
             return;
         }
 
-        const auto procId = Ui::GetDispatcher()->downloadImage(Uri_, QString(), false);
+        const auto procId = Ui::GetDispatcher()->downloadImage(Uri_, getContact(), QString(), false, 0, 0);
         FullImageDownloadSeq_ = procId;
     }
 
@@ -422,16 +427,7 @@ namespace HistoryControl
             return;
         }
 
-        #ifdef __APPLE__
-            MacSupport::showPreview(FullFileLocalPath_, click.x(), click.y());
-        #else
-            QPixmap preview;
-            Utils::loadPixmap(FullFileLocalPath_, Out preview);
-            if (!preview.isNull())
-            {
-                Previewer::ShowPreview(preview);
-            }
-        #endif
+        Utils::InterConnector::instance().getMainWindow()->openGallery(aimId_, Data::Image(0, Uri_, false), FullFileLocalPath_);
     }
 
     bool ImagePreviewWidget::isPreviewVisible() const
@@ -447,10 +443,26 @@ namespace HistoryControl
         }
         return (State_ != State::Error);
     }
+
+    void ImagePreviewWidget::onVisibilityChanged(const bool isVisible)
+    {
+        PreviewContentWidget::onVisibilityChanged(isVisible);
+
+        const auto hasPreviewSeq = (PreviewImageDownloadSeq_ > 0);
+        if (hasPreviewSeq)
+        {
+            Ui::GetDispatcher()->raiseDownloadPriority(PreviewImageDownloadSeq_);
+        }
+    }
 }
 
 namespace
 {
+    int32_t getPreviewHeight()
+    {
+        return Utils::scale_value(240);
+    }
+
     QString uri2Filename(const QString &uri)
     {
         assert(!uri.isEmpty());

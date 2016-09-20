@@ -17,6 +17,7 @@
 #define settings_favorites_visible "favorites_visible"
 
 #define settings_startup_at_system_started "startup_at_system_started"
+#define settings_start_minimazed "start_minimazed"
 #define settings_show_in_taskbar "show_in_taskbar"
 #define settings_show_in_menubar "show_in_menubar"
 #define settings_sounds_enabled "sounds_enabled"
@@ -51,3 +52,10 @@
 #define settings_proxy_port "proxy_settings_port"
 #define settings_proxy_username "proxy_settings_username"
 #define settings_proxy_password "proxy_settings_password"
+
+#define login_page_last_entered_uin "login_page_last_entered_uin"
+#define login_page_last_entered_country_code "login_page_last_entered_country_code"
+#define login_page_last_entered_phone "login_page_last_entered_phone"
+
+#define setting_mplayer_volume "mplayer_volume"
+#define setting_mplayer_mute "mplayer_mute"

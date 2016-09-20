@@ -9,10 +9,11 @@
 #include "stdafx.h"
 #include "PromoPage.h"
 #include "MainWindow.h"
-#include "../utils/utils.h"
-#include "../utils/InterConnector.h"
 #include "../core_dispatcher.h"
+#include "../controls/CommonStyle.h"
 #include "../controls/TextEmojiWidget.h"
+#include "../utils/InterConnector.h"
+#include "../utils/utils.h"
 
 namespace Ui
 {
@@ -42,7 +43,7 @@ namespace Ui
         QPushButton::resizeEvent(e);
     }
     
-    void PromoImage::paintEvent(QPaintEvent *e)
+    void PromoImage::paintEvent(QPaintEvent * /*e*/)
     {
         if (!image_.isNull())
         {
@@ -72,7 +73,7 @@ namespace Ui
         update();
     }
     
-    void PromoPageDot::paintEvent(QPaintEvent *e)
+    void PromoPageDot::paintEvent(QPaintEvent * /*e*/)
     {
         QPainter painter(this);
 
@@ -206,7 +207,7 @@ namespace Ui
                 subLayout->setAlignment(Qt::AlignCenter);
                 sub->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
                 {
-                    promoTopic = new TextEmojiWidget(sub, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(24), QColor("#282828"), Utils::scale_value(26));
+                    promoTopic = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(26));
                     promoTopic->setSizePolicy(QSizePolicy::Policy::Preferred, promoTopic->sizePolicy().verticalPolicy());
                     promoTopic->setText(pages[currentPage].topic_);
                     subLayout->addWidget(promoTopic);
@@ -221,7 +222,7 @@ namespace Ui
                 subLayout->setAlignment(Qt::AlignCenter);
                 sub->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
                 {
-                    promoText1 = new TextEmojiWidget(sub, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#696969"), Utils::scale_value(36));
+                    promoText1 = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), QColor("#696969"), Utils::scale_value(36));
                     promoText1->setSizePolicy(QSizePolicy::Policy::Preferred, promoText1->sizePolicy().verticalPolicy());
                     promoText1->setText(pages[currentPage].text1_);
                     subLayout->addWidget(promoText1);
@@ -236,7 +237,7 @@ namespace Ui
                 subLayout->setAlignment(Qt::AlignCenter);
                 sub->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
                 {
-                    promoText2 = new TextEmojiWidget(sub, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#696969"), Utils::scale_value(18));
+                    promoText2 = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), QColor("#696969"), Utils::scale_value(18));
                     promoText2->setSizePolicy(QSizePolicy::Policy::Preferred, promoText2->sizePolicy().verticalPolicy());
                     promoText2->setText(pages[currentPage].text2_);
                     subLayout->addWidget(promoText2);
@@ -262,7 +263,7 @@ namespace Ui
                     nextButton->setFlat(true);
                     nextButton->setText(pages[currentPage].next_);
                     nextButton->setCursor(Qt::PointingHandCursor);
-                    Utils::ApplyStyle(nextButton, "QPushButton { font-family:\"%FONT_FAMILY%\"; font-weight:%FONT_WEIGHT%; color:#ffffff; font-size:16dip; background-color:#579e1c; border-style:none; margin:0; padding-left:20dip; padding-right:20dip; min-width:100dip; max-height:32dip; min-height:32dip; } QPushButton:hover { background-color:#57a813; } QPushButton:pressed { background-color:#50901b; }");
+                    Utils::ApplyStyle(nextButton, CommonStyle::getGreenButtonStyle());
                     subLayout->addWidget(nextButton);
                 }
                 promoDescriptionLayout->addWidget(sub);
@@ -288,7 +289,7 @@ namespace Ui
                 skipButton->setFlat(true);
                 skipButton->setText(pages[currentPage].skip_);
                 skipButton->setCursor(Qt::PointingHandCursor);
-                Utils::ApplyStyle(skipButton, "background-color:transparent; border-style:none; font:\"%FONT_FAMILY%\"; font-weight:%FONT_WEIGHT%; font-size:16dip; color:#696969; padding:0; margin:0;");
+                Utils::ApplyStyle(skipButton, "background-color:transparent; border-style:none; font-size:16dip; color:#696969; padding:0; margin:0;");
                 subLayout->addWidget(skipButton);
             }
             controlsLayout->addWidget(sub);
@@ -305,7 +306,7 @@ namespace Ui
             promoTopic->setText(pages[currentPage].topic_);
             promoText1->setText(pages[currentPage].text1_);
             promoText2->setText(pages[currentPage].text2_);
-            promoText2->set_size_to_baseline(promoText2->text().trimmed().isEmpty() ? Utils::scale_value(2) : Utils::scale_value(18));
+            promoText2->setSizeToBaseline(promoText2->text().trimmed().isEmpty() ? Utils::scale_value(2) : Utils::scale_value(18));
             nextButton->setText(pages[currentPage].next_);
             skipButton->setText(pages[currentPage].skip_);
             skipButton->setEnabled(!skipButton->text().isEmpty());

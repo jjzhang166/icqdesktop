@@ -7,7 +7,7 @@ namespace Ui
         Q_OBJECT
 
     public:
-        virtual int pixelMetric(PixelMetric metric, const QStyleOption * option = 0, const QWidget * widget = 0 ) const;
+        virtual int pixelMetric(PixelMetric _metric, const QStyleOption* _option = 0, const QWidget* _widget = 0 ) const;
 
     };
 
@@ -18,22 +18,27 @@ namespace Ui
    public:
        ContextMenu(QWidget* parent);
 
-       QAction* addActionWithIcon(const QIcon& icon, const QString& name, const QVariant& data);
-       QAction* addActionWithIcon(const QIcon& icon, const QString& name, const QObject *receiver, const char* member);
+       static void applyStyle(QMenu* menu, bool withPadding, int fonSize, int height);
 
-       bool hasAction(const QString& command);
+       QAction* addActionWithIcon(const QIcon& _icon, const QString& _name, const QVariant& _data);
 
-       void removeAction(const QString& command);
+       QAction* addActionWithIcon(const QIcon& _icon, const QString& _name, const QObject* _receiver, const char* _member);
 
-       void invertRight(bool invert);
-       void setIndent(int indent);
+       QAction* addActionWithIcon(const QString& _iconPath, const QString& _name, const QVariant& _data);
 
-	   void popup(const QPoint &pos, QAction *at=0);
+       bool hasAction(const QString& _command);
+
+       void removeAction(const QString& _command);
+
+       void invertRight(bool _invert);
+       void setIndent(int _indent);
+
+	   void popup(const QPoint& _pos, QAction* _at=0);
        void clear();
 
    protected:
-       virtual void showEvent(QShowEvent *e) override;
-       virtual void hideEvent(QHideEvent *e) override;
+       virtual void showEvent(QShowEvent* _e) override;
+       virtual void hideEvent(QHideEvent* _e) override;
 
    private:
        bool InvertRight_;

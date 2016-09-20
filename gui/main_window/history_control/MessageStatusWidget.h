@@ -23,6 +23,8 @@ namespace Ui
 
         void setContact(const QString _aimId) { aimId_ = _aimId; }
 
+        void setOutgoing(bool _outgoing) { IsOutgoing_ = _outgoing; }
+
         QColor getTimeColor() const;
 
         void setMessageBubbleVisible(const bool _visible);
@@ -33,13 +35,7 @@ namespace Ui
     private:
         bool IsOutgoing_;
 
-        bool IsDeliveredToServer_;
-
-        bool IsDeliveredToClient_;
-
         bool IsMessageBubbleVisible_;
-
-        Themes::PixmapResourceId StatusIcon_;
 
         QString aimId_;
 

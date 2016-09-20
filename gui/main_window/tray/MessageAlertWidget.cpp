@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "MessageAlertWidget.h"
 #include "../contact_list/RecentItemDelegate.h"
+#include "../contact_list/ContactList.h"
 #include "../../cache/avatars/AvatarStorage.h"
 
 namespace Ui
@@ -14,6 +15,7 @@ namespace Ui
 		Options_.initFrom(this);
 		setFixedSize(Delegate_->sizeHintForAlert());
         connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatarChanged(QString)), Qt::QueuedConnection);
+        Delegate_->setRegim(::Logic::MembersWidgetRegim::FROM_ALERT);
 	}
 
 	MessageAlertWidget::~MessageAlertWidget()
@@ -31,14 +33,14 @@ namespace Ui
         if (!Painter_)
         {
             Painter_ = new QPainter(this);
-            Delegate_->paint(Painter_, Options_, State_, true);
+            Delegate_->paint(Painter_, Options_, State_, false);
             Painter_->end();
             return;
         }
 
         if (Painter_->begin(this))
         {
-			Delegate_->paint(Painter_, Options_, State_, true);
+			Delegate_->paint(Painter_, Options_, State_, false);
 			Painter_->end();
 		}
 	}

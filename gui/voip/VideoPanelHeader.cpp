@@ -1,95 +1,67 @@
 #include "stdafx.h"
 #include "VideoPanelHeader.h"
-#include "../core_dispatcher.h"
-#include "../../core/Voip/VoipManagerDefines.h"
-#include "../utils/utils.h"
-#include "../main_window/contact_list/ContactListModel.h"
-#include "VoipTools.h"
-#include "../controls/TextEmojiWidget.h"
-#include "NameAndStatusWidget.h"
+
 #include "PushButton_t.h"
+#include "VoipTools.h"
+#include "../controls/CommonStyle.h"
+#include "../utils/utils.h"
 
 #define SCALED_VALUE(x) (Utils::scale_value((x)))
 #define DEFAULT_BORDER SCALED_VALUE(12)
 #define DEFAULT_WINDOW_ROUND_RECT SCALED_VALUE(5)
 #define DEFAULT_TIME_BUTTONS_OFFSET SCALED_VALUE(300)
 
-#define COLOR_SECURE_BTN_ACTIVE   QColor(0, 0, 0, 255)
-#define COLOR_SECURE_BTN_INACTIVE QColor(0, 0, 0, 0)
+#define COLOR_SECURE_BTN_ACTIVE   QColor(255, 255, 255, 255)
+#define COLOR_SECURE_BTN_INACTIVE QColor(255, 255, 255, 0)
 
 #ifdef __APPLE__
-    const QString closeButtonStyle =
-        "QPushButton { border-image: url(:/resources/video_panel/videoctrl_close_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
-        "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_close_100_hover.png); background-color: #e81123; } "
-        "QPushButton:pressed { border-image: url(:/resources/video_panel/videoctrl_close_100_active.png); background-color: #d00516; }";
-
     const QString minButtonStyle =
-        "QPushButton { border-image: url(:/resources/video_panel/videoctrl_minimize_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
-        "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_minimize_100_hover.png); background-color: #d3d3d3; } "
-        "QPushButton:pressed { border-image: url(:/resources/video_panel/videoctrl_minimize_100_active.png); background-color: #9b9b9b; }";
+        "QPushButton { border-image: url(:/resources/main_window/contr_minimize_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
+        "QPushButton:hover { border-image: url(:/resources/main_window/contr_minimize_100_hover.png); background-color: #d3d3d3; } "
+        "QPushButton:pressed { border-image: url(:/resources/main_window/contr_minimize_100_active.png); background-color: #9b9b9b; }";
 
     const QString maxButtonStyle =
         "QPushButton { border-image: url(:/resources/video_panel/videoctrl_bigwindow_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
         "QPushButton:hover { border-image: url(:/resources/video_panel/videoctrl_bigwindow_100_hover.png); background-color: #d3d3d3; } "
         "QPushButton:pressed { border-image: url(:/resources/video_panel/videoctrl_bigwindow_100_active.png); background-color: #9b9b9b; }";
-
-    const QString maxButtonStyle2 =
-        "QPushButton { border-image: url(:/resources/main_window/contr_smallwindow_100.png); width: 32dip; height: 32dip; background-color: transparent; padding: 0; margin: 0; border: none; } "
-        "QPushButton:hover { border-image: url(:/resources/main_window/contr_smallwindow_100.png); background-color: #d3d3d3; } "
-        "QPushButton:pressed { border-image: url(:/resources/main_window/contr_smallwindow_100_active.png); background-color: #9b9b9b; }";
 #else
-	const QString closeButtonStyle =
-		"QPushButton { background-image: url(:/resources/video_panel/videoctrl_close_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
-        "QPushButton:hover { background-image: url(:/resources/video_panel/videoctrl_close_100_hover.png); background-color: #e81123; }"
-        "QPushButton:pressed { background-image: url(:/resources/video_panel/videoctrl_close_100_active.png); background-color: #d00516; } ";
+    const QString minButtonStyle =
+        "QPushButton { background-image: url(:/resources/main_window/contr_minimize_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
+        "QPushButton:hover { background-image: url(:/resources/main_window/contr_minimize_100_hover.png); background-color: #d3d3d3; }"
+        "QPushButton:pressed { background-image: url(:/resources/main_window/contr_minimize_100_active.png); background-color: #9b9b9b; } ";
 
-	const QString minButtonStyle =
-		"QPushButton { background-image: url(:/resources/video_panel/videoctrl_minimize_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
-        "QPushButton:hover { background-image: url(:/resources/video_panel/videoctrl_minimize_100_hover.png); background-color: #d3d3d3; }"
-        "QPushButton:pressed { background-image: url(:/resources/video_panel/videoctrl_minimize_100_active.png); background-color: #9b9b9b; } ";
-
-	const QString maxButtonStyle =
-		"QPushButton { background-image: url(:/resources/video_panel/videoctrl_bigwindow_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
+    const QString maxButtonStyle =
+        "QPushButton { background-image: url(:/resources/video_panel/videoctrl_bigwindow_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; background-color: transparent; padding-top: 2dip; padding-bottom: 2dip; width: 24dip; height: 24dip; padding-left: 11dip; padding-right: 12dip; border: none; }"
         "QPushButton:hover { background-image: url(:/resources/video_panel/videoctrl_bigwindow_100_hover.png); background-color: #d3d3d3; }"
         "QPushButton:pressed { background-image: url(:/resources/video_panel/videoctrl_bigwindow_100_active.png); background-color: #9b9b9b; } ";
-
-    const QString maxButtonStyle2 =
-        "QPushButton { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_smallwindow_100.png); background-color: transparent; background-repeat: no-repeat; background-position: center; padding-top: 2dip; padding-bottom: 2dip; padding-left: 11dip; padding-right: 11dip; border: none; }"
-        "QPushButton:hover { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_smallwindow_100.png); background-color: #d3d3d3; }"
-        "QPushButton:hover:pressed { width: 24dip; height: 24dip; background-image: url(:/resources/main_window/contr_smallwindow_100_active.png); background-color: #c8c8c8; }";
 #endif
 
 const QString secureCallButton = 
 " \
 QPushButton \
 { \
-    color: #ffffff; \
+    color: #000000; \
     font-size: 15dip; \
     text-align: center; \
     border-style: none; \
     background-color: transparent; \
 } \
 ";
-    //margin-left:  24dip; \
-    //margin-right: 24dip; \
 
 const QString secureCallButtonClicked = 
 " \
 QPushButton \
 { \
-    color: #ffffff; \
+    color: #000000; \
     font-size: 15dip; \
     text-align: center; \
     border-style: solid; \
     border-color: #000000; \
-    background-color: #000000; \
+    background-color: #FFFFFF; \
 } \
 ";
-    //border-right-width: 24dip;\
-    //border-left-width: 24dip;\
 
-    //margin-left:  24dip; \
-    //margin-right: 24dip; \
+const QString userNameStyle = "QWidget { color: #FFFFFF; }";
 
 #define SECURE_BTN_BORDER_W    Utils::scale_value(24)
 #define SECURE_BTN_ICON_W      Utils::scale_value(16)
@@ -99,131 +71,152 @@ QPushButton \
 #define SECURE_BTN_W           (2 * SECURE_BTN_BORDER_W + SECURE_BTN_ICON_W + SECURE_BTN_TEXT_W + SECURE_BTN_ICON2TEXT_W)
 
 
-std::string Ui::getFotmatedTime(unsigned ts) {
-    int h = ts / (60 * 60);
-    int m = (ts / 60) % 60;
-    int s = ts % 60;
+std::string Ui::getFotmatedTime(unsigned _ts)
+{
+    int hours = _ts / (60 * 60);
+    int minutes = (_ts / 60) % 60;
+    int sec = _ts % 60;
 
-    std::stringstream ss;
-    if (h > 0) {
-        ss << std::setfill('0') << std::setw(2) << h << ":";
+    std::stringstream timeString;
+    if (hours > 0)
+    {
+        timeString << std::setfill('0') << std::setw(2) << hours << ":";
     }
-    ss << std::setfill('0') << std::setw(2) << m << ":";
-    ss << std::setfill('0') << std::setw(2) << s;
+    timeString << std::setfill('0') << std::setw(2) << minutes << ":";
+    timeString << std::setfill('0') << std::setw(2) << sec;
 
-    return ss.str();
+    return timeString.str();
 }
 
-Ui::MoveablePanel::MoveablePanel(QWidget* parent)
-: QWidget(NULL)
-, _parent(parent) {
-	_drag_state.is_draging = false;
-
-    setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint);
+Ui::MoveablePanel::MoveablePanel(QWidget* _parent)
+    : QWidget(_parent, Qt::Window | Qt::FramelessWindowHint)
+    , parent_(_parent)
+{
+    dragState_.isDraging = false;
     setAttribute(Qt::WA_NoSystemBackground, true);
     setAttribute(Qt::WA_TranslucentBackground, true);
 }
 
-Ui::MoveablePanel::~MoveablePanel() {
+Ui::MoveablePanel::~MoveablePanel()
+{
 }
 
-void Ui::MoveablePanel::mouseReleaseEvent(QMouseEvent* /*e*/) {
-	_drag_state.is_draging = false;
+void Ui::MoveablePanel::mouseReleaseEvent(QMouseEvent* /*e*/)
+{
+    dragState_.isDraging = false;
 }
 
-void Ui::MoveablePanel::resizeEvent(QResizeEvent* e) {
-    QWidget::resizeEvent(e);
+void Ui::MoveablePanel::resizeEvent(QResizeEvent* _e)
+{
+    QWidget::resizeEvent(_e);
 #ifdef __APPLE__
-    const auto rc = _parent->rect();
-    if (_parent && !_parent->isFullScreen()) {
+    const auto rc = parent_->rect();
+    if (parent_ && !parent_->isFullScreen())
+    {
         QPainterPath path(QPointF(0, 0));
         path.addRoundedRect(rc.x(), rc.y(), rc.width(), rc.height(), DEFAULT_WINDOW_ROUND_RECT, DEFAULT_WINDOW_ROUND_RECT);
         setMask(path.toFillPolygon().toPolygon());
-    } else {
+    }
+    else
+    {
         clearMask();
     }
 #endif
 }
 
-void Ui::MoveablePanel::mousePressEvent(QMouseEvent* e) {
-	if (_parent && !_parent->isFullScreen()) {
-		_drag_state.is_draging = true;
-		_drag_state.pos_drag_begin = e->pos();
-	}
-}
-
-void Ui::MoveablePanel::mouseMoveEvent(QMouseEvent* e) {
-    if ((e->buttons() & Qt::LeftButton) && _drag_state.is_draging) {
-        QPoint diff = e->pos() - _drag_state.pos_drag_begin;
-        QPoint newpos = _parent->pos() + diff;
-
-        _parent->move(newpos);
+void Ui::MoveablePanel::mousePressEvent(QMouseEvent* _e)
+{
+    if (parent_ && !parent_->isFullScreen())
+    {
+        dragState_.isDraging = true;
+        dragState_.posDragBegin = _e->pos();
     }
 }
 
-void Ui::MoveablePanel::changeEvent(QEvent* e) {
-    QWidget::changeEvent(e);
+void Ui::MoveablePanel::mouseMoveEvent(QMouseEvent* _e)
+{
+    if ((_e->buttons() & Qt::LeftButton) && dragState_.isDraging)
+    {
+        QPoint diff = _e->pos() - dragState_.posDragBegin;
+        QPoint newpos = parent_->pos() + diff;
 
-    if (e->type() == QEvent::ActivationChange) {
-        if (isActiveWindow() || uiWidgetIsActive()) {
-            if (_parent) {
-                _parent->raise();
+        parent_->move(newpos);
+    }
+}
+
+void Ui::MoveablePanel::changeEvent(QEvent* _e)
+{
+    QWidget::changeEvent(_e);
+
+    if (_e->type() == QEvent::ActivationChange)
+    {
+        if (isActiveWindow() || uiWidgetIsActive())
+        {
+            if (parent_)
+            {
+                parent_->raise();
                 raise();
             }
         }
     }
 }
 
-void Ui::MoveablePanel::keyReleaseEvent(QKeyEvent* e) {
-    QWidget::keyReleaseEvent(e);
-    if (e->key() == Qt::Key_Escape) {
+void Ui::MoveablePanel::keyReleaseEvent(QKeyEvent* _e)
+{
+    QWidget::keyReleaseEvent(_e);
+    if (_e->key() == Qt::Key_Escape)
+    {
         emit onkeyEscPressed();
     }
 }
 
-bool Ui::VideoPanelHeader::uiWidgetIsActive() const {
-    return _lowWidget->isActiveWindow();
+bool Ui::VideoPanelHeader::uiWidgetIsActive() const
+{
+    return lowWidget_->isActiveWindow();
 }
 
-void Ui::VideoPanelHeader::_onMinimize() {
+void Ui::VideoPanelHeader::_onMinimize()
+{
     emit onMinimize();
 }
 
-void Ui::VideoPanelHeader::_onMaximize() {
+void Ui::VideoPanelHeader::_onMaximize()
+{
     emit onMaximize();
 }
 
-void Ui::VideoPanelHeader::_onClose() {
+void Ui::VideoPanelHeader::_onClose()
+{
     emit onClose();
 }
 
-Ui::VideoPanelHeader::VideoPanelHeader(QWidget* parent, int items)
-: MoveablePanel(parent)
-, _callName(NULL)
-, _lowWidget(NULL)
-, _callTime(NULL)
-, _btnMin(NULL)
-, _secureCallEnabled(false)
-, _btnMax(NULL)
-, _btnClose(NULL)
-, _callNameSpacer(NULL)
-, _callTimeSpacer(NULL)
-, _items_to_show(items) {
+Ui::VideoPanelHeader::VideoPanelHeader(QWidget* _parent, int _items)
+    : MoveablePanel(_parent)
+    , callName_(NULL)
+    , lowWidget_(NULL)
+    , callTime_(NULL)
+    , btnMin_(NULL)
+    , secureCallEnabled_(false)
+    , btnMax_(NULL)
+    , btnClose_(NULL)
+    , itemsToShow_(_items)
+{
+    setStyleSheet(Utils::LoadStyle(":/voip/video_panel.qss"));
     setProperty("VideoPanelHeader", true);
     setContentsMargins(0, 0, 0, 0);
 
     QHBoxLayout* layout = new QHBoxLayout();
-    _lowWidget = new QWidget(this);
+    lowWidget_ = new QWidget(this);
     { // low widget. it makes background panel coloured
-        _lowWidget->setContentsMargins(DEFAULT_BORDER, 0, 0, 0);
-        _lowWidget->setProperty("VideoPanelHeader", true);
-        _lowWidget->setLayout(layout);
+        lowWidget_->setContentsMargins(DEFAULT_BORDER, 0, 0, 0);
+        lowWidget_->setProperty("VideoPanelHeader", true);
+        lowWidget_->setLayout(layout);
 
         QVBoxLayout* vLayoutParent = new QVBoxLayout();
         vLayoutParent->setContentsMargins(0, 0, 0, 0);
         vLayoutParent->setSpacing(0);
         vLayoutParent->setAlignment(Qt::AlignVCenter);
-        vLayoutParent->addWidget(_lowWidget);
+        vLayoutParent->addWidget(lowWidget_);
         setLayout(vLayoutParent);
 
         layout->setSpacing(0);
@@ -233,142 +226,131 @@ Ui::VideoPanelHeader::VideoPanelHeader(QWidget* parent, int items)
         //layout->addSpacing(DEFAULT_BORDER);
     }
 
-    auto __addWidget = [] (QWidget* parent)
+    auto addWidget = [] (QWidget* _parent)
     {
-        QWidget* w = new QWidget(parent);
+        QWidget* w = new QWidget(_parent);
         w->setContentsMargins(0, 0, 0, 0);
         w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        if (parent) {
-            parent->layout()->addWidget(w);
+        if (_parent)
+        {
+            _parent->layout()->addWidget(w);
         }
         return w;
     };
 
-    auto __addLayout = [] (QWidget* w, Qt::Alignment align)
+    auto addLayout = [] (QWidget* _w, Qt::Alignment _align)
     {
-        assert(w);
-        if (w) {
+        assert(_w);
+        if (_w)
+        {
             QHBoxLayout* layout = new QHBoxLayout();
             layout->setSpacing(0);
             layout->setContentsMargins(0, 0, 0, 0);
-            layout->setAlignment(align);
-            w->setLayout(layout);
+            layout->setAlignment(_align);
+            _w->setLayout(layout);
         }
     };
 
-    QWidget* leftWidg    = __addWidget(_lowWidget);
-    QWidget* centerWidg  = __addWidget(_lowWidget);
-    QWidget* rightWidg   = __addWidget(_lowWidget);
+    QWidget* leftWidg    = addWidget(lowWidget_);
+    QWidget* centerWidg  = addWidget(lowWidget_);
+    QWidget* rightWidg   = addWidget(lowWidget_);
 
-    __addLayout(leftWidg,   Qt::AlignLeft | Qt::AlignVCenter);
-    __addLayout(centerWidg, Qt::AlignCenter);
-    __addLayout(rightWidg,  Qt::AlignRight | Qt::AlignVCenter);
+    addLayout(leftWidg,   Qt::AlignLeft | Qt::AlignVCenter);
+    addLayout(centerWidg, Qt::AlignCenter);
+    addLayout(rightWidg,  Qt::AlignRight | Qt::AlignVCenter);
 
     QFont font = QApplication::font();
     font.setStyleStrategy(QFont::PreferAntialias);
-    if (_items_to_show & kVPH_ShowName) {
-        _callName = new NameWidget(leftWidg, Utils::scale_value(15));
-        _callName->setFont(font);
-        _callName->layout()->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-        _callName->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-        _callName->setNameProperty("VideoPanelHeaderText", true);
+    if (itemsToShow_ & kVPH_ShowName)
+    {
+        callName_ = new NameWidget(leftWidg, Utils::scale_value(15));
+        callName_->setFont(font);
+        callName_->layout()->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+        callName_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+        callName_->setNameProperty("VideoPanelHeaderText", true);
 
-        leftWidg->layout()->addWidget(_callName);
+        leftWidg->layout()->addWidget(callName_);
         //leftWidg->layout()->addSpacing(DEFAULT_BORDER << 1);
     }
 
-    if (_items_to_show & kVPH_ShowTime) {
-        _callTime = new voipTools::BoundBox<PushButton_t>(centerWidg);
-        _callTime->setPostfixColor(QColor(255, 255, 255, 255));
-        _callTime->setFont(font);
-        _callTime->setEnabled(false);
-        _callTime->setAlignment(Qt::AlignCenter);
-        _callTime->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
-        _callTime->setFixedWidth(SECURE_BTN_TEXT_W);
-        _callTime->setIconSize(SECURE_BTN_ICON_W, SECURE_BTN_ICON_H);
+    if (itemsToShow_ & kVPH_ShowTime)
+    {
+        callTime_ = new voipTools::BoundBox<PushButton_t>(centerWidg);
+        callTime_->setPostfixColor(QColor(0, 0, 0, 255));
+        callTime_->setFont(font);
+        callTime_->setEnabled(false);
+        callTime_->setAlignment(Qt::AlignCenter);
+        callTime_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
+        callTime_->setFixedWidth(SECURE_BTN_TEXT_W);
+        callTime_->setIconSize(SECURE_BTN_ICON_W, SECURE_BTN_ICON_H);
 
-        QObject::connect(_callTime, SIGNAL(clicked()), this, SLOT(_onSecureCallClicked()), Qt::QueuedConnection);
-        Utils::ApplyStyle(_callTime, secureCallButton);
-        centerWidg->layout()->addWidget(_callTime);
+        QObject::connect(callTime_, SIGNAL(clicked()), this, SLOT(_onSecureCallClicked()), Qt::QueuedConnection);
+        Utils::ApplyStyle(callTime_, secureCallButton);
+        centerWidg->layout()->addWidget(callTime_);
         //layout->addSpacing(DEFAULT_BORDER * 3);
     }
 
     QWidget* parentWidget = rightWidg;
-    auto __addButton = [this, parentWidget] (const QString& propertyName, const char* slot)->QPushButton* {
+    auto addButton = [this, parentWidget] (const QString& _propertyName, const char* _slot)->QPushButton*
+    {
         QPushButton* btn = new voipTools::BoundBox<QPushButton>(parentWidget);
 
-        Utils::ApplyStyle(btn, propertyName);
+        Utils::ApplyStyle(btn, _propertyName);
         btn->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
         btn->setCursor(QCursor(Qt::PointingHandCursor));
         btn->setFlat(true);
         parentWidget->layout()->addWidget(btn);
-        connect(btn, SIGNAL(clicked()), this, slot, Qt::QueuedConnection);
+        connect(btn, SIGNAL(clicked()), this, _slot, Qt::QueuedConnection);
         return btn;
     };
-
-    bool spacerBetweenBtnsAndTimeAdded = false;
-    if (_items_to_show & kVPH_ShowMin) {
-        //if (!spacerBetweenBtnsAndTimeAdded) {
-        //    _callTimeSpacer = new QSpacerItem(1, 1, QSizePolicy::Expanding);
-        //    layout->addSpacerItem(_callTimeSpacer);
-        //    spacerBetweenBtnsAndTimeAdded = true;
-        //}
-        _btnMin = __addButton(minButtonStyle, SLOT(_onMinimize()));
+    if (itemsToShow_ & kVPH_ShowMin)
+    {
+        btnMin_ = addButton(minButtonStyle, SLOT(_onMinimize()));
     }
 
-    if (_items_to_show & kVPH_ShowMax) {
-        //if (!spacerBetweenBtnsAndTimeAdded) {
-        //    _callTimeSpacer = new QSpacerItem(1, 1, QSizePolicy::Expanding);
-        //    layout->addSpacerItem(_callTimeSpacer);
-        //    spacerBetweenBtnsAndTimeAdded = true;
-        //}
-        _btnMax = __addButton(maxButtonStyle, SLOT(_onMaximize()));
+    if (itemsToShow_ & kVPH_ShowMax)
+    {
+        btnMax_ = addButton(maxButtonStyle, SLOT(_onMaximize()));
     }
 
-    if (_items_to_show & kVPH_ShowClose) {
-        //if (!spacerBetweenBtnsAndTimeAdded) {
-        //    _callTimeSpacer = new QSpacerItem(1, 1, QSizePolicy::Expanding);
-        //    layout->addSpacerItem(_callTimeSpacer);
-        //    spacerBetweenBtnsAndTimeAdded = true;
-        //}
-        _btnClose = __addButton(closeButtonStyle, SLOT(_onClose()));
+    if (itemsToShow_ & kVPH_ShowClose)
+    {
+        btnClose_ = addButton(Ui::CommonStyle::getCloseButtonStyle(), SLOT(_onClose()));
     }
-
-    //if (!spacerBetweenBtnsAndTimeAdded) {
-    //    _callTimeSpacer = new QSpacerItem(1, 1, QSizePolicy::Expanding);
-    //    layout->addSpacerItem(_callTimeSpacer);
-    //    spacerBetweenBtnsAndTimeAdded = true;
-    //}
 }
 
-Ui::VideoPanelHeader::~VideoPanelHeader() {
+Ui::VideoPanelHeader::~VideoPanelHeader()
+{
     
 }
 
-void Ui::VideoPanelHeader::enterEvent(QEvent* e) {
-	QWidget::enterEvent(e);
-	emit onMouseEnter();
-}
-
-void Ui::VideoPanelHeader::leaveEvent(QEvent* e) {
-	QWidget::leaveEvent(e);
-	emit onMouseLeave();
-}
-
-void Ui::VideoPanelHeader::enableSecureCall(bool enable)
+void Ui::VideoPanelHeader::enterEvent(QEvent* _e)
 {
-    _secureCallEnabled = enable;
-    if (_callTime) {
-        _callTime->setEnabled(enable);
-        _callTime->setOffsets(enable ? Utils::scale_value(12) : 0);
-        _callTime->setImageForState(PushButton_t::normal, enable ? ":/resources/video_panel/content_securecall_video_100.png" : "");
-        _callTime->setFixedWidth(enable ? SECURE_BTN_W : SECURE_BTN_TEXT_W);
+    QWidget::enterEvent(_e);
+    emit onMouseEnter();
+}
 
-        _callTime->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_INACTIVE);
-        _callTime->setColorForState(PushButton_t::hovered, enable ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
-        _callTime->setColorForState(PushButton_t::pressed, enable ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+void Ui::VideoPanelHeader::leaveEvent(QEvent* _e)
+{
+    QWidget::leaveEvent(_e);
+    emit onMouseLeave();
+}
 
-        _callTime->setCursor(enable ? QCursor(Qt::PointingHandCursor) : QCursor(Qt::ArrowCursor));
+void Ui::VideoPanelHeader::enableSecureCall(bool _enable)
+{
+    secureCallEnabled_ = _enable;
+    if (callTime_)
+    {
+        callTime_->setEnabled(_enable);
+        callTime_->setOffsets(_enable ? Utils::scale_value(12) : 0);
+        callTime_->setImageForState(PushButton_t::normal, _enable ? ":/resources/video_panel/content_securecall_video_100.png" : "");
+        callTime_->setFixedWidth(_enable ? SECURE_BTN_W : SECURE_BTN_TEXT_W);
+
+        callTime_->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_INACTIVE);
+        callTime_->setColorForState(PushButton_t::hovered, _enable ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+        callTime_->setColorForState(PushButton_t::pressed, _enable ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+
+        callTime_->setCursor(_enable ? QCursor(Qt::PointingHandCursor) : QCursor(Qt::ArrowCursor));
     }
 }
 
@@ -377,52 +359,69 @@ void Ui::VideoPanelHeader::_onSecureCallClicked()
     emit onSecureCallClicked(geometry());
 }
 
-void Ui::VideoPanelHeader::setCallName(const std::string& name) {
-    if (!!_callName) {
-        _callName->setName(name.c_str());
-    }
-}
-
-void Ui::VideoPanelHeader::setFullscreenMode(bool en) {
-    if (_btnMin) {
-        if (en) {
-            _btnMin->hide();
-        } else {
-            _btnMin->show();
-        }
-    }
-}
-
-void Ui::VideoPanelHeader::setSecureWndOpened(const bool opened)
+void Ui::VideoPanelHeader::setCallName(const std::string& _name)
 {
-    assert(_callTime);
-    if (_callTime) {
-        if (opened) {
-            Utils::ApplyStyle(_callTime, secureCallButtonClicked);
+    if (!!callName_)
+    {
+        callName_->setName(_name.c_str());
+    }
+}
 
-            _callTime->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_ACTIVE);
-            _callTime->setColorForState(PushButton_t::hovered, COLOR_SECURE_BTN_ACTIVE);
-            _callTime->setColorForState(PushButton_t::pressed, COLOR_SECURE_BTN_ACTIVE);
-        } else {
-            Utils::ApplyStyle(_callTime, secureCallButton);
-
-            _callTime->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_INACTIVE);
-            _callTime->setColorForState(PushButton_t::hovered, _secureCallEnabled ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
-            _callTime->setColorForState(PushButton_t::pressed, _secureCallEnabled ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
-
-            _callTime->setCursor(_secureCallEnabled ? QCursor(Qt::PointingHandCursor) : QCursor(Qt::ArrowCursor));
+void Ui::VideoPanelHeader::setFullscreenMode(bool _en)
+{
+    if (btnMin_)
+    {
+        if (_en)
+        {
+            btnMin_->hide();
+        }
+        else
+        {
+            btnMin_->show();
         }
     }
 }
 
-void Ui::VideoPanelHeader::setTime(unsigned ts, bool have_call) {
-    if (!have_call) {
-        if (!!_callTime) {
-            _callTime->setText(QString(), "");
+void Ui::VideoPanelHeader::setSecureWndOpened(const bool _opened)
+{
+    assert(callTime_);
+    if (callTime_)
+    {
+        if (_opened)
+        {
+            Utils::ApplyStyle(callTime_, secureCallButtonClicked);
+
+            callTime_->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_ACTIVE);
+            callTime_->setColorForState(PushButton_t::hovered, COLOR_SECURE_BTN_ACTIVE);
+            callTime_->setColorForState(PushButton_t::pressed, COLOR_SECURE_BTN_ACTIVE);
         }
-	} else {
-        if (!!_callTime) {
-            _callTime->setText(QString(), getFotmatedTime(ts).c_str());
+        else
+        {
+            Utils::ApplyStyle(callTime_, secureCallButton);
+
+            callTime_->setColorForState(PushButton_t::normal,  COLOR_SECURE_BTN_INACTIVE);
+            callTime_->setColorForState(PushButton_t::hovered, secureCallEnabled_ ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+            callTime_->setColorForState(PushButton_t::pressed, secureCallEnabled_ ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
+
+            callTime_->setCursor(secureCallEnabled_ ? QCursor(Qt::PointingHandCursor) : QCursor(Qt::ArrowCursor));
         }
-	}
+    }
+}
+
+void Ui::VideoPanelHeader::setTime(unsigned _ts, bool _hasCall)
+{
+    if (!_hasCall)
+    {
+        if (!!callTime_)
+        {
+            callTime_->setText(QString(), "");
+        }
+    }
+    else
+    {
+        if (!!callTime_)
+        {
+            callTime_->setText(QString(), getFotmatedTime(_ts).c_str());
+        }
+    }
 }

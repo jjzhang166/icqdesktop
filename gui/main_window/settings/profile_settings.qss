@@ -165,8 +165,6 @@ QPushButton#optionsButton_[self="true"]
 {
     height: 40dip;
     border: none;
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     font-size: 16dip;
     color: #579e1c;
     text-align: right bottom;
@@ -217,8 +215,6 @@ QPushButton#ignoreButton_
 {
     height: 40dip;
     border: none;
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     font-size: 18dip;
     color: #e30f04;
     text-align: left bottom;
@@ -238,8 +234,6 @@ QPushButton#spamButton_
 {
     height: 40dip;
     border: none;
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     font-size: 18dip;
     color: #e30f04;
     text-align: left bottom;
@@ -258,8 +252,6 @@ QPushButton#spamButton_:hover:pressed
 QMenu
 {
     color: #282828;
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     font-size: 15dip;
     border-style: solid;
 	border-width: 1dip;
@@ -327,16 +319,12 @@ QPushButton#statusButton_::menu-indicator
 
 QLabel#statusLabel_[self="true"]
 {
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     font-size: 16dip;
     color: #579e1c;
     margin-left: 0dip;
 }
 QLabel#statusLabel_[self="false"]
 {
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     font-size: 16dip;
     color: #579e1c;
     margin-left: 10dip;

@@ -1,14 +1,15 @@
 #include "stdafx.h"
-#include "IntroduceYourself.h"
 
-#include "../controls/CustomButton.h"
+#include "IntroduceYourself.h"
+#include "../controls/CommonStyle.h"
+#include "../controls/ContactAvatarWidget.h"
 #include "../controls/LineEditEx.h"
-#include "../utils/utils.h"
 #include "../controls/TextEmojiWidget.h"
-#include "../utils/InterConnector.h"
 #include "../core_dispatcher.h"
 #include "../gui_settings.h"
-#include "../controls/ContactAvatarWidget.h"
+#include "../utils/utils.h"
+#include "../utils/InterConnector.h"
+
 
 namespace Ui
 {
@@ -58,31 +59,15 @@ namespace Ui
             }
 
             {
-                QString style_name_edit = "QLineEdit{min-height: 48dip;\
-                                          max-height: 48dip;\
-                                          background-color: transparent;\
-                                          border-style: none;\
-                                          border-bottom-color: #cccccc;\
-                                          border-bottom-width: 1dip;\
-                                          border-bottom-style: solid;\
-                                          font-size: 18dip;}";
 
-                auto style_focus_name_edit = "QLineEdit:focus{min-height: 48dip;\
-                                             max-height: 48dip;\
-                                             font-size: 18dip;\
-                                             background-color: transparent;\
-                                             border-style: none;\
-                                             border-bottom-color: #579e1c;\
-                                             border-bottom-width: 1dip;\
-                                             border-bottom-style: solid;}";
-                
                 name_edit_ = new LineEditEx(middle_widget);
                 name_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("placeholders", "Your name"));
                 name_edit_->setAlignment(Qt::AlignCenter);
                 name_edit_->setMinimumWidth(Utils::scale_value(320));
                 name_edit_->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
                 name_edit_->setAttribute(Qt::WA_MacShowFocusRect, false);
-                name_edit_->setStyleSheet(Utils::ScaleStyle(style_name_edit + style_focus_name_edit, Utils::get_scale_coefficient()));
+                name_edit_->setFont(Fonts::appFontScaled(18));
+                Utils::ApplyStyle(name_edit_, Ui::CommonStyle::getLineEditStyle());
                 middle_layout->addWidget(name_edit_);
             }
 
@@ -95,14 +80,14 @@ namespace Ui
                 pl->setAlignment(Qt::AlignCenter);
 
                 next_button_ = new QPushButton(middle_widget);
-                Utils::ApplyStyle(next_button_, disable_button_style);
+                Utils::ApplyStyle(next_button_, Ui::CommonStyle::getDisabledButtonStyle());
                 setButtonActive(false);
                 next_button_->setFlat(true);
                 next_button_->setText(QT_TRANSLATE_NOOP("placeholders", "Continue"));
                 next_button_->setCursor(QCursor(Qt::PointingHandCursor));
                 next_button_->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
                 connect(next_button_, SIGNAL(clicked()), this, SLOT(accept()), Qt::QueuedConnection);
-                
+
                 name_edit_->setAlignment(Qt::AlignCenter);
                 pl->addWidget(next_button_);
                 middle_layout->addLayout(pl);
@@ -125,15 +110,14 @@ namespace Ui
                 bottom_layout->setContentsMargins(0, 0, 0, 0);
                 bottom_layout->setAlignment(Qt::AlignHCenter);
 
-                auto skip = new Ui::TextEmojiWidget(bottom_widget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), QColor("#579e1c"), Utils::scale_value(46));
+                /*auto skip = new Ui::TextEmojiWidget(bottom_widget, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16), CommonStyle::getLinkColor(), Utils::scale_value(46));
                 skip->setSizePolicy(QSizePolicy::Policy::Preferred, skip->sizePolicy().verticalPolicy());
                 skip->setText(QT_TRANSLATE_NOOP("placeholders", "Skip"));
                 skip->setCursor(Qt::PointingHandCursor);
                 bottom_layout->addWidget(skip);
                 bottom_layout->setAlignment(skip, Qt::AlignHCenter | Qt::AlignBottom);
                 connect(skip, &TextEmojiWidget::clicked, this, &IntroduceYourself::Skipped);
-                //parent->connect(skip, &Ui::TextEmojiWidget::clicked, addNewContactsRoutine);
-
+                */
                 auto horizontalSpacer = new QSpacerItem(0, Utils::scale_value(32), QSizePolicy::Preferred, QSizePolicy::Minimum);
                 bottom_layout->addItem(horizontalSpacer);
             }
@@ -172,7 +156,7 @@ namespace Ui
         int max_nickname_length = 20;
 
         bool any_non_space = false;
-        
+
         for (auto symb : name_edit_->text())
         {
             if (!symb.isSpace())
@@ -191,7 +175,7 @@ namespace Ui
     void IntroduceYourself::setButtonActive(bool _is_active)
     {
         next_button_->setEnabled(_is_active);
-        Utils::ApplyStyle(next_button_, _is_active ? main_button_style : disable_button_style);
+        Utils::ApplyStyle(next_button_, _is_active ? Ui::CommonStyle::getGreenButtonStyle() : Ui::CommonStyle::getDisabledButtonStyle());
     }
 
     void IntroduceYourself::Skipped()

@@ -1,5 +1,15 @@
 #pragma once
+
+#include "../namespaces.h"
+
 #include "../utils/utils.h"
+
+FONTS_NS_BEGIN
+
+enum class FontFamily;
+enum class FontStyle;
+
+FONTS_NS_END
 
 namespace Ui
 {
@@ -21,7 +31,8 @@ namespace Ui
         void keyPressed(int);
 
     private Q_SLOTS:
-        void edit_content_changed();
+        void editContentChanged();
+        void enableFlash();
 
     private:
 
@@ -29,22 +40,31 @@ namespace Ui
 
         typedef std::map<QString, QString>	ResourceMap;
 
-        ResourceMap resource_index_;
+        ResourceMap resourceIndex_;
         QFont font_;
         QColor color_;
-        int prev_pos_;
+        int prevPos_;
         bool input_;
         bool isFitToText_;
+        int flashInterval_;
+        int add_;
+
+        QTimer* flashChangeTimer_;
 
         bool isCatchEnter_;
 
         QString getPlainText(int _from, int _to = -1) const;
-        void init(int fontSize);
+        void init(int _fontSize);
+        void initFlashTimer();
+        void setFlashInterval(int _interval);
 
     public:
 
-        TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QPalette& palette, bool input, bool _isFitToText);
-        TextEditEx(QWidget* parent, const Utils::FontsFamily fontFamily, int fontSize, const QColor& color, bool input, bool _isFitToText);
+        TextEditEx(QWidget* _parent, const Fonts::FontFamily _fontFamily, int _fontSize, const QPalette& _palette, bool _input, bool _isFitToText);
+        TextEditEx(QWidget* _parent, const Fonts::FontFamily _fontFamily, int _fontSize, const QColor& _color, bool _input, bool _isFitToText);
+        TextEditEx(QWidget* _parent, const QFont& _font, const QColor& _color, bool _input, bool _isFitToText);
+
+        virtual QSize sizeHint() const override;
 
         QString getPlainText() const;
         void setPlainText(const QString& _text, bool _convertLinks = true, const QTextCharFormat::VerticalAlignment _aligment = QTextCharFormat::AlignBaseline);
@@ -53,14 +73,25 @@ namespace Ui
         void insertEmoji(int _main, int _ext);
         void insertPlainText_(const QString& _text);
 
-        void selectByPos(const QPoint& p);
+        void selectWholeText();
+        void selectFromBeginning(const QPoint& _p);
+        void selectTillEnd(const QPoint& _p);
+        void selectByPos(const QPoint& _p);
+        void selectByPos(const QPoint& _from, const QPoint& _to);
         void clearSelection();
         bool isAllSelected();
         QString selection();
 
         QSize getTextSize() const;
+        int32_t getTextHeight() const;
+        int32_t getTextWidth() const;
+
         void setCatchEnter(bool _isCatchEnter);
+        virtual bool catchEnter(int _modifiers);
+
         int adjustHeight(int _width);
+
+        void addSpace(int _space) { add_ = _space; }
 
     protected:
         virtual void focusInEvent(QFocusEvent*) override;
@@ -69,11 +100,10 @@ namespace Ui
         virtual void mouseReleaseEvent(QMouseEvent*) override;
         virtual void mouseMoveEvent(QMouseEvent *) override;
         virtual void keyPressEvent(QKeyEvent*) override;
-        virtual QSize sizeHint() const override;
 
         virtual QMimeData* createMimeDataFromSelection() const override;
         virtual bool canInsertFromMimeData(const QMimeData* _source) const override;
         virtual void insertFromMimeData(const QMimeData* _source) override;
-        virtual bool catchEnter(int _modifiers);
+        virtual void contextMenuEvent(QContextMenuEvent *e);
     };
 }

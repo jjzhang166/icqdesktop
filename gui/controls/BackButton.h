@@ -6,7 +6,7 @@ namespace Ui
     {   
 
     public:
-        BackButton(QWidget* parent = nullptr);
+        BackButton(QWidget* _parent = nullptr);
         ~BackButton();
     };
 }

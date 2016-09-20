@@ -13,7 +13,9 @@ namespace Ui
 		: QWidget(parent)
         , HasTopMargin_(false)
         , HasAvatar_(false)
+        , HasAvatarSet_(false)
         , Selected_(false)
+        , isDeleted_(false)
 	{
 	}
 
@@ -29,6 +31,7 @@ namespace Ui
 
     bool HistoryControlPageItem::hasAvatar() const
     {
+        assert(HasAvatarSet_);
         return HasAvatar_;
     }
 
@@ -64,9 +67,20 @@ namespace Ui
         return Selected_;
     }
 
+    void HistoryControlPageItem::onActivityChanged(const bool isActive)
+    {
+        isActive;
+    }
+
+    void HistoryControlPageItem::onVisibilityChanged(const bool isVisible)
+    {
+        isVisible;
+    }
+
     void HistoryControlPageItem::setHasAvatar(const bool value)
     {
         HasAvatar_ = value;
+        HasAvatarSet_ = true;
 
         updateGeometry();
     }
@@ -78,7 +92,7 @@ namespace Ui
 
     void HistoryControlPageItem::setSender(const QString& /*_sender*/)
     {
-        
+
     }
 
     themes::themePtr HistoryControlPageItem::theme() const
@@ -91,26 +105,54 @@ namespace Ui
         return false;
     }
 
-    void HistoryControlPageItem::drawLastReadAvatar(QPainter& _p, const QString& _aimid, const QString& _friendly, const int _rightPadding)
+    void HistoryControlPageItem::drawLastReadAvatar(QPainter& _p, const QString& _aimid, const QString& _friendly, const int _rightPadding, const int _bottomPadding)
     {
         const QRect rc = rect();
 
         const int size = Utils::scale_bitmap(MessageStyle::getLastReadAvatarSize());
 
         bool isDefault = false;
-        QPixmap avatar = *Logic::GetAvatarStorage()->GetRounded(_aimid, _friendly, size, QString(), true, isDefault, false);
+        QPixmap avatar = *Logic::GetAvatarStorage()->GetRounded(_aimid, _friendly, size, QString(), true, isDefault, false, false);
 
         const int avatarSize = MessageStyle::getLastReadAvatarSize();
-        const int margin = MessageStyle::getLastReadAvatarMargin();
 
         if (!avatar.isNull())
         {
-            _p.drawPixmap(rc.right() - avatarSize - _rightPadding, rc.bottom() - avatarSize - margin, avatarSize, avatarSize, avatar);
+            _p.drawPixmap(
+                rc.right() - avatarSize - _rightPadding,
+                rc.bottom() - avatarSize - _bottomPadding,
+                avatarSize,
+                avatarSize,
+                avatar);
         }
     }
 
     qint64 HistoryControlPageItem::getId() const
     {
         return -1;
+    }
+
+
+    void HistoryControlPageItem::setDeleted(const bool _isDeleted)
+    {
+        isDeleted_ = _isDeleted;
+    }
+
+    bool HistoryControlPageItem::isDeleted() const
+    {
+        return isDeleted_;
+    }
+
+    void HistoryControlPageItem::setAimid(const QString &aimId)
+    {
+        assert(!aimId.isEmpty());
+
+        if (aimId == aimId_)
+        {
+            return;
+        }
+
+        assert(aimId_.isEmpty());
+        aimId_ = aimId;
     }
 }

@@ -35,16 +35,21 @@ namespace core
             std::string info_version_;
             std::string location_;
             std::string stamp_;
+            std::string creator_;
 
             uint32_t create_time_;
             uint32_t members_count_;
             uint32_t friend_count_;
             uint32_t blocked_count_;
+            uint32_t pending_count_;
 
             bool you_blocked_;
+            bool you_pending_;
+            bool you_member_;
             bool public_;
             bool live_;
             bool controlled_;
+            bool joinModeration_;
 
             std::list<chat_member_info> members_;
 

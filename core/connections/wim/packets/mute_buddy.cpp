@@ -27,7 +27,7 @@ int32_t mute_buddy::init_request(std::shared_ptr<core::http_request_simple> _req
 
     ss_url << c_wim_host << "buddylist/Mute" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&buddy=" << escape_symbols(aimid_) <<
         "&r=" << core::tools::system::generate_guid() <<
         "&eternal=" << (mute_ ? "1" : "0");

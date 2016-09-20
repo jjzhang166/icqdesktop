@@ -1,11 +1,18 @@
 #include "stdafx.h"
-#include "local_history.h"
+
+#include "../../corelib/collection_helper.h"
+
+#include "../log/log.h"
+
+#include "../tools/url_parser.h"
+
+#include "image_cache.h"
 #include "history_message.h"
 #include "contact_archive.h"
 #include "archive_index.h"
 #include "not_sent_messages.h"
-#include "../../corelib/collection_helper.h"
-#include "../log/log.h"
+
+#include "local_history.h"
 
 using namespace core;
 using namespace archive;
@@ -42,10 +49,20 @@ void local_history::update_history(
     archive::history_block_sptr _data,
     Out headers_list& _inserted_messages,
     Out dlg_state& _state,
-    Out dlg_state_changes& _state_changes
-    )
+    Out dlg_state_changes& _state_changes)
 {
     get_contact_archive(_contact)->insert_history_block(_data, Out _inserted_messages, Out _state, Out _state_changes);
+}
+
+void local_history::get_images(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ image_list& _images)
+{
+    get_contact_archive(_contact)->load_from_local();
+    get_contact_archive(_contact)->get_images(_from, _count, _images);
+}
+
+bool local_history::repair_images(const std::string& _contact)
+{
+    return get_contact_archive(_contact)->repair_images();
 }
 
 void local_history::get_messages_index(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ headers_list& _headers)
@@ -183,12 +200,25 @@ not_sent_message_sptr local_history::get_first_message_to_send()
 
 not_sent_message_sptr local_history::get_not_sent_message_by_iid(const std::string& _iid)
 {
-    return get_pending_messages().get_by_iid(_iid);
+    return get_pending_messages().get_by_internal_id(_iid);
 }
 
 void local_history::get_pending_file_sharing(std::list<not_sent_message_sptr>& _messages)
 {
     return get_pending_messages().get_pending_file_sharing_messages(_messages);
+}
+
+not_sent_message_sptr local_history::update_pending_with_imstate(const std::string& _message_internal_id,
+                                                                 const int64_t& _hist_msg_id,
+                                                                 const int64_t& _before_hist_msg_id)
+{
+    return get_pending_messages().update_with_imstate(_message_internal_id, _hist_msg_id, _before_hist_msg_id);
+}
+
+
+void local_history::failed_pending_message(const std::string& _message_internal_id)
+{
+    return get_pending_messages().failed_pending_message(_message_internal_id);
 }
 
 void local_history::delete_messages_up_to(const std::string& _contact, const int64_t _id)
@@ -207,10 +237,39 @@ void local_history::delete_messages_up_to(const std::string& _contact, const int
     return get_contact_archive(_contact)->delete_messages_up_to(_id);
 }
 
+void local_history::find_previewable_links(
+    const archive::history_block_sptr &_block,
+    Out tools::url_vector_t &_uris)
+{
+    for (const auto &message : *_block)
+    {
+        assert(message);
+
+        auto message_uris = tools::parse_urls(message->get_text());
+
+        _uris.insert(
+            _uris.end(),
+            std::make_move_iterator(message_uris.begin()),
+            std::make_move_iterator(message_uris.end()));
+    }
+}
+
 int32_t local_history::remove_messages_from_not_sent(const std::string& _contact, archive::history_block_sptr _data)
 {
     get_pending_messages().remove(_contact, _data);
     return 0;
+}
+
+void local_history::mark_message_duplicated(const std::string _message_internal_id)
+{
+    get_pending_messages().mark_duplicated(_message_internal_id);
+}
+
+void local_history::update_message_post_time(
+    const std::string& _message_internal_id, 
+    const std::chrono::system_clock::time_point& _time_point)
+{
+    get_pending_messages().update_message_post_time(_message_internal_id, _time_point);
 }
 
 bool local_history::has_not_sent_messages(const std::string& _contact)
@@ -265,6 +324,62 @@ std::shared_ptr<update_history_handler> face::update_history(const std::string& 
                 );
             }
         };
+
+    return handler;
+}
+
+std::shared_ptr<request_images_handler> face::get_images(const std::string& _contact, int64_t _from, int64_t _count)
+{
+    assert(!_contact.empty());
+
+    __LOG(core::log::info("archive", boost::format("get_images, contact=%1%") % _contact);)
+
+    auto history_cache = history_cache_;
+    auto handler = std::make_shared<request_images_handler>();
+    auto images = std::make_shared<image_list>();
+    std::weak_ptr<face> wr_this = shared_from_this();
+
+    thread_->run_async_function([history_cache, _contact, _from, _count, images]() -> int32_t
+    {
+        history_cache->get_images(_contact, _from, _count, *images);
+        return 0;
+
+    })->on_result_ = [wr_this, handler, images](int32_t /*_error*/)
+    {
+        auto ptr_this = wr_this.lock();
+        if (!ptr_this)
+            return;
+
+        if (handler->on_result)
+            handler->on_result(images);
+    };
+
+    return handler;
+}
+
+std::shared_ptr<async_task_handlers> face::repair_images(const std::string& _contact)
+{
+    assert(!_contact.empty());
+
+    __LOG(core::log::info("archive", boost::format("repair_images, contact=%1%") % _contact);)
+
+    auto history_cache = history_cache_;
+    auto handler = std::make_shared<async_task_handlers>();
+    std::weak_ptr<face> wr_this = shared_from_this();
+
+    thread_->run_async_function([history_cache, _contact]() -> int32_t
+    {
+        return history_cache->repair_images(_contact) ? 0 : 1;
+
+    })->on_result_ = [wr_this, handler](int32_t _error)
+    {
+        auto ptr_this = wr_this.lock();
+        if (!ptr_this)
+            return;
+
+        if (handler->on_result_)
+            handler->on_result_(_error);
+    };
 
     return handler;
 }
@@ -497,6 +612,37 @@ std::shared_ptr<async_task_handlers> face::delete_messages_up_to(const std::stri
     return handler;
 }
 
+std::shared_ptr<find_previewable_links_handler> face::find_previewable_links(const archive::history_block_sptr &_block)
+{
+    assert(_block);
+
+    auto handler = std::make_shared<find_previewable_links_handler>();
+    auto history_cache = history_cache_;
+    auto uris = std::make_shared<tools::url_vector_t>();
+
+    thread_->run_async_function(
+        [_block, history_cache, uris]
+        {
+            history_cache->find_previewable_links(_block, Out *uris);
+
+            return 0;
+        })
+    ->on_result_ =
+        [handler, uris]
+        (int32_t _error)
+        {
+            if (_error != 0)
+            {
+                return;
+            }
+
+            assert(handler->on_result_);
+            handler->on_result_(*uris);
+        };
+
+    return handler;
+}
+
 std::shared_ptr<not_sent_messages_handler> face::get_not_sent_message_by_iid(const std::string& _iid)
 {
     assert(!_iid.empty());
@@ -589,6 +735,26 @@ std::shared_ptr<async_task_handlers> face::remove_message_from_not_sent(const st
     return remove_messages_from_not_sent(_contact, block);
 }
 
+std::shared_ptr<async_task_handlers> face::mark_message_duplicated(const std::string& _message_internal_id)
+{
+    auto handler = std::make_shared<async_task_handlers>();
+    auto history_cache = history_cache_;
+
+    thread_->run_async_function([history_cache, _message_internal_id]()->int32_t
+    {
+        history_cache->mark_message_duplicated(_message_internal_id);
+
+        return 0;
+
+    })->on_result_ = [handler](int32_t _error)
+    {
+        if (handler->on_result_)
+            handler->on_result_(_error);
+    };
+
+    return handler;
+}
+
 void face::serialize(std::shared_ptr<headers_list> _headers, coll_helper& _coll)
 {
     local_history::serialize(_headers, _coll);
@@ -657,6 +823,77 @@ std::shared_ptr<pending_messages_handler> face::get_pending_file_sharing()
     })->on_result_ = [handler, messages_list](int32_t _error)
     {
         handler->on_result(*messages_list);
+    };
+
+    return handler;
+}
+
+
+std::shared_ptr<not_sent_messages_handler> face::update_pending_messages_by_imstate(const std::string& _message_internal_id,
+                                                                                    const int64_t& _hist_msg_id,
+                                                                                    const int64_t& _before_hist_msg_id)
+{
+    auto handler = std::make_shared<not_sent_messages_handler>();
+
+    auto history_cache = history_cache_;
+
+    auto message = std::make_shared<not_sent_message_sptr>();
+
+    auto task = thread_->run_async_function([history_cache, message, _message_internal_id, _hist_msg_id, _before_hist_msg_id]
+    {
+        *message = history_cache->update_pending_with_imstate(_message_internal_id, _hist_msg_id, _before_hist_msg_id);
+
+        return (*message) ? 0 : -1;
+    });
+
+    task->on_result_ = [handler, message](int32_t _error)
+    {
+        const auto succeed = (_error == 0);
+
+        handler->on_result(succeed ? *message : nullptr);
+    };
+
+    return handler;
+}
+
+std::shared_ptr<async_task_handlers> face::update_message_post_time(
+    const std::string& _message_internal_id, 
+    const std::chrono::system_clock::time_point& _time_point)
+{
+    auto handler = std::make_shared<async_task_handlers>();
+
+    auto history_cache = history_cache_;
+
+    auto task = thread_->run_async_function([history_cache, _message_internal_id, _time_point]
+    {
+        history_cache->update_message_post_time(_message_internal_id, _time_point);
+
+        return 0;
+
+    })->on_result_ = [handler](int32_t _error)
+    {
+        handler->on_result_(0);
+    };
+
+    return handler;
+}
+
+
+std::shared_ptr<async_task_handlers> face::failed_pending_message(const std::string& _message_internal_id)
+{
+    auto handler = std::make_shared<async_task_handlers>();
+
+    auto history_cache = history_cache_;
+
+    auto task = thread_->run_async_function([history_cache, _message_internal_id]
+    {
+        history_cache->failed_pending_message(_message_internal_id);
+
+        return 0;
+
+    })->on_result_ = [handler](int32_t _error)
+    {
+        handler->on_result_(0);
     };
 
     return handler;

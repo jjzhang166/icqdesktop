@@ -1,8 +1,5 @@
 #pragma once
 
-#include <AL/al.h>
-#include <AL/alc.h>
-
 namespace Ui
 {
     struct PlayingData
@@ -22,10 +19,10 @@ namespace Ui
         void clear();
         void free();
         bool isEmpty() const;
-        ALenum state() const;
+        openal::ALenum state() const;
 
-        ALuint Source_;
-        ALuint Buffer_;
+        openal::ALuint Source_;
+        openal::ALuint Buffer_;
         int Id_;
     };
 
@@ -70,8 +67,8 @@ Q_SIGNALS:
         
         QTimer* PttTimer_;
         int AlId;
-        ALCdevice *AlAudioDevice_;
-        ALCcontext *AlAudioContext_;
+        openal::ALCdevice *AlAudioDevice_;
+        openal::ALCcontext *AlAudioContext_;
         PlayingData CurPlay_;
         PlayingData PrevPlay_;
         bool AlInited_;

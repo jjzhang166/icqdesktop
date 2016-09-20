@@ -120,4 +120,32 @@ namespace core { namespace tools { namespace system {
         return boost::filesystem::create_directories(path, e);
     }
 
+    std::wstring create_temp_file_path()
+    {
+        std::wstring result;
+        boost::system::error_code e;
+        boost::filesystem::wpath p = boost::filesystem::temp_directory_path(e);
+        if (boost::filesystem::exists(p, e))
+        {
+            result += p.wstring();
+            auto separator = boost::filesystem::wpath::preferred_separator;
+            if (*(result.rbegin()) != separator)
+                result += separator;
+            auto temp_file = boost::filesystem::unique_path(L"%%%%-%%%%-%%%%-%%%%", e);
+            if (!e)
+            {
+                result += temp_file.wstring();
+            }
+        }
+        return result;
+    }
+
+    bool create_empty_file(const std::wstring &_path)
+    {
+        assert(!_path.empty());
+
+        binary_stream out;
+        return out.save_2_file(_path);
+    }
+
 }}}

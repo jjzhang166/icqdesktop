@@ -92,7 +92,7 @@ namespace core
         void determine_log_index()
         {
             boost::system::error_code error;
-            assert(fs::is_directory(logs_dir_, error));
+            assert(fs::is_directory(logs_dir_, Out error));
             assert(log_file_index_ == -1);
 
             using namespace boost::xpressive;
@@ -120,7 +120,7 @@ namespace core
                 }
 
                 const auto &index_str = match["index"].str();
-                const auto index = boost::lexical_cast<int>(index_str);
+                const auto index = std::stoi(index_str);
                 assert(index >= 0);
                 max_index = std::max(max_index, index);
             }

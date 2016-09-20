@@ -4,37 +4,42 @@
 #include "NameAndStatusWidget.h"
 #include "WindowHeaderFormat.h"
 
-namespace voip_manager {
+namespace voip_manager
+{
     struct ContactEx;
     struct Contact;
 }
 
-namespace Ui {
-    std::string getFotmatedTime(unsigned ts);
+namespace Ui
+{
+    std::string getFotmatedTime(unsigned _ts);
 
     class PushButton_t;
 
-    class MoveablePanel : public QWidget { Q_OBJECT
+    class MoveablePanel : public QWidget
+    {
+        Q_OBJECT
     Q_SIGNALS:
         void onkeyEscPressed();
 
     private Q_SLOTS:
 
     public:
-        MoveablePanel(QWidget *parent);
+        MoveablePanel(QWidget* _parent);
         virtual ~MoveablePanel();
 
     private:
-        QWidget* _parent;
-		struct {
-			QPoint pos_drag_begin;
-			bool is_draging;
-		} _drag_state;
+        QWidget* parent_;
+        struct
+        {
+            QPoint posDragBegin;
+            bool isDraging;
+        } dragState_;
 
         void changeEvent(QEvent*) override;
-		void mousePressEvent(QMouseEvent* e) override;
-		void mouseMoveEvent(QMouseEvent* e) override;
-		void mouseReleaseEvent(QMouseEvent* e) override;
+        void mousePressEvent(QMouseEvent* _e) override;
+        void mouseMoveEvent(QMouseEvent* _e) override;
+        void mouseReleaseEvent(QMouseEvent* _e) override;
         void keyReleaseEvent(QKeyEvent*) override;
         void resizeEvent(QResizeEvent*) override;
 
@@ -43,16 +48,17 @@ namespace Ui {
     };
 
     //class videoPanelHeader;
-    class VideoPanelHeader : public MoveablePanel {
+    class VideoPanelHeader : public MoveablePanel
+    {
     Q_OBJECT
 
     Q_SIGNALS:
         void onMinimize();
         void onMaximize();
         void onClose();
-		void onMouseEnter();
-		void onMouseLeave();
-        void onSecureCallClicked(const QRect& rc);
+        void onMouseEnter();
+        void onMouseLeave();
+        void onSecureCallClicked(const QRect& _rc);
 
     private Q_SLOTS:
         void _onMinimize();
@@ -62,36 +68,35 @@ namespace Ui {
         void _onSecureCallClicked();
 
     public:
-        VideoPanelHeader(QWidget* parent, int items = kVPH_ShowAll);
+        VideoPanelHeader(QWidget* _parent, int _items = kVPH_ShowAll);
         virtual ~VideoPanelHeader();
 
         void setCallName(const std::string&);
-		void setTime(unsigned ts, bool have_call);
+        void setTime(unsigned _ts, bool _hasCall);
         void setFullscreenMode(bool en);
 
-        void setSecureWndOpened(const bool opened);
-        void enableSecureCall(bool enable);
+        void setSecureWndOpened(const bool _opened);
+        void enableSecureCall(bool _enable);
 
     private:
         //std::unique_ptr<videoPanelHeader> _ui;
-		int _items_to_show;
+        int itemsToShow_;
 
-        NameWidget*  _callName;
-        QSpacerItem* _callNameSpacer;
+        NameWidget*  callName_;
 
-        PushButton_t* _callTime;
-        QSpacerItem* _callTimeSpacer;
+        PushButton_t* callTime_;
 
-        QPushButton* _btnMin;
-        QPushButton* _btnMax;
-        QPushButton* _btnClose;
+        QPushButton* btnMin_;
+        QPushButton* btnMax_;
+        QPushButton* btnClose_;
 
-        QWidget*     _lowWidget;
-        bool         _secureCallEnabled;
+        QWidget*     lowWidget_;
+        bool         secureCallEnabled_;
 
-		void enterEvent(QEvent* e) override;
-		void leaveEvent(QEvent* e) override;
-//		void resizeEvent(QResizeEvent* e) override;
+        QPushButton* _backToVideoCode;
+
+        void enterEvent(QEvent* _e) override;
+        void leaveEvent(QEvent* _e) override;
         bool uiWidgetIsActive() const override;
     };
 

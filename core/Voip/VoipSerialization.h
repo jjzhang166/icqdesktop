@@ -2,8 +2,6 @@
 #define __VOIP_SERIALIZATION_H__
 
 #include "VoipManagerDefines.h"
-#include <assert.h>
-#include <sstream>
 #include "../../corelib/collection_helper.h"
 
 inline void operator>>(const voip2::ButtonType& type, core::coll_helper& coll) {
@@ -251,6 +249,10 @@ inline void operator<<(std::vector<voip_manager::Contact>& contacts, core::coll_
     }
 }
 
+inline void operator>>(const voip_manager::MinimalBandwidth& mdw, core::coll_helper& coll) {
+    coll.set_value_as_bool("enable", mdw.enable);
+}
+
 inline void operator>>(const voip_manager::eNotificationTypes& type, core::coll_helper& coll) {
     const char* name = "sig_type";
 
@@ -297,6 +299,8 @@ inline void operator>>(const voip_manager::eNotificationTypes& type, core::coll_
     case kNotificationType_VoipWindowAddComplete: coll.set_value_as_string(name, "voip_window_add_complete"); return;
 
     case kNotificationType_CipherStateChanged:  coll.set_value_as_string(name, "voip_cipher_state_changed"); return;
+
+	case kNotificationType_MinimalBandwidthChanged: coll.set_value_as_string(name, "voip_minimal_bandwidth_state_changed"); return;
 
     default: assert(false); return;
     }

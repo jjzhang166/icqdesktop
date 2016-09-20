@@ -21,7 +21,7 @@ namespace core
         {
             std::unique_ptr<storage>	storage_;
 
-            history_block get_message_modifications(const message_header& _header);
+            history_block get_message_modifications(const message_header& _header) const;
 
         public:
 
@@ -29,7 +29,7 @@ namespace core
             virtual ~messages_data();
 
             bool update(const history_block& _data);
-            bool get_messages(headers_list& _headers, history_block& _messages);
+            bool get_messages(headers_list& _headers, history_block& _messages) const;
         };
 
     }

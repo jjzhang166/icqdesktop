@@ -9,8 +9,8 @@
 #include "ui/main_window/main_window.h"
 #include "utils/styles.h"
 
-#include "../common.shared/crash_handler.h"
-#include "../common.shared/common_crash_sender.h"
+#include "../common.shared/win32/crash_handler.h"
+#include "../common.shared/win32/common_crash_sender.h"
 
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
 Q_IMPORT_PLUGIN(QICOPlugin);
@@ -21,11 +21,13 @@ const wchar_t* old_version_launch_mutex_name = L"MRAICQLAUNCH";
 
 int main(int _argc, char* _argv[])
 {
+#ifndef __linux__
     if (_argv[1] == send_dump_arg)
     {
         ::common_crash_sender::post_dump_to_hockey_app_and_delete();
         return 0;
     };
+#endif //__linux__
 
     int res = 0;
 

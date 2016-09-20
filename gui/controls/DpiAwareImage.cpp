@@ -11,23 +11,23 @@ namespace Ui
 	{
 	}
 
-	DpiAwareImage::DpiAwareImage(const QImage &image)
-		: Image_(image)
+	DpiAwareImage::DpiAwareImage(const QImage& _image)
+		: Image_(_image)
 	{
 	}
 
-	DpiAwareImage::DpiAwareImage(const QImage &&image)
-		: Image_(image)
+	DpiAwareImage::DpiAwareImage(const QImage&& _image)
+		: Image_(_image)
 	{
 	}
 
-	DpiAwareImage::DpiAwareImage(const QPixmap &pixmap)
-		: Image_(pixmap.toImage())
+	DpiAwareImage::DpiAwareImage(const QPixmap& _pixmap)
+		: Image_(_pixmap.toImage())
 	{
 	}
 
-	DpiAwareImage::DpiAwareImage(const QPixmap &&pixmap)
-		: Image_(pixmap.toImage())
+	DpiAwareImage::DpiAwareImage(const QPixmap&& _pixmap)
+		: Image_(_pixmap.toImage())
 	{
 	}
 
@@ -36,25 +36,25 @@ namespace Ui
 		return !isNull();
 	}
 
-	void DpiAwareImage::draw(QPainter &p, const int32_t x, const int32_t y) const
+	void DpiAwareImage::draw(QPainter& _p, const int32_t _x, const int32_t _y) const
 	{
-		draw(p, QPoint(x, y));
+		draw(_p, QPoint(_x, _y));
 	}
 
-	void DpiAwareImage::draw(QPainter &p, const QPoint &coords) const
+	void DpiAwareImage::draw(QPainter& _p, const QPoint& _coords) const
 	{
 		assert(!Image_.isNull());
 
 #ifdef __APPLE__
         auto imageRect = Image_.rect();
-        imageRect.moveTopLeft(coords);
-        p.drawImage(coords, Image_);
+        imageRect.moveTopLeft(_coords);
+        _p.drawImage(_coords, Image_);
 #else
 		auto imageRect = Utils::scale_bitmap(
 			Image_.rect()
 		);
-        imageRect.moveTopLeft(coords);
-        p.drawImage(imageRect, Image_);
+        imageRect.moveTopLeft(_coords);
+        _p.drawImage(imageRect, Image_);
 #endif
 	}
 

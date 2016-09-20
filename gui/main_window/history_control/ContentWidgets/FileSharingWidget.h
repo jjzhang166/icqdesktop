@@ -1,10 +1,24 @@
 #pragma once
 
+#include "../../../namespaces.h"
+
 #include "PreviewContentWidget.h"
 
-namespace Themes
+UI_NS_BEGIN
+
+class ActionButtonWidget;
+
+UI_NS_END
+
+THEMES_NS_BEGIN
+
+typedef std::shared_ptr<class IThemePixmap> IThemePixmapSptr;
+
+THEMES_NS_END
+
+namespace Ui
 {
-	typedef std::shared_ptr<class IThemePixmap> IThemePixmapSptr;
+    class MessageItem;
 }
 
 namespace HistoryControl
@@ -29,14 +43,11 @@ namespace HistoryControl
 	// --------------------------------------------------------------------------------------------------------------------------------
 	// Public
 
-//    Q_SIGNALS:
-//        void stateChanged();
-
 	public:
-        FileSharingWidget(const FileSharingInfoSptr& fsInfo, QString _aimId);
+        FileSharingWidget(const FileSharingInfoSptr& fsInfo, const QString& contactUin);
 
 		FileSharingWidget(
-            QWidget *parent,
+            Ui::MessageItem* parent,
             const bool isOutgoing,
             const QString &contactUin,
             const FileSharingInfoSptr& fsInfo,
@@ -68,17 +79,23 @@ namespace HistoryControl
 	// Protected
 
 	protected:
-        virtual void initializeInternal() override;
+        virtual void enterEvent(QEvent *event) override;
+
+        virtual void initialize() override;
 
         virtual bool isPreloaderVisible() const override;
+
+        virtual void leaveEvent(QEvent *event) override;
 
 		virtual void mouseMoveEvent(QMouseEvent *event) override;
 
 		virtual void mouseReleaseEvent(QMouseEvent *event) override;
 
-        virtual void renderPreview(QPainter &p) override;
+        virtual void renderPreview(QPainter &p, const bool isAnimating) override;
 
         virtual void resizeEvent(QResizeEvent *e) override;
+
+        virtual bool drag() override;
 
 	// --------------------------------------------------------------------------------------------------------------------------------
 	// Slots
@@ -100,7 +117,7 @@ namespace HistoryControl
 
 		void fileSharingUploadingProgress(QString, qint64);
 
-        void fileSharingUploadingResult(QString, bool, QString, bool);
+        void fileSharingUploadingResult(QString seq, bool success, QString localPath, QString uri, int contentType, bool isFileTooBig);
 
         void localPreviewLoaded(QPixmap pixmap);
 
@@ -112,7 +129,9 @@ namespace HistoryControl
 	// Private Member Variables
 
 	private:
-		enum class State;
+        Ui::MessageItem* ParentItem_;
+
+        enum class State;
 
         enum class PreviewState;
 
@@ -141,8 +160,6 @@ namespace HistoryControl
 		} Metainfo_;
 
 		const FileSharingInfoSptr FsInfo_;
-
-		const QString ContactUin_;
 
 		struct
 		{
@@ -179,6 +196,14 @@ namespace HistoryControl
 
         int64_t CheckLocalCopyExistenceId_;
 
+        QString LastProgressText_;
+
+        QRect ProgressTextRect_;
+
+        Themes::IThemePixmapSptr CurrentCtrlIcon_;
+
+        bool IsCtrlButtonHovered_;
+
         struct Retry
         {
             Retry();
@@ -206,6 +231,10 @@ namespace HistoryControl
             int PreviewDownloadRetryCount_;
         } Retry_;
 
+        QSharedPointer<QMovie> GifImage_;
+
+        Ui::ActionButtonWidget *ShareButton_;
+
 	// --------------------------------------------------------------------------------------------------------------------------------
 	// Private Methods
 
@@ -230,19 +259,31 @@ namespace HistoryControl
 
 		void convertToUploadErrorView();
 
-		const QRect& getControlButtonRect() const;
+        QString elideFilename(const QString &text, const QFont &font, const int32_t maxTextWidth);
 
-		const QRect& getControlButtonPlainRect() const;
+        void formatFileSizeStr();
 
-		const QRect& getControlButtonPreviewRect() const;
+		const QRect& getControlButtonRect(const QSize &iconSize) const;
+
+		const QRect& getControlButtonPlainRect(const QSize &iconSize) const;
+
+		const QRect& getControlButtonPreviewRect(const QSize &iconSize) const;
 
 		bool getLocalFileMetainfo();
 
 		State getState() const;
 
-		bool isControlButtonVisible() const;
+        void initializeShareButton();
+
+        bool isControlButtonVisible() const;
 
 		bool isDataTransferProgressVisible() const;
+
+        bool isFullImageDownloading() const;
+
+        bool isGifImage() const;
+
+        bool isGifPlaying() const;
 
         bool isImagePreview() const;
 
@@ -260,17 +301,23 @@ namespace HistoryControl
 
 		bool isState(const State state) const;
 
+        void loadGifImage(const QString &path);
+
 		bool loadPreviewFromLocalFile();
 
+        void onGifFrameUpdated(int frameNumber);
+
+        void onGifImageClicked();
+
+        void onShareButtonClicked();
+
 		void openDownloadsDir() const;
-
-		void openPreview();
-
-        void openPreviewMac(const QString &path, int x, int y);
 
 		void renderControlButton(QPainter &p);
 
 		void renderDataTransferProgress(QPainter &p);
+
+        void renderDataTransferProgressText(QPainter &p);
 
 		void renderFilename(QPainter &p);
 
@@ -294,7 +341,9 @@ namespace HistoryControl
 
 		void setInitialWidgetSizeAndState();
 
-		void setState(const State state);
+        void setState(const State state);
+
+        void showPreviewer(const QPoint &globalPos);
 
 		void startDataTransferAnimation();
 
@@ -307,6 +356,8 @@ namespace HistoryControl
 		void stopDownloading();
 
 		void stopUploading();
+
+        void updateShareButtonGeometry();
 
 	};
 

@@ -12,6 +12,10 @@
         <translation>Повторить</translation>
     </message>
     <message>
+        <source>Cu&amp;t</source>
+        <translation>Вырезать</translation>
+    </message>
+    <message>
         <source>&amp;Copy</source>
         <translation>Копировать</translation>
     </message>
@@ -20,16 +24,12 @@
         <translation>Вставить</translation>
     </message>
     <message>
-        <source>Cu&amp;t</source>
-        <translation>Вырезать</translation>
+        <source>Delete</source>
+        <translation>Удалить</translation>
     </message>
     <message>
         <source>Select All</source>
         <translation>Выделить все</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Удалить</translation>
     </message>
 </context>
 <context>
@@ -286,6 +286,14 @@ photo</source>
         <source>You have joined group</source>
         <translation>Вы вошли в группу</translation>
     </message>
+    <message>
+        <source>You changed chat rules to &quot;</source>
+        <translation>Вы сменили правила чата на &quot;</translation>
+    </message>
+    <message>
+        <source> changed chat rules to &quot;</source>
+        <translation> сменил правила чата на &quot;</translation>
+    </message>
 </context>
 <context>
     <name>chat_page</name>
@@ -360,6 +368,66 @@ photo</source>
     <message>
         <source>Official account</source>
         <translation>Официальный аккаунт</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>Переслать</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Копировать</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Отмена</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Просмотр</translation>
+    </message>
+    <message>
+        <source>Set to all</source>
+        <translation>Применить ко всем</translation>
+    </message>
+    <message>
+        <source>Set</source>
+        <translation>Применить</translation>
+    </message>
+    <message>
+        <source> of </source>
+        <translation> из </translation>
+    </message>
+    <message>
+        <source>Drop files to place</source>
+        <translation>Перетащите файлы сюда</translation>
+    </message>
+    <message>
+        <source>Show in folder</source>
+        <translation>Показать в папке</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Файл</translation>
+    </message>
+    <message>
+        <source>typing</source>
+        <translation>пишет</translation>
+    </message>
+    <message>
+        <source>are typing</source>
+        <translation>пишут</translation>
+    </message>
+    <message>
+        <source>Snap expired</source>
+        <translation>Снап устарел</translation>
+    </message>
+    <message>
+        <source>Not authorized</source>
+        <translation>Не авторизован</translation>
+    </message>
+    <message>
+        <source>forwarded messages</source>
+        <translation>пересылаемые сообщения</translation>
     </message>
 </context>
 <context>
@@ -481,6 +549,26 @@ photo</source>
     <message>
         <source>Create Groupchat</source>
         <translation>Создать групчат</translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation>Видео</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Файл</translation>
+    </message>
+    <message>
+        <source>Unknown contacts</source>
+        <translation>Неизвестные контакты</translation>
+    </message>
+    <message>
+        <source>Close All</source>
+        <translation>Закрыть все</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Поиск</translation>
     </message>
 </context>
 <context>
@@ -632,6 +720,10 @@ photo</source>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
+    <message>
+        <source>Forward</source>
+        <translation>Переслать</translation>
+    </message>
 </context>
 <context>
     <name>countries</name>
@@ -692,20 +784,8 @@ photo</source>
         <translation>Монтсеррат</translation>
     </message>
     <message>
-        <source>Nevis</source>
-        <translation>Невис</translation>
-    </message>
-    <message>
-        <source>St. Kitts</source>
-        <translation>Сент-Китс</translation>
-    </message>
-    <message>
         <source>Saint Kitts and Nevis</source>
         <translation>Сент-Китс и Невис</translation>
-    </message>
-    <message>
-        <source>St. Vincent and the Grenadines</source>
-        <translation>Сент-Винсент и Гренадины</translation>
     </message>
     <message>
         <source>Trinidad and Tobago</source>
@@ -716,24 +796,8 @@ photo</source>
         <translation>Теркс и Кайкос</translation>
     </message>
     <message>
-        <source>Barbuda</source>
-        <translation>Антигуа и Барбуда</translation>
-    </message>
-    <message>
-        <source>Puerto Rico, Common Wealth of</source>
-        <translation>Пуэрто-Рико</translation>
-    </message>
-    <message>
         <source>Saint Lucia</source>
         <translation>Сент-Люсия</translation>
-    </message>
-    <message>
-        <source>Virgin Islands of the United States</source>
-        <translation>Американские Виргинские острова</translation>
-    </message>
-    <message>
-        <source>Canary Islands</source>
-        <translation>Канарские острова</translation>
     </message>
     <message>
         <source>Egypt</source>
@@ -750,10 +814,6 @@ photo</source>
     <message>
         <source>Tunisia</source>
         <translation>Тунис</translation>
-    </message>
-    <message>
-        <source>Libyan Arab Jamahiriya</source>
-        <translation>Ливия</translation>
     </message>
     <message>
         <source>Gambia</source>
@@ -834,14 +894,6 @@ photo</source>
     <message>
         <source>Gabon</source>
         <translation>Габон</translation>
-    </message>
-    <message>
-        <source>Congo, (Republic of the)</source>
-        <translation>Республика Конго</translation>
-    </message>
-    <message>
-        <source>Congo, Democratic Republic of (Zaire)</source>
-        <translation>Демократическая республика Конго (Заир)</translation>
     </message>
     <message>
         <source>Angola</source>
@@ -1072,10 +1124,6 @@ photo</source>
         <translation>Украина</translation>
     </message>
     <message>
-        <source>Yugoslavia</source>
-        <translation>Югославия</translation>
-    </message>
-    <message>
         <source>Croatia</source>
         <translation>Хорватия</translation>
     </message>
@@ -1118,14 +1166,6 @@ photo</source>
     <message>
         <source>United Kingdom</source>
         <translation>Великобритания</translation>
-    </message>
-    <message>
-        <source>Wales</source>
-        <translation>Уэльс</translation>
-    </message>
-    <message>
-        <source>Scotland</source>
-        <translation>Шотландия</translation>
     </message>
     <message>
         <source>Denmark</source>
@@ -1220,10 +1260,6 @@ photo</source>
         <translation>Гваделупа</translation>
     </message>
     <message>
-        <source>French Antilles</source>
-        <translation>Французские Антильские острова</translation>
-    </message>
-    <message>
         <source>Antilles</source>
         <translation>Антильские острова</translation>
     </message>
@@ -1272,10 +1308,6 @@ photo</source>
         <translation>Австралия</translation>
     </message>
     <message>
-        <source>Cocos (Keeling) Islands</source>
-        <translation>Кокосовые острова</translation>
-    </message>
-    <message>
         <source>Indonesia</source>
         <translation>Индонезия</translation>
     </message>
@@ -1294,18 +1326,6 @@ photo</source>
     <message>
         <source>Thailand</source>
         <translation>Таиланд</translation>
-    </message>
-    <message>
-        <source>Saipan Island</source>
-        <translation>Остров Сайпан</translation>
-    </message>
-    <message>
-        <source>Rota Island</source>
-        <translation>Остров Рота</translation>
-    </message>
-    <message>
-        <source>Tinian Island</source>
-        <translation>Остров Тиниан</translation>
     </message>
     <message>
         <source>Guam, US Territory of</source>
@@ -1368,10 +1388,6 @@ photo</source>
         <translation>Самоа</translation>
     </message>
     <message>
-        <source>Western Samoa</source>
-        <translation>Западная Самоа</translation>
-    </message>
-    <message>
         <source>Kiribati</source>
         <translation>Кирибати</translation>
     </message>
@@ -1390,10 +1406,6 @@ photo</source>
     <message>
         <source>Tokelau</source>
         <translation>Токелау</translation>
-    </message>
-    <message>
-        <source>Micronesia, Federated States of</source>
-        <translation>Федеративные Штаты Микронезии</translation>
     </message>
     <message>
         <source>Marshall Islands</source>
@@ -1426,14 +1438,6 @@ photo</source>
     <message>
         <source>Japan</source>
         <translation>Япония</translation>
-    </message>
-    <message>
-        <source>Korea (South Korea), Republic of</source>
-        <translation>Республика Корея</translation>
-    </message>
-    <message>
-        <source>Viet Nam</source>
-        <translation>Вьетнам</translation>
     </message>
     <message>
         <source>Hong Kong</source>
@@ -1548,10 +1552,6 @@ photo</source>
         <translation>Непал</translation>
     </message>
     <message>
-        <source>Iran (Islamic Republic of)</source>
-        <translation>Иран</translation>
-    </message>
-    <message>
         <source>Azerbaijan</source>
         <translation>Азербайджан</translation>
     </message>
@@ -1572,47 +1572,88 @@ photo</source>
         <translation>Гвинея-Бисау</translation>
     </message>
     <message>
-        <source>St. Helena</source>
-        <translation>Остров Святой Елены</translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Serbia</source>
-        <translation>Сербия</translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Montenegro</source>
-        <translation>Черногория</translation>
-    </message>
-    <message>
         <source>Macedonia (F.Y.R.O.M.)</source>
         <translation>Македония (Бывшая Югославская респ.)</translation>
-    </message>
-    <message>
-        <source>St. Pierre and Miquelon</source>
-        <translation>Сен-Пьер и Микелон</translation>
-    </message>
-    <message>
-        <source>Korea (North Korea), Democratic People&apos;s Republic of</source>
-        <translation>Северная Корея (КНДР)</translation>
     </message>
     <message>
         <source>Lao People&apos;s Democratic Republic</source>
         <translation>Лаос (ЛНДР)</translation>
     </message>
-</context>
-<context>
-    <name>filesharing_widget</name>
     <message>
-        <source>Show in folder</source>
-        <translation>Показать в папке</translation>
+        <source>Northern Mariana Islands</source>
+        <translation>Северные Марианские острова</translation>
     </message>
     <message>
-        <source>File</source>
-        <translation>Файл</translation>
+        <source>Saint Vincent and the Grenadines</source>
+        <translation>Сент-Винсент и Гренадины</translation>
     </message>
     <message>
-        <source>Drop files to place</source>
-        <translation>Перетащите файлы сюда</translation>
+        <source>Puerto Rico</source>
+        <translation>Пуэрто-Рико</translation>
+    </message>
+    <message>
+        <source>US Virgin Islands</source>
+        <translation>Американские Виргинские Острова</translation>
+    </message>
+    <message>
+        <source>Libya</source>
+        <translation>Ливия</translation>
+    </message>
+    <message>
+        <source>Congo, Republic of</source>
+        <translation>Республика Конго</translation>
+    </message>
+    <message>
+        <source>Congo, Democratic Republic of</source>
+        <translation>Демократическая Республика Конго</translation>
+    </message>
+    <message>
+        <source>Cocos Islands</source>
+        <translation>Кокосовые острова</translation>
+    </message>
+    <message>
+        <source>East Timor</source>
+        <translation>Восточный Тимор</translation>
+    </message>
+    <message>
+        <source>American Samoa</source>
+        <translation>Американское Самоа</translation>
+    </message>
+    <message>
+        <source>Vietnam</source>
+        <translation>Вьетнам</translation>
+    </message>
+    <message>
+        <source>Iran, Islamic Republic of</source>
+        <translation>Иран</translation>
+    </message>
+    <message>
+        <source>Saint Helena</source>
+        <translation>Остров Святой Елены</translation>
+    </message>
+    <message>
+        <source>Serbia</source>
+        <translation>Сербия</translation>
+    </message>
+    <message>
+        <source>Montenegro</source>
+        <translation>Черногория</translation>
+    </message>
+    <message>
+        <source>Saint Pierre and Miquelon</source>
+        <translation>Сен-Пьер и Микелон</translation>
+    </message>
+    <message>
+        <source>South Korea</source>
+        <translation>Республика Корея</translation>
+    </message>
+    <message>
+        <source>North Korea (DPRK)</source>
+        <translation>Северная Корея (КНДР)</translation>
+    </message>
+    <message>
+        <source>Federated States of Micronesia</source>
+        <translation>Федеративные Штаты Микронезии</translation>
     </message>
 </context>
 <context>
@@ -1628,10 +1669,6 @@ photo</source>
     <message>
         <source>You are not a member of this groupchat</source>
         <translation>Вы не участник групчата</translation>
-    </message>
-    <message>
-        <source>View all </source>
-        <translation>Все </translation>
     </message>
     <message>
         <source>Add to chat</source>
@@ -1655,6 +1692,58 @@ photo</source>
     <message>
         <source>Message</source>
         <translation>Сообщение</translation>
+    </message>
+    <message>
+        <source>Send image</source>
+        <translation>Отправить картинку</translation>
+    </message>
+    <message>
+        <source>Send file</source>
+        <translation>Отправить файл</translation>
+    </message>
+    <message>
+        <source>image</source>
+        <comment>1</comment>
+        <translation>картинка</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>2</comment>
+        <translation>картинки</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>5</comment>
+        <translation>картинок</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>21</comment>
+        <translation>картинку</translation>
+    </message>
+    <message>
+        <source>file</source>
+        <comment>1</comment>
+        <translation>файл</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>2</comment>
+        <translation>файла</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>5</comment>
+        <translation>файлов</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>21</comment>
+        <translation>файл</translation>
+    </message>
+    <message>
+        <source>Send %1 %2 %3 %4</source>
+        <translation>Отправить %1 %2 %3 %4</translation>
     </message>
 </context>
 <context>
@@ -1702,6 +1791,10 @@ photo</source>
     <message>
         <source>Open</source>
         <translation>Открыть</translation>
+    </message>
+    <message>
+        <source>Waiting for approval</source>
+        <translation>Ожидание подтверждения</translation>
     </message>
 </context>
 <context>
@@ -1791,6 +1884,109 @@ your phone number</source>
         <source>Code from SMS</source>
         <translation>Код из SMS</translation>
     </message>
+    <message>
+        <source>Forgot password?</source>
+        <translation>Забыли пароль?</translation>
+    </message>
+</context>
+<context>
+    <name>macos_menu</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>Редактировать</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation>Отменить</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation>Повторить</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation>Вырезать</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Копировать</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Вставить</translation>
+    </message>
+    <message>
+        <source>Paste as Quote</source>
+        <translation>Встать как цитату</translation>
+    </message>
+    <message>
+        <source>Contact</source>
+        <translation>Контакт</translation>
+    </message>
+    <message>
+        <source>Add Buddy</source>
+        <translation>Добавить контакт</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Профиль</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Закрыть</translation>
+    </message>
+    <message>
+        <source>View</source>
+        <translation>Вид</translation>
+    </message>
+    <message>
+        <source>Next Unread Message</source>
+        <translation>Следующее непрочитанное сообщение</translation>
+    </message>
+    <message>
+        <source>Enter Full Screen</source>
+        <translation>Перейти в полноэкранный режим</translation>
+    </message>
+    <message>
+        <source>Exit Full Screen</source>
+        <translation>Выйти из полноэкранного режима</translation>
+    </message>
+    <message>
+        <source>Window</source>
+        <translation>Окно</translation>
+    </message>
+    <message>
+        <source>Select Next Chat</source>
+        <translation>Следующий чат</translation>
+    </message>
+    <message>
+        <source>Select Previous Chat</source>
+        <translation>Предыдущий чат</translation>
+    </message>
+    <message>
+        <source>Minimize</source>
+        <translation>Убрать в Dock</translation>
+    </message>
+    <message>
+        <source>Main Window</source>
+        <translation>Главное окно</translation>
+    </message>
+    <message>
+        <source>Check For Updates...</source>
+        <translation>Проверить обновления...</translation>
+    </message>
+    <message>
+        <source>About...</source>
+        <translation>О программе...</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Настройки</translation>
+    </message>
+    <message>
+        <source>Emoji &amp; Symbols</source>
+        <translation>Эмодзи и символы</translation>
+    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1836,10 +2032,6 @@ your phone number</source>
     <message>
         <source>Continue</source>
         <translation>Продолжить</translation>
-    </message>
-    <message>
-        <source>Skip</source>
-        <translation>Пропустить</translation>
     </message>
     <message>
         <source>Your nickname cannot be longer than 20 symbols</source>
@@ -1935,6 +2127,57 @@ your phone number</source>
     <message>
         <source>Are you sure you want to revoke admin role?</source>
         <translation>Вы уверены, что хотите снять админа?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete message?</source>
+        <translation>Вы уверены, что хотите удалить сообщение?</translation>
+    </message>
+    <message>
+        <source>Delete message</source>
+        <translation>Удалить сообщение</translation>
+    </message>
+    <message>
+        <source>Share link</source>
+        <translation>Поделиться ссылкой</translation>
+    </message>
+    <message>
+        <source>Copy link and close</source>
+        <translation>Скопировать ссылку и закрыть</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>Переслать</translation>
+    </message>
+    <message>
+        <source>Ignored contacts</source>
+        <translation>Игнорируемые</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Готово</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
+        <translation>Вы уверены, что хотите переслать сообщения контакту &lt;USER&gt;?</translation>
+    </message>
+    <message>
+        <source>Confirmation</source>
+        <translation>Подтверждение</translation>
+    </message>
+</context>
+<context>
+    <name>previewer</name>
+    <message>
+        <source>Unable to download the image</source>
+        <translation>Не удалось загрузить фото</translation>
+    </message>
+    <message>
+        <source>%1 of %2</source>
+        <translation>%1 из %2</translation>
+    </message>
+    <message>
+        <source>Loading...</source>
+        <translation>Загрузка…</translation>
     </message>
 </context>
 <context>
@@ -2057,10 +2300,6 @@ your phone number</source>
 <context>
     <name>settings_pages</name>
     <message>
-        <source>General settings</source>
-        <translation>Основные настройки</translation>
-    </message>
-    <message>
         <source>Launch ICQ when system starts</source>
         <translation>Запускать ICQ на старте системы</translation>
     </message>
@@ -2077,24 +2316,12 @@ your phone number</source>
         <translation>Показывать в панели задач</translation>
     </message>
     <message>
-        <source>Save to:</source>
-        <translation>Сохранять в папку:</translation>
-    </message>
-    <message>
         <source>Choose new path</source>
         <translation>Выбрать другую папку</translation>
     </message>
     <message>
         <source>Send message by:</source>
         <translation>Отправлять сообщения:</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>Приватность</translation>
-    </message>
-    <message>
-        <source>Show last message in recents</source>
-        <translation>Показывать последнее сообщение</translation>
     </message>
     <message>
         <source>Preview images and videos</source>
@@ -2224,6 +2451,26 @@ your phone number</source>
         <source>Show in menu bar</source>
         <translation>Показывать в строке меню</translation>
     </message>
+    <message>
+        <source>Launch minimized</source>
+        <translation>Сворачивать при запуске</translation>
+    </message>
+    <message>
+        <source>Application</source>
+        <translation>Приложение</translation>
+    </message>
+    <message>
+        <source>Chat</source>
+        <translation>Чат</translation>
+    </message>
+    <message>
+        <source>Save files to:</source>
+        <translation>Сохранять файлы в:</translation>
+    </message>
+    <message>
+        <source>Chat list compact mode</source>
+        <translation>Компактный вид списка чатов</translation>
+    </message>
 </context>
 <context>
     <name>sidebar</name>
@@ -2262,10 +2509,6 @@ your phone number</source>
     <message>
         <source>Admins</source>
         <translation>Админы</translation>
-    </message>
-    <message>
-        <source>All members</source>
-        <translation>Все участники</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -2424,10 +2667,6 @@ your phone number</source>
         <translation>Публичный</translation>
     </message>
     <message>
-        <source>Chat description</source>
-        <translation>Описание чата</translation>
-    </message>
-    <message>
         <source>Revoke admin role</source>
         <translation>Снять права админа</translation>
     </message>
@@ -2444,14 +2683,6 @@ your phone number</source>
         <translation>Удалить из чата</translation>
     </message>
     <message>
-        <source>Change chat name</source>
-        <translation>Изменить имя чата</translation>
-    </message>
-    <message>
-        <source>Change chat description</source>
-        <translation>Изменить описание чата</translation>
-    </message>
-    <message>
         <source>Rename</source>
         <translation>Переименовать</translation>
     </message>
@@ -2465,24 +2696,73 @@ Please edit phone number and try again.</source>
         <translation>Этот номер телефона уже используется.
 Измените номер и попробуйте еще раз.</translation>
     </message>
-</context>
-<context>
-    <name>top_theme_widget</name>
     <message>
-        <source>Preview</source>
-        <translation>Просмотр</translation>
+        <source>Copy link to chat</source>
+        <translation>Скопировать ссылку на чат</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation>Отмена</translation>
+        <source>Approve All</source>
+        <translation>Утвердить всех</translation>
     </message>
     <message>
-        <source>Set to all</source>
-        <translation>Применить ко всем</translation>
+        <source>Approve All (</source>
+        <translation>Утвердить всех (</translation>
     </message>
     <message>
-        <source>Set</source>
-        <translation>Применить</translation>
+        <source>Waiting for approval</source>
+        <translation>Ждут подтверждения</translation>
+    </message>
+    <message>
+        <source>link copied</source>
+        <translation>ссылка скопирована</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Вступление по запросу</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>При включении чат будет виден всем</translation>
+    </message>
+    <message>
+        <source>Admin approval required to join</source>
+        <translation>Новые участники должны отправлять запрос на вступление в чат</translation>
+    </message>
+    <message>
+        <source>more</source>
+        <translation>еще</translation>
+    </message>
+    <message>
+        <source>edit</source>
+        <translation>редактировать</translation>
+    </message>
+    <message>
+        <source>NAME</source>
+        <translation>ИМЯ</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION</source>
+        <translation>ОПИСАНИЕ</translation>
+    </message>
+    <message>
+        <source>hide</source>
+        <translation>скрыть</translation>
+    </message>
+    <message>
+        <source>Add your description</source>
+        <translation>Добавить описание</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Настройки чата</translation>
+    </message>
+    <message>
+        <source>Members</source>
+        <translation>Участники</translation>
+    </message>
+    <message>
+        <source>Birthday</source>
+        <translation>день рождения</translation>
     </message>
 </context>
 <context>
@@ -2506,17 +2786,6 @@ Please edit phone number and try again.</source>
     <message>
         <source>Open</source>
         <translation>Открыть</translation>
-    </message>
-</context>
-<context>
-    <name>typing_widget</name>
-    <message>
-        <source>typing</source>
-        <translation>пишет</translation>
-    </message>
-    <message>
-        <source>are typing</source>
-        <translation>пишут</translation>
     </message>
 </context>
 <context>
@@ -2568,6 +2837,18 @@ Please edit phone number and try again.</source>
     <message>
         <source>Ringing...</source>
         <translation>Звоним...</translation>
+    </message>
+    <message>
+        <source>Return to call</source>
+        <translation>Вернуться к звонку</translation>
+    </message>
+    <message>
+        <source>Data saving enabled</source>
+        <translation>Экономия данных включена</translation>
+    </message>
+    <message>
+        <source> enabled data saving</source>
+        <translation> включает экономию данных</translation>
     </message>
 </context>
 </TS>

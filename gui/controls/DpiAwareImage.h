@@ -8,19 +8,19 @@ namespace Ui
 	public:
 		DpiAwareImage();
 
-		explicit DpiAwareImage(const QImage &image);
+		explicit DpiAwareImage(const QImage& _image);
 
-		explicit DpiAwareImage(const QImage &&image);
+		explicit DpiAwareImage(const QImage&& _image);
 
-		explicit DpiAwareImage(const QPixmap &pixmap);
+		explicit DpiAwareImage(const QPixmap& _pixmap);
 
-		explicit DpiAwareImage(const QPixmap &&pixmap);
+		explicit DpiAwareImage(const QPixmap&& _pixmap);
 
 		operator bool() const;
 
-		void draw(QPainter &p, const int32_t x, const int32_t y) const;
+		void draw(QPainter& _p, const int32_t _x, const int32_t _y) const;
 
-		void draw(QPainter &p, const QPoint &coords) const;
+		void draw(QPainter& _p, const QPoint& _coords) const;
 
 		int32_t height() const;
 

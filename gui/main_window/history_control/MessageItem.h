@@ -16,7 +16,6 @@ namespace Themes
 
 namespace Ui
 {
-	class message_item;
 	class TextEditEx;
 	class TextEmojiWidget;
 	class PictureWidget;
@@ -55,7 +54,7 @@ namespace Ui
         } Outgoing_;
 	};
 
-	enum SelectDirection
+	enum class SelectDirection
 	{
 		NONE = 0,
 		DOWN,
@@ -76,18 +75,18 @@ namespace Ui
             std::function<void()> callback_;
         };
         std::map<QString, MessageItemsAvatars::Info> data_;
-        
+
     private:
         MessageItemsAvatars();
         static MessageItemsAvatars &instance();
-        
+
     public:
         ~MessageItemsAvatars();
-        
-        static QPixmap &get(const QString &aimId, const QString &friendlyName, int size, const std::function<void()> &callback);
-        static void reset(const QString &aimId);
+
+        static QPixmap &get(const QString& _aimId, const QString& _friendlyName, int _size, const std::function<void()> & _callback);
+        static void reset(const QString& _aimId);
     };
-    
+
 	class MessageItem : public MessageItemBase
 	{
         friend class MessageItemLayout;
@@ -96,36 +95,43 @@ namespace Ui
 
 	Q_SIGNALS:
 		void copy(QString);
-		void quote(QString);
+        void quote(QList<Data::Quote>);
+        void forward(QList<Data::Quote>);
+        void adminMenuRequest(QString);
+        void selectionChanged();
 
 	public:
         MessageItem();
-		MessageItem(QWidget* parent);
+		MessageItem(QWidget* _parent);
 		~MessageItem();
 
 		virtual QString formatRecentsText() const override;
 
         virtual void setContact(const QString& _aimId) override;
         virtual void setSender(const QString& _sender) override;
+        virtual void setHasAvatar(const bool _value) override;
 
-		void selectByPos(const QPoint& pos, bool doNotSelectImage = false);
-		QString selection(bool textonly = false);
+		void selectByPos(const QPoint& _pos, bool _doNotSelectImage = false);
+		QString selection(bool textonly = false) const;
 
-		void setId(qint64 id, const QString& aimId);
+        bool isSelected() const override;
+        bool isTextSelected() const;
+
+		void setId(qint64 id, const QString& _aimId);
         qint64 getId() const override;
 
-		void setNotificationKeys(const QStringList& keys);
+		void setNotificationKeys(const QStringList& _keys);
 		const QStringList& getNotificationKeys();
-		void waitForAvatar(bool wait);
+		void waitForAvatar(bool _wait);
 		void setAvatarVisible(const bool);
-		void setMessage(const QString& message);
-        void setMchatSenderAimId(const QString& senderAimId);
+		void setMessage(const QString& _message);
+        void setMchatSenderAimId(const QString& _senderAimId);
         inline const QString& getMchatSenderAimId() const { return MessageSenderAimId_; };
-		void setMchatSender(const QString& sender);
+		void setMchatSender(const QString& _sender);
 
 		void setOutgoing(
-            const bool _isOutgoing, 
-            const bool _isDeliveredToServer, 
+            const bool _isOutgoing,
+            const bool _isDeliveredToServer,
             const bool _isMChat,
             const bool _isInit = false);
 
@@ -133,12 +139,12 @@ namespace Ui
 
         virtual bool isOutgoing() const override;
 
-		void setTime(const int32_t time);
-		void setContentWidget(::HistoryControl::MessageContentWidget *widget);
-		void setStickerText(const QString& text);
-		virtual void setTopMargin(const bool value) override;
+		void setTime(const int32_t _time);
+		void setContentWidget(::HistoryControl::MessageContentWidget* _widget);
+		void setStickerText(const QString& _text);
+		virtual void setTopMargin(const bool _value) override;
         virtual themes::themePtr theme() const override;
-		void setDate(const QDate& date);
+		void setDate(const QDate& _date);
 		bool selected();
 		QDate date() const;
 		bool isRemovable() const;
@@ -146,16 +152,20 @@ namespace Ui
 		QString toLogString() const;
         virtual void select() override;
         virtual void clearSelection() override;
-        void manualUpdateGeometry(const int32_t widgetWidth);
+        void manualUpdateGeometry(const int32_t _widgetWidth);
         void updateMenus();
         QString contentClass() const;
 
-		void updateWith(MessageItem &messageItem);
+		void updateWith(MessageItem& _messageItem);
 		std::shared_ptr<MessageData> getData();
 
         void loadAvatar(const int size);
 
         virtual QSize sizeHint() const override;
+
+        virtual void onVisibilityChanged(const bool _isVisible) override;
+        
+        Data::Quote getQuote(bool force = false) const;
 
     public Q_SLOTS:
         bool updateData();
@@ -189,17 +199,19 @@ namespace Ui
 
         void createSenderControl();
 
-        void drawAvatar(QPainter &p);
+        void drawAvatar(QPainter& _p);
 
-        void drawMessageBubble(QPainter &p);
+        void drawMessageBubble(QPainter& _p);
 
         QRect evaluateAvatarRect() const;
 
-        QRect evaluateContentHorGeometry(const int32_t contentWidth) const;
+        QRect evaluateBubbleGeometry(const QRect &_contentGeometry) const;
+
+        QRect evaluateContentHorGeometry(const int32_t _contentWidth) const;
 
         QRect evaluateContentVertGeometry() const;
 
-        int32_t evaluateContentWidth(const int32_t widgetWidth) const;
+        int32_t evaluateContentWidth(const int32_t _widgetWidth) const;
 
         int32_t evaluateDesiredContentHeight() const;
 
@@ -211,25 +223,25 @@ namespace Ui
 
         const QRect& getAvatarRect() const;
 
-        void initializeContentWidget();
-
         bool isAvatarVisible() const;
 
         bool isBlockItem() const;
 
-        bool isOverAvatar(const QPoint &p) const;
+        bool isFileSharing() const;
 
-        void updateBubbleGeometry(const QRect &bubbleGeometry);
+        bool isOverAvatar(const QPoint& _p) const;
 
-        void updateContentWidgetHorGeometry(const QRect &bubbleHorGeometry);
+        void updateBubbleGeometry(const QRect& _bubbleGeometry);
 
-        void updateMessageBodyHorGeometry(const QRect &bubbleHorGeometry);
+        void updateContentWidgetHorGeometry(const QRect& _bubbleHorGeometry);
 
-        void updateMessageBodyFullGeometry(const QRect &bubbleRect);
+        void updateMessageBodyHorGeometry(const QRect& _bubbleHorGeometry);
+
+        void updateMessageBodyFullGeometry(const QRect& _bubbleRect);
 
         void updateSenderGeometry();
 
-        void updateStatusGeometry(const QRect &contentGeometry);
+        void updateTimeGeometry(const QRect& _contentGeometry);
 
 		bool isMessageBubbleVisible() const;
 
@@ -241,7 +253,7 @@ namespace Ui
         QString MessageSenderAimId_;
 		::HistoryControl::MessageContentWidget *ContentWidget_;
 
-        bool lastRead_;
+        bool LastRead_;
 
 		SelectDirection Direction_;
 		ContextMenu* Menu_;
@@ -258,10 +270,10 @@ namespace Ui
         bool isConnectedToDeliveryEvent_;
         bool isConnectedReadEvent_;
 
-        MessageStatusWidget *StatusWidget_;
+        MessageStatusWidget *TimeWidget_;
 
         MessageItemLayout *Layout_;
-        int start_select_y_;
-        bool is_selection_;
+        int startSelectY_;
+        bool isSelection_;
 	};
 }

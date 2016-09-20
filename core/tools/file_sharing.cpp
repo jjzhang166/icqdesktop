@@ -8,9 +8,19 @@ using namespace boost::xpressive;
 
 namespace
 {
-    static const auto new_id_regex = sregex::compile("^http(s?)://files.icq.net/get/(?P<id>\\w{33})$");
+    #define NET_URI_PREFIX "^http(s?)://files\\.icq\\.net/get"
 
-    static const auto NEW_ID_LENGTH = 33;
+    #define COM_URI_PREFIX "^http(s?)://icq\\.com/files"
+
+    const auto new_id_regex_a = sregex::compile(NET_URI_PREFIX "/(?P<id>\\w{33,})$");
+
+    const auto new_id_regex_b = sregex::compile(COM_URI_PREFIX "/(?P<id>\\w{33,})$");
+
+    const auto previewable_regex_a = sregex::compile(NET_URI_PREFIX "/(?P<id>([0-9]|[A-F])\\w{32,})$");
+
+    const auto previewable_regex_b = sregex::compile(COM_URI_PREFIX "/(?P<id>([0-9]|[A-F])\\w{32,})$");
+
+    const auto NEW_ID_LENGTH_MIN = 33;
 }
 
 std::string format_file_sharing_preview_uri(const std::string &_id, const file_sharing_preview_size _size)
@@ -19,7 +29,7 @@ std::string format_file_sharing_preview_uri(const std::string &_id, const file_s
     assert(_size > file_sharing_preview_size::min);
     assert(_size < file_sharing_preview_size::max);
 
-    if (_id.length() != NEW_ID_LENGTH)
+    if (_id.length() < NEW_ID_LENGTH_MIN)
     {
         return std::string();
     }
@@ -54,7 +64,84 @@ bool is_new_file_sharing_uri(const std::string &_uri)
     assert(!_uri.empty());
 
     smatch m;
-    return regex_match(_uri, m, new_id_regex);
+    return (
+        regex_match(_uri, m, new_id_regex_a) ||
+        regex_match(_uri, m, new_id_regex_b));
+}
+
+bool get_content_type_from_uri(const std::string& _uri, Out core::file_sharing_content_type& _type)
+{
+    std::string id;
+
+    if (!tools::parse_new_file_sharing_uri(_uri, Out id))
+        return false;
+
+    return get_content_type_from_file_sharing_id(id, Out _type);
+}
+
+bool get_content_type_from_file_sharing_id(const std::string& _file_id, Out core::file_sharing_content_type& _type)
+{
+    assert(!_file_id.empty());
+
+    Out _type = core::file_sharing_content_type::undefined;
+
+    const auto id0 = _file_id[0];
+
+    const auto is_snap_image = (id0 == '1');
+    if (is_snap_image)
+    {
+        Out _type = core::file_sharing_content_type::snap_image;
+        return true;
+    }
+
+    const auto is_snap_gif = (id0 == '5');
+    if (is_snap_gif)
+    {
+        Out _type = core::file_sharing_content_type::snap_gif;
+        return true;
+    }
+
+    const auto is_snap_video = (id0 == '9');
+    if (is_snap_video)
+    {
+        Out _type = core::file_sharing_content_type::snap_video;
+        return true;
+    }
+
+    const auto is_gif = (id0 == '4');
+    if (is_gif)
+    {
+        Out _type = core::file_sharing_content_type::gif;
+        return true;
+    }
+
+    const auto is_image = ((id0 >= '0') && (id0 <= '7'));
+    if (is_image)
+    {
+        Out _type = core::file_sharing_content_type::image;
+        return true;
+    }
+
+    const auto is_video = (
+        ((id0 >= '8') && (id0 <= '9')) ||
+        ((id0 >= 'A') && (id0 <= 'F')));
+    if (is_video)
+    {
+        Out _type = core::file_sharing_content_type::video;
+        return true;
+    }
+
+    return false;
+}
+
+bool is_previewable_file_sharing_uri(const std::string &_uri)
+{
+    assert(!_uri.empty());
+
+    smatch m;
+    return (
+        regex_match(_uri, m, previewable_regex_a) ||
+        regex_match(_uri, m, previewable_regex_b));
 }
 
 bool parse_new_file_sharing_uri(const std::string &_uri, Out std::string &_fileId)
@@ -62,7 +149,8 @@ bool parse_new_file_sharing_uri(const std::string &_uri, Out std::string &_fileI
     assert(!_uri.empty());
 
     smatch m;
-    if (!regex_match(_uri, m, new_id_regex))
+    if (!regex_match(_uri, m, new_id_regex_a) &&
+        !regex_match(_uri, m, new_id_regex_b))
     {
         Out _fileId.clear();
 
@@ -70,7 +158,7 @@ bool parse_new_file_sharing_uri(const std::string &_uri, Out std::string &_fileI
     }
 
     Out _fileId = m["id"].str();
-    assert(_fileId.length() == NEW_ID_LENGTH);
+    assert(_fileId.length() >= NEW_ID_LENGTH_MIN);
 
     return true;
 }

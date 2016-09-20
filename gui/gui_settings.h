@@ -26,7 +26,7 @@ Q_SIGNALS:
 
         void post_value_to_core(const QString& _name, const settings_value& _val) const;
 
-        void set_value_simple_data(const QString& _name, const char* _data, int _len, bool _post_to_core = true)
+        void set_value_simple_data(const QString& _name, const char* _data, int _len, bool _postToCore = true)
         {
             auto& val = values_[_name];
             if (!_len)
@@ -38,7 +38,7 @@ Q_SIGNALS:
             val.data_.resize(_len);
             memcpy(&val.data_[0], _data, _len);
 
-            if (_post_to_core)
+            if (_postToCore)
                 post_value_to_core(_name, val);
             
             emit changed(_name);
@@ -61,16 +61,16 @@ Q_SIGNALS:
         }
 
         template <class t_>
-        t_ get_value_simple(const QString& _name, const t_& _default_value) const
+        t_ get_value_simple(const QString& _name, const t_& _defaultValue) const
         {
             std::vector<char> data;
             if (!get_value_simple_data(_name, data))
-                return _default_value;
+                return _defaultValue;
 
             if (data.size() != sizeof(t_))
             {
                 assert(false);
-                return _default_value;
+                return _defaultValue;
             }
 
             t_ val;
@@ -88,18 +88,18 @@ Q_SIGNALS:
         }
 
         template <class t_>
-        t_ get_value(const QString& _name, const t_& _default_value) const
+        t_ get_value(const QString& _name, const t_& _defaultValue) const
         {
             assert(false);
-            return _default_value;
+            return _defaultValue;
         }
         
         bool contains_value(const QString& _name) const;
                 
     private:
 
-        int							shadow_width_;
-        bool is_loaded_;
+        int shadowWidth_;
+        bool isLoaded_;
     public:
 
         qt_gui_settings();
@@ -110,24 +110,24 @@ Q_SIGNALS:
         int get_shadow_width() const;
         int get_current_shadow_width() const;
 
-        bool getIsLoaded() const { return is_loaded_; };
-        void setIsLoaded(bool _is_loaded) { is_loaded_ = _is_loaded; };
+        bool getIsLoaded() const { return isLoaded_; };
+        void setIsLoaded(bool _isLoaded) { isLoaded_ = _isLoaded; };
     };
 
     template<> void qt_gui_settings::set_value<QString>(const QString& _name, const QString& _value);
-    template<> QString qt_gui_settings::get_value<QString>(const QString& _name, const QString& _default_value) const;
+    template<> QString qt_gui_settings::get_value<QString>(const QString& _name, const QString& _defaultValue) const;
     template<> void qt_gui_settings::set_value<int>(const QString& _name, const int& _value);
-    template <> int qt_gui_settings::get_value<int>(const QString& _name, const int& _default_value) const;
+    template <> int qt_gui_settings::get_value<int>(const QString& _name, const int& _defaultValue) const;
     template<> void qt_gui_settings::set_value<double>(const QString& _name, const double& _value);
-    template <> double qt_gui_settings::get_value<double>(const QString& _name, const double& _default_value) const;
+    template <> double qt_gui_settings::get_value<double>(const QString& _name, const double& _defaultValue) const;
     template<> void qt_gui_settings::set_value<bool>(const QString& _name, const bool& _value);
-    template <> bool qt_gui_settings::get_value<bool>(const QString& _name, const bool& _default_value) const;
+    template <> bool qt_gui_settings::get_value<bool>(const QString& _name, const bool& _defaultValue) const;
     template<> void qt_gui_settings::set_value<std::vector<int32_t>>(const QString& _name, const std::vector<int32_t>& _value);
     template<> std::vector<int32_t> qt_gui_settings::get_value<std::vector<int32_t>>(const QString& _name, const std::vector<int32_t>& _default_value) const;
     template<> void qt_gui_settings::set_value<QRect>(const QString& _name, const QRect& _value);
-    template<> QRect qt_gui_settings::get_value<QRect>(const QString& _name, const QRect& _default_value) const;
+    template<> QRect qt_gui_settings::get_value<QRect>(const QString& _name, const QRect& _defaultValue) const;
     
     qt_gui_settings* get_gui_settings();
 
-    const std::string get_account_setting_name(const std::string& setting_name);
+    const std::string get_account_setting_name(const std::string& settingName);
 }

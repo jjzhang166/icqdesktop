@@ -1,29 +1,32 @@
 #include "stdafx.h"
 #include "AvatarContainerWidget.h"
+
 #include "NameAndStatusWidget.h"
-#include "../utils/utils.h"
-#include "../types/contact.h"
 #include "VoipTools.h"
+#include "../types/contact.h"
+#include "../utils/utils.h"
 
-Ui::AvatarContainerWidget::AvatarContainerWidget(QWidget* parent, int avatarSize, int x_offset, int y_offset, int border_w)
-    : QWidget(parent)
-    , _avatarSize(avatarSize)
-    , _x_offset(x_offset)
-    , _y_offset(y_offset)
-    , _border(NULL)
-    , _overlapPer01(0.0f) {
-        assert(_avatarSize > 0);
+Ui::AvatarContainerWidget::AvatarContainerWidget(QWidget* _parent, int _avatarSize, int _xOffset, int _yOffset, int _borderW)
+    : QWidget(_parent)
+    , avatarSize_(_avatarSize)
+    , xOffset_(_xOffset)
+    , yOffset_(_yOffset)
+    , border_(NULL)
+    , overlapPer01_(0.0f)
+{
+        assert(avatarSize_ > 0);
 
-        if (border_w < _avatarSize / 2) {
-            _border = new QPixmap(_avatarSize, _avatarSize);
-            _border->fill(Qt::transparent);
+        if (_borderW < avatarSize_ / 2)
+        {
+            border_ = new QPixmap(avatarSize_, avatarSize_);
+            border_->fill(Qt::transparent);
 
-            QPainter p(_border);
+            QPainter p(border_);
             QPainterPath path(QPoint(0, 0));
-            path.addEllipse(QRect(0, 0, _avatarSize, _avatarSize));
+            path.addEllipse(QRect(0, 0, avatarSize_, avatarSize_));
 
             QPainterPath innerpath(QPoint(0, 0));
-            innerpath.addEllipse(QRect(border_w, border_w, _avatarSize - 2*border_w, _avatarSize - 2*border_w));
+            innerpath.addEllipse(QRect(_borderW, _borderW, avatarSize_ - 2* _borderW, avatarSize_ - 2* _borderW));
             path = path.subtracted(innerpath);
 
             p.setClipPath(path);
@@ -31,146 +34,170 @@ Ui::AvatarContainerWidget::AvatarContainerWidget(QWidget* parent, int avatarSize
             p.setPen(Qt::PenStyle::NoPen);
             p.setBrush(brush);
             p.setRenderHint(QPainter::HighQualityAntialiasing);
-            p.drawEllipse(QRect(0, 0, _avatarSize, _avatarSize));
+            p.drawEllipse(QRect(0, 0, avatarSize_, avatarSize_));
         }
 
         connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(_avatarChanged(QString)), Qt::QueuedConnection);
 }
 
-Ui::AvatarContainerWidget::~AvatarContainerWidget() {
+Ui::AvatarContainerWidget::~AvatarContainerWidget()
+{
 
 }
 
-void Ui::AvatarContainerWidget::setOverlap(float per01) {
-    _overlapPer01 = std::max(0.0f, std::min(1.0f, per01));
+void Ui::AvatarContainerWidget::setOverlap(float _per01)
+{
+    overlapPer01_ = std::max(0.0f, std::min(1.0f, _per01));
 }
 
-void Ui::AvatarContainerWidget::_addAvatarTo(const std::string& userId, std::map<std::string, Logic::QPixmapSCptr>& avatars) {
-    if (_avatarSize <= 0) {
+void Ui::AvatarContainerWidget::addAvatarTo(const std::string& _userId, std::map<std::string, Logic::QPixmapSCptr>& _avatars)
+{
+    if (avatarSize_ <= 0)
+    {
         assert(!"wrong avatar size");
         return;
     }
 
     bool isDefault = false;
-    avatars[userId] = Logic::GetAvatarStorage()->GetRounded(userId.c_str(), QString(), _avatarSize, QString(), true, isDefault, false);
+    _avatars[_userId] = Logic::GetAvatarStorage()->GetRounded(_userId.c_str(), QString(), avatarSize_, QString(), true, isDefault, false, false);
 }
 
-void Ui::AvatarContainerWidget::_avatarChanged(QString userId) {
-    std::string userIdUtf8 = userId.toStdString();
-    std::map<std::string, Logic::QPixmapSCptr>::iterator it = _avatars.find(userIdUtf8);
-    if (it != _avatars.end()) {
-        _addAvatarTo(userIdUtf8, _avatars);
+void Ui::AvatarContainerWidget::_avatarChanged(QString _userId)
+{
+    std::string userIdUtf8 = _userId.toStdString();
+    std::map<std::string, Logic::QPixmapSCptr>::iterator it = avatars_.find(userIdUtf8);
+    if (it != avatars_.end())
+    {
+        addAvatarTo(userIdUtf8, avatars_);
     }
 
 	repaint();
 }
 
-void Ui::AvatarContainerWidget::addAvatar(const std::string& userId) {
-    _addAvatarTo(userId, _avatars);
+void Ui::AvatarContainerWidget::addAvatar(const std::string& _userId)
+{
+    addAvatarTo(_userId, avatars_);
 
-    QSize sz = _calculateAvatarSize();
+    QSize sz = calculateAvatarSize();
     setMinimumSize(sz);
 
-    _avatarRects = _calculateAvatarPositions(rect(), sz);
+    avatarRects_ = calculateAvatarPositions(rect(), sz);
 
 	repaint();
 }
 
-QSize Ui::AvatarContainerWidget::_calculateAvatarSize() {
+QSize Ui::AvatarContainerWidget::calculateAvatarSize()
+{
     QSize sz;
-    sz.setHeight(_avatarSize + 2*_y_offset);
-    if (!_avatars.empty()) {
-        sz.setWidth(_avatarSize + (int(_avatarSize * (1.0f - _overlapPer01) + 0.5f) * ((int)_avatars.size() - 1)) + 2*_x_offset);
+    sz.setHeight(avatarSize_ + 2* yOffset_);
+    if (!avatars_.empty())
+    {
+        sz.setWidth(avatarSize_ + (int(avatarSize_ * (1.0f - overlapPer01_) + 0.5f) * ((int)avatars_.size() - 1)) + 2* xOffset_);
     }
     return sz;
 }
 
-void Ui::AvatarContainerWidget::resizeEvent(QResizeEvent* e) {
-    QWidget::resizeEvent(e);
+void Ui::AvatarContainerWidget::resizeEvent(QResizeEvent* _e)
+{
+    QWidget::resizeEvent(_e);
     QSize result;
-    _avatarRects = _calculateAvatarPositions(rect(), result);
+    avatarRects_ = calculateAvatarPositions(rect(), result);
 }
 
-std::vector<QRect> Ui::AvatarContainerWidget::_calculateAvatarPositions(const QRect& rcParent, QSize& avatars_size) {
+std::vector<QRect> Ui::AvatarContainerWidget::calculateAvatarPositions(const QRect& _rcParent, QSize& _avatarsSize)
+{
     std::vector<QRect> positions;
-    _avatarRects.clear();
+    avatarRects_.clear();
 
-    if (!_avatars.empty()) {
-        if (avatars_size.width() <= 0 || avatars_size.height() <= 0) {
-            avatars_size = _calculateAvatarSize();
+    if (!avatars_.empty())
+    {
+        if (_avatarsSize.width() <= 0 || _avatarsSize.height() <= 0)
+        {
+            _avatarsSize = calculateAvatarSize();
         }
 
-        QRect remains = rcParent;
-        remains.setLeft  (remains.left()   + _x_offset);
-        remains.setRight (remains.right()  - _x_offset);
-        remains.setTop   (remains.top()    + _y_offset);
-        remains.setBottom(remains.bottom() - _y_offset);
+        QRect remains = _rcParent;
+        remains.setLeft  (remains.left()   + xOffset_);
+        remains.setRight (remains.right()  - xOffset_);
+        remains.setTop   (remains.top()    + yOffset_);
+        remains.setBottom(remains.bottom() - yOffset_);
 
-        remains.setLeft(std::max((remains.right() + remains.left() - avatars_size.width()) / 2, remains.left()));
-        remains.setRight(std::min(remains.right(), remains.left() + avatars_size.width()));
-        remains.setTop(std::max((remains.bottom() + remains.top() - avatars_size.height()) / 2, remains.top()));
-        remains.setBottom(std::min(remains.bottom(), remains.top() + avatars_size.height()));
+        remains.setLeft(std::max((remains.right() + remains.left() - _avatarsSize.width()) / 2, remains.left()));
+        remains.setRight(std::min(remains.right(), remains.left() + _avatarsSize.width()));
+        remains.setTop(std::max((remains.bottom() + remains.top() - _avatarsSize.height()) / 2, remains.top()));
+        remains.setBottom(std::min(remains.bottom(), remains.top() + _avatarsSize.height()));
 
-        for (std::map<std::string, Logic::QPixmapSCptr>::iterator it = _avatars.begin(); it != _avatars.end(); it++) {
-            if (remains.width() < _avatarSize || remains.height() < _avatarSize) {
+        for (std::map<std::string, Logic::QPixmapSCptr>::iterator it = avatars_.begin(); it != avatars_.end(); it++)
+        {
+            if (remains.width() < avatarSize_ || remains.height() < avatarSize_)
+            {
                 break;
             }
 
             QRect rc_draw = remains;
-            rc_draw.setRight(rc_draw.left() + _avatarSize);
+            rc_draw.setRight(rc_draw.left() + avatarSize_);
             positions.push_back(rc_draw);
 
-            remains.setLeft(remains.left() + _avatarSize * (1.0f - _overlapPer01));
+            remains.setLeft(remains.left() + avatarSize_ * (1.0f - overlapPer01_));
         }
     }
 
     return positions;
 }
 
-void Ui::AvatarContainerWidget::dropExcess(const std::vector<std::string>& users) {
-    std::map<std::string, Logic::QPixmapSCptr> tmp_avatars;
-    for (unsigned ix = 0; ix < users.size(); ix++) {
-        const std::string& userId = users[ix];
+void Ui::AvatarContainerWidget::dropExcess(const std::vector<std::string>& _users)
+{
+    std::map<std::string, Logic::QPixmapSCptr> tmpAvatars;
+    for (unsigned ix = 0; ix < _users.size(); ix++)
+    {
+        const std::string& userId = _users[ix];
 
-        auto it = _avatars.find(userId);
-        if (it != _avatars.end()) {
-            tmp_avatars[userId] = it->second;
-        } else {
-            _addAvatarTo(userId, tmp_avatars);
+        auto it = avatars_.find(userId);
+        if (it != avatars_.end())
+        {
+            tmpAvatars[userId] = it->second;
+        }
+        else
+        {
+            addAvatarTo(userId, tmpAvatars);
         }
     }
 
-    tmp_avatars.swap(_avatars);
+    tmpAvatars.swap(avatars_);
 
-    QSize sz = _calculateAvatarSize();
+    QSize sz = calculateAvatarSize();
     setMinimumSize(sz);
-    _avatarRects = _calculateAvatarPositions(rect(), sz);
+    avatarRects_ = calculateAvatarPositions(rect(), sz);
 
 	repaint();
 }
 
-void Ui::AvatarContainerWidget::removeAvatar(const std::string& userId) {
-    _avatars.erase(userId);
+void Ui::AvatarContainerWidget::removeAvatar(const std::string& _userId)
+{
+    avatars_.erase(_userId);
 
 	repaint();
 }
 
-void Ui::AvatarContainerWidget::paintEvent(QPaintEvent*) {
+void Ui::AvatarContainerWidget::paintEvent(QPaintEvent*)
+{
     QPainter painter(this);
 
-    assert(_avatarRects.size() <= _avatars.size());
-    for (unsigned ix = 0; ix < _avatarRects.size(); ix++) {
-        const QRect& rc = _avatarRects[ix];
+    assert(avatarRects_.size() <= avatars_.size());
+    for (unsigned ix = 0; ix < avatarRects_.size(); ix++)
+    {
+        const QRect& rc = avatarRects_[ix];
         
-        auto avatar = _avatars.begin();
+        auto avatar = avatars_.begin();
         std::advance(avatar, ix);
 
         Logic::QPixmapSCptr pixmap = avatar->second;
         painter.setRenderHint(QPainter::HighQualityAntialiasing);
         painter.drawPixmap(rc, *pixmap);
 
-        if (!!_border) {
-            painter.drawPixmap(rc, *_border);
+        if (!!border_)
+        {
+            painter.drawPixmap(rc, *border_);
         }
     }
 }

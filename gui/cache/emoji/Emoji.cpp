@@ -3,9 +3,8 @@
 #include "Emoji.h"
 #include "EmojiDb.h"
 
-#include "../../core_dispatcher.h"
-#include "../../utils/utils.h"
 #include "../../utils/SChar.h"
+#include "../../utils/utils.h"
 
 namespace
 {
@@ -13,7 +12,7 @@ namespace
 
 	struct EmojiSetMeta
 	{
-		EmojiSetMeta(const int32_t sizePx, const QString &resourceName);
+		EmojiSetMeta(const int32_t _sizePx, const QString& _resourceName);
 
 		const int32_t SizePx_;
 
@@ -46,11 +45,11 @@ namespace
 
 	const EmojiSetMeta& GetMetaForCurrentUiScale();
 
-	const EmojiSetMeta& GetMetaBySize(const int32_t sizePx);
+	const EmojiSetMeta& GetMetaBySize(const int32_t _sizePx);
 
-	EmojiSetsIter LoadEmojiSetForSizeIfNeeded(const EmojiSetMeta &meta);
+	EmojiSetsIter LoadEmojiSetForSizeIfNeeded(const EmojiSetMeta& _meta);
 
-	int64_t MakeCacheKey(const int32_t index, const int32_t sizePx);
+	int64_t MakeCacheKey(const int32_t _index, const int32_t _sizePx);
 
 }
 
@@ -79,11 +78,11 @@ namespace Emoji
 		EmojiSetBySize_.clear();
 	}
 
-	const QImage& GetEmoji(const uint32_t main, const uint32_t ext, const EmojiSizePx size)
+	const QImage& GetEmoji(const uint32_t _main, const uint32_t _ext, const EmojiSizePx _size)
 	{
-		assert(main > 0);
-		assert(size >= EmojiSizePx::Min);
-		assert(size <= EmojiSizePx::Max);
+		assert(_main > 0);
+		assert(_size >= EmojiSizePx::Min);
+		assert(_size <= EmojiSizePx::Max);
 
 		static QImage empty;
 
@@ -93,9 +92,9 @@ namespace Emoji
 			return empty;
 		}
 
-		const auto sizeToSearch = ((size == EmojiSizePx::Auto) ? GetEmojiSizeForCurrentUiScale() : (int32_t)size);
+		const auto sizeToSearch = ((_size == EmojiSizePx::Auto) ? GetEmojiSizeForCurrentUiScale() : (int32_t)_size);
 
-		const auto info = GetEmojiInfoByCodepoint(main, ext);
+		const auto info = GetEmojiInfoByCodepoint(_main, _ext);
 		if (!info)
 		{
 			return empty;
@@ -122,7 +121,7 @@ namespace Emoji
             
             QPainter painter(&imageOut);
             painter.setFont(QFont(QStringLiteral("AppleColorEmoji"), sizeToSearch));
-            painter.drawText(QRect(0, -2, sizeToSearch, sizeToSearch + 2), Qt::AlignHCenter, Utils::SChar(main, ext).ToQString());
+            painter.drawText(QRect(0, -2, sizeToSearch, sizeToSearch + 2), Qt::AlignHCenter, Utils::SChar(_main, _ext).ToQString());
             painter.end();
             
             image = imageOut;
@@ -152,15 +151,15 @@ namespace Emoji
 		return result.first->second;
 	}
 
-	EmojiSizePx GetNearestSizeAvailable(const int32_t sizePx)
+	EmojiSizePx GetNearestSizeAvailable(const int32_t _sizePx)
 	{
-		assert(sizePx > 0);
+		assert(_sizePx > 0);
 
 		auto nearest = std::make_tuple(EmojiSizePx::_16, std::numeric_limits<int32_t>::max());
 
 		for (const auto &size : AvailableSizes_)
 		{
-			const auto diff = std::abs(sizePx - (int32_t)size);
+			const auto diff = std::abs(_sizePx - (int32_t)size);
 			const auto minDiff = std::get<1>(nearest);
 			if (diff <= minDiff)
 			{
@@ -171,16 +170,16 @@ namespace Emoji
 		return std::get<0>(nearest);
 	}
 
-	EmojiSizePx GetFirstLesserOrEqualSizeAvailable(const int32_t sizePx)
+	EmojiSizePx GetFirstLesserOrEqualSizeAvailable(const int32_t _sizePx)
 	{
-		assert(sizePx > 0);
+		assert(_sizePx > 0);
 
 		const auto sizeIter = std::find_if(
 			AvailableSizes_.rbegin(),
 			AvailableSizes_.rend(),
-			[sizePx](const EmojiSizePx availableSize)
+			[_sizePx](const EmojiSizePx availableSize)
 			{
-				return (((int)availableSize) <= sizePx);
+				return (((int)availableSize) <= _sizePx);
 			}
 		);
 
@@ -196,9 +195,9 @@ namespace Emoji
 
 namespace
 {
-	EmojiSetMeta::EmojiSetMeta(const int32_t sizePx, const QString &resourceName)
-		: SizePx_(sizePx)
-		, ResourceName_(resourceName)
+	EmojiSetMeta::EmojiSetMeta(const int32_t _sizePx, const QString& _resourceName)
+		: SizePx_(_sizePx)
+		, ResourceName_(_resourceName)
 	{
 		assert(SizePx_ > 0);
 		assert(!ResourceName_.isEmpty());
@@ -215,7 +214,7 @@ namespace
 			info.emplace(200, 44);
 		}
 
-		const auto k = (int32_t)(Utils::get_scale_coefficient() * 100);
+		const auto k = (int32_t)(Utils::getScaleCoefficient() * 100);
 		assert(info.count(k));
 
 		const auto size = info[k];
@@ -232,9 +231,9 @@ namespace
 		return GetMetaBySize(size);
 	}
 
-	const EmojiSetMeta& GetMetaBySize(const int32_t sizePx)
+	const EmojiSetMeta& GetMetaBySize(const int32_t _sizePx)
 	{
-		assert(sizePx > 0);
+		assert(_sizePx > 0);
 
 		typedef std::shared_ptr<EmojiSetMeta> EmojiSetMetaSptr;
 
@@ -251,32 +250,32 @@ namespace
 			info.emplace(64, std::make_shared<EmojiSetMeta>(64, ":/emoji/64.png"));
 		}
 
-		assert(info.count(sizePx));
-		return *info[sizePx];
+		assert(info.count(_sizePx));
+		return *info[_sizePx];
 	}
 
-	EmojiSetsIter LoadEmojiSetForSizeIfNeeded(const EmojiSetMeta &meta)
+	EmojiSetsIter LoadEmojiSetForSizeIfNeeded(const EmojiSetMeta& _meta)
 	{
-		assert(meta.SizePx_ > 0);
+		assert(_meta.SizePx_ > 0);
 
-		auto emojiSetIter = EmojiSetBySize_.find(meta.SizePx_);
+		auto emojiSetIter = EmojiSetBySize_.find(_meta.SizePx_);
 		if (emojiSetIter != EmojiSetBySize_.end())
 		{
 			return emojiSetIter;
 		}
 
 		QImage setImg;
-		const auto success = setImg.load(meta.ResourceName_);
+		const auto success = setImg.load(_meta.ResourceName_);
 		if (!success)
 		{
 			return EmojiSetBySize_.end();
 		}
 
-		return EmojiSetBySize_.emplace(meta.SizePx_, std::move(setImg)).first;
+		return EmojiSetBySize_.emplace(_meta.SizePx_, std::move(setImg)).first;
 	}
 
-	int64_t MakeCacheKey(const int32_t index, const int32_t sizePx)
+	int64_t MakeCacheKey(const int32_t _index, const int32_t _sizePx)
 	{
-		return ((int64_t)index | ((int64_t)sizePx << 32));
+		return ((int64_t)_index | ((int64_t)_sizePx << 32));
 	}
 }

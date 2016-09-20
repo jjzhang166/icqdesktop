@@ -19,23 +19,23 @@ namespace
 namespace HistoryControl
 {
 
-	ChatEventInfoSptr ChatEventInfo::Make(const core::coll_helper &info, const bool isOutgoing, const QString &myAimid)
+	ChatEventInfoSptr ChatEventInfo::Make(const core::coll_helper& _info, const bool _isOutgoing, const QString& _myAimid)
 	{
-		assert(!myAimid.isEmpty());
+		assert(!_myAimid.isEmpty());
 
-		const auto type = info.get_value_as_enum<chat_event_type>("type");
+		const auto type = _info.get_value_as_enum<chat_event_type>("type");
 
 		ChatEventInfoSptr eventInfo(new ChatEventInfo(
-			type, isOutgoing, myAimid
+			type, _isOutgoing, _myAimid
 		));
 
         const auto isGeneric = (type == chat_event_type::generic);
         if (isGeneric)
         {
-            assert(!info.is_value_exist("sender_friendly"));
+            assert(!_info.is_value_exist("sender_friendly"));
 
             eventInfo->setGenericText(
-                info.get<QString>("generic")
+                _info.get<QString>("generic")
             );
 
             return eventInfo;
@@ -45,14 +45,15 @@ namespace HistoryControl
 		const auto isBuddyFound = (type == chat_event_type::buddy_found);
 		const auto isBirthday = (type == chat_event_type::birthday);
         const auto isMessageDeleted = (type == chat_event_type::message_deleted);
-		if (isBuddyReg || isBuddyFound || isBirthday || isMessageDeleted)
+        if (isBuddyReg || isBuddyFound || isBirthday || isMessageDeleted)
 		{
-			assert(!info.is_value_exist("sender_friendly"));
+			assert(!_info.is_value_exist("sender_friendly"));
 			return eventInfo;
 		}
 
-		eventInfo->setSenderFriendly	(
-			info.get<QString>("sender_friendly")
+		eventInfo->setSenderInfo(
+            _info.get<QString>("sender_aimid"),
+			_info.get<QString>("sender_friendly")
 		);
 
 		const auto isAddedToBuddyList = (type == chat_event_type::added_to_buddy_list);
@@ -65,7 +66,7 @@ namespace HistoryControl
 		const auto isChatNameModified = (type == chat_event_type::chat_name_modified);
 		if (isChatNameModified)
 		{
-			const auto newChatName = info.get<QString>("chat/new_name");
+			const auto newChatName = _info.get<QString>("chat/new_name");
 			assert(!newChatName.isEmpty());
 
 			eventInfo->setNewName(newChatName);
@@ -76,9 +77,19 @@ namespace HistoryControl
         const auto isChatDescriptionModified = (type == chat_event_type::chat_description_modified);
         if (isChatDescriptionModified)
         {
-            const auto newDescription = info.get<QString>("chat/new_description");
+            const auto newDescription = _info.get<QString>("chat/new_description");
 
             eventInfo->setNewDescription(newDescription);
+
+            return eventInfo;
+        }
+
+        const auto isChatRulesModified = (type == chat_event_type::chat_rules_modified);
+        if (isChatRulesModified)
+        {
+            const auto newChatRules = _info.get<QString>("chat/new_rules");
+
+            eventInfo->setNewChatRules(newChatRules);
 
             return eventInfo;
         }
@@ -91,7 +102,7 @@ namespace HistoryControl
 		const auto hasMchatMembers = (isMchatAddMembers || isMchatInvite || isMchatLeave || isMchatDelMembers || isMchatKicked);
 		if (hasMchatMembers)
 		{
-			const auto membersArray = info.get_value_as_array("mchat/members");
+			const auto membersArray = _info.get_value_as_array("mchat/members");
 			assert(membersArray);
 
 			eventInfo->setMchatMembers(*membersArray);
@@ -103,10 +114,10 @@ namespace HistoryControl
 		return eventInfo;
 	}
 
-	ChatEventInfo::ChatEventInfo(const chat_event_type type, const bool isOutgoing, const QString &myAimid)
-		: Type_(type)
-		, IsOutgoing_(isOutgoing)
-		, MyAimid_(myAimid)
+	ChatEventInfo::ChatEventInfo(const chat_event_type _type, const bool _isOutgoing, const QString& _myAimid)
+		: Type_(_type)
+		, IsOutgoing_(_isOutgoing)
+		, MyAimid_(_myAimid)
 	{
 		assert(Type_ > chat_event_type::min);
 		assert(Type_ < chat_event_type::max);
@@ -158,6 +169,9 @@ namespace HistoryControl
 
             case chat_event_type::message_deleted:
                 return formatMessageDeletedText();
+
+            case chat_event_type::chat_rules_modified:
+                return formatChatRulesModified();
 
             default:
                 break;
@@ -326,6 +340,30 @@ namespace HistoryControl
         return result;
     }
 
+    QString ChatEventInfo::formatChatRulesModified() const
+    {
+        assert(Type_ == chat_event_type::chat_rules_modified);
+
+        QString result;
+        result.reserve(512);
+
+        if (IsOutgoing_)
+        {
+            result += QT_TRANSLATE_NOOP("chat_event", "You changed chat rules to \"");
+            result += Chat_.NewRules_;
+        }
+        else
+        {
+            result += SenderFriendly_;
+            result += QT_TRANSLATE_NOOP("chat_event", " changed chat rules to \"");
+            result += Chat_.NewRules_;
+        }
+
+        result += "\"";
+
+        return result;
+    }
+
 	QString ChatEventInfo::formatMchatInviteText() const
 	{
 		assert(Type_ == chat_event_type::mchat_invite);
@@ -334,12 +372,14 @@ namespace HistoryControl
 
 		QString result;
 		result.reserve(512);
-		const auto joinedMyselfOnly = isMyAimid(SenderFriendly_);
-		if ((IsOutgoing_) && (joinedMyselfOnly))
+
+		const auto joinedMyselfOnly = isMyAimid(SenderAimid_);
+		if (IsOutgoing_ && joinedMyselfOnly)
 		{
 			result += QT_TRANSLATE_NOOP("chat_event", "You have joined group");
 			return result;
 		}
+
 		result += SenderFriendly_;
 		result += QT_TRANSLATE_NOOP("chat_event", " added ");
 		result += formatMchatMembersList(false);
@@ -417,7 +457,7 @@ namespace HistoryControl
 		return result;
 	}
 
-	QString ChatEventInfo::formatMchatMembersList(const bool activeVoice) const
+	QString ChatEventInfo::formatMchatMembersList(const bool _activeVoice) const
 	{
 		assert(!MyAimid_.isEmpty());
 
@@ -432,7 +472,7 @@ namespace HistoryControl
 		}
 
 		const auto you =
-            activeVoice ?
+            _activeVoice ?
                 QT_TRANSLATE_NOOP3("chat_event", "You", "active_voice") :
                 QT_TRANSLATE_NOOP3("chat_event", "you", "passive_voice");
 
@@ -476,9 +516,9 @@ namespace HistoryControl
 		return FormattedEventText_;
 	}
 
-	QImage ChatEventInfo::loadEventIcon(const int32_t sizePx) const
+	QImage ChatEventInfo::loadEventIcon(const int32_t _sizePx) const
 	{
-		assert(sizePx > 0);
+		assert(_sizePx > 0);
 
 		if (Type_ != chat_event_type::birthday)
 		{
@@ -486,10 +526,10 @@ namespace HistoryControl
 		}
 
 		const auto birthdayEmojiId = 0x1f381;
-		const auto emojiSize = Emoji::GetFirstLesserOrEqualSizeAvailable(sizePx);
+		const auto emojiSize = Emoji::GetFirstLesserOrEqualSizeAvailable(_sizePx);
 		return Emoji::GetEmoji(birthdayEmojiId, 0, emojiSize);
 	}
-    
+
     core::chat_event_type ChatEventInfo::eventType() const
     {
         return Type_;
@@ -500,12 +540,12 @@ namespace HistoryControl
         return QT_TRANSLATE_NOOP("chat_event", "Deleted message");
     }
 
-	bool ChatEventInfo::isMyAimid(const QString &aimId) const
+	bool ChatEventInfo::isMyAimid(const QString& _aimId) const
 	{
-		assert(!aimId.isEmpty());
+		assert(!_aimId.isEmpty());
 		assert(!MyAimid_.isEmpty());
 
-		return (MyAimid_ == aimId);
+		return (MyAimid_ == _aimId);
 	}
 
 	bool ChatEventInfo::hasMultipleMembers() const
@@ -515,47 +555,73 @@ namespace HistoryControl
 		return (Mchat_.MembersFriendly_.size() > 1);
 	}
 
-    void ChatEventInfo::setGenericText(const QString &text)
+    void ChatEventInfo::setGenericText(const QString& _text)
     {
         assert(Generic_.isEmpty());
-        assert(!text.isEmpty());
+        assert(!_text.isEmpty());
 
-        Generic_ = text;
+        Generic_ = _text;
     }
 
-    void ChatEventInfo::setNewDescription(const QString &newDescription)
+    void ChatEventInfo::setNewChatRules(const QString& _newChatRules)
+    {
+        assert(Chat_.NewRules_.isEmpty());
+        assert(!_newChatRules.isEmpty());
+
+        Chat_.NewRules_ = _newChatRules;
+    }
+
+    void ChatEventInfo::setNewDescription(const QString& _newDescription)
     {
         assert(Chat_.NewDescription_.isEmpty());
 
-        Chat_.NewDescription_ = newDescription;
+        Chat_.NewDescription_ = _newDescription;
     }
 
-	void ChatEventInfo::setNewName(const QString &newName)
+	void ChatEventInfo::setNewName(const QString& _newName)
 	{
 		assert(Chat_.NewName_.isEmpty());
-		assert(!newName.isEmpty());
+		assert(!_newName.isEmpty());
 
-		Chat_.NewName_ = newName;
+		Chat_.NewName_ = _newName;
 	}
 
-	void ChatEventInfo::setSenderFriendly(const QString &friendly)
+	void ChatEventInfo::setSenderInfo(const QString& _aimid, const QString& _friendly)
 	{
 		assert(SenderFriendly_.isEmpty());
-		assert(!friendly.isEmpty());
+		assert(!_friendly.isEmpty());
+        assert(SenderAimid_.isEmpty());
 
-		SenderFriendly_ = friendly;
-        cleanupFriendlyName(SenderFriendly_);
+		SenderFriendly_ = _friendly;
+        cleanupFriendlyName(InOut SenderFriendly_);
+
+        SenderAimid_ = _aimid;
+
+        if (!SenderAimid_.isEmpty())
+        {
+            cleanupFriendlyName(InOut SenderAimid_);
+        }
 	}
 
-	void ChatEventInfo::setMchatMembers(const core::iarray &members)
+    const QString& ChatEventInfo::getSenderFriendly() const
+    {
+        return SenderFriendly_;
+    }
+
+    bool ChatEventInfo::isOutgoing() const
+    {
+        return IsOutgoing_;
+    }
+
+	void ChatEventInfo::setMchatMembers(const core::iarray& _members)
 	{
 		auto &membersFriendly = Mchat_.MembersFriendly_;
 
 		assert(membersFriendly.isEmpty());
 
-		for (auto index = 0; index < members.size(); ++index)
+		for (auto index = 0; index < _members.size(); ++index)
 		{
-			auto member = members.get_at(index);
+			auto member = _members.get_at(index);
 			assert(member);
 
             QString memberFriendly = member->get_as_string();
@@ -566,17 +632,17 @@ namespace HistoryControl
 
 		membersFriendly.removeDuplicates();
 
-		assert(membersFriendly.size() == members.size());
+		assert(membersFriendly.size() == _members.size());
 	}
 
 }
 
 namespace
 {
-    void cleanupFriendlyName(QString &name)
+    void cleanupFriendlyName(QString& _name)
     {
-        assert(!name.isEmpty());
+        assert(!_name.isEmpty());
 
-        name.remove("@uin.icq", Qt::CaseInsensitive);
+        _name.remove("@uin.icq", Qt::CaseInsensitive);
     }
 }

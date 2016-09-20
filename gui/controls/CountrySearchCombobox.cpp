@@ -1,30 +1,34 @@
 #include "stdafx.h"
 #include "CountrySearchCombobox.h"
-#include "LineEditEx.h"
+
 #include "CustomButton.h"
+#include "LineEditEx.h"
 #include "PictureWidget.h"
 #include "../utils/utils.h"
+#ifdef __APPLE__
+#   include "../utils/macos/mac_support.h"
+#endif
 
 namespace Ui
 {
-	SearchComboboxView::SearchComboboxView(QWidget* parent)
-		: QTreeView(parent)
+	SearchComboboxView::SearchComboboxView(QWidget* _parent)
+		: QTreeView(_parent)
 	{
-		setStyleSheet(Utils::LoadStyle(":/main_window/login_page.qss", Utils::get_scale_coefficient(), true));
+		setStyleSheet(Utils::LoadStyle(":/main_window/login_page.qss"));
 	}
 
-	void SearchComboboxView::paintEvent(QPaintEvent *event)
+	void SearchComboboxView::paintEvent(QPaintEvent* _event)
 	{
 		int expectedWidth = width() * 0.65;
 		if (header()->sectionSize(0) != expectedWidth)
 			header()->resizeSection(0, width() * 0.65);
-		QTreeView::paintEvent(event);
+		QTreeView::paintEvent(_event);
 	}
 
-	CountrySearchCombobox::CountrySearchCombobox(QWidget* parent)
-		: Edit_(new LineEditEx(parent))
-		, Completer_(new QCompleter(parent))
-		, ComboboxView_(new SearchComboboxView(parent))
+	CountrySearchCombobox::CountrySearchCombobox(QWidget* _parent)
+		: Edit_(new LineEditEx(_parent))
+		, Completer_(new QCompleter(_parent))
+		, ComboboxView_(new SearchComboboxView(_parent))
 	{
 		initLayout();
 
@@ -84,28 +88,23 @@ namespace Ui
 		setLayout(mainLayout);
 	}
 
-	void CountrySearchCombobox::setEditBoxClass(char* className)
+	void CountrySearchCombobox::setComboboxViewClass(char* _className)
 	{
-		Edit_->setProperty(className, true);
+		ComboboxView_->setProperty(_className, true);
 	}
 
-	void CountrySearchCombobox::setComboboxViewClass(char* className)
+	void CountrySearchCombobox::setClass(char* _className)
 	{
-		ComboboxView_->setProperty(className, true);
+		setProperty(_className, true);
 	}
 
-	void CountrySearchCombobox::setClass(char* className)
+	void CountrySearchCombobox::setSources(QMap<QString, QString> _sources)
 	{
-		setProperty(className, true);
-	}
-
-	void CountrySearchCombobox::setSources(QMap<QString, QString> sources)
-	{
-		Sources_ = sources;
+		Sources_ = _sources;
 		QStandardItemModel* model = new QStandardItemModel(this);
 		model->setColumnCount(2);
 		int i = 0;
-		for (auto iter : sources.toStdMap())
+		for (auto iter : _sources.toStdMap())
 		{
 			QStandardItem* firstCol = new QStandardItem(iter.first);
 			QStandardItem* secondCol = new QStandardItem(iter.second);
@@ -123,9 +122,9 @@ namespace Ui
 		Edit_->setCompleter(Completer_);
 	}
 
-	void CountrySearchCombobox::setPlaceholder(QString placeholder)
+	void CountrySearchCombobox::setPlaceholder(QString _placeholder)
 	{
-		Edit_->setPlaceholderText(placeholder);
+		Edit_->setPlaceholderText(_placeholder);
 	}
 
 	void CountrySearchCombobox::editClicked()
@@ -139,7 +138,7 @@ namespace Ui
 		}
 	}
 
-	void CountrySearchCombobox::completerActivated(QString text)
+	void CountrySearchCombobox::completerActivated(QString _text)
 	{
 		Edit_->clearFocus();
 	}
@@ -157,7 +156,47 @@ namespace Ui
 			QRegExp re("\\d*");
 			if (re.exactMatch(value))
 				value = "+" + value;
-			Edit_->setText(Sources_.key(value));
+
+            bool doClassicRoutine = true;
+            if (auto selectionModel = ComboboxView_->selectionModel())
+            {
+                auto selectedRows = selectionModel->selectedRows();
+                if (!selectedRows.isEmpty())
+                {
+                    doClassicRoutine = false;
+                    auto rowModel = selectedRows.first();
+                    auto country = rowModel.data().toString();
+                    Edit_->setText(country);
+                }
+            }
+            if (doClassicRoutine)
+            {
+                if (value == Utils::GetTranslator()->getCurrentPhoneCode())
+                {
+#ifdef __APPLE__
+                    QString counryCode = MacSupport::currentRegion().right(2).toLower();;
+#else
+                    QString counryCode = QLocale::system().name().right(2).toLower();
+#endif
+                    const auto mustBe = Utils::getCountryNameByCode(counryCode).toLower();
+                    const auto stdMap = Sources_.toStdMap();
+                    const auto it = std::find_if(
+                        stdMap.begin(),
+                        stdMap.end(),
+                        [mustBe](const std::pair<QString, QString> &p)
+                    {
+                        return p.first.toLower() == mustBe;
+                    });
+                    if (it != stdMap.end())
+                        Edit_->setText(it->first);
+                    else
+                        Edit_->setText(Sources_.key(value));
+                }
+                else
+                {
+                    Edit_->setText(Sources_.key(value));
+                }
+            }
 			Completer_->setCompletionColumn(0);
 		}
 		
@@ -172,12 +211,12 @@ namespace Ui
 		}
 	}
 
-	void CountrySearchCombobox::editTextChanged(QString text)
+	void CountrySearchCombobox::editTextChanged(QString _text)
 	{
 		int completionColumn = Completer_->completionColumn();
 		int newCompletionColumn;
 		QRegExp re("[\\+\\d]\\d*");
-		if (re.exactMatch(text))
+		if (re.exactMatch(_text))
 		{
 			QString completion = Completer_->completionPrefix();
 			if (!completion.startsWith("+"))
@@ -194,7 +233,7 @@ namespace Ui
             Completer_->setCompletionColumn(newCompletionColumn);
 		}
 
-		if (text.isEmpty())
+		if (_text.isEmpty())
 		{
 			Completer_->setCompletionPrefix(QString());
 		}
@@ -204,11 +243,11 @@ namespace Ui
 		}
 	}
 
-	QString CountrySearchCombobox::getValue(const QString& key)
+	QString CountrySearchCombobox::getValue(const QString& _key)
 	{
 		for (auto iter : Sources_.uniqueKeys())
 		{
-			if (iter.compare(key, Qt::CaseInsensitive) == 0)
+			if (iter.compare(_key, Qt::CaseInsensitive) == 0)
 			{
 				return Sources_[iter];
 			}
@@ -217,29 +256,50 @@ namespace Ui
 		return QString();
 	}
 
-	bool CountrySearchCombobox::selectItem(QString item)
+	bool CountrySearchCombobox::selectItem(QString _item)
 	{
 		QString value;
 		QRegExp re("[\\+\\d]\\d*");
-		if (re.exactMatch(item))
-			item = Sources_.key(item.startsWith("+") ? item : ("+" + item));
+		if (re.exactMatch(_item))
+        {
+            _item = _item.startsWith("+") ? _item : ("+" + _item);
+            if (_item == Utils::GetTranslator()->getCurrentPhoneCode())
+            {
+#ifdef __APPLE__
+                QString counryCode = MacSupport::currentRegion().right(2).toLower();;
+#else
+                QString counryCode = QLocale::system().name().right(2).toLower();
+#endif
+                const auto mustBe = Utils::getCountryNameByCode(counryCode).toLower();
+                const auto stdMap = Sources_.toStdMap();
+                const auto it = std::find_if(stdMap.begin(), stdMap.end(), [mustBe](const std::pair<QString, QString> &p){ return p.first.toLower() == mustBe; });
+                if (it != stdMap.end())
+                    _item = it->first;
+                else
+                    _item = Sources_.key(_item);
+            }
+            else
+            {
+                _item = Sources_.key(_item);
+            }
+        }
 		
-		value = getValue(item);
+		value = getValue(_item);
 		if (!value.isEmpty())
 		{
-			Edit_->setText(item);
-			OldEditValue_ = item;
+			Edit_->setText(_item);
+			OldEditValue_ = _item;
 			emit selected(value);
 			return true;
 		}
 		return false;
 	}
 
-	bool CountrySearchCombobox::containsCode(QString code)
+	bool CountrySearchCombobox::containsCode(QString _code)
 	{
 		for (auto iter : Sources_)
 		{
-			if (iter.indexOf(code) != -1)
+			if (iter.indexOf(_code) != -1)
 			{
 				return true;
 			}

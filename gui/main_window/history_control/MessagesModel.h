@@ -25,10 +25,21 @@ namespace Ui
 
 namespace Logic
 {
-    enum control_type
+    enum class control_type
     {
-        ct_date,
-        ct_message
+        ct_date         = 0,
+        ct_message      = 1,
+        ct_new_messages = 2
+    };
+
+    enum class preview_type
+    {
+        min,
+
+        none,
+        site,
+
+        max
     };
 
     class MessageKey
@@ -40,45 +51,51 @@ namespace Logic
         MessageKey();
 
         MessageKey(
-            qint64 id,
-            qint64 prev,
-            const QString& internalId,
-            int pendingId,
-            qint32 time,
-            core::message_type type,
-            bool outgoing,
-            bool isPreview,
-            bool isDeleted,
-            control_type _control_type);
+            const qint64 _id,
+            const control_type _control_type);
+
+
+        MessageKey(
+            const qint64 _id,
+            const qint64 _prev,
+            const QString& _internalId,
+            const int _pendingId,
+            const qint32 _time,
+            const core::message_type _type,
+            const bool _outgoing,
+            const preview_type _previewType,
+            const control_type _control_type);
 
         bool isEmpty() const
         {
-            return Id_ == -1 && Prev_ == -1 && InternalId_.isEmpty();
+            return id_ == -1 && prev_ == -1 && internalId_.isEmpty();
         }
 
         bool isPending() const
         {
-            return Id_ == -1 && !InternalId_.isEmpty();
+            return id_ == -1 && !internalId_.isEmpty();
         }
 
-        bool operator==(const MessageKey& other) const
+        bool operator==(const MessageKey& _other) const
         {
-            const auto idsEqual = (hasId() && Id_ == other.Id_);
-            const auto internalIdsEqual = (!InternalId_.isEmpty() && (InternalId_ == other.InternalId_));
+            const auto idsEqual = (hasId() && id_ == _other.id_);
+
+            const auto internalIdsEqual = (!internalId_.isEmpty() && (internalId_ == _other.internalId_));
+
             if (idsEqual || internalIdsEqual)
             {
-                return control_type_ == other.control_type_;
+                return controlType_ == _other.controlType_;
             }
 
             return false;
         }
 
-        bool operator!=(const MessageKey& other) const
+        bool operator!=(const MessageKey& _other) const
         {
-            return !operator==(other);
+            return !operator==(_other);
         }
 
-        bool operator<(const MessageKey& other) const;
+        bool operator<(const MessageKey& _other) const;
 
         bool hasId() const;
 
@@ -86,46 +103,57 @@ namespace Logic
 
         bool isChatEvent() const;
 
-        bool isDeleted() const;
-
         bool isOutgoing() const;
 
         bool isFileSharing() const;
+
+        bool isVoipEvent() const;
 
         bool isSticker() const;
 
         bool isDate() const;
 
-        void setDeleted(const bool isDeleted);
+        void setId(const int64_t _id);
 
-        void setId(const int64_t id);
+        qint64 getId() const;
 
-        void setOutgoing(const bool isOutgoing);
+        void setOutgoing(const bool _isOutgoing);
 
         QString toLogStringShort() const;
 
-        qint64 Id_;
+        void setControlType(const control_type _controlType);
+        control_type getControlType() const;
 
-        qint64 Prev_;
+        core::message_type getType() const;
+        void setType(core::message_type _type);
 
-        QString InternalId_;
+        preview_type getPreviewType() const;
 
-        core::message_type Type_;
+        qint64 getPrev() const;
 
-        control_type control_type_;
-
-        qint32 Time_;
-
-        int PendingId_;
-
-        bool IsPreview_;
+        QString getInternalId() const;
 
     private:
-        bool IsDeleted_;
 
-        bool Outgoing_;
+        qint64 id_;
 
-        bool compare(const MessageKey& rhs) const;
+        qint64 prev_;
+
+        QString internalId_;
+
+        core::message_type type_;
+
+        control_type controlType_;
+
+        qint32 time_;
+
+        int pendingId_;
+
+        preview_type previewType_;
+
+        bool outgoing_;
+
+        bool compare(const MessageKey& _rhs) const;
 
     };
 
@@ -133,166 +161,151 @@ namespace Logic
 
     typedef std::vector<MessageKey> MessageKeyVector;
 
-    typedef std::set<class InternalIndex> InternalIndexSet;
+    typedef std::map<MessageKey, class Message> MessagesMap;
 
-    typedef InternalIndexSet::iterator InternalIndexSetIter;
+    typedef MessagesMap::iterator MessagesMapIter;
 
-    class InternalIndex
+    class Message
     {
+
     public:
-        InternalIndex()
-            : MaxTime_(-1)
-            , MinTime_(-1)
-            , LastIndex_(-1)
-            , Deleted_(false)
+
+        Message(const QString& _aimId)
+            : deleted_(false)
+            , aimId_(_aimId)
         {
         }
 
-        bool operator==(const InternalIndex& other) const
-        {
-            return Key_ == other.Key_;
-        }
+        bool isBase() const;
 
-        bool operator<(const InternalIndex& other) const
-        {
-            return Key_ < other.Key_;
-        }
+        bool isChatEvent() const;
 
-        bool ContainsId(const int64_t id) const;
+        bool isDate() const;
 
-        bool ContainsKey(const MessageKey &needle) const;
+        bool isDeleted() const;
 
-        bool containsNotLast(const int64_t id) const
-        {
-            int i = 0;
-            for (auto iter : MsgKeys_)
-            {
-                ++i;
-                if (iter.Id_ == id)
-                    return i != MsgKeys_.size();
-            }
-            return false;
-        }
+        bool isFileSharing() const;
 
-        bool IsBase() const;
+        bool isOutgoing() const;
 
-        bool IsChatEvent() const;
+        bool isPending() const;
 
-        bool IsDate() const;
+        bool isStandalone() const;
 
-        bool IsDeleted() const;
+        bool isSticker() const;
 
-        bool IsFileSharing() const;
+        bool isVoipEvent() const;
 
-        bool IsOutgoing() const;
+        bool isPreview() const;
 
-        bool IsPending() const;
+        const HistoryControl::ChatEventInfoSptr& getChatEvent() const;
 
-        bool IsStandalone() const;
+        const QString& getChatSender() const;
 
-        bool IsSticker() const;
+        const HistoryControl::FileSharingInfoSptr& getFileSharing() const;
 
-        bool IsVoipEvent() const;
+        const HistoryControl::StickerInfoSptr& getSticker() const;
 
-        bool IsPreview() const;
+        const HistoryControl::VoipEventInfoSptr& getVoipEvent() const;
 
-        const HistoryControl::ChatEventInfoSptr& GetChatEvent() const;
+        void setChatEvent(const HistoryControl::ChatEventInfoSptr& _info);
 
-        const QString& GetChatSender() const;
+        void setChatSender(const QString& _chatSender);
 
-        const HistoryControl::FileSharingInfoSptr& GetFileSharing() const;
+        void setDeleted(const bool _deleted);
 
-        const MessageKey& GetFirstMessageKey() const;
+        void setFileSharing(const HistoryControl::FileSharingInfoSptr& info);
 
-        MessageKey GetKeyById(const int64_t id) const;
+        void setSticker(const HistoryControl::StickerInfoSptr& _info);
 
-        const MessageKey& GetLastMessageKey() const;
+        void setVoipEvent(const HistoryControl::VoipEventInfoSptr& _info);
 
-        const HistoryControl::StickerInfoSptr& GetSticker() const;
+        void removeMessageKey(MessageKey _key) const;
 
-        const HistoryControl::VoipEventInfoSptr& GetVoipEvent() const;
+        void applyModification(const Data::MessageBuddy& _modification);
 
-        void SetChatEvent(const HistoryControl::ChatEventInfoSptr& info);
+        void setBuddy(std::shared_ptr<Data::MessageBuddy> _buddy);
+        std::shared_ptr<Data::MessageBuddy> getBuddy() const;
 
-        void SetChatSender(const QString& chatSender);
+        const QString& getAimId() const;
 
-        void SetDeleted(const bool deleted);
+        void setKey(const MessageKey& _key);
+        const MessageKey& getKey() const;
 
-        void SetFileSharing(const HistoryControl::FileSharingInfoSptr& info);
+        const QDate& getDate();
+        void setDate(const QDate& _date);
 
-        void SetSticker(const HistoryControl::StickerInfoSptr& info);
-
-        void SetVoipEvent(const HistoryControl::VoipEventInfoSptr& info);
-
-        void InsertMessageKey(const MessageKey& key) const;
-
-        void InsertMessageKeys(const MessageKeySet& keys) const;
-
-        const MessageKeySet& GetMessageKeys() const;
-
-        void RemoveMessageKey(MessageKey key) const;
-
-        void ApplyModification(const Data::MessageBuddy &modification);
-
-        QString AimId_;
-        MessageKey Key_;
-        mutable qint32 MaxTime_;
-        mutable qint32 MinTime_;
-        QDate Date_;
-        mutable QString ChatFriendly_;
-        qint64 LastIndex_;
+        void setChatFriendly(const QString& _friendly);
+        const QString& getChatFriendly();
 
     private:
-        HistoryControl::FileSharingInfoSptr FileSharing_;
 
-        HistoryControl::StickerInfoSptr Sticker_;
+        HistoryControl::FileSharingInfoSptr fileSharing_;
 
-        HistoryControl::ChatEventInfoSptr ChatEvent_;
+        HistoryControl::StickerInfoSptr sticker_;
 
-        HistoryControl::VoipEventInfoSptr VoipEvent_;
+        HistoryControl::ChatEventInfoSptr chatEvent_;
 
-        mutable MessageKeySet MsgKeys_;
+        HistoryControl::VoipEventInfoSptr voipEvent_;
 
-        mutable QString ChatSender_;
+        QString chatSender_;
 
-        bool Deleted_;
+        bool deleted_;
+
+        std::shared_ptr<Data::MessageBuddy> buddy_;
+
+        QString aimId_;
+
+        MessageKey key_;
+
+        QDate date_;
+
+        QString chatFriendly_;
 
         void EraseEventData();
-
     };
 
-    class MessageInternal
+    typedef std::map<QDate, Message> DatesMap;
+
+    class ContactDialog
     {
+        std::unique_ptr<MessagesMap> messages_;
+        std::unique_ptr<MessagesMap> pendingMessages_;
+        std::unique_ptr<DatesMap> dateItems_;
+        std::unique_ptr<MessageKey> newKey_;
+
+        std::unique_ptr<qint64> lastRequestedMessage_;
+
+        MessageKey lastKey_;
+
+
     public:
-        bool operator<(const MessageInternal& other) const
-        {
-            return Key_ < other.Key_;
-        }
 
-        bool operator ==(const MessageInternal& other) const
-        {
-            return Key_ == other.Key_;
-        }
+        ContactDialog() {}
 
-        explicit MessageInternal(const MessageKey& id)
-            : Key_(id)
-        {
-        }
+        void setLastRequestedMessage(const qint64 _message);
+        qint64 getLastRequestedMessage() const;
+        bool isLastRequestedMessageEmpty() const;
 
-        MessageInternal(const MessageKey& id, Data::MessageBuddy* buddy)
-            : Key_(id)
-            , Buddy_(buddy)
-        {
-        }
+        MessagesMap& getMessages();
+        MessagesMap& getPendingMessages();
+        DatesMap& getDatesMap();
+        const MessageKey& getLastKey() const;
+        void setLastKey(const MessageKey& _key);
+        bool hasItemsInBetween(const MessageKey& _l, const MessageKey& _r) const;
 
-        explicit MessageInternal(std::shared_ptr<Data::MessageBuddy> buddy)
-            : Buddy_(buddy)
-        {
-            Key_ = Buddy_->ToKey();
-        }
+        std::shared_ptr<Data::MessageBuddy> addDateItem(const QString& _aimId, const MessageKey& _key, const QDate& _date);
+        bool hasDate(const QDate& date) const;
+        void removeDateItem(const QDate& date);
+        void removeDateItems();
 
-        std::shared_ptr<Data::MessageBuddy> Buddy_;
-        MessageKey Key_;
+        Logic::MessageKey findFirstKeyAfter(const Logic::MessageKey& _key) const;
+        int64_t getLastMessageId() const;
+        bool isHasPending() const;
+
+        void setNewKey(const MessageKey& _key);
+        void resetNewKey();
+        const MessageKey* getNewKey() const;
     };
 
     class MessagesModel : public QObject
@@ -300,6 +313,7 @@ namespace Logic
         Q_OBJECT
 
     public:
+
         enum UpdateMode
         {
             BASE = 0,
@@ -310,7 +324,8 @@ namespace Logic
             MODIFIED
         };
 
-Q_SIGNALS:
+    Q_SIGNALS:
+
         void ready(QString);
         void updated(QList<Logic::MessageKey>, QString, unsigned);
         void deleted(QList<Logic::MessageKey>, QString);
@@ -320,89 +335,112 @@ Q_SIGNALS:
         void pttPlayed(qint64);
         void canFetchMore(QString);
         void indentChanged(Logic::MessageKey, bool);
+        void hasAvatarChanged(Logic::MessageKey, bool _hasAvatar);
         void chatEvent(QString aimId);
 
-        private Q_SLOTS:
-            void messageBuddies(std::shared_ptr<Data::MessageBuddies>, QString, Ui::MessagesBuddiesOpt, bool, qint64);
+    private Q_SLOTS:
 
-            void messagesDeletedUpTo(QString, int64_t);
-            void messagesModified(QString, std::shared_ptr<Data::MessageBuddies>);
-            void dlgState(Data::DlgState);
-            void fileSharingUploadingResult(QString, bool, QString, bool);
+        void messageBuddies(std::shared_ptr<Data::MessageBuddies> _buddies, QString _aimId, Ui::MessagesBuddiesOpt _option, bool _havePending, qint64 _seq);
 
-            public Q_SLOTS:
-                void contactChanged(QString);
-                void messagesDeleted(QString, QList<int64_t>);
+        void messagesDeletedUpTo(QString, int64_t);
+        void messagesModified(QString, std::shared_ptr<Data::MessageBuddies>);
+        void dlgState(Data::DlgState);
+        void fileSharingUploadingResult(QString seq, bool success, QString localPath, QString uri, int contentType, bool isFileTooBig);
+
+    public Q_SLOTS:
+
+        void contactChanged(QString);
+        void messagesDeleted(QString, QList<int64_t>);
 
     public:
-        explicit MessagesModel(QObject *parent = 0);
 
-        QModelIndexList indexes(const QList<int>& rows);
+        explicit MessagesModel(QObject* _parent = 0);
+
         int getUnreadCount() const;
-        void setItemWidth(int width);
-        QMap<MessageKey, QWidget*> tail(const QString& aimId, QWidget* parent, qint64 newId);
-        QMap<MessageKey, QWidget*> more(const QString& aimId, QWidget* parent, qint64 newId);
-        QWidget* getById(const QString& aimId, const MessageKey& key, QWidget* parent, qint64 newId);
+        void setItemWidth(int _width);
+
+        QMap<MessageKey, Ui::HistoryControlPageItem*> tail(const QString& _aimId, QWidget* _parent);
+        QMap<MessageKey, Ui::HistoryControlPageItem*> more(const QString& _aimId, QWidget* _parent);
+
+        Ui::HistoryControlPageItem* getById(const QString& _aimId, const MessageKey& _key, QWidget* _parent);
+
         int32_t preloadCount() const;
         int32_t moreCount() const;
-        void setLastKey(const MessageKey& key, const QString& aimId);
-        void removeDialog(const QString& aimId);
-        void updateNew(const QString& aimId, qint64 newId, bool hide = false);
+
+        void setLastKey(const MessageKey& _key, const QString& _aimId);
+        void removeDialog(const QString& _aimId);
+
+        Ui::ServiceMessageItem* createNew(const QString& _aimId, const MessageKey& _index, QWidget* _parent) const;
+        void updateNew(const QString& _aimId, const qint64 _newId, const bool _hide = false);
+        void hideNew(const QString& _aimId);
+
         QString formatRecentsText(const Data::MessageBuddy &buddy) const;
         int64_t getLastMessageId(const QString &aimId) const;
-        std::vector<int64_t> getBubbleMessageIds(const QString &aimId, const int64_t messageId) const;
         qint64 normalizeNewMessagesId(const QString& aimid, qint64 id);
+
         Logic::MessageKey findFirstKeyAfter(const QString &aimId, const Logic::MessageKey &key) const;
-        bool isHasPending(const QString &aimId) const;
+
+        bool isHasPending(const QString& _aimId) const;
+
+        void eraseHistory(const QString& _aimid);
 
     private:
-        Data::MessageBuddy item(const InternalIndex& index);
-        void requestMessages(const QString& aimId);
+
+        Data::MessageBuddy item(const Message& _index);
+        void requestMessages(const QString& _aimId);
         int generatedDomUid();
-        Ui::HistoryControlPageItem* fill(const Data::MessageBuddy& msg, QWidget* parent) const;
-        QWidget* fillNew(const InternalIndex& index, QWidget* parent, qint64 newId);
-        QWidget* fillItemById(const QString& aimId, const MessageKey& key, QWidget* parent, qint64 newId);
-        void setFirstMessage(const QString& aimId, qint64 id);
-        std::set<MessageInternal>::iterator previousMsg(const QString& aimId, const qint64 id);
-        void processPendingMessage(InOut Data::MessageBuddies& msgs, const QString& aimId, const Ui::MessagesBuddiesOpt state);
-        bool tryInsertPendingMessageToLast(std::shared_ptr<Data::MessageBuddies> msgs, const QString& aimId);
-        void sendDeliveryNotifications(const Data::MessageBuddies &msgs);
-        void emitUpdated(const QList<Logic::MessageKey>& list, const QString& aimId, unsigned mode);
-        void emitDeleted(const QList<Logic::MessageKey>& list, const QString& aimId);
+
+        Ui::HistoryControlPageItem* makePageItem(const Data::MessageBuddy& _msg, QWidget* _parent) const;
+        Ui::HistoryControlPageItem* fillItemById(const QString& _aimId, const MessageKey& _key, QWidget* _parent);
+
+        void setFirstMessage(const QString& _aimId, qint64 _id);
+
+        MessagesMapIter previousMessage(MessagesMap& _map, MessagesMapIter _iter) const;
+        MessagesMapIter nextMessage(MessagesMap& _map, MessagesMapIter _iter) const;
+
+        void processPendingMessage(InOut Data::MessageBuddies& _msgs, const QString& _aimId, const Ui::MessagesBuddiesOpt _state);
+        void sendDeliveryNotifications(const Data::MessageBuddies& _msgs);
+
+        void emitUpdated(const QList<Logic::MessageKey>& _list, const QString& _aimId, unsigned _mode);
+        void emitDeleted(const QList<Logic::MessageKey>& _list, const QString& _aimId);
 
         // widgets factory
-        void createFileSharingWidget(Ui::MessageItem &messageItem, QWidget* parent, const Data::MessageBuddy& messageBuddy) const;
-        void createImagePreviewWidget(Ui::MessageItem &messageItem, QWidget* parent, const Data::MessageBuddy& messageBuddy) const;
-        void createStickerWidget(Ui::MessageItem &messageItem, QWidget* parent, const Data::MessageBuddy& messageBuddy) const;
+        void createFileSharingWidget(Ui::MessageItem& _messageItem, const Data::MessageBuddy& _messageBuddy) const;
 
-        MessageKey applyMessageModification(const QString& aimId, Data::MessageBuddy& modification);
-        bool hasItemsInBetween(const QString &aimId, const InternalIndex &l, const InternalIndex &r) const;
-        void updateDateItems(const QString& aimId);
-        void updateMessagesMargins(const QString& aimId);
+        MessageKey applyMessageModification(const QString& _aimId, Data::MessageBuddy& _modification);
 
-        void addDateItem(const QString &aimId, const MessageKey &key, const QDate &date);
-        bool hasDate(const QString &aimId, const QDate &date) const;
-        void removeDateItem(const QString &aimId, const QDate &date);
-        void removeDateItems(const QString &aimId);
-        void removeDateItemIfOutdated(const QString &aimId, const Data::MessageBuddy &msg);
+        void removeDateItemIfOutdated(const QString& _aimId, const Data::MessageBuddy& _msg);
+        bool hasItemsInBetween(const QString& _aimId, const Message& _l, const Message& _r) const;
+        void updateDateItems(const QString& _aimId);
+        void updateMessagesMarginsAndAvatars(const QString& _aimId);
 
-        InternalIndexSetIter findIndexRecord(InternalIndexSet &indexRecords, const Logic::MessageKey &key) const;
+        MessagesMapIter findIndexRecord(MessagesMap& _indexRecords, const Logic::MessageKey& _key) const;
+
+        ContactDialog& getContactDialog(const QString& _aimid);
+        const ContactDialog* getContactDialogConst(const QString& _aimid) const;
+
+        void messageBuddiesUnloadUnusedMessages(std::shared_ptr<Data::MessageBuddies> _buddies, const QString& _aimId, bool& _hole);
+        void messageBuddiesInsertMessages(
+            std::shared_ptr<Data::MessageBuddies> _buddies,
+            const QString& _aimId,
+            const qint64 _modelFirst,
+            const Ui::MessagesBuddiesOpt _option,
+            const qint64 _seq,
+            const bool hole);
+
+        void updateLastSeen(const QString& _aimid);
 
     private:
-        QHash<QString, std::set<MessageInternal>> Messages_;
-        QHash<QString, InternalIndexSet> Indexes_;
-        QHash<QString, InternalIndexSet> PendingMessages_;
-        QHash<QString, qint64> LastRequested_;
-        QStringList Requested_;
-        QStringList FailedUploads_;
-        QStringList Subscribed_;
-        QList<qint64> Sequences_;
 
-        QHash<QString, MessageKey> LastKey_;
-        QHash<QString, std::map<QDate, InternalIndex>> DateItems_;
+        QHash<QString, std::shared_ptr<ContactDialog>> dialogs_;
 
-        int32_t ItemWidth_;
-        int32_t DomUid_;
+        QStringList requestedContact_;
+        QStringList failedUploads_;
+        QStringList subscribed_;
+        QList<qint64> sequences_;
+
+
+        int32_t itemWidth_;
     };
 
     MessagesModel* GetMessagesModel();

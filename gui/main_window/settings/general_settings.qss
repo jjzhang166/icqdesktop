@@ -4,46 +4,8 @@ QWidget
     border: none;
 }
 
-QCheckBox
-{
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
-    font-size: 16dip;
-    spacing: 12dip;
-}
-QCheckBox::indicator
-{
-    width: 44dip;
-    height: 20dip;
-}
-QCheckBox::indicator[ordinary="true"]
-{
-    width: 20dip;
-    height: 20dip;
-}
-
-QCheckBox::indicator:unchecked
-{
-    image: url(:/resources/widgets/content_switch_off_100.png);
-}
-QCheckBox::indicator:checked
-{
-    image: url(:/resources/widgets/content_switch_on_100.png);
-}
-
-QCheckBox::indicator:unchecked[ordinary="true"]
-{
-    image: url(:/resources/widgets/content_uncheck_100.png);
-}
-QCheckBox::indicator:checked[ordinary="true"]
-{
-    image: url(:/resources/widgets/content_check_100.png);
-}
-
 QPushButton
 {
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     font-size: 16dip;
 }
 QPushButton::menu-indicator
@@ -55,29 +17,16 @@ QPushButton::menu-indicator
     subcontrol-position: center right;
 }
 
-QMenu
-{
-    color: #282828;
-    font: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
-    font-size: 16dip;
-    border-style: solid;
-	border-width: 1dip;
-	border-color: #d4d4d4;
-    background-color: #f2f2f2;
-}
 QMenu::item
 {
-    padding-left: 16dip;
-    padding-right: 16dip;
-    height: 40dip;
+	padding-left: 14dip;
 	min-width: 140dip;
 	max-width: 248dip;
 }
-QMenu::item:selected
+
+QPushButton#logo
 {
-    color: #282828;
-    background-color: #dcdcdc;
+	border-image: url(:/resources/main_window/content_logo_100.png);
 }
 
 QSlider

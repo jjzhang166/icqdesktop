@@ -1,21 +1,9 @@
 #pragma once
 
-
-namespace Ui
-{
-	class ContactListItem;
-}
-
-namespace Utils
-{
-    int scale_value(const int _px);
-}
+#include "Common.h"
 
 namespace Logic
 {
-	
-    class SearchModel;
-
 	class ContactListItemDelegate : public QItemDelegate
 	{
 	public:
@@ -44,10 +32,7 @@ namespace Logic
 	private:
         bool StateBlocked_;
         bool renderRole_;
-        int regim_;
-        int width_;
-        int leftMargin_;
-        int rightMargin_;
         QModelIndex DragIndex_;
-	};
+        ContactList::ViewParams viewParams_;
+    };
 }

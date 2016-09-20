@@ -36,7 +36,7 @@ int32_t set_state::init_request(std::shared_ptr<core::http_request_simple> _requ
     std::stringstream ss_url;
     ss_url << c_wim_host << "presence/setState" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&view=" << escape_symbols(state) <<
         "&r=" << core::tools::system::generate_guid() <<
         "&invisible=" << escape_symbols(invisible);

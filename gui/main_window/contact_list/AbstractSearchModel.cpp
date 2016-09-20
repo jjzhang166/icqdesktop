@@ -1,24 +1,30 @@
 #include "stdafx.h"
 #include "SearchMembersModel.h"
 #include "SearchModel.h"
-#include "ChatMembersModel.h"
-#include "ContactItem.h"
-
-#include "../../utils/utils.h"
-#include "../../core_dispatcher.h"
-#include "../../utils/gui_coll_helper.h"
 
 namespace Logic
 {
-    AbstractSearchModel::AbstractSearchModel(QObject *parent/* = 0*/): CustomAbstractListModel(parent)
-    {     
+    AbstractSearchModel::AbstractSearchModel(QObject* _parent/* = 0*/)
+        : CustomAbstractListModel(_parent)
+        , isClSorting_(true)
+    {
     }
     
-    AbstractSearchModel* GetCurrentSearchModel(int _regim)
+    AbstractSearchModel* getCurrentSearchModel(int _regim)
     {
         if (!Logic::is_delete_members_regim(_regim))
-            return GetSearchModel();
+            return getSearchModel();
         else
-            return GetSearchMemberModel();
+            return getSearchMemberModel();
+    }
+
+    void AbstractSearchModel::setSort(bool _isClSorting)
+    {
+        isClSorting_ = _isClSorting;
+    }
+
+    bool AbstractSearchModel::isClSorting() const
+    {
+        return isClSorting_;
     }
 }

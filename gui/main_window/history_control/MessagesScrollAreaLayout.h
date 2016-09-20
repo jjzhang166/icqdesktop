@@ -46,6 +46,8 @@ namespace Ui
 
         virtual void invalidate() override;
 
+        QPoint absolute2Viewport(const QPoint absPos) const;
+
         bool containsWidget(QWidget *widget) const;
 
         QWidget* getItemByPos(const int32_t pos) const;
@@ -82,19 +84,18 @@ namespace Ui
 
         bool isViewportAtBottom() const;
 
+        void resumeVisibleItems();
+
+        void suspendVisibleItems();
+
+        QPoint viewport2Absolute(const QPoint viewportPos) const;
+
     private:
-        struct ItemInfo
-        {
-            ItemInfo(QWidget *widget, const Logic::MessageKey &key);
+        class ItemInfo;
 
-            QWidget *Widget_;
+        typedef std::unique_ptr<ItemInfo> ItemInfoUptr;
 
-            QRect AbsGeometry_;
-
-            Logic::MessageKey Key_;
-        };
-
-        typedef std::deque<ItemInfo> ItemsInfo;
+        typedef std::deque<ItemInfoUptr> ItemsInfo;
 
         typedef ItemsInfo::iterator ItemsInfoIter;
 
@@ -132,6 +133,8 @@ namespace Ui
 
         int32_t evalViewportAbsMiddleY() const;
 
+        QRect evalViewportAbsRect() const;
+
         Interval getItemsAbsBounds() const;
 
         int32_t getRelY(const int32_t y) const;
@@ -140,7 +143,13 @@ namespace Ui
 
         ItemsInfoIter insertItem(QWidget *widget, const Logic::MessageKey &key);
 
+        void onItemActivityChanged(QWidget *widget, const bool isActive);
+
+        void onItemVisibilityChanged(QWidget *widget, const bool isVisible);
+
         bool setViewportAbsY(const int32_t absY);
+
+        void simulateMouseEvents(ItemInfo &itemInfo, const QRect &scrollAreaWidgetGeometry, const QPoint &globalMousePos, const QPoint &scrollAreaMousePos);
 
         bool slideItemsApart(const ItemsInfoIter &changedItemIter, const int slideY, const SlideOp slideOp);
 

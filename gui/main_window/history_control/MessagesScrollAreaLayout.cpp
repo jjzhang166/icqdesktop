@@ -1,8 +1,9 @@
 #include "stdafx.h"
 
 #include "../../utils/log/log.h"
-#include "../../utils/profiling/auto_stop_watch.h"
 #include "../../utils/utils.h"
+
+#include "complex_message/ComplexMessageItem.h"
 
 #include "ChatEventItem.h"
 #include "MessageItem.h"
@@ -49,9 +50,33 @@ namespace Ui
         return lhs;
     }
 
+    class MessagesScrollAreaLayout::ItemInfo
+    {
+    public:
+        ItemInfo(QWidget *widget, const Logic::MessageKey &key);
+
+        QWidget *Widget_;
+
+        QRect AbsGeometry_;
+
+        Logic::MessageKey Key_;
+
+        bool IsGeometrySet_;
+
+        bool IsHovered_;
+
+        bool IsActive_;
+
+        bool IsVisible_;
+    };
+
     MessagesScrollAreaLayout::ItemInfo::ItemInfo(QWidget *widget, const Logic::MessageKey &key)
         : Widget_(widget)
         , Key_(key)
+        , IsVisible_(false)
+        , IsGeometrySet_(false)
+        , IsHovered_(false)
+        , IsActive_(false)
     {
         assert(Widget_);
     }
@@ -59,8 +84,7 @@ namespace Ui
     MessagesScrollAreaLayout::MessagesScrollAreaLayout(
         MessagesScrollArea *scrollArea,
         MessagesScrollbar *messagesScrollbar,
-        QWidget *typingWidget
-    )
+        QWidget *typingWidget)
         : QLayout(scrollArea)
         , Scrollbar_(messagesScrollbar)
         , ScrollArea_(scrollArea)
@@ -213,6 +237,16 @@ namespace Ui
         QLayout::invalidate();
     }
 
+    QPoint MessagesScrollAreaLayout::absolute2Viewport(const QPoint absPos) const
+    {
+        auto result = absPos;
+
+        // apply the viewport transformation
+        result.ry() -= ViewportAbsY_;
+
+        return result;
+    }
+
     bool MessagesScrollAreaLayout::containsWidget(QWidget *widget) const
     {
         assert(widget);
@@ -228,16 +262,16 @@ namespace Ui
         if (pos < 0 || pos >= (int32_t)LayoutItems_.size())
             return nullptr;
 
-        return LayoutItems_[pos].Widget_;
+        return LayoutItems_[pos]->Widget_;
     }
 
     QWidget* MessagesScrollAreaLayout::getItemByKey(const Logic::MessageKey &key) const
     {
         for (const auto &layoutItem : LayoutItems_)
         {
-            if (layoutItem.Key_ == key)
+            if (layoutItem->Key_ == key)
             {
-                return layoutItem.Widget_;
+                return layoutItem->Widget_;
             }
         }
 
@@ -265,7 +299,7 @@ namespace Ui
         auto itemIndex = (result.size() - 1);
         for (const auto &layoutItem : LayoutItems_)
         {
-            result[itemIndex--] = layoutItem.Key_;
+            result[itemIndex--] = layoutItem->Key_;
         }
 
         return result;
@@ -296,14 +330,14 @@ namespace Ui
         if (scrollHeight == 0)
         {
             const auto &bottomItem = *LayoutItems_.begin();
-            const auto bottom = bottomItem.AbsGeometry_.bottom();
+            const auto bottom = bottomItem->AbsGeometry_.bottom();
             const auto top = (bottom + getTypingWidgetHeight() - ViewportSize_.height());
 
             return Interval(top, top);
         }
 
         const auto &topItem = *(LayoutItems_.end() - 1);
-        const auto top = topItem.AbsGeometry_.top();
+        const auto top = topItem->AbsGeometry_.top();
         const auto bottom = (top + scrollHeight);
 
         return Interval(top, bottom);
@@ -332,7 +366,10 @@ namespace Ui
 
         for (auto iter = LayoutItems_.crbegin(); iter != LayoutItems_.crend(); ++iter)
         {
-            const auto &layoutItem = *iter;
+            const auto &layoutItem = **iter;
+
+            if (layoutItem.Widget_->property("permanent").toBool())
+                continue;
 
             const auto &itemAbsGeometry = layoutItem.AbsGeometry_;
 
@@ -372,6 +409,9 @@ namespace Ui
                 continue;
             }
 
+            if (auto messageItem = qobject_cast<MessageItem*>(widget))
+                connect(messageItem, &MessageItem::selectionChanged, ScrollArea_, &MessagesScrollArea::notifySelectionChanges);
+
             Widgets_.emplace(widget);
 
             // -----------------------------------------------------------------------
@@ -402,10 +442,11 @@ namespace Ui
             {
                 const auto absolutePosition = calculateInsertionRect(itemInfoIter, Out slideOp);
 
-                itemInfoIter->AbsGeometry_ = absolutePosition;
+                (*itemInfoIter)->AbsGeometry_ = absolutePosition;
             }
 
-            /*const bool itemsSlided = */slideItemsApart(itemInfoIter, itemInfoIter->AbsGeometry_.height(), slideOp);
+            const auto insertedItemHeight = (*itemInfoIter)->AbsGeometry_.height();
+            slideItemsApart(itemInfoIter, insertedItemHeight, slideOp);
         }
 
         if (isAtBottom)
@@ -449,7 +490,9 @@ namespace Ui
         auto iter = LayoutItems_.begin();
         for (; iter != LayoutItems_.end(); ++iter)
         {
-            if (iter->Widget_ == widget)
+            auto &item = **iter;
+
+            if (item.Widget_ == widget)
             {
                 break;
             }
@@ -459,11 +502,17 @@ namespace Ui
 
         // determine slide operation type
 
-        const auto &layoutItemGeometry = iter->AbsGeometry_;
+        const auto &layoutItemGeometry = (*iter)->AbsGeometry_;
+        assert(layoutItemGeometry.height() >= 0);
+        assert(layoutItemGeometry.width() > 0);
 
         const auto insertBeforeViewportMiddle = (layoutItemGeometry.top() < evalViewportAbsMiddleY());
 
-        const auto slideOp = (insertBeforeViewportMiddle ? SlideOp::SlideUp : SlideOp::SlideDown);
+        auto slideOp = SlideOp::NoSlide;
+        if (!layoutItemGeometry.isEmpty())
+        {
+            slideOp = (insertBeforeViewportMiddle ? SlideOp::SlideUp : SlideOp::SlideDown);
+        }
 
         const auto itemsSlided = slideItemsApart(iter, -layoutItemGeometry.height(), slideOp);
 
@@ -520,16 +569,64 @@ namespace Ui
 
     void MessagesScrollAreaLayout::applyItemsGeometry()
     {
+        const auto globalMousePos = QCursor::pos();
+        const auto localMousePos = ScrollArea_->mapFromGlobal(globalMousePos);
+
+        const auto viewportAbsRect = evalViewportAbsRect();
+
+        const auto preloadMargin = Utils::scale_value(1900);
+        const QMargins preloadMargins(0, preloadMargin, 0, preloadMargin);
+        const auto viewportActivityAbsRect = viewportAbsRect.marginsAdded(preloadMargins);
+
+        const auto visibilityMargin = Utils::scale_value(50);
+        const QMargins visibilityMargins(0, visibilityMargin, 0, visibilityMargin);
+        const auto viewportVisibilityAbsRect = viewportAbsRect.marginsAdded(visibilityMargins);
+
         for (auto &item : LayoutItems_)
         {
-            const auto widgetGeometry = absolute2Viewport(item.AbsGeometry_);
-            assert(!widgetGeometry.isEmpty());
+            const auto &widgetAbsGeometry = item->AbsGeometry_;
 
-            const auto geometryChanged = (item.Widget_->geometry() != widgetGeometry);
-            if (geometryChanged)
+            const auto isGeometryActive = viewportActivityAbsRect.intersects(widgetAbsGeometry);
+
+            const auto isActivityChanged = (item->IsActive_ != isGeometryActive);
+            if (isActivityChanged)
             {
-                item.Widget_->setGeometry(widgetGeometry);
+                item->IsActive_ = isGeometryActive;
+
+                onItemActivityChanged(item->Widget_, isGeometryActive);
             }
+
+            const auto isGeometryVisible = viewportVisibilityAbsRect.intersects(widgetAbsGeometry);
+
+            const auto isInvisibleMovement = ((!isGeometryVisible && !item->IsVisible_) && item->IsGeometrySet_);
+            if (isInvisibleMovement)
+            {
+                //continue;
+            }
+
+            const auto isVisibilityChanged = (item->IsVisible_ != isGeometryVisible);
+            if (isVisibilityChanged)
+            {
+                item->IsVisible_ = isGeometryVisible;
+
+                onItemVisibilityChanged(item->Widget_, isGeometryVisible);
+            }
+
+            if (!widgetAbsGeometry.isEmpty())
+            {
+                const auto widgetGeometry = absolute2Viewport(widgetAbsGeometry);
+
+                const auto geometryChanged = (item->Widget_->geometry() != widgetGeometry);
+                if (geometryChanged)
+                {
+                    item->Widget_->setGeometry(widgetGeometry);
+
+                    simulateMouseEvents(*item, widgetGeometry, globalMousePos, localMousePos);
+                }
+
+            }
+
+            item->IsGeometrySet_ = true;
         }
     }
 
@@ -556,8 +653,8 @@ namespace Ui
 
         Out slideOp = SlideOp::NoSlide;
 
-        const auto widgetHeight = evaluateWidgetHeight(itemInfoIter->Widget_);
-        assert(widgetHeight > 0);
+        const auto widgetHeight = evaluateWidgetHeight((*itemInfoIter)->Widget_);
+        assert(widgetHeight >= 0);
 
         const auto isInitialInsertion = (LayoutItems_.size() == 1);
         if (isInitialInsertion)
@@ -585,10 +682,11 @@ namespace Ui
         {
             // add to geometry top
 
-            const auto prevItemInfo = (itemInfoIter - 1);
+            const auto &prevItemInfo = *(itemInfoIter - 1);
 
             const auto &prevItemGeometry = prevItemInfo->AbsGeometry_;
-            assert(!prevItemGeometry.isEmpty());
+            assert(prevItemGeometry.width() > 0);
+            assert(prevItemGeometry.height() >= 0);
 
             const QRect result(
                 getXForItem(),
@@ -611,10 +709,11 @@ namespace Ui
         {
             // add to geometry bottom
 
-            const auto nextItemInfo = (itemInfoIter + 1);
+            const auto &nextItemInfo = *(itemInfoIter + 1);
 
             const auto &nextItemGeometry = nextItemInfo->AbsGeometry_;
-            assert(!nextItemGeometry.isEmpty());
+            assert(nextItemGeometry.width() > 0);
+            assert(nextItemGeometry.height() >= 0);
 
             const QRect result(
                 getXForItem(),
@@ -634,8 +733,8 @@ namespace Ui
 
         // insert in the middle
 
-        const auto &overItemInfo = *(itemInfoIter + 1);
-        const auto &underItemInfo = *(itemInfoIter - 1);
+        const auto &overItemInfo = **(itemInfoIter + 1);
+        const auto &underItemInfo = **(itemInfoIter - 1);
 
         const auto insertionY = underItemInfo.AbsGeometry_.top();
 
@@ -643,7 +742,10 @@ namespace Ui
 
         if (insertBeforeViewportMiddle)
         {
-            Out slideOp = SlideOp::SlideUp;
+            if (widgetHeight > 0)
+            {
+                Out slideOp =  SlideOp::SlideUp;
+            }
 
             const QRect result(
                 getXForItem(),
@@ -664,7 +766,10 @@ namespace Ui
             return result;
         }
 
-        Out slideOp = SlideOp::SlideDown;
+        if (widgetHeight > 0)
+        {
+            Out slideOp = SlideOp::SlideDown;
+        }
 
         const QRect result(
             getXForItem(),
@@ -704,15 +809,15 @@ namespace Ui
                 break;
             }
 
-            const auto &geometry = iter->AbsGeometry_;
-            const auto &nextGeometry = next->AbsGeometry_;
+            const auto &geometry = (*iter)->AbsGeometry_;
+            const auto &nextGeometry = (*next)->AbsGeometry_;
 
             if (nextGeometry.bottom() > geometry.top())
             {
                 __TRACE(
                     "geometry",
-                    "    widget-above=<" << next->Widget_ << ">\n"
-                    "    widget-below=<" << iter->Widget_ << ">\n"
+                    "    widget-above=<" << (*next)->Widget_ << ">\n"
+                    "    widget-below=<" << (*iter)->Widget_ << ">\n"
                     "    widget-above-bottom=<" << nextGeometry.bottom() << ">\n"
                     "    widget-below-top=<" << geometry.top() << ">\n"
                     "    error=<intersection>"
@@ -746,7 +851,7 @@ namespace Ui
         {
             const auto pos = (iter - LayoutItems_.crbegin());
 
-            const auto widget = iter->Widget_;
+            const auto widget = (*iter)->Widget_;
 
             const char *className = widget->metaObject()->className();
 
@@ -759,8 +864,8 @@ namespace Ui
                 "    widget=<" << widget << ">\n"
                 "    class=<" << className << ">\n"
                 "    content=<" << contentClassName << ">\n"
-                "    abs-geometry=<" << iter->AbsGeometry_ << ">\n"
-                "    rel-y-inclusive=<" << getRelY(iter->AbsGeometry_.top()) << "," << getRelY(iter->AbsGeometry_.bottom() + 1) << ">"
+                "    abs-geometry=<" << (*iter)->AbsGeometry_ << ">\n"
+                "    rel-y-inclusive=<" << getRelY((*iter)->AbsGeometry_.top()) << "," << getRelY((*iter)->AbsGeometry_.bottom() + 1) << ">"
             );
         }
 
@@ -779,6 +884,17 @@ namespace Ui
         );
     }
 
+    QRect MessagesScrollAreaLayout::evalViewportAbsRect() const
+    {
+        QRect result(
+            0,
+            ViewportAbsY_,
+            ViewportSize_.width(),
+            ViewportSize_.height());
+
+        return result;
+    }
+
     MessagesScrollAreaLayout::Interval MessagesScrollAreaLayout::getItemsAbsBounds() const
     {
         if (LayoutItems_.empty())
@@ -786,15 +902,15 @@ namespace Ui
             return Interval(0, 0);
         }
 
-        const auto &topItem = *(LayoutItems_.cend() - 1);
-        const auto &bottomItem = *LayoutItems_.cbegin();
+        const auto &topItem = **(LayoutItems_.cend() - 1);
+        const auto &bottomItem = **LayoutItems_.cbegin();
 
         assert(!ViewportSize_.isEmpty());
 
         const auto itemsAbsTop = topItem.AbsGeometry_.top();
         const auto itemsAbsBottom = (bottomItem.AbsGeometry_.bottom() + 1);
 
-        assert(itemsAbsBottom > itemsAbsTop);
+        assert(itemsAbsBottom >= itemsAbsTop);
         return Interval(itemsAbsTop, itemsAbsBottom);
     }
 
@@ -815,23 +931,24 @@ namespace Ui
     {
         assert(widget);
 
+        ItemInfoUptr info(new ItemInfo(widget, key));
+
         const auto isInitialInsertion = LayoutItems_.empty();
         if (isInitialInsertion)
         {
-            return LayoutItems_.emplace(
-                LayoutItems_.end(), widget, key
-            );
+            return LayoutItems_.emplace(LayoutItems_.end(), std::move(info));
         }
 
         {
             // insert to the geometry bottom
 
             const auto iterFirst = LayoutItems_.begin();
-            const auto &keyFirst = iterFirst->Key_;
+            const auto &keyFirst = (*iterFirst)->Key_;
             const auto isPrepend = (keyFirst < key);
             if (isPrepend)
             {
-                LayoutItems_.emplace_front(widget, key);
+                LayoutItems_.emplace_front(std::move(info));
+
                 return LayoutItems_.begin();
             }
         }
@@ -840,13 +957,11 @@ namespace Ui
             // insert to the geometry top
 
             const auto iterLast = (LayoutItems_.end() - 1);
-            const auto &keyLast = iterLast->Key_;
+            const auto &keyLast = (*iterLast)->Key_;
             const auto isAppend = (key < keyLast);
             if (isAppend)
             {
-                return LayoutItems_.emplace(
-                    LayoutItems_.end(), widget, key
-                );
+                return LayoutItems_.emplace(LayoutItems_.end(), std::move(info));
             }
         }
 
@@ -856,13 +971,13 @@ namespace Ui
         auto iter = LayoutItems_.begin();
         for (; iter != LayoutItems_.end(); ++iter)
         {
-            if (iter->Key_ < key)
+            if ((*iter)->Key_ < key)
             {
                 break;
             }
         }
 
-        return LayoutItems_.emplace(iter, widget, key);
+        return LayoutItems_.emplace(iter, std::move(info));
     }
 
     bool MessagesScrollAreaLayout::isViewportAtBottom() const
@@ -892,6 +1007,43 @@ namespace Ui
         return isAtBottom;
     }
 
+    void MessagesScrollAreaLayout::resumeVisibleItems()
+    {
+        for (auto &item : LayoutItems_)
+        {
+            const auto activateItem = (!item->IsActive_ && item->IsVisible_ && item->IsGeometrySet_);
+            if (activateItem)
+            {
+                item->IsActive_ = true;
+
+                onItemActivityChanged(item->Widget_, true);
+            }
+        }
+    }
+
+    void MessagesScrollAreaLayout::suspendVisibleItems()
+    {
+        for (auto &item : LayoutItems_)
+        {
+            if (item->IsActive_)
+            {
+                item->IsActive_ = false;
+
+                onItemActivityChanged(item->Widget_, false);
+            }
+        }
+    }
+
+    QPoint MessagesScrollAreaLayout::viewport2Absolute(const QPoint viewportPos) const
+    {
+        auto absolute(viewportPos);
+
+        // apply the absolute transformation
+        absolute.ry() += ViewportAbsY_;
+
+        return absolute;
+    }
+
     void MessagesScrollAreaLayout::moveViewportToBottom()
     {
         const auto scrollBounds = getViewportScrollBounds();
@@ -917,12 +1069,26 @@ namespace Ui
         auto newViewportAbsY = viewportBounds.second;
         newViewportAbsY -= bottomOffset;
 
-        if (!setViewportAbsY(newViewportAbsY))
+        setViewportAbsY(newViewportAbsY);
+    }
+
+    void MessagesScrollAreaLayout::onItemActivityChanged(QWidget *widget, const bool isActive)
+    {
+        auto item = qobject_cast<HistoryControlPageItem*>(widget);
+
+        if (item)
         {
-            if (bottomOffset != 0)
-            {
-                assert(!"invalid viewport bottom offset");
-            }
+            item->onActivityChanged(isActive);
+        }
+    }
+
+    void MessagesScrollAreaLayout::onItemVisibilityChanged(QWidget *widget, const bool isVisible)
+    {
+        auto item = qobject_cast<HistoryControlPageItem*>(widget);
+
+        if (item)
+        {
+            item->onVisibilityChanged(isVisible);
         }
     }
 
@@ -953,15 +1119,59 @@ namespace Ui
         return true;
     }
 
+    void MessagesScrollAreaLayout::simulateMouseEvents(
+        ItemInfo &itemInfo,
+        const QRect &scrollAreaWidgetGeometry,
+        const QPoint &globalMousePos,
+        const QPoint &scrollAreaMousePos)
+    {
+        if (scrollAreaWidgetGeometry.isEmpty())
+        {
+            return;
+        }
+
+        if (!ScrollArea_->isVisible())
+        {
+            return;
+        }
+
+        if (!ScrollArea_->isScrolling())
+        {
+            return;
+        }
+
+        auto widget = itemInfo.Widget_;
+        assert(widget);
+
+        const auto oldHoveredState = itemInfo.IsHovered_;
+        const auto newHoveredState = scrollAreaWidgetGeometry.contains(scrollAreaMousePos);
+
+        itemInfo.IsHovered_ = newHoveredState;
+
+        const auto isMouseLeftWidget = (oldHoveredState && !newHoveredState);
+        if (isMouseLeftWidget)
+        {
+            QEvent leaveEvent(QEvent::Leave);
+            QApplication::sendEvent(widget, &leaveEvent);
+            return;
+        }
+
+        const auto widgetMousePos = widget->mapFromGlobal(globalMousePos);
+        QMouseEvent moveEvent(QEvent::MouseMove, widgetMousePos, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+        QApplication::sendEvent(widget, &moveEvent);
+    }
+
     bool MessagesScrollAreaLayout::slideItemsApart(const ItemsInfoIter &changedItemIter, const int slideY, const SlideOp slideOp)
     {
         assert(slideOp > SlideOp::Min);
         assert(slideOp < SlideOp::Max);
-        assert(slideY != 0);
+        assert(
+            (slideOp == SlideOp::NoSlide) ||
+            (slideY != 0));
 
         __TRACE(
             "geometry",
-            "    widget=<" << changedItemIter->Widget_ << ">\n"
+            "    widget=<" << (*changedItemIter)->Widget_ << ">\n"
             "    slide-y=<" << slideY << ">\n"
             "    slide-op=<" << slideOp << ">"
         );
@@ -982,7 +1192,7 @@ namespace Ui
 
         if (slideOp == SlideOp::SlideUp)
         {
-            changedItemIter->AbsGeometry_.translate(0, -slideY);
+            (*changedItemIter)->AbsGeometry_.translate(0, -slideY);
 
             auto iter = (changedItemIter + 1);
             const auto end = LayoutItems_.end();
@@ -1001,18 +1211,17 @@ namespace Ui
 
             for (; iter != end; ++iter)
             {
-                const auto &geometry = iter->AbsGeometry_;
+                const auto &geometry = (*iter)->AbsGeometry_;
                 const auto newGeometry = geometry.translated(0, -slideY);
 
                 __TRACE(
                     "geometry",
                     "    op=<" << slideOp << ">\n"
-                    "    widget=<" << iter->Widget_ << ">\n"
+                    "    widget=<" << (*iter)->Widget_ << ">\n"
                     "    old-geometry=<" << geometry << ">\n"
-                    "    new-geometry=<" << newGeometry << ">"
-                );
+                    "    new-geometry=<" << newGeometry << ">");
 
-                iter->AbsGeometry_ = newGeometry;
+                (*iter)->AbsGeometry_ = newGeometry;
             }
 
             return true;
@@ -1031,7 +1240,7 @@ namespace Ui
 
         for (;; --iter)
         {
-            iter->AbsGeometry_.translate(0, slideY);
+            (*iter)->AbsGeometry_.translate(0, slideY);
 
             if (iter == begin)
             {
@@ -1053,11 +1262,13 @@ namespace Ui
             ++iter
         )
         {
-            auto widget = iter->Widget_;
+            auto &item = *iter;
+
+            auto widget = item->Widget_;
 
             applyWidgetWidth(getWidthForItem(), widget, true);
 
-            const auto oldGeometry = iter->AbsGeometry_;
+            const auto oldGeometry = item->AbsGeometry_;
 
             const auto newHeight = evaluateWidgetHeight(widget);
 
@@ -1068,7 +1279,7 @@ namespace Ui
                 newHeight
             );
 
-            iter->AbsGeometry_ = newGeometry;
+            item->AbsGeometry_ = newGeometry;
 
             const auto deltaY = (newGeometry.height() - oldGeometry.height());
             if (deltaY != 0)
@@ -1112,7 +1323,7 @@ namespace Ui
                 ++iter
             )
         {
-            auto &item = *iter;
+            auto &item = **iter;
 
             const auto itemHeight = evaluateWidgetHeight(item.Widget_);
 
@@ -1176,9 +1387,10 @@ namespace Ui
     {
         for (auto &layoutItem : LayoutItems_)
         {
-            if (layoutItem.Key_ == key)
+            if (layoutItem->Key_ == key)
             {
-                layoutItem.Key_ = key;
+                layoutItem->Key_ = key;
+                break;
             }
         }
     }
@@ -1218,7 +1430,8 @@ namespace Ui
             }
 
             const auto &itemGeometry = itemInfo.AbsGeometry_;
-            assert(!itemGeometry.isEmpty());
+            assert(itemGeometry.width() >= 0);
+            assert(itemGeometry.height() >= 0);
 
             const auto isAboveViewport = (itemGeometry.bottom() < ViewportAbsY_);
 
@@ -1268,8 +1481,10 @@ namespace Ui
         {
             for (auto iter = LayoutItems_.cbegin(); iter != LayoutItems_.cend(); ++iter)
             {
-                if (!onItemInfo(*iter))
+                if (!onItemInfo(**iter))
+                {
                     break;
+                }
             }
 
             return;
@@ -1277,8 +1492,10 @@ namespace Ui
 
         for (auto iter = LayoutItems_.crbegin(); iter != LayoutItems_.crend(); ++iter)
         {
-            if (!onItemInfo(*iter))
+            if (!onItemInfo(**iter))
+            {
                 break;
+            }
         }
     }
 
@@ -1333,6 +1550,14 @@ namespace Ui
             if (serviceMessageItem)
             {
                 serviceMessageItem->setFixedWidth(viewportWidth);
+
+                return;
+            }
+
+            auto complexMessageItem = qobject_cast<ComplexMessage::ComplexMessageItem*>(widget);
+            if (complexMessageItem)
+            {
+                complexMessageItem->setFixedWidth(viewportWidth);
 
                 return;
             }

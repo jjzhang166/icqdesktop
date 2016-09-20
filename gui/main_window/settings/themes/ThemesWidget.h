@@ -5,26 +5,36 @@
 namespace Ui {
     class FlowLayout;
     class ThemesModel;
+    class BackButton;
     
     class ThemesWidget : public QWidget
     {
         Q_OBJECT
         FlowLayout *flowLayout_;
         ThemesModel *themesModel_;
-        themes::themes_list themes_list_;
-        QMap<int,bool> loaded_themes_;
-        QGridLayout *grid_layout_;
+        themes::themesList themesList_;
+        QMap<int,bool> loadedThemes_;
+        BackButton* backButton_;
+        QWidget *backButtonAndCaptionSpacer_;
+        QWidget *captionWithoutBackButtonSpacer_;
         
         bool firstThemeAdded_;
-        void checkFirstTheme_(themes::themePtr theme);
+        void checkFirstTheme_(themes::themePtr _theme);
+
     public:
         ThemesWidget(QWidget* _parent, int _spacing);
         ~ThemesWidget();
+
         void onThemeGot(themes::themePtr theme);
-        void set_target_contact(QString _aimId);
-        void addCaptionLayout(QLayout* _layout);
+        void setTargetContact(QString _aimId);
+        void setBackButton(bool _doSet);
+
     protected:
-        virtual void resizeEvent(QResizeEvent *e) override;
+        virtual void resizeEvent(QResizeEvent* _e) override;
+
+    private Q_SLOTS:
+        void touchScrollStateChanged(QScroller::State);
+        void backPressed();
     };
 
 }

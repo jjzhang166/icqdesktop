@@ -10,6 +10,7 @@ namespace Ui
         if (_imageName.length() > 0)
         {
             pixmapToDraw_ = QPixmap(Utils::parse_image_name(_imageName));
+            pixmapToDrawCacheKey_ = pixmapToDraw_.cacheKey();
         }
     };
 
@@ -31,7 +32,8 @@ namespace Ui
             {
                 float pixmapSidesRatio = 1. * pixmapSize.width() / pixmapSize.height();
                 float screenRatio = 1. * currentSize_.width() / currentSize_.height();
-                if ((currentSize_.width() >= pixmapSize.width() && currentSize_.height() >= pixmapSize.height()) ||
+                if (
+                    (currentSize_.width() >= pixmapSize.width() && currentSize_.height() >= pixmapSize.height()) ||
                     (currentSize_.width() < pixmapSize.width() && currentSize_.height() < pixmapSize.height())
                     )
                 {
@@ -40,14 +42,14 @@ namespace Ui
                         int width = currentSize_.width();
                         int height = width / pixmapSidesRatio;
                         yOffset = -(height - currentSize_.height()) / 2;
-                        drawPixmap(0, yOffset, width, height, pixmapToDraw_);
+                        drawPixmap(0, yOffset, width, height);
                     }
                     else
                     {
                         int height = currentSize_.height();
                         int width = height * pixmapSidesRatio;
                         xOffset = -(width - currentSize_.width()) / 2;
-                        drawPixmap(xOffset, 0, width, height, pixmapToDraw_);
+                        drawPixmap(xOffset, 0, width, height);
                     }
                 }
                 if (currentSize_.width() > pixmapSize.width() && currentSize_.height() <= pixmapSize.height())
@@ -55,14 +57,14 @@ namespace Ui
                     float height = currentSize_.width() / pixmapSidesRatio;
                     float width = currentSize_.width();
                     yOffset = -(height - currentSize_.height())/2;
-                    drawPixmap(0, yOffset, width, height, pixmapToDraw_);
+                    drawPixmap(0, yOffset, width, height);
                 }
                 else if (currentSize_.width() <= pixmapSize.width() && currentSize_.height() > pixmapSize.height())
                 {
                     float height = currentSize_.height();
                     float width = currentSize_.height() * pixmapSidesRatio;
                     xOffset = -(width - currentSize_.width()) / 2;
-                    drawPixmap(xOffset, 0, width, height, pixmapToDraw_);
+                    drawPixmap(xOffset, 0, width, height);
                 }
             }
             else
@@ -74,7 +76,7 @@ namespace Ui
                 {
                     for (int y = 0; y < this->rect().height(); y += pixmapToDraw_.height()/ratio)
                     {
-                        drawPixmap(x + xOffset, y + yOffset, pixmapSize.width(), pixmapSize.height(), pixmapToDraw_);
+                        drawPixmap(x + xOffset, y + yOffset, pixmapSize.width(), pixmapSize.height());
                     }
                 }
             }
@@ -92,13 +94,14 @@ namespace Ui
         return changed;
     }
     
-    void BackgroundWidget::drawPixmap(int x, int y, int w, int h, const QPixmap& _pm)
+    void BackgroundWidget::drawPixmap(int x, int y, int w, int h)
     {
         QPainter painter(this);
-        bool changed = cachedPixmapParams_.cacheAndCheckIfChanged(x, y, w, h);
+        bool changed = (cachedPixmapCacheKey_ != pixmapToDrawCacheKey_);
         if (changed)
         {
-            QPixmap scaledPixmap = _pm.scaled(w, h, Qt::AspectRatioMode::KeepAspectRatio, Qt::TransformationMode::SmoothTransformation);
+            cachedPixmapCacheKey_ = pixmapToDrawCacheKey_;
+            QPixmap scaledPixmap = pixmapToDraw_.scaled(w, h, Qt::AspectRatioMode::KeepAspectRatio, Qt::TransformationMode::SmoothTransformation);
             cachedPixmap_ = scaledPixmap;
             painter.drawPixmap(x, y, w, h, scaledPixmap);
         }
@@ -120,6 +123,7 @@ namespace Ui
         if (!_pixmap.isNull())
         {
             pixmapToDraw_ = _pixmap;
+            pixmapToDrawCacheKey_ = pixmapToDraw_.cacheKey();
             tiling_ = _tiling;
             cachedPixmapParams_.invalidate();
             update();

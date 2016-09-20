@@ -23,22 +23,6 @@ bool core::wim::parse_history_messages_json(
 {
     assert(!_sender_aimid.empty());
 
-    auto iter_messages = _node.FindMember("messages");
-    if (iter_messages == _node.MemberEnd())
-    {
-        return true;
-    }
-
-    if (!iter_messages->value.IsArray())
-    {
-        return false;
-    }
-
-    if (iter_messages->value.Empty())
-    {
-        return true;
-    }
-
     auto iter_persons = _node.FindMember("persons");
     if (iter_persons != _node.MemberEnd() && iter_persons->value.IsArray() && !iter_persons->value.Empty())
     {
@@ -64,6 +48,22 @@ bool core::wim::parse_history_messages_json(
 
             _persons.emplace(sn, p);
         }
+    }
+
+    auto iter_messages = _node.FindMember("messages");
+    if (iter_messages == _node.MemberEnd())
+    {
+        return true;
+    }
+
+    if (!iter_messages->value.IsArray())
+    {
+        return false;
+    }
+
+    if (iter_messages->value.Empty())
+    {
+        return true;
     }
 
     if (!iter_messages->value.IsArray())
@@ -149,5 +149,7 @@ namespace
         {
             voip->apply_persons(_persons);
         }
+        
+        _message->apply_persons_to_quotes(_persons);
     }
 }

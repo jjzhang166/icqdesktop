@@ -1,0 +1,18 @@
+QPushButton#backButton
+{
+    min-height: 40dip;
+	max-height: 40dip;
+	min-width: 40dip;
+	max-width: 40dip;
+    border: none;
+    background-color: transparent;
+    border-image: url(:/resources/contr_back_100.png);
+}
+QPushButton#backButton:hover
+{
+    border-image: url(:/resources/contr_back_100_hover.png);
+}
+QPushButton#backButton:pressed
+{
+    border-image: url(:/resources/contr_back_100_active.png);
+}

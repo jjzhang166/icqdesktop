@@ -24,14 +24,17 @@
 #include "profiling/profiler.h"
 #include "updater/updater.h"
 #include "crash_sender.h"
-#include "../common.shared/crash_handler.h"
 #include "statistics.h"
 #include "tools/md5.h"
 #include "../corelib/enumerations.h"
-#include "../corelib/common.h"
+#include "../common.shared/common.h"
 #include "tools/system.h"
 #include "proxy_settings.h"
 #include "tools/strings.h"
+
+#ifdef _WIN32
+    #include "../common.shared/win32/crash_handler.h"
+#endif
 
 using namespace core;
 
@@ -70,7 +73,7 @@ std::string core::core_dispatcher::get_uniq_device_id()
     return settings_->get_value<std::string>(core_settings_values::csv_device_id, std::string());
 }
 
-void core::core_dispatcher::excute_core_context(std::function<void()> func)
+void core::core_dispatcher::excute_core_context(std::function<void()> _func)
 {
     if (!core_thread_)
     {
@@ -78,7 +81,12 @@ void core::core_dispatcher::excute_core_context(std::function<void()> func)
         return;
     }
 
-    core_thread_->excute_core_context(func);
+    core_thread_->excute_core_context(_func);
+}
+
+void core::core_dispatcher::excute_core_context_priority(std::function<void()> _func)
+{
+    core_thread_->excute_core_context_priority(_func);
 }
 
 std::shared_ptr<base_im> core::core_dispatcher::find_im_by_id(unsigned id) {
@@ -115,7 +123,7 @@ std::shared_ptr<async_task_handlers> core::core_dispatcher::save_async(std::func
 }
 
 
-void core::core_dispatcher::link_gui(icore_interface* _core_face)
+void core::core_dispatcher::link_gui(icore_interface* _core_face, const common::core_gui_settings& _settings)
 {
     // called from main thread
 
@@ -123,14 +131,15 @@ void core::core_dispatcher::link_gui(icore_interface* _core_face)
     core_factory_ = _core_face->get_factory();
     core_thread_ = new main_thread();
 
-    excute_core_context([this]
+    excute_core_context([this, _settings]
     {
-        start();
+        start(_settings);
     });
 }
 
-void core::core_dispatcher::start()
+void core::core_dispatcher::start(const common::core_gui_settings& _settings)
 {
+    core_gui_settings_ = _settings;
     // called from core thread
     network_log_.reset(new network_log(utils::get_logs_path()));
 
@@ -161,7 +170,7 @@ void core::core_dispatcher::start()
     voip_manager_.reset(new(std::nothrow) voip_manager::VoipManager(*this));
     assert(!!voip_manager_);
 #endif //__STRIP_VOIP
-    im_container_.reset(new im_container(*voip_manager_));
+    im_container_.reset(new im_container(voip_manager_));
     im_container_->create();
 
     updater_.reset(new update::updater());
@@ -214,6 +223,21 @@ void core::core_dispatcher::post_message_to_gui(const char * _message, int64_t _
     bs.write<std::string>("CORE->GUI: message=");
     bs.write<std::string>(_message);
     bs.write<std::string>("\r\n");
+
+	// Added type of voip call to log.
+	if (_message == "voip_signal" && _message_data)
+	{
+		auto value = _message_data->get_value("sig_type");
+		if (value)
+		{
+			std::stringstream s;
+			s << "type: ";
+			s << value->get_as_string();
+
+			bs.write<std::string>(s.str());
+			bs.write<std::string>("\r\n");
+		}
+	}
 //     if (_message_data)
 //     {
 //         bs.write<std::string>(_message_data->log());
@@ -466,7 +490,7 @@ void core::core_dispatcher::receive_message_from_gui(const char * _message, int6
 {
     // called from main thread
     std::string message_string = _message;
-        
+
 //     __LOG(
 //         if (message_string != "log")
 //         {
@@ -481,20 +505,42 @@ void core::core_dispatcher::receive_message_from_gui(const char * _message, int6
 
     excute_core_context([this, message_string, _seq, _message_data]
     {
+        coll_helper params(_message_data, true);
         if (message_string != "log")
         {
             tools::binary_stream bs;
             bs.write<std::string>("GUI->CORE: message=");
             bs.write<std::string>(message_string);
             bs.write<std::string>("\r\n");
+            if (message_string == "archive/messages/get")
+            {
+                std::stringstream s;
+                s << "for: ";
+                s << params.get_value_as_string("contact");
+                s << " from: ";
+                s << params.get_value_as_int64("from");
+                s << " count: ";
+                s << params.get_value_as_int64("count");
+
+                bs.write<std::string>(s.str());
+                bs.write<std::string>("\r\n");
+            }
+			// Added type of voip call to log.
+			if (message_string == "voip_call")
+			{
+				std::stringstream s;
+				s << "type: ";
+				s << params.get_value_as_string("type");
+
+				bs.write<std::string>(s.str());
+				bs.write<std::string>("\r\n");
+			}
         /*    if (_message_data)
             {
                 bs.write<std::string>(_message_data->log());
             }*/
             get_network_log().write_data(bs);
         }
-        
-        coll_helper params(_message_data, true);
 
         if (message_string == "settings/value/set")
         {
@@ -525,6 +571,11 @@ void core::core_dispatcher::receive_message_from_gui(const char * _message, int6
             im_container_->on_message_from_gui(message_string.c_str(), _seq, params);
         }
     });
+}
+
+const common::core_gui_settings& core::core_dispatcher::get_core_gui_settings() const
+{
+    return core_gui_settings_;
 }
 
 std::string core::core_dispatcher::get_root_login()
@@ -679,8 +730,24 @@ void core_dispatcher::set_user_proxy_settings(const proxy_settings& _user_proxy_
     g_core->post_user_proxy_to_gui();
 }
 
+bool core_dispatcher::locale_was_changed() const
+{
+    static bool stored = settings_->get_locale_was_changed();
+    if (stored)
+        settings_->set_locale_was_changed(false);
+    return stored;
+}
+
 void core_dispatcher::set_locale(const std::string& _locale)
 {
+    static std::string stored;
+    if (stored.empty())
+        stored = get_locale();
+    if (!stored.empty())
+    {
+        locale_was_changed(); // just store initiated value
+        settings_->set_locale_was_changed(_locale != stored);
+    }
     settings_->set_locale(_locale);
 }
 
@@ -700,6 +767,11 @@ void core_dispatcher::post_user_proxy_to_gui()
 std::thread::id core_dispatcher::get_core_thread_id() const
 {
    return core_thread_->get_core_thread_id();
+}
+
+bool core_dispatcher::is_core_thread() const
+{
+    return (std::this_thread::get_id() == get_core_thread_id());
 }
 
 void core_dispatcher::set_voip_mute_fix_flag(bool bValue)

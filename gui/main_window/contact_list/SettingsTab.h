@@ -16,8 +16,6 @@ namespace Ui
 
     public Q_SLOTS:
         void settingsProfileClicked();
-        
-    private Q_SLOTS:
         void settingsGeneralClicked();
         void settingsVoiceVideoClicked();
         void settingsNotificationsClicked();
@@ -27,8 +25,8 @@ namespace Ui
         void settingsSignoutClicked();
 
     private:
-        std::unique_ptr< UI > Ui_;
-        Utils::CommonSettingsType CurrentSettingsItem_;
+        std::unique_ptr< UI > ui_;
+        Utils::CommonSettingsType currentSettingsItem_;
 
     public:
         SettingsTab(QWidget* _parent);

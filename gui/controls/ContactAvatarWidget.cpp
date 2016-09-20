@@ -1,34 +1,44 @@
 #include "stdafx.h"
 #include "ContactAvatarWidget.h"
-#include "../utils/utils.h"
-#include "../cache/avatars/AvatarStorage.h"
-#include "../utils/InterConnector.h"
-#include "../core_dispatcher.h"
-#include "ImageCropper.h"
+
 #include "AvatarPreview.h"
 #include "GeneralDialog.h"
+#include "ImageCropper.h"
+#include "../core_dispatcher.h"
+#include "../my_info.h"
+#include "../cache/avatars/AvatarStorage.h"
 #include "../main_window/MainWindow.h"
 #include "../main_window/contact_list/ContactListModel.h"
-#include "../my_info.h"
+#include "../utils/InterConnector.h"
+#include "../utils/utils.h"
+
+namespace
+{
+    const auto MIN_AVATAR_SIZE = 600;
+    const int ADD_PHOTO_FONTSIZE = 24;
+    const QColor STROKE_COLOR(0x57, 0x9e, 0x1c);
+    const QColor ADD_PHOTO_COLOR(0x28, 0x28, 0x28, 0x7f);
+}
 
 namespace Ui
 {
-    ContactAvatarWidget::ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _display_name, int _size, bool _autoUpdate)
+    ContactAvatarWidget::ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _displayName, int _size, bool _autoUpdate)
         :  QPushButton(_parent)
         , aimid_(_aimid)
-        , display_name_(_display_name)
+        , displayName_(_displayName)
         , size_(_size)
-        , is_in_my_profile_(false)
-        , is_visible_shadow_(false)
-        , is_visible_spinner_(false)
-        , spinner_movie_(nullptr)
+        , isInMyProfile_(false)
+        , isVisibleShadow_(false)
+        , isVisibleSpinner_(false)
+        , spinnerMovie_(nullptr)
         , connected_(false)
+        , seq_(-1)
     {
         setFixedHeight(_size);
         setFixedWidth(_size);
 
-        spinner_movie_ = new QMovie(":/resources/gifs/r_spiner200.gif");
-        connect(spinner_movie_, &QMovie::frameChanged, this, &ContactAvatarWidget::frameChanged);
+        spinnerMovie_ = new QMovie(":/resources/gifs/r_spiner200.gif");
+        connect(spinnerMovie_, &QMovie::frameChanged, this, &ContactAvatarWidget::frameChanged);
 
         if (_autoUpdate)
             connect(Logic::GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatarChanged(QString)), Qt::QueuedConnection);
@@ -43,9 +53,9 @@ namespace Ui
     
     QString ContactAvatarWidget::GetState()
     {
-        if (is_in_my_profile_)
+        if (isInMyProfile_)
         {
-            return is_visible_shadow_ ? "photo enter" : "photo leave";
+            return isVisibleShadow_ ? "photo enter" : "photo leave";
         }
         return "";
     }
@@ -53,7 +63,7 @@ namespace Ui
 	void ContactAvatarWidget::paintEvent(QPaintEvent* _e)
 	{
 		bool isDefault = false;
-		const auto &avatar = Logic::GetAvatarStorage()->GetRounded(aimid_, display_name_, Utils::scale_bitmap(size_), GetState(), !Logic::GetContactListModel()->isChat(aimid_), isDefault, false);
+		const auto &avatar = Logic::GetAvatarStorage()->GetRounded(aimid_, displayName_, Utils::scale_bitmap(size_), GetState(), !Logic::getContactListModel()->isChat(aimid_), isDefault, false, false);
         
 		if (avatar->isNull())
 			return;
@@ -68,13 +78,19 @@ namespace Ui
             p.setBrush(QBrush(QColor(Qt::transparent)));
             p.drawEllipse(0, 0, size_, size_);
 
-            QPen pen(QColor(0x57, 0x9e, 0x1c), Utils::scale_value(2), Qt::DashLine, Qt::RoundCap);
+            QPen pen(STROKE_COLOR, Utils::scale_value(2), Qt::DashLine, Qt::RoundCap);
             p.setPen(pen);
-            p.drawRoundedRect(pen.width(), pen.width(), size_ - (pen.width() * 2), size_ - (pen.width() * 2), (size_ / 2), (size_ / 2));
+            p.drawRoundedRect(
+                pen.width(),
+                pen.width(),
+                size_ - (pen.width() * 2),
+                size_ - (pen.width() * 2),
+                (size_ / 2),
+                (size_ / 2)
+            );
             
-
-            p.setFont(Utils::appFont(Utils::FontsFamily::SEGOE_UI_LIGHT, Utils::scale_value(24)));
-            p.setPen(QPen(QColor(0x28, 0x28, 0x28, 0x7f)));
+            p.setFont(Fonts::appFontScaled(ADD_PHOTO_FONTSIZE, Fonts::FontStyle::LIGHT));
+            p.setPen(QPen(ADD_PHOTO_COLOR));
 
             p.drawText(QRectF(0, 0, size_, size_), Qt::AlignCenter, QT_TRANSLATE_NOOP("avatar_upload", "Add\nphoto"));
         }
@@ -83,19 +99,23 @@ namespace Ui
 		    p.drawPixmap(0, 0, size_, size_, *avatar);
         }
 
-        if (is_visible_spinner_)
+        if (isVisibleSpinner_)
         {
-            auto spinner_size = spinner_movie_->currentPixmap().size();
-            p.drawPixmap(size_/2 - spinner_size.width()/2, size_/2 - spinner_size.width()/2, spinner_movie_->currentPixmap());
+            auto spinner_size = spinnerMovie_->currentPixmap().size();
+            p.drawPixmap(
+                size_/2 - spinner_size.width()/2,
+                size_/2 - spinner_size.width()/2,
+                spinnerMovie_->currentPixmap()
+            );
         }
 
 		return QWidget::paintEvent(_e);
 	}
 
-    void ContactAvatarWidget::UpdateParams(const QString& _aimid, const QString& _display_name)
+    void ContactAvatarWidget::UpdateParams(const QString& _aimid, const QString& _displayName)
     {
         aimid_ = _aimid;
-        display_name_ = _display_name;
+        displayName_ = _displayName;
     }
 
     void ContactAvatarWidget::avatarChanged(QString _aimId)
@@ -113,23 +133,23 @@ namespace Ui
         }
     }
 
-    void ContactAvatarWidget::enterEvent(QEvent* _event) 
+    void ContactAvatarWidget::enterEvent(QEvent* /*_event*/) 
     {
         emit mouseEntered();
         update();
     }
 
-    void ContactAvatarWidget::leaveEvent(QEvent* _event)
+    void ContactAvatarWidget::leaveEvent(QEvent* /*_event*/)
     {
         emit mouseLeft();
         update();
     }
 
-    void ContactAvatarWidget::SetIsInMyProfile(bool _is_in_my_profile)
+    void ContactAvatarWidget::SetIsInMyProfile(bool _isInMyProfile)
     {
-        is_in_my_profile_ = _is_in_my_profile;
+        isInMyProfile_ = _isInMyProfile;
 
-        if (is_in_my_profile_)
+        if (isInMyProfile_)
         {
             if (!connected_)
             {
@@ -151,49 +171,50 @@ namespace Ui
 
     }
 
-    void ContactAvatarWidget::SetVisibleShadow(bool _is_visible_shadow)
+    void ContactAvatarWidget::SetVisibleShadow(bool _isVisibleShadow)
     {
-        is_visible_shadow_ = _is_visible_shadow;
+        isVisibleShadow_ = _isVisibleShadow;
     }
 
-    void ContactAvatarWidget::frameChanged(int frame)
+    void ContactAvatarWidget::frameChanged(int /*frame*/)
     {
         repaint();
     }
 
-    void ContactAvatarWidget::SetVisibleSpinner(bool _is_visible_spinner)
+    void ContactAvatarWidget::SetVisibleSpinner(bool _isVisibleSpinner)
     {
-        is_visible_spinner_ = _is_visible_spinner;
+        if (isVisibleSpinner_ == _isVisibleSpinner)
+            return;
 
-        if (is_visible_spinner_)
+        isVisibleSpinner_ = _isVisibleSpinner;
+
+        if (isVisibleSpinner_)
         {
-            spinner_movie_->start();
+            spinnerMovie_->start();
         }
         else
         {
-            spinner_movie_->stop();
+            spinnerMovie_->stop();
         }
     }
 
     void ContactAvatarWidget::postSetAvatarToCore(const QPixmap& _avatar)
     {
-        QByteArray byte_array;
-        QBuffer buffer(&byte_array);
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
         _avatar.save(&buffer, "PNG");
 
         core::coll_helper helper(GetDispatcher()->create_collection(), true);
 
         core::ifptr<core::istream> data_stream(helper->create_stream());
-        if (byte_array.size())
-            data_stream->write((const uint8_t*) byte_array.data(), (uint32_t)byte_array.size());
+        if (byteArray.size())
+            data_stream->write((const uint8_t*)byteArray.data(), (uint32_t)byteArray.size());
         helper.set_value_as_stream("avatar", data_stream.get());
         if (aimid_ != MyInfo()->aimId())
             helper.set_value_as_string("aimid", aimid_.toStdString());
 
-        GetDispatcher()->post_message_to_core("set_avatar", helper.get());
+        seq_ = GetDispatcher()->post_message_to_core("set_avatar", helper.get());
     }
-
-    const auto min_avatar_size_px = 600;
 
     void ContactAvatarWidget::selectFileForAvatar()
     {
@@ -203,19 +224,19 @@ namespace Ui
         fileDialog.setFileMode(QFileDialog::ExistingFiles);
         fileDialog.setNameFilter(QT_TRANSLATE_NOOP("avatar_upload", "Images (*.jpg *.jpeg *.png *.bmp)"));
 
-        bool is_continue = true;
+        bool isContinue = true;
         QImage newAvatar;
 
-        while (is_continue)
+        while (isContinue)
         {
-            is_continue = false;
+            isContinue = false;
             if (fileDialog.exec())
             {
                 infoForSetAvatar_.currentDirectory = fileDialog.directory().path();
                 auto file = fileDialog.selectedFiles()[0];
                 newAvatar = QImage(file);
 
-                if (newAvatar.height() < min_avatar_size_px || newAvatar.width() < min_avatar_size_px)
+                if (newAvatar.height() < MIN_AVATAR_SIZE || newAvatar.width() < MIN_AVATAR_SIZE)
                 {
                     if (Utils::GetErrorWithTwoButtons(
                         QT_TRANSLATE_NOOP("avatar_upload", "Cancel"),
@@ -225,7 +246,7 @@ namespace Ui
                         QT_TRANSLATE_NOOP("avatar_upload", "Image should be at least 600x600 px"),
                         NULL))
                     {
-                        is_continue = true;
+                        isContinue = true;
                     }
                     else
                     {
@@ -252,49 +273,49 @@ namespace Ui
 
     void ContactAvatarWidget::cropAvatar()
     {
-        auto main_widget = new QWidget(this);
-        auto avatar_cropper = new Ui::ImageCropper(main_widget);
-        avatar_cropper->setProportion(QSizeF(1.0, 1.0));
-        avatar_cropper->setProportionFixed(true);
-        avatar_cropper->setBackgroundColor(QColor(255, 255, 255, 255));
+        auto mainWidget = new QWidget(this);
+        auto avatarCropper = new Ui::ImageCropper(mainWidget);
+        avatarCropper->setProportion(QSizeF(1.0, 1.0));
+        avatarCropper->setProportionFixed(true);
+        avatarCropper->setBackgroundColor(QColor(255, 255, 255, 255));
         
         if (!infoForSetAvatar_.croppingRect.isNull())
         {
-            avatar_cropper->setCroppingRect(infoForSetAvatar_.croppingRect);
+            avatarCropper->setCroppingRect(infoForSetAvatar_.croppingRect);
         }
 
-        avatar_cropper->setImage(QPixmap::fromImage(infoForSetAvatar_.image));
+        avatarCropper->setImage(QPixmap::fromImage(infoForSetAvatar_.image));
 
         auto layout = new QHBoxLayout();
         layout->setContentsMargins(Utils::scale_value(24), Utils::scale_value(12), Utils::scale_value(24), 0);
-        layout->addWidget(avatar_cropper);
+        layout->addWidget(avatarCropper);
         
-        main_widget->setLayout(layout);
+        mainWidget->setLayout(layout);
 
-        GeneralDialog image_crop_dialog(main_widget, Utils::InterConnector::instance().getMainWindow());
-        image_crop_dialog.addHead();
-        image_crop_dialog.addLabel(QT_TRANSLATE_NOOP("avatar_upload", "Upload photo"));
+        GeneralDialog imageCropDialog(mainWidget, Utils::InterConnector::instance().getMainWindow());
+        imageCropDialog.addHead();
+        imageCropDialog.addLabel(QT_TRANSLATE_NOOP("avatar_upload", "Upload photo"));
 
-        image_crop_dialog.addButtonsPair(QT_TRANSLATE_NOOP("avatar_upload", "Back"), QT_TRANSLATE_NOOP("avatar_upload", "Continue"),
+        imageCropDialog.addButtonsPair(QT_TRANSLATE_NOOP("avatar_upload", "Back"), QT_TRANSLATE_NOOP("avatar_upload", "Continue"),
             Utils::scale_value(24), Utils::scale_value(12));
         
-        QObject::connect(&image_crop_dialog, &GeneralDialog::leftButtonClicked, this, &ContactAvatarWidget::selectFileForAvatar, Qt::QueuedConnection);
+        QObject::connect(&imageCropDialog, &GeneralDialog::leftButtonClicked, this, &ContactAvatarWidget::selectFileForAvatar, Qt::QueuedConnection);
 
-        bool is_continue = true;
-        while (is_continue)
+        bool isContinue = true;
+        while (isContinue)
         {
-            is_continue = false;
+            isContinue = false;
 
-            if (image_crop_dialog.showInPosition(-1, -1))
+            if (imageCropDialog.showInPosition(-1, -1))
             {
-                infoForSetAvatar_.croppedImage = avatar_cropper->cropImage();
-                infoForSetAvatar_.croppingRect = avatar_cropper->getCroppingRect();
+                infoForSetAvatar_.croppedImage = avatarCropper->cropImage();
+                infoForSetAvatar_.croppingRect = avatarCropper->getCroppingRect();
 
-                QByteArray byte_array;
-                QBuffer buffer(&byte_array);
+                QByteArray byteArray;
+                QBuffer buffer(&byteArray);
                 infoForSetAvatar_.croppedImage.save(&buffer, "PNG");
 
-                if (byte_array.size() > 8 * 1024 * 1024)
+                if (byteArray.size() > 8 * 1024 * 1024)
                 {
                     if (Utils::GetErrorWithTwoButtons(
                         QT_TRANSLATE_NOOP("avatar_upload", "Cancel"),
@@ -304,7 +325,7 @@ namespace Ui
                         QT_TRANSLATE_NOOP("avatar_upload", "Image size should be 8 Mb or less"),
                         NULL))
                     {
-                        is_continue = true;
+                        isContinue = true;
                     }
                     else
                     {
@@ -326,13 +347,13 @@ namespace Ui
     {
         auto layout = new QHBoxLayout();
 
-        auto spacer_left = new QSpacerItem(Utils::scale_value(12), 1, QSizePolicy::Expanding);
-        layout->addSpacerItem(spacer_left);
+        auto spacerLeft = new QSpacerItem(Utils::scale_value(12), 1, QSizePolicy::Expanding);
+        layout->addSpacerItem(spacerLeft);
 
-        auto cropped_avatar = infoForSetAvatar_.croppedImage;
-        auto preview_avatar_widget = new AvatarPreview(cropped_avatar, nullptr);
-        preview_avatar_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
-        layout->addWidget(preview_avatar_widget);
+        auto croppedAvatar = infoForSetAvatar_.croppedImage;
+        auto previewAvatarWidget = new AvatarPreview(croppedAvatar, nullptr);
+        previewAvatarWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+        layout->addWidget(previewAvatarWidget);
 
         auto spacerRight = new QSpacerItem(Utils::scale_value(12), 1, QSizePolicy::Expanding);
         layout->addSpacerItem(spacerRight);
@@ -340,24 +361,27 @@ namespace Ui
         auto avatarPreviewHost = new QWidget();
         avatarPreviewHost->setLayout(layout);
 
-        Ui::GeneralDialog preview_dialog(avatarPreviewHost, Utils::InterConnector::instance().getMainWindow());
-        preview_dialog.addHead();
-        preview_dialog.addLabel(QT_TRANSLATE_NOOP("avatar_upload", "Preview"));
+        Ui::GeneralDialog previewDialog(avatarPreviewHost, Utils::InterConnector::instance().getMainWindow());
+        previewDialog.addHead();
+        previewDialog.addLabel(QT_TRANSLATE_NOOP("avatar_upload", "Preview"));
 
-        preview_dialog.addButtonsPair(QT_TRANSLATE_NOOP("avatar_upload", "Back"), QT_TRANSLATE_NOOP("avatar_upload", "Save"),
+        previewDialog.addButtonsPair(QT_TRANSLATE_NOOP("avatar_upload", "Back"), QT_TRANSLATE_NOOP("avatar_upload", "Save"),
             Utils::scale_value(24), Utils::scale_value(12));
 
-        QObject::connect(&preview_dialog, &GeneralDialog::leftButtonClicked, this, &ContactAvatarWidget::cropAvatar, Qt::QueuedConnection);
+        QObject::connect(&previewDialog, &GeneralDialog::leftButtonClicked, this, &ContactAvatarWidget::cropAvatar, Qt::QueuedConnection);
 
-        if (preview_dialog.showInPosition(-1, -1))
+        if (previewDialog.showInPosition(-1, -1))
         {
             SetVisibleSpinner(true);
-            postSetAvatarToCore(cropped_avatar);
+            postSetAvatarToCore(croppedAvatar);
         }
     }
 
-    void ContactAvatarWidget::setAvatar(int _error)
+    void ContactAvatarWidget::setAvatar(qint64 _seq, int _error)
     {
+        if (_seq != seq_)
+            return;
+
         SetVisibleSpinner(false);
 
         if (_error != 0)

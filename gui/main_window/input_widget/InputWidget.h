@@ -1,18 +1,20 @@
 #pragma once
 
 #include "../../controls/TextEditEx.h"
+#include "../../types/message.h"
 
 class QPushButton;
 
 namespace Ui
 {
+    class PictureWidget;
+
     class input_edit : public TextEditEx
     {
-        virtual bool catchEnter(int _modifiers) override;
 
     public:
-
         input_edit(QWidget* _parent);
+        virtual bool catchEnter(int _modifiers) override;
     };
 
     class InputWidget : public QWidget
@@ -26,7 +28,8 @@ Q_SIGNALS:
         void editFocusOut();
 
     public Q_SLOTS:
-        void quote(QString);
+        void quote(QList<Data::Quote>);
+        void contactSelected(QString);
 
     private Q_SLOTS:
 
@@ -34,8 +37,10 @@ Q_SIGNALS:
         void send();
         void attach_file();
         void stats_attach_file();
+        void clear_quote(const QString&);
+        void clear_files(const QString&);
+        void clear();
 
-        void contactSelected(QString);
         void insert_emoji(int32_t _main, int32_t _ext);
         void send_sticker(int32_t _set_id, int32_t _sticker_id);
         void resize_to(int _height);
@@ -45,16 +50,27 @@ Q_SIGNALS:
         void stats_message_enter();
         void stats_message_send();
 
+        void onFilesCancel();
+
     public:
 
         InputWidget(QWidget* parent);
         ~InputWidget();
         void hide();
+        void hideNoClear();
 
         Q_PROPERTY(int current_height READ get_current_height WRITE set_current_height)
 
         void set_current_height(int _val);
         int get_current_height() const;
+
+        void setFocusOnInput();
+
+    private:
+        void initQuotes(const QString&);
+        void initFiles(const QString&);
+        QPixmap getFilePreview(const QString& contact);
+        QString getFileSendText(const QString& contact);
 
     private:
 
@@ -66,6 +82,19 @@ Q_SIGNALS:
         input_edit* text_edit_;
         QString contact_;
 
+        QWidget* quote_text_widget_;
+        TextEditEx* quote_text_;
+        QWidget* quote_line_;
+        QWidget* quote_block_;
+        QWidget* files_block_;
+        QPushButton* cancel_quote_;
+        QPushButton* cancel_files_;
+        QMap<QString, QList<Data::Quote>> quotes_;
+        QMap<QString, QStringList> files_to_send_;
+        PictureWidget* file_preview_;
+        QLabel* files_label_;
+        QMap<QString, QPixmap> image_buffer_;
+
         int active_height_;
         int need_height_;
         int active_document_height_;
@@ -75,6 +104,7 @@ Q_SIGNALS:
 
         virtual void paintEvent(QPaintEvent* _e) override;
         virtual void resizeEvent(QResizeEvent * _e) override;
+        virtual void keyPressEvent(QKeyEvent * _e) override;
         virtual void keyReleaseEvent(QKeyEvent * _e) override;
     };
 }

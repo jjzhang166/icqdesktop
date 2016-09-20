@@ -27,7 +27,7 @@ int32_t set_buddy_attribute::init_request(std::shared_ptr<core::http_request_sim
 
     ss_url << c_wim_host << "buddylist/setBuddyAttribute" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&buddy=" << escape_symbols(aimid_) <<
         "&friendly=" << escape_symbols(friendly_) << 
         "&r=" << core::tools::system::generate_guid();

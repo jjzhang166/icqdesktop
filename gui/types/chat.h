@@ -44,16 +44,21 @@ namespace Data
 		QString MembersVersion_;
 		QString InfoVersion_;
         QString Stamp_;
+        QString Creator_;
 
 		int32_t CreateTime_;
 		int32_t MembersCount_;
 		int32_t FriendsCount;
 		int32_t BlockedCount_;
+        int32_t PendingCount_;
 
 		bool YouBlocked_;
+        bool YouPending_;
 		bool Public_;
+        bool ApprovedJoin_;
 		bool Live_;
 		bool Controlled_;
+        bool YouMember_;
 
 		QList<ChatMemberInfo> Members_;
 	};

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../controls/GeneralCreator.h"
+
 namespace voip_proxy
 {
     struct device_desc;
@@ -33,7 +35,8 @@ namespace Ui
 
     public:
         
-        TextEmojiWidget* connection_type_chooser_;
+        TextEmojiWidget* connectionTypeChooser_;
+        GeneralCreator::addSwitcherWidgets launchMinimized_;
     };
 
     class GeneralSettingsWidget : public QStackedWidget
@@ -66,7 +69,7 @@ namespace Ui
             QMenu* audioPlaybackDevices;
             QMenu* videoCaptureDevices;
         }
-        _voiceAndVideo;
+        voiceAndVideo_;
 
         GeneralSettings* general_;
         QWidget* notifications_;
@@ -79,30 +82,30 @@ namespace Ui
 
         struct Creator
         {
-            static void initAbout(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
-            static void initGeneral(GeneralSettings* parent, std::map<std::string, Synchronizator> &collector);
-            static void initVoiceVideo(QWidget* parent, VoiceAndVideoOptions& voiceAndVideo);//, std::map<std::string, Synchronizator> &/*collector*/);
-            static void initThemes(QWidget* parent);
-            static void initNotifications(QWidget* parent, std::map<std::string, Synchronizator> &collector);
-            static void initContactUs(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
-            static void initAttachUin(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
-            static void initAttachPhone(QWidget* parent, std::map<std::string, Synchronizator> &/*collector*/);
+            static void initAbout(QWidget* _parent, std::map<std::string, Synchronizator> &/*collector*/);
+            static void initGeneral(GeneralSettings* _parent, std::map<std::string, Synchronizator>& _collector);
+            static void initVoiceVideo(QWidget* _parent, VoiceAndVideoOptions& _voiceAndVideo);
+            static void initThemes(QWidget* _parent);
+            static void initNotifications(QWidget* _parent, std::map<std::string, Synchronizator>& _collector);
+            static void initContactUs(QWidget* _parent, std::map<std::string, Synchronizator> &/*collector*/);
+            static void initAttachUin(QWidget* _parent, std::map<std::string, Synchronizator> &/*collector*/);
+            static void initAttachPhone(QWidget* _parent, std::map<std::string, Synchronizator> &/*collector*/);
         };
 
     public:
-        GeneralSettingsWidget(QWidget* parent = nullptr);
+        GeneralSettingsWidget(QWidget* _parent = nullptr);
         ~GeneralSettingsWidget();
 
-        void setType(int type);
+        void setType(int _type);
 
     private:
         void initialize();
         
-        virtual void paintEvent(QPaintEvent *event) override;
-        virtual void hideEvent(QHideEvent *e) override;
-        virtual void showEvent(QShowEvent *e) override;
+        virtual void paintEvent(QPaintEvent* _event) override;
+        virtual void hideEvent(QHideEvent* _e) override;
+        virtual void showEvent(QShowEvent* _e) override;
 
         private Q_SLOTS:
-            void onVoipDeviceListUpdated(const std::vector< voip_proxy::device_desc >& devices);
+            void onVoipDeviceListUpdated(const std::vector< voip_proxy::device_desc >& _devices);
     };
 }

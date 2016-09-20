@@ -58,9 +58,9 @@ namespace core
             }
 
             const auto &index_str = match["index"].str();
-            const auto index = boost::lexical_cast<int64_t>(index_str);
+            const auto index = std::stoll(index_str);
             assert(index >= 0);
-            max_index = std::max(max_index, index);
+            max_index = std::max((int32_t)max_index, (int32_t)index);
         }
 
         return (max_index + 1);
@@ -105,7 +105,7 @@ namespace core
             }
 
             const auto &index_str = match["index"].str();
-            const auto index = boost::lexical_cast<int64_t>(index_str);
+            const auto index = std::stoll(index_str);
 
             files[index] = filename;
         }

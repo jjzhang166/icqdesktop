@@ -116,7 +116,7 @@ SOURCES += \
     ../../core/tools/threadpool.cpp \
     ../../core/tools/tlv.cpp \
     ../../core/updater/updater.cpp \
-    ../../core/tools/system.linux.cpp \
+    ../../core/tools/linux/system.linux.cpp \
     ../../core/connections/wim/events/fetch_event_typing.cpp \
     ../../core/connections/im_login.cpp \
     ../../core/connections/wim/search_contacts_response.cpp \
@@ -155,7 +155,29 @@ SOURCES += \
     ../../core/connections/wim/packets/mod_chat_member_alpha.cpp \
     ../../core/connections/wim/packets/set_avatar.cpp \
     ../../core/connections/wim/packets/set_timezone.cpp \
-    ../../core/connections/wim/loader/preview_proxy.cpp
+    ../../core/connections/wim/loader/preview_proxy.cpp \
+    ../../core/connections/wim/packets/phoneinfo.cpp \
+    ../../core/connections/wim/loader/fs_loader_task.cpp \
+    ../../core/connections/wim/loader/generic_loader_task.cpp \
+    ../../core/connections/wim/loader/image_download_task.cpp \
+    ../../core/connections/wim/loader/image_preview_download_task.cpp \
+    ../../core/connections/wim/loader/link_metainfo_download_task.cpp \
+    ../../core/connections/wim/loader/loader_helpers.cpp \
+    ../../core/connections/wim/packets/get_chat_pending.cpp \
+    ../../core/connections/wim/packets/resolve_pending.cpp \
+    ../../core/archive/image_cache.cpp \
+    ../../core/connections/wim/packets/snap_viewed.cpp \
+    ../../core/connections/wim/loader/snap_metainfo.cpp \
+    ../../core/connections/wim/loader/snap_metainfo_download_task.cpp \
+    ../../core/connections/wim/loader/tasks_runner_slot.cpp \
+    ../../core/tools/url_parser.cpp \
+    ../../core/disk_cache/cache_entity.cpp \
+    ../../core/disk_cache/cache_entity_type.cpp \
+    ../../core/disk_cache/cache_garbage_collector.cpp \
+    ../../core/disk_cache/dir_cache.cpp \
+    ../../core/disk_cache/disk_cache.cpp \
+    ../../core/connections/wim/events/fetch_event_imstate.cpp \
+    ../../core/connections/wim/imstate.cpp
 
 HEADERS += \
     ../collection.h \
@@ -330,7 +352,30 @@ HEADERS += \
     ../../core/connections/wim/packets/mod_chat_member_alpha.h \
     ../../core/connections/wim/packets/set_avatar.h \
     ../../core/connections/wim/packets/set_timezone.h \
-    ../../core/connections/wim/loader/preview_proxy.h
+    ../../core/connections/wim/loader/preview_proxy.h \
+    ../../core/connections/wim/packets/phoneinfo.h \
+    ../../core/connections/wim/loader/fs_loader_task.h \
+    ../../core/connections/wim/loader/generic_loader_task.h \
+    ../../core/connections/wim/loader/image_download_task.h \
+    ../../core/connections/wim/loader/image_preview_download_task.h \
+    ../../core/connections/wim/loader/link_metainfo_download_task.h \
+    ../../core/connections/wim/loader/loader_helpers.h \
+    ../../core/connections/wim/packets/get_chat_pending.h \
+    ../../core/connections/wim/packets/resolve_pending.h \
+    ../../core/archive/image_cache.h \
+    ../../core/connections/wim/packets/snap_viewed.h \
+    ../../core/connections/wim/loader/snap_metainfo.h \
+    ../../core/connections/wim/loader/snap_metainfo_download_task.h \
+    ../../core/connections/wim/loader/tasks_runner_slot.h \
+    ../../core/tools/url_parser.h \
+    ../../core/disk_cache/cache_entity.h \
+    ../../core/disk_cache/cache_entity_type.h \
+    ../../core/disk_cache/cache_filename.h \
+    ../../core/disk_cache/cache_garbage_collector.h \
+    ../../core/disk_cache/dir_cache.h \
+    ../../core/disk_cache/disk_cache.h \
+    ../../core/connections/wim/events/fetch_event_imstate.h \
+    ../../core/connections/wim/imstate.h
 
 DEFINES += STRIP_VOIP
 

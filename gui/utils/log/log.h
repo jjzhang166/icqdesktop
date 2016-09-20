@@ -27,7 +27,7 @@
 #define __WARN(area, params) __WRITE_LOG(warn, (area), params)
 #define __ERROR(area, params) __WRITE_LOG(error, (area), params)
 
-#define __LOGP(id, value) #id "=<" << (value) << ">\n"
+#define __LOGP(id, value) "    " #id "=<" << (value) << ">\n"
 
 namespace Log
 {
@@ -40,6 +40,11 @@ namespace Log
 
 	void error(const QString& area, const QString& text);
 
+}
+
+namespace core
+{
+    enum class file_sharing_content_type;
 }
 
 inline QTextStream& operator <<(QTextStream &lhs, const QUrl &uri)
@@ -62,8 +67,15 @@ inline QTextStream& operator <<(QTextStream &lhs, const QRect &rect)
     return (lhs << rect.x() << "," << rect.y() << "," << rect.width() << "," << rect.height());
 }
 
+inline QTextStream& operator <<(QTextStream &lhs, const QPoint &p)
+{
+    return (lhs << p.x() << "," << p.y());
+}
+
 template<class T>
 inline QTextStream& operator <<(QTextStream &lhs, const std::pair<T, T> &pair)
 {
     return (lhs << pair.first << "," << pair.second);
 }
+
+QTextStream& operator <<(QTextStream &oss, const core::file_sharing_content_type arg);

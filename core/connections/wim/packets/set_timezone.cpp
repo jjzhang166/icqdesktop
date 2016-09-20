@@ -26,7 +26,7 @@ int32_t set_timezone::init_request(std::shared_ptr<core::http_request_simple> _r
 
     ss_url << c_wim_host << "timezone/set" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&r=" <<  core::tools::system::generate_guid() <<
         "&TimeZoneOffset=" << time_offset;
 

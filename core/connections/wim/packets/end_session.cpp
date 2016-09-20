@@ -22,7 +22,7 @@ int32_t end_session::init_request(std::shared_ptr<core::http_request_simple> _re
     std::stringstream ss_url;
     ss_url << c_wim_host << "aim/endSession" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_;
+        "&aimsid=" << escape_symbols(get_params().aimsid_);
  
     _request->set_url(ss_url.str());
     _request->set_keep_alive();

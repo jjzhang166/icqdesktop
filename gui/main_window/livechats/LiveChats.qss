@@ -7,8 +7,6 @@ Ui--LiveChatProfile
 
 QLabel#LiveChatMembersCount
 {
-	font-family: %FONT_FAMILY%;
-	font-weight: %FONT_WEIGHT%;
 	font-size: 12dip;
 	color: #696969;
 }

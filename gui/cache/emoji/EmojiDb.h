@@ -4,7 +4,7 @@ namespace Emoji
 {
 	struct EmojiRecord
 	{
-		EmojiRecord(const QString &category, const int index, const unsigned codepoint, const unsigned extendedCodepoint, const QString &name);
+		EmojiRecord(const QString& _category, const int _index, const unsigned _codepoint, const unsigned _extendedCodepoint, const QString& _name);
 
 		const QString Category_;
 
@@ -25,9 +25,9 @@ namespace Emoji
 
     
     static const EmojiRecordSptr EmptyEmoji;
-	const EmojiRecordSptr& GetEmojiInfoByCodepoint(const uint32_t codepoint, const uint32_t extendedCodepoint);
+	const EmojiRecordSptr& GetEmojiInfoByCodepoint(const uint32_t _codepoint, const uint32_t _extendedCodepoint);
 
 	const QStringList& GetEmojiCategories();
 
-	const EmojiRecordSptrVec& GetEmojiInfoByCategory(const QString &category);
+	const EmojiRecordSptrVec& GetEmojiInfoByCategory(const QString& _category);
 }

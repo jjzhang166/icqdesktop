@@ -17,7 +17,6 @@ public:
     );
 
 private:
-
     const int64_t message_id_;
 
     const std::string contact_aimid_;

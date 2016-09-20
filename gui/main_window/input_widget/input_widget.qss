@@ -1,12 +1,12 @@
 QPushButton#send_button
 {
 	border: none;
-	width: 40dip;
-	height: 40dip;
+	width: 24dip;
+	height: 24dip;
 	border-image: url(:/resources/input_widget/contr_send_100.png);
 	margin-left: 0;
 	margin-top: 0;
-	margin-right: 24dip;
+	margin-right: 20dip;
 	margin-bottom: 0;
 	padding: 0dip;
 }
@@ -49,6 +49,32 @@ QPushButton#smiles_button:hover:pressed
 	border-image: url(:/resources/input_widget/contr_smile_100_active.png);
 }
 
+QPushButton#cancel_files
+{
+	border: none;
+	width: 20dip;
+	height: 20dip;
+	border-image: url(:/resources/dialog_closechat_100.png);
+	margin-left: 24dip;
+	margin-top: 0;
+	margin-right: 0;
+	margin-bottom: 0;
+	padding: 0dip;
+}
+
+QPushButton#cancel_quote
+{
+	border: none;
+	width: 24dip;
+	height: 24dip;
+	border-image: url(:/resources/contr_clear_100.png);
+	margin-right: 0dip;
+	margin-top: 0;
+	margin-right: 0;
+	margin-bottom: 0;
+	padding: 0dip;
+}
+
 
 QPushButton#file_button
 {
@@ -73,7 +99,7 @@ QPushButton#file_button:hover:pressed
 }
 
 
-Ui--InputWidget
+Ui--InputWidget#input_edit_control
 {
 	background: #ebebeb;
 	padding: 0;
@@ -83,10 +109,8 @@ Ui--InputWidget
 	border-top-style: solid;
 }
 
-Ui--TextEditEx
+Ui--TextEditEx#input_edit_control
 {
-	font-family: %FONT_FAMILY%;
-	font-weight: %FONT_WEIGHT%;
 	background: #fafafa;
 	border-radius: 8dip;
 	border-color: #d7d7d7;
@@ -104,8 +128,7 @@ Ui--TextEditEx
 
 }
 
-Ui--TextEditEx:focus
+Ui--TextEditEx#input_edit_control:focus
 {
 	border-color: #579e1c;
 }
-

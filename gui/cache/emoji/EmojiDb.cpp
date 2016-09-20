@@ -22,12 +22,12 @@ namespace
 
 namespace Emoji
 {
-	EmojiRecord::EmojiRecord(const QString &category, const int index, const unsigned codepoint, const unsigned extendedCodepoint, const QString &name)
-		: Category_(category)
-		, Index_(index)
-		, Name_(name)
-		, Codepoint_(codepoint)
-		, ExtendedCodepoint_(extendedCodepoint)
+	EmojiRecord::EmojiRecord(const QString& _category, const int _index, const unsigned _codepoint, const unsigned _extendedCodepoint, const QString& _name)
+		: Category_(_category)
+		, Index_(_index)
+		, Name_(_name)
+		, Codepoint_(_codepoint)
+		, ExtendedCodepoint_(_extendedCodepoint)
 	{
 		assert(!Category_.isEmpty());
 		assert(!Name_.isEmpty());
@@ -65,12 +65,12 @@ namespace Emoji
 		}
 	}
 
-	const EmojiRecordSptr& GetEmojiInfoByCodepoint(const uint32_t codepoint, const uint32_t extendedCodepoint)
+	const EmojiRecordSptr& GetEmojiInfoByCodepoint(const uint32_t _codepoint, const uint32_t _extendedCodepoint)
 	{
-		assert(codepoint > 0);
+		assert(_codepoint > 0);
 		assert(!EmojiIndexByCodepoint_.empty());
 
-		const auto complexCodepoint = MakeComplexCodepoint(codepoint, extendedCodepoint);
+		const auto complexCodepoint = MakeComplexCodepoint(_codepoint, _extendedCodepoint);
 		const auto iter = EmojiIndexByCodepoint_.find(complexCodepoint);
 		if (iter == EmojiIndexByCodepoint_.end())
 		{
@@ -86,13 +86,13 @@ namespace Emoji
 		return EmojiCategories_;
 	}
 
-	const EmojiRecordSptrVec& GetEmojiInfoByCategory(const QString &category)
+	const EmojiRecordSptrVec& GetEmojiInfoByCategory(const QString& _category)
 	{
-		assert(!category.isEmpty());
+		assert(!_category.isEmpty());
 
 		static const EmojiRecordSptrVec empty;
 
-		const auto iter = EmojiIndexByCategory_.find(category);
+		const auto iter = EmojiIndexByCategory_.find(_category);
 		if (iter == EmojiIndexByCategory_.end())
 		{
 			return empty;

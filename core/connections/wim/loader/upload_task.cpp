@@ -1,12 +1,15 @@
 #include "stdafx.h"
-#include "upload_task.h"
+
 #include "loader_errors.h"
 #include "loader_handlers.h"
 #include "web_file_info.h"
 #include "../packets/get_gateway.h"
 #include "../packets/send_file.h"
 #include "../../../tools/system.h"
+#include "tasks_runner_slot.h"
 #include "loader.h"
+
+#include "upload_task.h"
 
 using namespace core;
 using namespace wim;
@@ -15,7 +18,7 @@ const int32_t status_code_too_large_file	= 413;
 const int32_t max_block_size				= 1024*1024;
 
 upload_task::upload_task(const std::string &_id, const wim_packet_params& _params, const std::wstring& _file_name)
-    : loader_task(_id, _params)
+    : fs_loader_task(_id, _params)
     , file_name_(_file_name)
     , file_size_(0)
     , bytes_sent_(0)
@@ -30,7 +33,7 @@ upload_task::~upload_task()
         file_stream_.close();
 }
 
-int32_t upload_task::get_gate()
+loader_errors upload_task::get_gate()
 {
     get_gateway packet(get_wim_params(), core::tools::from_utf16(file_name_short_), file_size_);
 
@@ -57,10 +60,10 @@ int32_t upload_task::get_gate()
     upload_host_ = packet.get_host();
     upload_url_ = packet.get_url();
 
-    return 0;
+    return loader_errors::success;
 }
 
-int32_t upload_task::open_file()
+loader_errors upload_task::open_file()
 {
     boost::filesystem::wpath path_for_file(file_name_);
     if (!core::tools::system::is_exist(file_name_))
@@ -84,10 +87,10 @@ int32_t upload_task::open_file()
 
     out_buffer_.reserve(max_block_size);
 
-    return 0;
+    return loader_errors::success;
 }
 
-int32_t upload_task::read_data_from_file()
+loader_errors upload_task::read_data_from_file()
 {
     out_buffer_.reset();
 
@@ -109,10 +112,10 @@ int32_t upload_task::read_data_from_file()
     if (!file_stream_.good())
         return loader_errors::read_from_file;
 
-    return 0;
+    return loader_errors::success;
 }
 
-int32_t upload_task::send_data_to_server()
+loader_errors upload_task::send_data_to_server()
 {
     send_file_params chunk;
     chunk.size_already_sent_ = bytes_sent_;
@@ -145,13 +148,13 @@ int32_t upload_task::send_data_to_server()
         assert(bytes_sent_ < file_size_);
     }
 
-    return 0;
+    return loader_errors::success;
 }
 
-int32_t upload_task::send_next_range()
+loader_errors upload_task::send_next_range()
 {
-    int32_t res = read_data_from_file();
-    if (res != 0)
+    auto res = read_data_from_file();
+    if (res != loader_errors::success)
         return res;
 
     return send_data_to_server();

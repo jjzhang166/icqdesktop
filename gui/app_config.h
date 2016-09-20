@@ -1,30 +1,43 @@
 #pragma once
 
-namespace core
+#include "namespaces.h"
+
+CORE_NS_BEGIN
+
+class coll_helper;
+
+CORE_NS_END
+
+UI_NS_BEGIN
+
+class AppConfig
 {
-	class coll_helper;
-}
+public:
+	AppConfig(const core::coll_helper &collection);
 
-namespace Ui
-{
-	class AppConfig
-	{
-	public:
-		AppConfig(const core::coll_helper &collection);
+    bool IsContextMenuFeaturesUnlocked() const;
 
-		bool IsServerHistoryEnabled() const;
+	bool IsServerHistoryEnabled() const;
 
-		int GetForcedDpi() const;
+	int GetForcedDpi() const;
 
-	private:
-		bool IsServerHistoryEnabled_;
+    bool isCrashEnable() const;
 
-		int ForcedDpi_;
-	};
+private:
+    bool IsContextMenuFeaturesUnlocked_;
 
-	typedef std::unique_ptr<AppConfig> AppConfigUptr;
+    int ForcedDpi_;
 
-	const AppConfig& GetAppConfig();
+	bool IsServerHistoryEnabled_;
 
-	void SetAppConfig(AppConfigUptr &appConfig);
-}
+    bool isCrashEnable_;
+
+};
+
+typedef std::unique_ptr<AppConfig> AppConfigUptr;
+
+const AppConfig& GetAppConfig();
+
+void SetAppConfig(AppConfigUptr &appConfig);
+
+UI_NS_END

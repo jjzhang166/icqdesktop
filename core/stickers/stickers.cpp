@@ -7,7 +7,7 @@
 #include "../tools/system.h"
 
 #include "../async_task.h"
-
+#include "../connections/wim/loader/loader_errors.h"
 
 namespace core
 {
@@ -699,7 +699,7 @@ namespace core
             :	thread_(new async_executer()),
                 cache_(new cache(_stickers_path)),
                 meta_requested_(false),
-                error_(0),
+                error_(wim::loader_errors::success),
                 failed_step_(failed_step::ok),
                 up_to_date_(false),
                 download_in_progress_(true)
@@ -945,12 +945,12 @@ namespace core
             return meta_requested_;
         }
 
-        void face::set_last_error(int32_t _error)
+        void face::set_last_error(wim::loader_errors _error)
         {
             error_ = _error;
         }
 
-        int32_t face::get_last_error() const
+        wim::loader_errors face::get_last_error() const
         {
             return error_;
         }

@@ -34,7 +34,6 @@ namespace core
         }
     };
 
-
     class auto_callback : private boost::noncopyable
     {
         std::function<void(int32_t)> callback_;
@@ -70,8 +69,13 @@ namespace core
         virtual ~async_executer();
 
         virtual std::shared_ptr<async_task_handlers> run_async_task(std::shared_ptr<async_task> task);
+
         virtual std::shared_ptr<async_task_handlers> run_async_function(std::function<int32_t()> func);
+
+        virtual std::shared_ptr<async_task_handlers> run_priority_async_function(std::function<int32_t()> func);
     };
+
+    typedef std::unique_ptr<async_executer> async_executer_uptr;
 
 }
 

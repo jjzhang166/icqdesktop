@@ -4,6 +4,10 @@
 
 class QApplication;
 
+#ifdef _WIN32
+QPixmap qt_pixmapFromWinHBITMAP(HBITMAP bitmap, int hbitmapFormat = 0);
+#endif //_WIN32
+
 namespace Utils
 {
     class ShadowWidgetEventFilter : public QObject
@@ -11,13 +15,13 @@ namespace Utils
         Q_OBJECT
 
     public:
-        ShadowWidgetEventFilter(int shadowWidth);
+        ShadowWidgetEventFilter(int _shadowWidth);
 
     protected:
-        bool eventFilter(QObject* obj, QEvent* event);
+        bool eventFilter(QObject* _obj, QEvent* _event);
 
     private:
-        void setGradientColor(QGradient& gradient, bool isActive);
+        void setGradientColor(QGradient& _gradient, bool _isActive);
 
     private:
         int ShadowWidth_;
@@ -31,102 +35,67 @@ namespace Utils
     public:
         SignalsDisconnector();
         ~SignalsDisconnector();
-        void add(const char *key, QMetaObject::Connection &&connection);
-        void remove(const char *key);
+        void add(const char* _key, QMetaObject::Connection&& _connection);
+        void remove(const char* _key);
         void clean();
     };
 
-    inline QString GetQstring(const wchar_t* const s)
+    inline const std::string QStringToString(const QString& _s)
     {
-#ifdef _WIN32
-        return QString::fromUtf16(reinterpret_cast<const unsigned short*>(s));
-#else
-        return QString::fromWCharArray(s);
-#endif
+        return _s.toUtf8().constData();
     }
 
-    inline const std::wstring FromQString(const QString& s)
-    {
-#ifdef _WIN32
-        return reinterpret_cast<const wchar_t*>(s.utf16());
-#else
-        std::wstring res = s.toStdWString();
-        qDebug() << "Convert qstring " << s << " to wchar";
-        return res;
-#endif
-    }
-    
-    inline const std::string QStringToString(const QString& s)
-    {
-        return s.toUtf8().constData();
-    }
+    QString getCountryNameByCode(const QString& _iso_code);
+    QMap<QString, QString> getCountryCodes();
 
-    QMap<QString, QString> GetCountryCodes();
+    QString ScaleStyle(const QString& _style, double _scale);
 
-    QString ScaleStyle(const QString& _style, double scale);
+    void ApplyStyle(QWidget* _widget, QString _style);
+    void ApplyPropertyParameter(QWidget* _widget, const char* _property, QVariant _parameter);
 
-    void ApplyStyle(QWidget *widget, QString style);
-    void ApplyPropertyParameter(QWidget *widget, const char *property, QVariant parameter);
+    QString SetFont(const QString& _qss);
 
-    QString SetFont(const QString& qss);
+    QString LoadStyle(const QString& _qssFile);
 
-    QString LoadStyle(const QString& qss_file, double scale, bool import_common_style = true);
+    QPixmap getDefaultAvatar(const QString& _uin, const QString& _displayName, const int _sizePx, const bool _isFilled);
 
-    QPixmap GetDefaultAvatar(const QString &uin, const QString &displayName, const int sizePx, const bool isFilled);
+    QStringList GetPossibleStrings(const QString& _text);
 
-    QStringList GetPossibleStrings(const QString& text);
+    QPixmap roundImage(const QPixmap& _img, const QString& _state, bool _isDefault, bool _miniIcons);
 
-    QPixmap RoundImage(const QPixmap &img, const QString& state, bool isDefault, bool mini_icons);
+    void addShadowToWidget(QWidget* _target);
+    void addShadowToWindow(QWidget* _target, bool _enabled = true);
 
-    QPixmap DrawStatus(const QString& state, int scale);
+    void setWidgetPopup(QWidget* _target, bool _isPopUp);
 
-    QPixmap DrawUnreads(int size, QColor color, const QString unreads);
+	void grabTouchWidget(QWidget* _target, bool _topWidget = false);
 
-    void setPropertyToWidget(QWidget* widget, char* name, bool value);
+    void removeLineBreaks(QString& _source);
 
-    void applyWidgetPropChanges(QWidget* widget);
+    bool isValidEmailAddress(const QString& _email);
 
-    void addShadowToWidget(QWidget* target);
-    void addShadowToWindow(QWidget* target, bool enabled = true);
-
-    void setWidgetPopup(QWidget* target, bool _isPopUp);
-
-	void grabTouchWidget(QWidget* target, bool topWidget = false);
-
-    void removeLineBreaks(QString& source);
-
-    bool isValidEmailAddress(const QString &email);
-
-    bool isProbablyPhoneNumber(const QString &number);
+    bool isProbablyPhoneNumber(const QString& _number);
 
     bool foregroundWndIsFullscreened();
-
-    enum class FontsFamily
-    {
-        MIN,
-
-        SEGOE_UI,
-        SEGOE_UI_BOLD,
-        SEGOE_UI_SEMIBOLD,
-        SEGOE_UI_LIGHT,
-
-        MAX
-    };
-
-    QFont appFont(const FontsFamily _fontFamily, int size);
-    QFont::Weight appFontWeight(const FontsFamily _fontFamily);
-    QString appFontWeightQss(const FontsFamily _fontFamily);
-
-    const QString& appFontFamily(const FontsFamily _fontFamily);
 
     QColor getSelectionColor();
     QString rgbaStringFromColor(const QColor& _color);
 
-    int    scale_value(const int _px);
-    int    unscale_value(int _px);
-    int    scale_bitmap(const int _px);
-    QSize    scale_bitmap(const QSize &_px);
-    QRect    scale_bitmap(const QRect &_px);
+    double fscale_value(const double _px);
+    int scale_value(const int _px);
+    QSize scale_value(const QSize _px);
+    QSizeF scale_value(const QSizeF _px);
+    QRect scale_value(const QRect _px);
+    int unscale_value(int _px);
+    QSize unscale_value(const QSize& _px);
+    int scale_bitmap(const int _px);
+    int unscale_bitmap(const int _px);
+    QSize scale_bitmap(const QSize& _px);
+    QSize unscale_bitmap(const QSize& _px);
+    QRect scale_bitmap(const QRect& _px);
+	int scale_bitmap_with_value(const int _px);
+	QSize scale_bitmap_with_value(const QSize& _px);
+	QRect scale_bitmap_with_value(const QRect& _px);
 
     template <typename _T>
     void check_pixel_ratio(_T& _image);
@@ -134,38 +103,38 @@ namespace Utils
     QString	parse_image_name(const QString& _imageName);
     bool	is_mac_retina();
     void	set_mac_retina(bool _val);
-    double	get_scale_coefficient();
-    void	set_scale_coefficient(double _coefficient);
-    double	get_basic_scale_coefficient();
-    void	init_basic_scale_coefficient(double _coefficient);
+    double	getScaleCoefficient();
+    void	setScaleCoefficient(double _coefficient);
+    double	getBasicScaleCoefficient();
+    void	initBasicScaleCoefficient(double _coefficient);
 
-    void groupTaskbarIcon(bool enabled);
+    void groupTaskbarIcon(bool _enabled);
 
-    bool is_start_on_startup();
-    void set_start_on_startup(bool _start);
+    bool isStartOnStartup();
+    void setStartOnStartup(bool _start);
 
 #ifdef _WIN32
-    HWND create_fake_parent_window();
+    HWND createFakeParentWindow();
 #endif //WIN32
 
-    const uint get_input_maximum_chars();
+    const uint getInputMaximumChars();
 
-    bool state_equals_online(const QString &state);
+    bool stateEqualsOnline(const QString& _state);
 
-    int calc_age(const QDateTime& _birthdate);
+    int calcAge(const QDateTime& _birthdate);
 
-    void init_crash_handlers_in_core();
+    void initCrashHandlersInCore();
 
     void drawText(QPainter & painter, const QPointF & point, int flags,
         const QString & text, QRectF * boundingRect = 0);
 
     const QString &DefaultDownloadsPath();
 
-    bool is_image_extension(const QString &ext);
+    bool is_image_extension(const QString& _ext);
 
-    void copyFileToClipboard(const QString& path);
+    void copyFileToClipboard(const QString& _path);
 
-    bool saveAs(const QString& inputFilename, QString& filename, QString& directory);
+    bool saveAs(const QString& _inputFilename, QString& _filename, QString& _directory);
 
     typedef std::vector<std::pair<QString, Ui::KeyToSendMessage>> SendKeysIndex;
 
@@ -178,44 +147,50 @@ namespace Utils
 
     void UpdateProfile(const std::vector<std::pair<std::string, QString>>& _fields);
 
-    QString get_item_safe(const std::vector<QString>& _values, size_t _selected, QString _default);
+    QString getItemSafe(const std::vector<QString>& _values, size_t _selected, QString _default);
 
     bool NameEditor(
         QWidget* _parent,
-        const QString& _chat_name,
-        const QString& _button_text,
-        const QString& _header_text,
-        Out QString& result_chat_name,
+        const QString& _chatName,
+        const QString& _buttonText,
+        const QString& _headerText,
+        Out QString& resultChatName,
         bool acceptEnter = true);
 
-    bool GetConfirmationWithTwoButtons(const QString& _button_left, const QString& _button_right,
-        const QString& _message_text, const QString& _label_text, QWidget* _parent);
+    bool GetConfirmationWithTwoButtons(const QString& _buttonLeft, const QString& _buttonRight,
+        const QString& _messageText, const QString& _labelText, QWidget* _parent);
 
-    bool GetErrorWithTwoButtons(const QString& _button_left_text, const QString& _button_right_text,
-        const QString& _message_text, const QString& _label_text, const QString& _error_text, QWidget* _parent);
+    bool GetErrorWithTwoButtons(const QString& _buttonLeftText, const QString& _buttonRightText,
+        const QString& _messageText, const QString& _labelText, const QString& _errorText, QWidget* _parent);
 
     struct ProxySettings
     {
-        const static int invalid_port = -1;
+        const static int invalidPort = -1;
 
-        core::proxy_types type;
-        QString username;
-        bool need_auth;
-        QString password;
-        QString proxy_server;
-        int port;
+        core::proxy_types type_;
+        QString username_;
+        bool needAuth_;
+        QString password_;
+        QString proxyServer_;
+        int port_;
 
         ProxySettings(core::proxy_types _type, QString _username, QString _password,
-            QString _proxy, int _port, bool _need_auth);
+            QString _proxy, int _port, bool _needAuth);
 
         ProxySettings();
 
-        void post_to_core();
+        void postToCore();
     };
 
     ProxySettings* get_proxy_settings();
 
-    bool loadPixmap(const QString &path, Out QPixmap &pixmap);
+    bool loadPixmap(const QString& _path, Out QPixmap& _pixmap);
+
+    bool loadPixmap(const QByteArray& _data, Out QPixmap& _pixmap);
+
+    bool dragUrl(QWidget* _parent, const QPixmap& _preview, const QString& _url);
+
+    bool extractUinFromIcqLink(const QString &_uri, Out QString &_uin);
 
     class StatsSender : public QObject
     {
@@ -224,16 +199,22 @@ namespace Utils
         StatsSender();
 
     public Q_SLOTS:
-        void recv_gui_settings() { gui_settings_received_ = true; trySendStats(); }
-        void recv_theme_settings() { theme_settings_received_ = true; trySendStats(); }
-        
+        void recvGuiSettings() { guiSettingsReceived_ = true; trySendStats(); }
+        void recvThemeSettings() { themeSettingsReceived_ = true; trySendStats(); }
+
     public:
         void trySendStats() const;
 
     private:
-        bool gui_settings_received_;
-        bool theme_settings_received_;
+        bool guiSettingsReceived_;
+        bool themeSettingsReceived_;
     };
-    
-    StatsSender* get_stats_sender();
+
+    StatsSender* getStatsSender();
+
+    int GetMinWidthOfMainWindow();
+
+    int GetDragDistance();
+
+    bool haveText(const QMimeData *);
 }

@@ -8,10 +8,11 @@
 using namespace core;
 using namespace wim;
 
-send_message_typing::send_message_typing(const wim_packet_params& _params, const std::string& _contact)
+send_message_typing::send_message_typing(const wim_packet_params& _params, const std::string& _contact, const core::typing_status& _status)
     :
     wim_packet(_params),
-    contact_(_contact)
+    contact_(_contact),
+    status_(_status)
 {
 }
 
@@ -21,13 +22,26 @@ send_message_typing::~send_message_typing()
 
 int32_t send_message_typing::init_request(std::shared_ptr<core::http_request_simple> _request)
 {
+    std::string status = "none";
+    switch (status_)
+    {
+        case core::typing_status::typing:
+            status = "typing";
+            break;
+        case core::typing_status::typed:
+            status = "typed";
+            break;
+        default:
+            break;
+    }
+    
     std::stringstream ss_url;
     ss_url << c_wim_host << "im/setTyping" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_ << 
+        "&aimsid=" << escape_symbols(get_params().aimsid_) << 
         "&t=" << escape_symbols(contact_) <<
         "&r=" <<  core::tools::system::generate_guid() <<
-        "&typingStatus=" << "typing";
+        "&typingStatus=" << status;
     _request->set_url(ss_url.str());
     _request->set_keep_alive();
     return 0;

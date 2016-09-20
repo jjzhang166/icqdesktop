@@ -11,6 +11,12 @@ namespace core
     {
         class http_request_simple;
     }
+
+    namespace archive
+    {
+        class quote;
+        typedef std::vector<quote> quotes_vec;
+    }
 }
 
 
@@ -42,6 +48,10 @@ namespace core
 
             bool duplicate_;
 
+            core::archive::quotes_vec quotes_;
+
+            void set_replace_log_function(bool _is_sticker, std::shared_ptr<core::http_request_simple> _request, const std::string& _message_text);
+
         public:
 
             uint32_t get_sms_error() const { return sms_error_; }
@@ -60,7 +70,8 @@ namespace core
                 const message_type _type,
                 const std::string& _internal_id,
                 const std::string& _aimid,
-                const std::string& _message_text);
+                const std::string& _message_text,
+                const core::archive::quotes_vec& _quotes);
 
             virtual ~send_message();
         };

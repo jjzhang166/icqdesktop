@@ -23,6 +23,10 @@ namespace core
 {
     namespace wim
     {
+
+        typedef std::unordered_set<std::string> ignorelist_cache;
+
+
         class get_permit_deny : public wim_packet
         {
         private:
@@ -38,7 +42,7 @@ namespace core
 
             virtual ~get_permit_deny();
 
-            std::vector<std::string> get_ignore_list() const;
+            const ignorelist_cache& get_ignore_list() const;
         };
 
     }

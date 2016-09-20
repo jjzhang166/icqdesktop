@@ -71,6 +71,80 @@
 
 @end
 
+@interface FullScreenDelegate : NSObject <NSWindowDelegate> {
+    platform_macos::FullScreenNotificaton* _notification;
+}
+@end
+
+@implementation FullScreenDelegate
+
+
+- (id)init: (platform_macos::FullScreenNotificaton*) notification
+{
+    if (![super init])
+    {
+        return nil;
+    }
+    _notification = notification;
+    [self registerSpaceNotification];
+    return self;
+}
+
+- (void)windowWillEnterFullScreen:(NSNotification *)notification
+{
+    if (_notification)
+    {
+        _notification->fullscreenAnimationStart();
+    }
+}
+
+- (void)windowDidEnterFullScreen:(NSNotification *)notification
+{
+    if (_notification)
+    {
+        _notification->fullscreenAnimationFinish();
+    }
+}
+
+- (void)windowWillExitFullScreen:(NSNotification *)notification
+{
+    if (_notification)
+    {
+        _notification->fullscreenAnimationStart();
+    }
+}
+
+- (void)windowDidExitFullScreen:(NSNotification *)notification
+{
+    if (_notification)
+    {
+        _notification->fullscreenAnimationFinish();
+    }
+}
+
+- (void)activeSpaceDidChange:(NSNotification *)notification
+{
+    if (_notification)
+    {
+        _notification->activeSpaceDidChange();
+    }
+}
+
+-(void)registerSpaceNotification
+{
+    NSNotificationCenter *notificationCenter = [[NSWorkspace sharedWorkspace] notificationCenter];
+    
+    if (notificationCenter)
+    {
+        [notificationCenter addObserver:self
+           selector:@selector(activeSpaceDidChange:)
+               name:NSWorkspaceActiveSpaceDidChangeNotification
+             object:[NSWorkspace sharedWorkspace]];
+    }
+}
+
+@end
+
 NSString *kAppNameKey      = @"applicationName"; // Application Name & PID
 NSString *kWindowOriginKey = @"windowOrigin";    // Window Origin as a string
 NSString *kWindowSizeKey   = @"windowSize";      // Window Size as a string
@@ -299,6 +373,65 @@ void platform_macos::playiTunes()
     }
 }
 
+void platform_macos::moveAboveParentWindow(QWidget& parent, QWidget& child)
+{
+    NSView* parentView = (NSView*)parent.winId();
+    assert(parentView);
+    
+    NSWindow* window = [parentView window];
+    assert(window);
+    
+    NSView* childView = (NSView*)child.winId();
+    assert(childView);
+    if (!childView) { return; }
+    
+    NSWindow* childWnd = [childView window];
+    assert(childWnd);
+    if (!childWnd) { return; }
+
+    [childWnd orderWindow: NSWindowAbove relativeTo: [window windowNumber]];
+}
+
+
+NSWindow* getNSWindow(QWidget& parentWindow)
+{
+    NSWindow* res = nil;
+    NSView* view = (NSView*)parentWindow.winId();
+    assert(view);
+    if (view)
+    {
+       res = [view window];
+    }
+    return res;
+}
+
+platform_macos::FullScreenNotificaton::FullScreenNotificaton (QWidget& parentWindow) : _delegate(nil), _parentWindow(parentWindow)
+{
+    NSWindow* window = getNSWindow(_parentWindow);
+    assert(!!window);
+    if (window)
+    {
+        FullScreenDelegate* delegate = [[FullScreenDelegate alloc] init: this];
+        [window setDelegate: delegate];
+        _delegate = delegate;
+        [delegate retain];
+    }
+}
+
+platform_macos::FullScreenNotificaton::~FullScreenNotificaton ()
+{
+    NSWindow* window = getNSWindow(_parentWindow);
+    if (window)
+    {
+        [window setDelegate: nil];
+    }
+    if (_delegate != nil)
+    {
+        [(FullScreenDelegate*)_delegate release];
+    }
+}
+
+
 
 namespace platform_macos {
     
@@ -322,6 +455,9 @@ public:
     void addPanels(std::vector<QWidget*>& panels) override;
     void clearPanels() override;
     void fullscreenModeChanged(bool fullscreen) override;
+    
+    void fullscreenAnimationStart() override;
+    void fullscreenAnimationFinish() override;
 };
 
 GraphicsPanelMacosImpl::GraphicsPanelMacosImpl(QWidget* parent, std::vector<QWidget*>& panels)
@@ -340,38 +476,37 @@ GraphicsPanelMacosImpl::GraphicsPanelMacosImpl(QWidget* parent, std::vector<QWid
     //NSView* window = (NSView*)parent->winId();
     //[[window window] setStyleMask:NSTitledWindowMask];
     
-    _renderView = [[WebrtcRenderView alloc] initWithFrame:frame];
-    assert(_renderView);
-
-    NSView* parentView = (NSView*)(parent ? parent->winId() : winId());
-    assert(parentView);
+    Class viewClass = NSClassFromString(@"RenderViewOSX");
     
-    NSWindow* window = [parentView window];
-    assert(window);
-    
-    [[window standardWindowButton:NSWindowCloseButton] setHidden:YES];
-    [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
-    [[window standardWindowButton:NSWindowZoomButton] setHidden:YES];
-    
-    window.movable = NO;
-    window.movableByWindowBackground  = NO;
-    
-    if (QSysInfo().macVersion() >= QSysInfo::MV_10_10)
+    if (viewClass)
     {
-        [window setValue:@(YES) forKey:@"titlebarAppearsTransparent"];
-        [window setValue:@(1) forKey:@"titleVisibility"];   
-//        window.titlebarAppearsTransparent = YES;
-//        window.titleVisibility = NSWindowTitleHidden;
-        window.styleMask |= (1 << 15);//NSFullSizeContentViewWindowMask;
+        _renderView = [[viewClass alloc] initWithFrame:frame];
+        assert(_renderView);
+        
+        NSView* parentView = (NSView*)(parent ? parent->winId() : winId());
+        assert(parentView);
+        
+        NSWindow* window = [parentView window];
+        assert(window);
+        
+        [[window standardWindowButton:NSWindowCloseButton] setHidden:YES];
+        [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
+        [[window standardWindowButton:NSWindowZoomButton] setHidden:YES];
+        
+        window.movable = NO;
+        window.movableByWindowBackground  = NO;
+        
+        if (QSysInfo().macVersion() >= QSysInfo::MV_10_10)
+        {
+            [window setValue:@(YES) forKey:@"titlebarAppearsTransparent"];
+            [window setValue:@(1) forKey:@"titleVisibility"];
+            //        window.titlebarAppearsTransparent = YES;
+            //        window.titleVisibility = NSWindowTitleHidden;
+            window.styleMask |= (1 << 15);//NSFullSizeContentViewWindowMask;
+        }
+        
+        [parentView addSubview:_renderView];
     }
-    
-    // For smooth avatar and text on Retina displays.
-    //if (Utils::is_mac_retina())
-    //{
-    //    [_renderView setWantsBestResolutionOpenGLSurface: YES];
-    //}
-    
-    [parentView addSubview:_renderView];
 }
     
 GraphicsPanelMacosImpl::~GraphicsPanelMacosImpl() {
@@ -445,6 +580,26 @@ void GraphicsPanelMacosImpl::clearPanels() {
     _setPanelsAttached(false);
     _panels.clear();
 }
+
+void GraphicsPanelMacosImpl::fullscreenAnimationStart()
+{
+    _setPanelsAttached(false);
+    moveAboveParentWindow(*(QWidget*)parent(), *this);
+    
+    if([_renderView respondsToSelector:@selector(startFullScreenAnimation)]) {
+        [_renderView startFullScreenAnimation];
+    }
+}
+    
+void GraphicsPanelMacosImpl::fullscreenAnimationFinish()
+{
+    _setPanelsAttached(true);
+
+    if([_renderView respondsToSelector:@selector(finishFullScreenAnimation)]) {
+        [_renderView finishFullScreenAnimation];
+    }
+}
+    
 }
 
 platform_specific::GraphicsPanel* platform_macos::GraphicsPanelMacos::create(QWidget* parent, std::vector<QWidget*>& panels) {

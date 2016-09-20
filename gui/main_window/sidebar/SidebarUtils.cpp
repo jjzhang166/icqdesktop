@@ -1,11 +1,22 @@
 #include "stdafx.h"
+
 #include "SidebarUtils.h"
+
+#include "../../controls/CommonStyle.h"
 #include "../../controls/CustomButton.h"
+#include "../../fonts.h"
 #include "../../utils/utils.h"
+
+namespace
+{
+    const int link_offset_left = 68;
+    const int link_offset_right = 24;
+    const int link_offset_top = 6;
+}
 
 namespace Ui
 {
-    LineWidget::LineWidget(QWidget* parent, int leftMargin, int topMargin, int rightMargin, int bottomMargin)
+    LineWidget::LineWidget(QWidget* /*parent*/, int leftMargin, int topMargin, int rightMargin, int bottomMargin)
     {
         auto rootLayout = emptyVLayout(this);
         rootLayout->addSpacerItem(new QSpacerItem(0, topMargin, QSizePolicy::Preferred, QSizePolicy::Fixed));
@@ -31,8 +42,10 @@ namespace Ui
     ActionButton::ActionButton(QWidget* parent, const QString& image, const QString& text, int height, int leftMargin, int textOffset)
         : QWidget(parent)
         , Hovered_(false)
+        , Height_(height)
     {
-        auto hLayout = emptyHLayout(this);
+        auto vLayout = emptyVLayout(this);
+        auto hLayout = emptyHLayout();
         hLayout->addSpacerItem(new QSpacerItem(leftMargin, 0, QSizePolicy::Fixed, QSizePolicy::Preferred));
         Button_ = new CustomButton(this, image);
         Button_->setOffsets(textOffset, 0);
@@ -44,6 +57,18 @@ namespace Ui
         Button_->setFixedHeight(height);
         Button_->setAttribute(Qt::WA_TransparentForMouseEvents);
         hLayout->addWidget(Button_);
+        vLayout->addLayout(hLayout);
+        {
+            vLayout->addSpacerItem(new QSpacerItem(0, Utils::scale_value(link_offset_top), QSizePolicy::Preferred, QSizePolicy::Fixed));
+            auto horLayout = emptyHLayout();
+            Link_ = new QLabel(this);
+            Link_->setFont(Fonts::appFontScaled(12));
+            horLayout->addSpacerItem(new QSpacerItem(Utils::scale_value(link_offset_left), 0, QSizePolicy::Fixed, QSizePolicy::Preferred));
+            horLayout->addWidget(Link_);
+            Link_->hide();
+            vLayout->addLayout(horLayout);
+            vLayout->addSpacerItem(new QSpacerItem(0, Utils::scale_value(link_offset_top), QSizePolicy::Preferred, QSizePolicy::Fixed));
+        }
         setFixedHeight(height);
     }
 
@@ -57,13 +82,45 @@ namespace Ui
         Button_->setText(text);
     }
 
+    void ActionButton::setLink(const QString& text, const QColor& color)
+    {
+        LinkText_ = text;
+        if (!text.isEmpty())
+        {
+            Link_->setText(text);
+            QPalette p;
+            p.setColor(QPalette::Foreground, color);
+            Link_->setPalette(p);
+            Link_->show();
+            setFixedHeight(Height_ + Utils::scale_value(link_offset_top * 2));
+        }
+        else
+        {
+            Link_->hide();
+            setFixedHeight(Height_);
+        }
+        elideLink();
+    }
+
+    void ActionButton::elideLink()
+    {
+        QFontMetrics m(Link_->font());
+        QString newText = LinkText_;
+        int w = width() - Utils::scale_value(link_offset_left) - Utils::scale_value(link_offset_right);
+        if (m.width(LinkText_) > w)
+        {
+            newText = m.elidedText(LinkText_, Qt::ElideRight, w);
+        }
+        Link_->setText(newText);
+    }
+
     void ActionButton::paintEvent(QPaintEvent* e)
     {
         QWidget::paintEvent(e);
         if (Hovered_)
         {
             QPainter p(this);
-            p.fillRect(rect(), QColor(QColor(220, 220, 220, 0.4 * 255)));
+            p.fillRect(rect(), Ui::CommonStyle::getContactListHoveredColor());
         }
     }
 
@@ -87,19 +144,32 @@ namespace Ui
         QWidget::mouseReleaseEvent(e);
     }
 
+    void ActionButton::resizeEvent(QResizeEvent* e)
+    {
+        elideLink();
+        QWidget::resizeEvent(e);
+    }
+
     ClickedWidget::ClickedWidget(QWidget* parent)
         : QWidget(parent)
         , Hovered_(false)
+        , Enabled_(true)
     {
+    }
+
+    void ClickedWidget::setEnabled(bool value)
+    {
+        Enabled_ = value;
+        update();
     }
 
     void ClickedWidget::paintEvent(QPaintEvent* e)
     {
         QWidget::paintEvent(e);
-        if (Hovered_)
+        if (Hovered_ && Enabled_)
         {
             QPainter p(this);
-            p.fillRect(rect(), QColor(QColor(220, 220, 220, 0.4 * 255)));
+            p.fillRect(rect(), Ui::CommonStyle::getContactListHoveredColor());
         }
     }
 
@@ -119,7 +189,8 @@ namespace Ui
 
     void ClickedWidget::mouseReleaseEvent(QMouseEvent *e)
     {
-        emit clicked();
+        if (Enabled_)
+            emit clicked();
         QWidget::mouseReleaseEvent(e);
     }
 

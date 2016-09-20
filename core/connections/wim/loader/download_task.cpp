@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "download_task.h"
+
 #include "loader_errors.h"
 #include "loader_handlers.h"
 #include "web_file_info.h"
@@ -8,7 +8,10 @@
 
 #include "../packets/get_file_meta_info.h"
 #include "../packets/load_file.h"
+#include "tasks_runner_slot.h"
 #include "loader.h"
+
+#include "download_task.h"
 
 using namespace core;
 using namespace wim;
@@ -20,7 +23,7 @@ download_task::download_task(
     const std::wstring& _files_folder,
     const std::wstring& _previews_folder,
     const std::wstring& _filename)
-    : loader_task(_id, _params)
+    : fs_loader_task(_id, _params)
     , files_folder_(_files_folder)
     , previews_folder_(_previews_folder)
     , filename_(_filename)
@@ -57,7 +60,7 @@ std::wstring download_task::get_info_file_name() const
     return previews_folder_ + L"/" + core::tools::from_utf8(core::tools::md5(url.c_str(), (uint32_t)url.size()));
 }
 
-int32_t download_task::on_finish()
+loader_errors download_task::on_finish()
 {
     if (file_stream_.is_open())
         file_stream_.close();
@@ -65,12 +68,12 @@ int32_t download_task::on_finish()
     if (!core::tools::system::move_file(file_name_temp_, info_->get_file_name()))
         return loader_errors::move_file;
 
-    core::tools::binary_stream bs;
-    info_->serialize(bs);
-    if (!bs.save_2_file(get_info_file_name()))
+    if (!serialize_metainfo())
+    {
         return loader_errors::store_info;
+    }
 
-    return 0;
+    return loader_errors::success;
 }
 
 int32_t download_task::copy_if_needed()
@@ -88,6 +91,20 @@ int32_t download_task::copy_if_needed()
     return 0;
 }
 
+bool download_task::serialize_metainfo()
+{
+    assert(info_);
+
+    core::tools::binary_stream bs;
+    info_->serialize(bs);
+
+    if (!bs.save_2_file(get_info_file_name()))
+    {
+        return false;
+    }
+
+    return true;
+}
 
 bool download_task::load_metainfo_from_local_cache()
 {
@@ -103,12 +120,10 @@ bool download_task::load_metainfo_from_local_cache()
         return false;
     }
 
-    if (!core::tools::system::is_exist(info.get_file_name()))
+    if (core::tools::system::is_exist(info.get_file_name()))
     {
-        return false;
+        info.set_bytes_transfer(info.get_file_size());
     }
-
-    info.set_bytes_transfer(info.get_file_size());
 
     *info_ = info;
 
@@ -118,7 +133,11 @@ bool download_task::load_metainfo_from_local_cache()
 bool download_task::is_downloaded_file_exists()
 {
     const auto &local_path = info_->get_file_name();
-    assert(!local_path.empty());
+
+    if (local_path.empty())
+    {
+        return false;
+    }
 
     return core::tools::system::is_exist(local_path);
 }
@@ -178,11 +197,13 @@ bool download_task::get_file_id(const std::string& _file_url, std::string& _file
     return false;
 }
 
-int32_t download_task::download_metainfo()
+loader_errors download_task::download_metainfo()
 {
     std::string file_id;
     if (!get_file_id(info_->get_file_url(), file_id))
+    {
         return loader_errors::invalid_url;
+    }
 
     info_->set_file_id(file_id);
 
@@ -192,10 +213,10 @@ int32_t download_task::download_metainfo()
 
     *info_ = packet.get_info();
 
-    return 0;
+    return loader_errors::success;
 }
 
-int32_t download_task::open_temporary_file()
+loader_errors download_task::open_temporary_file()
 {
     if (!core::tools::system::is_exist(files_folder_))
     {
@@ -238,7 +259,7 @@ int32_t download_task::open_temporary_file()
     if (!file_stream_.is_open())
         return loader_errors::create_file;
 
-    return 0;
+    return loader_errors::success;
 }
 
 bool download_task::is_end()
@@ -248,7 +269,7 @@ bool download_task::is_end()
     return (info_->get_bytes_transfer() == info_->get_file_size());
 }
 
-int32_t download_task::load_next_range()
+loader_errors download_task::load_next_range()
 {
     load_file packet(get_wim_params(), *info_);
 
@@ -267,10 +288,20 @@ int32_t download_task::load_next_range()
     file_stream_.write(
         (const char*) packet.get_response().read(size), size);
 
-    return 0;
+    return loader_errors::success;
 }
 
 void download_task::resume(loader& _loader)
 {
-    _loader.load_task_ranges_async(shared_from_this());
+    _loader.load_file_sharing_task_ranges_async(shared_from_this());
+}
+
+std::string download_task::get_file_direct_url() const
+{
+    if (!info_)
+    {
+        return std::string();
+    }
+
+    return info_->get_file_dlink();
 }

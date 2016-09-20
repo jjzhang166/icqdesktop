@@ -57,7 +57,6 @@
     <ClCompile Include="connections\login_info.cpp" />
     <ClCompile Include="core_settings.cpp" />
     <ClCompile Include="archive\dlg_state.cpp" />
-    <ClCompile Include="connections\wim\loader\loader_task.cpp" />
     <ClCompile Include="connections\wim\loader\download_task.cpp" />
     <ClCompile Include="connections\search_contacts_params.cpp" />
     <ClCompile Include="stickers\stickers.cpp" />
@@ -157,7 +156,29 @@
     <ClCompile Include="connections\wim\packets\mod_chat_member_alpha.cpp" />
     <ClCompile Include="..\common.shared\common_defs.cpp" />
     <ClCompile Include="..\common.shared\crash_sender_utils.cpp" />
+    <ClCompile Include="archive\image_cache.cpp" />
+    <ClCompile Include="tools\url_parser.cpp" />
     <ClCompile Include="connections\wim\packets\phoneinfo.cpp" />
+    <ClCompile Include="connections\wim\loader\fs_loader_task.cpp" />
+    <ClCompile Include="connections\wim\loader\generic_loader_task.cpp" />
+    <ClCompile Include="connections\wim\loader\loader_helpers.cpp" />
+    <ClCompile Include="connections\wim\loader\link_metainfo_download_task.cpp" />
+    <ClCompile Include="connections\wim\loader\image_preview_download_task.cpp" />
+    <ClCompile Include="connections\wim\loader\image_download_task.cpp" />
+    <ClCompile Include="connections\wim\loader\loader_task.cpp" />
+    <ClCompile Include="connections\wim\packets\get_chat_pending.cpp" />
+    <ClCompile Include="connections\wim\packets\resolve_pending.cpp" />
+    <ClCompile Include="connections\wim\packets\snap_viewed.cpp" />
+    <ClCompile Include="connections\wim\loader\snap_metainfo.cpp" />
+    <ClCompile Include="connections\wim\loader\snap_metainfo_download_task.cpp" />
+    <ClCompile Include="disk_cache\dir_cache.cpp" />
+    <ClCompile Include="disk_cache\cache_entity_type.cpp" />
+    <ClCompile Include="disk_cache\cache_garbage_collector.cpp" />
+    <ClCompile Include="disk_cache\disk_cache.cpp" />
+    <ClCompile Include="disk_cache\cache_entity.cpp" />
+    <ClCompile Include="connections\wim\loader\tasks_runner_slot.cpp" />
+    <ClCompile Include="connections\wim\events\fetch_event_imstate.cpp" />
+    <ClCompile Include="connections\wim\imstate.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="archive\opened_dialog.h" />
@@ -222,7 +243,6 @@
     <ClInclude Include="archive\local_history.h" />
     <ClInclude Include="archive\history_message.h" />
     <ClInclude Include="archive\dlg_state.h" />
-    <ClInclude Include="connections\wim\loader\loader_task.h" />
     <ClInclude Include="connections\wim\loader\download_task.h" />
     <ClInclude Include="connections\search_contacts_params.h" />
     <ClInclude Include="stickers\stickers.h" />
@@ -320,7 +340,30 @@
     <ClInclude Include="connections\wim\packets\mod_chat_member_alpha.h" />
     <ClInclude Include="..\common.shared\common_defs.h" />
     <ClInclude Include="..\common.shared\common_crash_sender.h" />
+    <ClInclude Include="archive\image_cache.h" />
+    <ClInclude Include="tools\url_parser.h" />
     <ClInclude Include="connections\wim\packets\phoneinfo.h" />
+    <ClInclude Include="connections\wim\loader\fs_loader_task.h" />
+    <ClInclude Include="connections\wim\loader\loader_task.h" />
+    <ClInclude Include="connections\wim\loader\generic_loader_task.h" />
+    <ClInclude Include="connections\wim\loader\loader_helpers.h" />
+    <ClInclude Include="connections\wim\loader\link_metainfo_download_task.h" />
+    <ClInclude Include="connections\wim\loader\image_preview_download_task.h" />
+    <ClInclude Include="connections\wim\loader\image_download_task.h" />
+    <ClInclude Include="connections\wim\packets\get_chat_pending.h" />
+    <ClInclude Include="connections\wim\packets\resolve_pending.h" />
+    <ClInclude Include="connections\wim\packets\snap_viewed.h" />
+    <ClInclude Include="connections\wim\loader\snap_metainfo_download_task.h" />
+    <ClInclude Include="connections\wim\loader\snap_metainfo.h" />
+    <ClInclude Include="disk_cache\dir_cache.h" />
+    <ClInclude Include="disk_cache\cache_filename.h" />
+    <ClInclude Include="disk_cache\cache_entity_type.h" />
+    <ClInclude Include="disk_cache\cache_garbage_collector.h" />
+    <ClInclude Include="disk_cache\disk_cache.h" />
+    <ClInclude Include="disk_cache\cache_entity.h" />
+    <ClInclude Include="connections\wim\loader\tasks_runner_slot.h" />
+    <ClInclude Include="connections\wim\events\fetch_event_imstate.h" />
+    <ClInclude Include="connections\wim\imstate.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

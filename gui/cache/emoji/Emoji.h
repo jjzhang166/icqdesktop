@@ -24,10 +24,10 @@ namespace Emoji
 
 	void Cleanup();
 
-	const QImage& GetEmoji(const uint32_t main, const uint32_t ext, const EmojiSizePx size = EmojiSizePx::Auto);
+	const QImage& GetEmoji(const uint32_t _main, const uint32_t _ext, const EmojiSizePx size = EmojiSizePx::Auto);
 
-	EmojiSizePx GetFirstLesserOrEqualSizeAvailable(const int32_t sizePx);
+	EmojiSizePx GetFirstLesserOrEqualSizeAvailable(const int32_t _sizePx);
 
-	EmojiSizePx GetNearestSizeAvailable(const int32_t sizePx);
+	EmojiSizePx GetNearestSizeAvailable(const int32_t _sizePx);
 
 }

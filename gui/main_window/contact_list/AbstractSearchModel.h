@@ -9,12 +9,18 @@ namespace Logic
         Q_OBJECT
 
     public:
-        AbstractSearchModel(QObject *parent = 0);
+        AbstractSearchModel(QObject* _parent = 0);
         virtual void setFocus() = 0;
-        virtual void emitChanged(int first, int last) = 0;
-        virtual void searchPatternChanged(QString p) = 0;
+        virtual void emitChanged(int _first, int _last) = 0;
+        virtual void searchPatternChanged(QString _p) = 0;
         virtual void setSelectEnabled(bool) { };
+    
+        void setSort(bool _isClSorting);
+        bool isClSorting() const;
+
+    private:
+        bool isClSorting_;
     };
     
-    AbstractSearchModel* GetCurrentSearchModel(int _regim);
+    AbstractSearchModel* getCurrentSearchModel(int _regim);
 }

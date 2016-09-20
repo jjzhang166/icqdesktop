@@ -35,7 +35,7 @@ namespace Utils
 
     public:
 
-        Application(int argc, char *argv[]);
+        Application(int& _argc, char* _argv[]);
         ~Application();
 
         int exec();
@@ -43,7 +43,7 @@ namespace Utils
         bool init();
 
         bool isMainInstance();
-        void switchInstance(launch::CommandLineParser& _cmd_parser);
+        void switchInstance(launch::CommandLineParser& _cmdParser);
 
         bool updating();
         void parseUrlCommand(const QString& _urlCommand);
@@ -57,7 +57,7 @@ namespace Utils
     private:
         void init_win7_features();
 
-        std::unique_ptr<Ui::MainWindow> main_window_;
+        std::unique_ptr<Ui::MainWindow> mainWindow_;
         std::unique_ptr<LocalPeer> peer_;
         std::unique_ptr<QApplication> app_;
 

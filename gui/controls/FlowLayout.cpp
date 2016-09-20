@@ -4,14 +4,14 @@
 
 namespace Ui
 {
-	FlowLayout::FlowLayout(QWidget *_parent, int _margin, int _h_spacing, int _v_spacing)
-		: QLayout(_parent), h_space_(_h_spacing), v_space_(_v_spacing)
+	FlowLayout::FlowLayout(QWidget *_parent, int _margin, int _hSpacing, int _vSpacing)
+		: QLayout(_parent), hSpace_(_hSpacing), vSpace_(_vSpacing)
 	{
 		setContentsMargins(_margin, _margin, _margin, _margin);
 	}
 
-	FlowLayout::FlowLayout(int _margin, int _h_spacing, int _v_spacing)
-		: h_space_(_h_spacing), v_space_(_v_spacing)
+	FlowLayout::FlowLayout(int _margin, int _hSpacing, int _vSpacing)
+		: hSpace_(_hSpacing), vSpace_(_vSpacing)
 	{
 		setContentsMargins(_margin, _margin, _margin, _margin);
 	}
@@ -25,41 +25,47 @@ namespace Ui
 
 	void FlowLayout::addItem(QLayoutItem *_item)
 	{
-		item_list_.append(_item);
+		itemList_.append(_item);
 	}
 
 	int FlowLayout::horizontalSpacing() const
 	{
-		if (h_space_ >= 0) {
-			return h_space_;
-		} else {
+		if (hSpace_ >= 0)
+        {
+			return hSpace_;
+		}
+        else
+        {
 			return smartSpacing(QStyle::PM_LayoutHorizontalSpacing);
 		}
 	}
 
 	int FlowLayout::verticalSpacing() const
 	{
-		if (v_space_ >= 0) {
-			return v_space_;
-		} else {
+		if (vSpace_ >= 0)
+        {
+			return vSpace_;
+		}
+        else
+        {
 			return smartSpacing(QStyle::PM_LayoutVerticalSpacing);
 		}
 	}
 
 	int FlowLayout::count() const
 	{
-		return item_list_.size();
+		return itemList_.size();
 	}
 
 	QLayoutItem *FlowLayout::itemAt(int _index) const
 	{
-		return item_list_.value(_index);
+		return itemList_.value(_index);
 	}
 
 	QLayoutItem *FlowLayout::takeAt(int _index)
 	{
-		if (_index >= 0 && _index < item_list_.size())
-			return item_list_.takeAt(_index);
+		if (_index >= 0 && _index < itemList_.size())
+			return itemList_.takeAt(_index);
 		else
 			return 0;
 	}
@@ -95,7 +101,7 @@ namespace Ui
 	{
 		QSize size;
 		QLayoutItem *item;
-		foreach (item, item_list_)
+		foreach (item, itemList_)
 			size = size.expandedTo(item->minimumSize());
 
 		size += QSize(2*margin(), 2*margin());
@@ -112,7 +118,8 @@ namespace Ui
 		int lineHeight = 0;
 
 		QLayoutItem *item;
-		foreach (item, item_list_) {
+		foreach (item, itemList_)
+        {
 			QWidget *wid = item->widget();
 			int spaceX = horizontalSpacing();
 			if (spaceX == -1)
@@ -123,7 +130,8 @@ namespace Ui
 				spaceY = wid->style()->layoutSpacing(
 				QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Vertical);
 			int nextX = x + item->sizeHint().width() + spaceX;
-			if (nextX - spaceX > effectiveRect.right() && lineHeight > 0) {
+			if (nextX - spaceX > effectiveRect.right() && lineHeight > 0)
+            {
 				x = effectiveRect.x();
 				y = y + lineHeight + spaceY;
 				nextX = x + item->sizeHint().width() + spaceX;
@@ -142,12 +150,17 @@ namespace Ui
 	int FlowLayout::smartSpacing(QStyle::PixelMetric _pm) const
 	{
 		QObject *parent = this->parent();
-		if (!parent) {
+		if (!parent)
+        {
 			return -1;
-		} else if (parent->isWidgetType()) {
+		}
+        else if (parent->isWidgetType())
+        {
 			QWidget *pw = static_cast<QWidget *>(parent);
 			return pw->style()->pixelMetric(_pm, 0, pw);
-		} else {
+		}
+        else
+        {
 			return static_cast<QLayout *>(parent)->spacing();
 		}
 	}

@@ -2,6 +2,7 @@
 #include "my_info.h"
 #include "core_dispatcher.h"
 #include "cache/avatars/AvatarStorage.h"
+#include "gui_settings.h"
 
 namespace Ui
 {
@@ -21,6 +22,9 @@ namespace Ui
         data_.flags_ = _collection->get_value_as_uint("globalFlags");
         data_.largeIconId_ = _collection->get_value_as_string("largeIconId");
 
+        get_gui_settings()->set_value(login_page_last_entered_phone, data_.phoneNumber_);
+        get_gui_settings()->set_value(login_page_last_entered_uin, data_.aimId_);
+        
         emit received();
     }
 

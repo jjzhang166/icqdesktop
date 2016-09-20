@@ -6,10 +6,5 @@ namespace core
 {
     namespace
     {
-
-	}
-
-
-
-
+    }
 }

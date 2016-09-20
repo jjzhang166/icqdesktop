@@ -6,30 +6,44 @@
 #elif _WIN32
     #include "win32/VideoFrameWin32.h"
 #else
+#ifndef STRIP_VOIP
     #error "video frame need to create"
+#endif //STRIP_VOIP
 #endif
 
-platform_specific::GraphicsPanel* platform_specific::GraphicsPanel::create(QWidget* parent, std::vector<QWidget*>& panels) {
+platform_specific::GraphicsPanel* platform_specific::GraphicsPanel::create(
+    QWidget* _parent,
+    std::vector<QWidget*>& _panels)
+{
 #ifdef __APPLE__
-    return  platform_macos::GraphicsPanelMacos::create(parent, panels);
+    return  platform_macos::GraphicsPanelMacos::create(_parent, _panels);
 #elif _WIN32
-    return  new platform_win32::GraphicsPanelWin32(parent, panels);
+    return  new platform_win32::GraphicsPanelWin32(_parent, _panels);
 #endif
     return nullptr;
 }
 
-WId platform_specific::GraphicsPanel::frameId() const {
-	return QWidget::winId();
+WId platform_specific::GraphicsPanel::frameId() const
+{
+    return QWidget::winId();
 }
 
-void platform_specific::GraphicsPanel::addPanels(std::vector<QWidget*>& /*panels*/) {
+void platform_specific::GraphicsPanel::addPanels(std::vector<QWidget*>& /*panels*/)
+{
 
 }
 
-void platform_specific::GraphicsPanel::clearPanels() {
-	
+void platform_specific::GraphicsPanel::clearPanels()
+{
+
 }
 
-void platform_specific::GraphicsPanel::fullscreenModeChanged(bool fullscreen) {
+void platform_specific::GraphicsPanel::fullscreenModeChanged(bool /*fullscreen*/)
+{
     
 }
+
+void platform_specific::GraphicsPanel::fullscreenAnimationStart() {}
+
+void platform_specific::GraphicsPanel::fullscreenAnimationFinish() {}
+

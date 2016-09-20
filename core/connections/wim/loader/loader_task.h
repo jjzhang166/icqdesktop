@@ -1,39 +1,49 @@
-#ifndef __WIM_LOADER_TASK_H_
-#define __WIM_LOADER_TASK_H_
-
 #pragma once
 
-namespace core
+#include "../../../namespaces.h"
+
+CORE_NS_BEGIN
+
+class async_executer;
+
+struct proxy_settings;
+
+CORE_NS_END
+
+CORE_WIM_NS_BEGIN
+
+enum class loader_errors;
+
+enum class tasks_runner_slot;
+
+struct wim_packet_params;
+
+class loader_task
 {
-    namespace wim
-    {
-        class loader;
+public:
+    virtual ~loader_task() = 0;
 
-        struct wim_packet_params;
+    virtual void cancel() = 0;
 
-        class loader_task
-        {
-            const std::string id_;
-            std::unique_ptr<wim_packet_params> wim_params_;
-            int32_t error_;
+    virtual const std::string& get_contact_aimid() const = 0;
 
-        public:
+    virtual int64_t get_id() const = 0;
 
-            const wim_packet_params& get_wim_params();
+    virtual tasks_runner_slot get_slot() const = 0;
 
-            loader_task(const std::string& _id, const wim_packet_params& _params);
-            virtual ~loader_task();
+    virtual void on_result(const loader_errors _error) = 0;
 
-            virtual void on_result(int32_t _error) = 0;
-            virtual void on_progress() = 0;
-            virtual void resume(loader& _loader);
+    virtual void on_before_resume(
+        const wim_packet_params &_wim_params,
+        const proxy_settings &_proxy_settings,
+        const bool _is_genuine) = 0;
 
-            const std::string& get_id() const;
-            void set_last_error(int32_t _error);
-            int32_t get_last_error() const;
-        };
+    virtual void on_before_suspend() = 0;
 
-    }
-}
+    virtual loader_errors run() = 0;
 
-#endif //__WIM_LOADER_TASK_H_
+    virtual std::string to_log_str() const = 0;
+
+};
+
+CORE_WIM_NS_END

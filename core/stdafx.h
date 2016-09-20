@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define _WIN32_LEAN_AND_MEAN
 
-#include "targetver.h"
+#include "win32/targetver.h"
 #include <Windows.h>
 #include <Shlobj.h>
 #include <atlbase.h>
@@ -47,6 +47,7 @@
 #include <assert.h>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -67,7 +68,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "../corelib/common.h"
+#include "../common.shared/common.h"
 
 #include "tools/tlv.h"
 #include "tools/binary_stream.h"

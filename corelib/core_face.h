@@ -4,6 +4,8 @@
 
 #include "ivalue.h"
 
+#include "../common.shared/common_defs.h"
+
 namespace core
 {
 	enum login_error
@@ -100,7 +102,7 @@ namespace core
 
 	struct iconnector : ibase
 	{
-		virtual void link(iconnector*) = 0;
+		virtual void link(iconnector*, const common::core_gui_settings&) = 0;
 		virtual void unlink() = 0;
         virtual void receive(const char*, int64_t, core::icollection*) = 0;
 

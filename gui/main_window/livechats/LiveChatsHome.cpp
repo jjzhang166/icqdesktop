@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "LiveChatsHome.h"
+
 #include "LiveChatProfile.h"
 #include "LiveChatsModel.h"
 #include "../contact_list/ContactListModel.h"
-#include "../../utils/utils.h"
-#include "../../controls/CustomButton.h"
 #include "../../core_dispatcher.h"
+#include "../../controls/CommonStyle.h"
+#include "../../utils/utils.h"
 
 namespace
 {
@@ -16,22 +17,22 @@ namespace
 
 namespace Ui
 {
-    LiveChatHomeWidget::LiveChatHomeWidget(QWidget* _parent, const Data::ChatInfo& info)
+    LiveChatHomeWidget::LiveChatHomeWidget(QWidget* _parent, const Data::ChatInfo& _info)
         :   QWidget(_parent)
-        ,   info_(info)
+        ,   info_(_info)
         ,   joinButton_(new QPushButton(this))
     {
         auto layout = new QVBoxLayout(this);
         layout->setSpacing(0);
         layout->setContentsMargins(0, 0, 0, 0);
-        profile_ = new LiveChatProfileWidget(_parent, info.Stamp_);
+        profile_ = new LiveChatProfileWidget(_parent, _info.Stamp_);
         profile_->setFixedHeight(Utils::scale_value(profile_height));
         profile_->setFixedWidth(Utils::scale_value(profile_width));
-        profile_->viewChat(std::make_shared<Data::ChatInfo>(info));
+        profile_->viewChat(std::make_shared<Data::ChatInfo>(_info));
         layout->addSpacerItem(new QSpacerItem(0, Utils::scale_value(spacing), QSizePolicy::Preferred, QSizePolicy::Fixed));
         layout->addWidget(profile_);
         layout->addSpacerItem(new QSpacerItem(0, Utils::scale_value(spacing), QSizePolicy::Preferred, QSizePolicy::Fixed));
-        Utils::ApplyStyle(joinButton_, main_button_style);
+        Utils::ApplyStyle(joinButton_, CommonStyle::getGreenButtonStyle());
         initButtonText();
         auto hLayout = new QHBoxLayout(this);
         hLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Preferred));
@@ -45,8 +46,8 @@ namespace Ui
         Utils::addShadowToWidget(this);
 
         connect(joinButton_, SIGNAL(clicked()), this, SLOT(joinButtonClicked()), Qt::QueuedConnection);
-        connect(Logic::GetContactListModel(), SIGNAL(liveChatJoined(QString)), this, SLOT(chatJoined(QString)), Qt::QueuedConnection);
-        connect(Logic::GetContactListModel(), SIGNAL(liveChatRemoved(QString)), this, SLOT(chatRemoved(QString)), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(liveChatJoined(QString)), this, SLOT(chatJoined(QString)), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(liveChatRemoved(QString)), this, SLOT(chatRemoved(QString)), Qt::QueuedConnection);
     }
 
     LiveChatHomeWidget::~LiveChatHomeWidget()
@@ -54,51 +55,70 @@ namespace Ui
         delete profile_;
     }
 
-    void LiveChatHomeWidget::chatJoined(QString aimId)
+    void LiveChatHomeWidget::chatJoined(QString _aimId)
     {
-        if (info_.AimId_ == aimId)
+        if (info_.AimId_ == _aimId)
             initButtonText();
-        if (aimId == joinedLivechat_)
-            Logic::GetContactListModel()->setCurrent(info_.AimId_, true, true);
     }
 
-    void LiveChatHomeWidget::chatRemoved(QString aimId)
+    void LiveChatHomeWidget::chatRemoved(QString _aimId)
     {
-        if (info_.AimId_ == aimId)
+        if (info_.AimId_ == _aimId)
             initButtonText();
     }
 
     void LiveChatHomeWidget::joinButtonClicked()
     {
-        if (Logic::GetContactListModel()->getContactItem(info_.AimId_))
+        if (Logic::getContactListModel()->getContactItem(info_.AimId_) && info_.YouMember_)
         {
-            Logic::GetContactListModel()->setCurrent(info_.AimId_, true, true);
+            Logic::getContactListModel()->setCurrent(info_.AimId_, true, true);
         }
         else
         {
-            Logic::GetContactListModel()->joinLiveChat(info_.Stamp_, true);
+            Logic::getContactListModel()->joinLiveChat(info_.Stamp_, true);
             Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::livechat_join_fromprofile);
-            joinedLivechat_ = info_.AimId_;
+            Logic::GetLiveChatsModel()->joined(info_.AimId_);
+            info_.YouMember_ = true;
+            if (info_.ApprovedJoin_)
+            {
+                joinButton_->setText(QT_TRANSLATE_NOOP("livechats", "Waiting for approval"));
+                Utils::ApplyStyle(joinButton_, CommonStyle::getDisabledButtonStyle());
+                Logic::GetLiveChatsModel()->pending(info_.AimId_);
+            }
         }
     }
 
     void LiveChatHomeWidget::initButtonText()
     {
-        if (Logic::GetContactListModel()->getContactItem(info_.AimId_))
+        if (Logic::getContactListModel()->getContactItem(info_.AimId_))
+        {
             joinButton_->setText(QT_TRANSLATE_NOOP("livechats", "Open"));
+            Utils::ApplyStyle(joinButton_, CommonStyle::getGreenButtonStyle());
+        }
         else
-            joinButton_->setText(QT_TRANSLATE_NOOP("livechats", "Join"));
+        {
+            if (info_.YouPending_)
+            {
+                joinButton_->setText(QT_TRANSLATE_NOOP("livechats", "Waiting for approval"));
+            }
+            else
+            {
+                joinButton_->setText(QT_TRANSLATE_NOOP("livechats", "Join"));
+            }
+            Utils::ApplyStyle(joinButton_, info_.YouPending_ ? CommonStyle::getDisabledButtonStyle() : CommonStyle::getGreenButtonStyle());
+        }
+
         joinButton_->adjustSize();
     }
 
-    void LiveChatHomeWidget::paintEvent(QPaintEvent* e)
+    void LiveChatHomeWidget::paintEvent(QPaintEvent* _e)
     {
         QStyleOption opt;
         opt.init(this);
         QPainter p(this);
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
-        return QWidget::paintEvent(e);
+        return QWidget::paintEvent(_e);
     }
 
     LiveChatHome::LiveChatHome(QWidget* _parent)
@@ -118,7 +138,7 @@ namespace Ui
     {
     }
 
-    void LiveChatHome::liveChatSelected(Data::ChatInfo info)
+    void LiveChatHome::liveChatSelected(Data::ChatInfo _info)
     {
         auto item = layout_->takeAt(0);
         if (item)
@@ -127,17 +147,17 @@ namespace Ui
             item->widget()->deleteLater();
         }
         
-        layout_->addWidget(new LiveChatHomeWidget(this, info));
+        layout_->addWidget(new LiveChatHomeWidget(this, _info));
         GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::livechat_profile_open);
     }
 
-    void LiveChatHome::paintEvent(QPaintEvent* e)
+    void LiveChatHome::paintEvent(QPaintEvent* _e)
     {
         QStyleOption opt;
         opt.init(this);
         QPainter p(this);
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
-        return QWidget::paintEvent(e);
+        return QWidget::paintEvent(_e);
     }
 }

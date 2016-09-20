@@ -7,7 +7,8 @@ namespace Ui
     class CustomButton;
     class HistoryControlPage;
     
-    enum ThemePanelChoice: int {
+    enum ThemePanelChoice: int
+    {
         ThemePanelCancel,
         ThemePanelSet,
         ThemePanelSetToAll,

@@ -21,7 +21,7 @@ mod_chat_alpha::~mod_chat_alpha()
 
 void mod_chat_alpha::set_about(const std::string& _about)
 {
-    about_ = _about;
+    about_.reset(_about);
 }
 
 void mod_chat_alpha::set_name(const std::string& _name)
@@ -32,6 +32,11 @@ void mod_chat_alpha::set_name(const std::string& _name)
 void mod_chat_alpha::set_public(bool _public)
 {
     public_.reset(_public);
+}
+
+void mod_chat_alpha::set_join(bool _approved)
+{
+    approved_.reset(_approved);
 }
 
 int32_t mod_chat_alpha::init_request(std::shared_ptr<core::http_request_simple> _request)
@@ -51,10 +56,12 @@ int32_t mod_chat_alpha::init_request(std::shared_ptr<core::http_request_simple> 
     node_params.AddMember("sn", aimid_, a);
     if (!name_.empty())
         node_params.AddMember("name", name_, a);
-    else if (!about_.empty())
-        node_params.AddMember("about", about_, a);
+    else if (about_.is_initialized())
+        node_params.AddMember("about", about_.get(), a);
     else if (public_.is_initialized())
         node_params.AddMember("public", public_.get(), a);
+    else if (approved_.is_initialized())
+        node_params.AddMember("joinModeration", approved_.get(), a);
     doc.AddMember("params", node_params, a);
 
     rapidjson::StringBuffer buffer;

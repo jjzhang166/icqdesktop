@@ -52,8 +52,7 @@ int32_t del_history::init_request(std::shared_ptr<core::http_request_simple> _re
         "sending history deletion request\n"
         "    contact_aimid=<%1%>\n"
         "    up_to=<%2%>",
-        contact_aimid_ % up_to_id_
-    );
+        contact_aimid_ % up_to_id_);
 
     return 0;
 }

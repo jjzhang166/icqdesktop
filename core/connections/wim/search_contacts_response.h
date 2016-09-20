@@ -8,6 +8,8 @@ namespace core
     {
         class search_contacts_response
         {
+            bool finish_;
+            std::string next_tag_;
             struct chunk
             {
                 std::string aimid_;
@@ -38,6 +40,7 @@ namespace core
         public:
             search_contacts_response();
 
+            int32_t unserialize_header(const rapidjson::Value& _node); // search 2
             int32_t unserialize(const rapidjson::Value& _node);
             void serialize(core::coll_helper _coll);
         };

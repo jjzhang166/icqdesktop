@@ -40,7 +40,7 @@ int32_t speech_to_text::init_request(std::shared_ptr<core::http_request_simple> 
 
     const time_t ts = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - params_.time_offset_;
 
-    params["a"] = params_.a_token_;
+    params["a"] = escape_symbols(params_.a_token_);
     params["f"] = "json";
     params["k"] = params_.dev_id_;
     params["ts"] = tools::from_int64(ts);

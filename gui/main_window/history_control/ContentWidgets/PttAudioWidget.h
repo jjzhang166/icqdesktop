@@ -62,7 +62,8 @@ namespace HistoryControl
         virtual void mouseReleaseEvent(QMouseEvent *);
         virtual void resizeEvent(QResizeEvent*);
 
-        virtual void initializeInternal() override;
+        virtual void initialize() override;
+        virtual bool drag() override;
 
     private:
         QPainterPath getBodyPath(const QRect &rect, const int32_t borderRadius, const bool isOutgoing, const bool skipArc);
@@ -78,6 +79,7 @@ namespace HistoryControl
         void stopDownloadAnimation();
         void showText();
         void updateHeight();
+        QString getPlayImagePath();
 
     private Q_SLOTS:
         void messageDownloaded(qint64, QString, QString);

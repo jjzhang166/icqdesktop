@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../corelib/core_face.h"
+
 namespace core
 {
 	class coll_helper;
@@ -21,10 +23,17 @@ namespace HistoryControl
 namespace Logic
 {
 	class MessageKey;
+
+    enum class preview_type;
 }
 
 namespace Data
 {
+    static const auto PRELOAD_MESSAGES_COUNT = 30;
+    static const auto MORE_MESSAGES_COUNT = 30;
+
+    struct Quote;
+
 	class MessageBuddy
 	{
 	public:
@@ -36,13 +45,23 @@ namespace Data
 
 		bool CheckInvariant() const;
 
-        bool ContainsPreviewableLink() const;
+        Logic::preview_type GetPreviewableLinkType() const;
+
+        bool ContainsAnyPreviewableLink() const;
+
+        bool ContainsPreviewableSiteLink() const;
 
         bool ContainsPttAudio() const;
 
         bool ContainsImage() const;
 
+        bool ContainsVideo() const;
+
         bool GetIndentWith(const MessageBuddy &buddy);
+
+        bool hasAvatarWith(const MessageBuddy& _prevBuddy, const bool _isMultichat);
+
+        bool isSameDirection(const MessageBuddy& _prevBuddy) const;
 
 		bool IsBase() const;
 
@@ -66,8 +85,6 @@ namespace Data
 
         bool IsServiceMessage() const;
 
-		bool IsStandalone() const;
-
         bool IsVoipEvent() const;
 
 		const HistoryControl::ChatEventInfoSptr& GetChatEvent() const;
@@ -78,7 +95,7 @@ namespace Data
 
 		const HistoryControl::FileSharingInfoSptr& GetFileSharing() const;
 
-        QStringRef GetFirstUriFromText() const;
+        QStringRef GetFirstSiteLinkFromText() const;
 
         int GetPttDuration() const;
 
@@ -106,7 +123,7 @@ namespace Data
 
 		bool HasText() const;
 
-		void FillFrom(const MessageBuddy &buddy, const bool merge);
+		void FillFrom(const MessageBuddy &buddy);
 
         void EraseEventData();
 
@@ -148,6 +165,7 @@ namespace Data
 		qint64 Prev_;
         int PendingId_;
         qint32 Time_;
+        QList<Quote> Quotes_;
 
 		bool Chat_;
 		QString ChatFriendly_;
@@ -241,6 +259,38 @@ namespace Data
 		QString Text_;
 
 	};
+
+    struct Quote
+    {
+        QString text_;
+        QString senderId_;
+        QString chatId_;
+        QString senderFriendly_;
+        qint32 time_;
+        qint64 msgId_;
+        bool isForward_;
+        
+        int id_;
+        
+        //gui only values
+        bool isFirstQuote_;
+        bool isLastQuote_;
+        
+        Quote()
+            : time_(-1)
+            , id_(-1)
+            , msgId_(-1)
+            , isFirstQuote_(false)
+            , isLastQuote_(false)
+            , isForward_(false)
+        {
+        }
+        
+        bool isEmpty() const { return text_.isEmpty(); }
+
+        void serialize(core::icollection* _collection) const;
+        void unserialize(core::icollection* _collection);
+    };
 
 	typedef std::shared_ptr<MessageBuddy> MessageBuddySptr;
 	typedef QList<MessageBuddySptr> MessageBuddies;

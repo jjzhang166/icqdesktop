@@ -1,42 +1,42 @@
 #include "stdafx.h"
 #include "MainWindow.h"
-#include "MainPage.h"
-#include "LoginPage.h"
-#include "PromoPage.h"
-#include "tray/TrayIcon.h"
-#include "contact_list/RecentsModel.h"
-#include "../core_dispatcher.h"
-#include "../gui_settings.h"
-#include "../theme_settings.h"
-#include "../utils/utils.h"
-#include "../utils/InterConnector.h"
-#include "../previewer/Previewer.h"
-#include "../controls/BackgroundWidget.h"
-#include "../cache/stickers/stickers.h"
-#include "sounds/SoundsManager.h"
-
-#include "contact_list/ContactListModel.h"
-#include "history_control/MessagesModel.h"
-#include "history_control/HistoryControlPage.h"
-#include "settings/ProfileSettingsWidget.h"
-#include "../../common.shared/crash_handler.h"
-#include "history_control/MessagesScrollArea.h"
-#include "../utils/utils.h"
-#include "livechats/LiveChatsModel.h"
 
 #include "ContactDialog.h"
-#include "../voip/VideoPanelHeader.h"
+#include "LoginPage.h"
+#include "MainPage.h"
+#include "PromoPage.h"
+#include "contact_list/ContactListModel.h"
+#include "contact_list/RecentsModel.h"
+#include "contact_list/UnknownsModel.h"
+#include "history_control/HistoryControlPage.h"
+#include "history_control/MessagesScrollArea.h"
+#include "livechats/LiveChatsModel.h"
+#include "settings/ProfileSettingsWidget.h"
+#include "sounds/SoundsManager.h"
+#include "tray/TrayIcon.h"
+#include "../gui_settings.h"
+#include "../theme_settings.h"
+#include "../controls/BackgroundWidget.h"
+#include "../controls/CommonStyle.h"
+#include "../previewer/GalleryWidget.h"
+#include "../previewer/Previewer.h"
+#include "../utils/utils.h"
+#include "../utils/InterConnector.h"
+#include "../cache/stickers/stickers.h"
+#include "mplayer/MultimediaViewer.h"
+#include "../app_config.h"
 
 #ifdef _WIN32
+#include "../../common.shared/win32/crash_handler.h"
 #include <windowsx.h>
 #include <wtsapi32.h>
 #pragma comment(lib, "wtsapi32.lib")
 #endif //_WIN32
 
 #ifdef __APPLE__
-#include "AccountsPage.h"
-#include "mac_support.h"
-#include "mac_migration.h"
+#include "macos/AccountsPage.h"
+#include "../utils/macos/mac_support.h"
+#include "../utils/macos/mac_migration.h"
 #endif //__APPLE__
 
 namespace
@@ -44,9 +44,15 @@ namespace
 	const int SIZE_BOX_WIDTH = 4;
 	enum PagesIndex
 	{
-		LOGIN_PAGE_INDEX = 0,
-        MAIN_PAGE_INDEX = 1,
+		loginPage_INDEX = 0,
+        mainPage_INDEX = 1,
 	};
+
+    QString getTitleStyle()
+    {
+        return QString(" background: transparent; color: %1; font-size: 15dip; margin-left: 8dip; ")
+            .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getTextCommonColor()));
+    };
 }
 
 namespace Ui
@@ -62,9 +68,9 @@ namespace Ui
         setAttribute(Qt::WA_TranslucentBackground);
     }
 
-    void ShadowWindow::setActive(bool value)
+    void ShadowWindow::setActive(bool _value)
     {
-        IsActive_ = value;
+        IsActive_ = _value;
         repaint();
     }
 
@@ -124,12 +130,12 @@ namespace Ui
         p.fillRect(bottomRight, QBrush(g));
     }
 
-    void ShadowWindow::setGradientColor(QGradient& gradient)
+    void ShadowWindow::setGradientColor(QGradient& _gradient)
     {
-        gradient.setColorAt(0, QColor(0, 0, 0, 50));
-        gradient.setColorAt(0.2, QColor(0, 0, 0, IsActive_ ? 20 : 10));
-        gradient.setColorAt(0.6, IsActive_ ? QColor(0, 0, 0, 5) : Qt::transparent);
-        gradient.setColorAt(1, Qt::transparent);
+        _gradient.setColorAt(0, QColor(0, 0, 0, 50));
+        _gradient.setColorAt(0.2, QColor(0, 0, 0, IsActive_ ? 20 : 10));
+        _gradient.setColorAt(0.6, IsActive_ ? QColor(0, 0, 0, 5) : Qt::transparent);
+        _gradient.setColorAt(1, Qt::transparent);
     }
 
 	TitleWidgetEventFilter::TitleWidgetEventFilter(QObject* parent)
@@ -137,21 +143,21 @@ namespace Ui
 	{
 	}
 
-	bool TitleWidgetEventFilter::eventFilter(QObject* obj, QEvent* event)
+	bool TitleWidgetEventFilter::eventFilter(QObject* _obj, QEvent* _event)
 	{
-		switch (event->type())
+		switch (_event->type())
 		{
 		case QEvent::MouseButtonDblClick:
 			emit doubleClick();
 			break;
 
 		case QEvent::MouseButtonPress:
-			clickPos = static_cast<QMouseEvent*>(event)->pos();
-			event->accept();
+			clickPos = static_cast<QMouseEvent*>(_event)->pos();
+			_event->accept();
 			break;
 
 		case QEvent::MouseMove:
-			emit moveRequest(static_cast<QMouseEvent*>(event)->globalPos() - clickPos - QPoint(get_gui_settings()->get_shadow_width(), get_gui_settings()->get_shadow_width()));
+			emit moveRequest(static_cast<QMouseEvent*>(_event)->globalPos() - clickPos - QPoint(get_gui_settings()->get_shadow_width(), get_gui_settings()->get_shadow_width()));
 			break;
 
 #ifdef _WIN32
@@ -164,20 +170,20 @@ namespace Ui
 			break;
 		}
 
-		return QObject::eventFilter(obj, event);
+		return QObject::eventFilter(_obj, _event);
 	}
 
-    void MainWindow::hide_taskbar_icon()
+    void MainWindow::hideTaskbarIcon()
     {
 #ifdef _WIN32
         HWND parent = (HWND)::GetWindowLong((HWND) winId(), GWL_HWNDPARENT);
         if (!parent)
             ::SetWindowLong((HWND) winId(), GWL_HWNDPARENT, (LONG) fake_parent_window_);
 #endif //_WIN32
-        tray_icon_->forceUpdateIcon();
+        trayIcon_->forceUpdateIcon();
     }
 
-    void MainWindow::show_taskbar_icon()
+    void MainWindow::showTaskbarIcon()
     {
 #ifdef _WIN32
         ::SetWindowLong((HWND) winId(), GWL_HWNDPARENT, 0L);
@@ -186,46 +192,46 @@ namespace Ui
         w->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
         w->show();
         w->activateWindow();
-        tray_icon_->forceUpdateIcon();
+        trayIcon_->forceUpdateIcon();
 #endif //_WIN32
     }
 
-    void MainWindow::showMenuBarIcon(bool show)
+    void MainWindow::showMenuBarIcon(bool _show)
     {
-        tray_icon_->setVisible(show);
+        trayIcon_->setVisible(_show);
     }
 
     MainWindow::MainWindow(QApplication* app)
-		: main_page_(nullptr)
-		, login_page_(nullptr)
-        , promo_page_(nullptr)
+        : gallery_(new Previewer::GalleryWidget(this))
+		, mainPage_(nullptr)
+		, loginPage_(nullptr)
+        , promoPage_(nullptr)
 #ifdef __APPLE__
         , accounts_page_(nullptr)
 #endif //_APPLE__
 		, app_(app)
-		, event_filter_(new TitleWidgetEventFilter(this))
-		, tray_icon_(new TrayIcon(this))
+		, eventFilter_(new TitleWidgetEventFilter(this))
+		, trayIcon_(new TrayIcon(this))
         , backgroundPixmap_(QPixmap())
         , Shadow_(0)
         , SkipRead_(false)
         , TaskBarIconHidden_(false)
         , callPanelMainEx(NULL)
+        , mplayer_(nullptr)
 	{
         Utils::InterConnector::instance().setMainWindow(this);
 
 #ifdef _WIN32
-        Utils::init_crash_handlers_in_core();
+        Utils::initCrashHandlersInCore();
         core::dump::crash_handler chandler;
         chandler.set_product_bundle("icq.desktop");
         chandler.set_process_exception_handlers();
         chandler.set_thread_exception_handlers();
 #endif //_WIN32
 
-		setStyleSheet(Utils::LoadStyle(":/main_window/main_window.qss", Utils::get_scale_coefficient(), true));
+		setStyleSheet(Utils::LoadStyle(":/main_window/main_window.qss"));
 #ifdef __APPLE__
-        mac_support_ = new MacSupport(this);
-        mac_support_->enableMacCrashReport();
-        mac_support_->listenSleepAwakeEvents();
+        getMacSupport()->listenSleepAwakeEvents();
 #endif
         {// Call panel main ex
             CallPanelMainEx::CallPanelMainFormat format;
@@ -242,13 +248,11 @@ namespace Ui
 		    connect(callPanelMainEx, SIGNAL(onClose()),    this, SLOT(hideWindow()), Qt::QueuedConnection);
 
             connect(callPanelMainEx, SIGNAL(onClickOpenChat(const std::string&)),    this, SLOT(onOpenChat(const std::string&)), Qt::DirectConnection);
+			connect(callPanelMainEx, SIGNAL(onBackToVideo()),  this, SLOT(onShowVideoWindow()), Qt::DirectConnection);
         }
 
         app_->installNativeEventFilter(this);
 
-        if (this->objectName().isEmpty())
-            this->setObjectName(QStringLiteral("main_window"));
-        this->resize(329, 331);
         QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
@@ -256,65 +260,59 @@ namespace Ui
         this->setSizePolicy(sizePolicy);
         this->setLayoutDirection(Qt::LeftToRight);
         this->setAutoFillBackground(false);
-        main_widget_ = new QWidget(this);
-        main_widget_->setObjectName(QStringLiteral("main_widget"));
-        sizePolicy.setHeightForWidth(main_widget_->sizePolicy().hasHeightForWidth());
-        main_widget_->setSizePolicy(sizePolicy);
-        vertical_layout_ = new QVBoxLayout(main_widget_);
-        vertical_layout_->setSpacing(0);
-        vertical_layout_->setObjectName(QStringLiteral("verticalLayout_9"));
-        vertical_layout_->setSizeConstraint(QLayout::SetDefaultConstraint);
-        vertical_layout_->setContentsMargins(0, 0, 0, 0);
-        title_widget_ = new QWidget(main_widget_);
-        title_widget_->setObjectName(QStringLiteral("title_widget"));
+        mainWidget_ = new QWidget(this);
+        sizePolicy.setHeightForWidth(mainWidget_->sizePolicy().hasHeightForWidth());
+        mainWidget_->setSizePolicy(sizePolicy);
+        mainLayout_ = new QVBoxLayout(mainWidget_);
+		mainLayout_->setSpacing(0);
+		mainLayout_->setSizeConstraint(QLayout::SetDefaultConstraint);
+		mainLayout_->setContentsMargins(0, 0, 0, 0);
+        titleWidget_ = new QWidget(mainWidget_);
+        titleWidget_->setObjectName("titleWidget");
         QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Fixed);
         sizePolicy1.setHorizontalStretch(0);
         sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(title_widget_->sizePolicy().hasHeightForWidth());
-        title_widget_->setSizePolicy(sizePolicy1);
-        title_widget_->setProperty("TitleWidget", QVariant(true));
-        horizontal_layout_ = new QHBoxLayout(title_widget_);
-        horizontal_layout_->setSpacing(0);
-        horizontal_layout_->setObjectName(QStringLiteral("horizontalLayout"));
-        horizontal_layout_->setContentsMargins(0, 0, 0, 0);
-        logo_ = new QPushButton(title_widget_);
-        logo_->setObjectName(QStringLiteral("logo"));
+        sizePolicy1.setHeightForWidth(titleWidget_->sizePolicy().hasHeightForWidth());
+        titleWidget_->setSizePolicy(sizePolicy1);
+        titleLayout_ = new QHBoxLayout(titleWidget_);
+		titleLayout_->setSpacing(0);
+		titleLayout_->setContentsMargins(0, 0, 0, 0);
+        logo_ = new QPushButton(titleWidget_);
+        logo_->setObjectName("windowIcon");
         QSizePolicy sizePolicy2(QSizePolicy::Fixed, QSizePolicy::Fixed);
         sizePolicy2.setHorizontalStretch(0);
         sizePolicy2.setVerticalStretch(0);
         sizePolicy2.setHeightForWidth(logo_->sizePolicy().hasHeightForWidth());
         logo_->setSizePolicy(sizePolicy2);
-        logo_->setProperty("WindowIcon", QVariant(true));
-        horizontal_layout_->addWidget(logo_);
-        title_ = new QLabel(title_widget_);
-        title_->setObjectName(QStringLiteral("title"));
-        title_->setProperty("Title", QVariant(true));
-        horizontal_layout_->addWidget(title_);
-        horizontal_spacer_ = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-        horizontal_layout_->addItem(horizontal_spacer_);
-        hide_button_ = new QPushButton(title_widget_);
-        hide_button_->setObjectName(QStringLiteral("hide_button"));
-        hide_button_->setProperty("HideButton", QVariant(true));
-        horizontal_layout_->addWidget(hide_button_);
-        maximize_button_ = new QPushButton(title_widget_);
-        maximize_button_->setObjectName(QStringLiteral("maximize_button"));
-        sizePolicy2.setHeightForWidth(maximize_button_->sizePolicy().hasHeightForWidth());
-        maximize_button_->setSizePolicy(sizePolicy2);
-        maximize_button_->setProperty("MaximizeButton", QVariant(true));
-        horizontal_layout_->addWidget(maximize_button_);
-        close_button_ = new QPushButton(title_widget_);
-        close_button_->setObjectName(QStringLiteral("close_button"));
-        sizePolicy2.setHeightForWidth(close_button_->sizePolicy().hasHeightForWidth());
-        close_button_->setSizePolicy(sizePolicy2);
-        close_button_->setProperty("CloseButton", QVariant(true));
-        horizontal_layout_->addWidget(close_button_);
-        vertical_layout_->addWidget(title_widget_);
-        stacked_widget_ = new BackgroundWidget(main_widget_, "");
-        stacked_widget_->setObjectName(QStringLiteral("stacked_widget"));
+        logo_->setFocusPolicy(Qt::NoFocus);
+		titleLayout_->addWidget(logo_);
+        title_ = new QLabel(titleWidget_);
+        title_->setFocusPolicy(Qt::NoFocus);
+        Utils::ApplyStyle(title_, getTitleStyle());
+		titleLayout_->addWidget(title_);
+        spacer_ = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+		titleLayout_->addItem(spacer_);
+        hideButton_ = new QPushButton(titleWidget_);
+        hideButton_->setObjectName("hideButton");
+		titleLayout_->addWidget(hideButton_);
+        maximizeButton_ = new QPushButton(titleWidget_);
+        maximizeButton_->setObjectName("maximizeButton");
+        sizePolicy2.setHeightForWidth(maximizeButton_->sizePolicy().hasHeightForWidth());
+		maximizeButton_->setSizePolicy(sizePolicy2);
+		maximizeButton_->setProperty("Maximize", true);
+		titleLayout_->addWidget(maximizeButton_);
+        closeButton_ = new QPushButton(titleWidget_);
+        sizePolicy2.setHeightForWidth(closeButton_->sizePolicy().hasHeightForWidth());
+		closeButton_->setSizePolicy(sizePolicy2);
+        Utils::ApplyStyle(closeButton_, Ui::CommonStyle::getCloseButtonStyle());
+		titleLayout_->addWidget(closeButton_);
+		mainLayout_->addWidget(titleWidget_);
+        stackedWidget_ = new BackgroundWidget(mainWidget_, "");
 
-        if (callPanelMainEx) {
-            vertical_layout_->addWidget(callPanelMainEx);
-            callPanelMainEx->installEventFilter(event_filter_);
+        if (callPanelMainEx)
+        {
+			mainLayout_->addWidget(callPanelMainEx);
+            callPanelMainEx->installEventFilter(eventFilter_);
 
             callPanelMainEx->hide();
         }
@@ -324,18 +322,18 @@ namespace Ui
 
         //Utils::InterConnector::instance().setMainWindow(this);
         get_qt_theme_settings()->setOrLoadDefaultTheme();
-        vertical_layout_->addWidget(stacked_widget_);
-        this->setCentralWidget(main_widget_);
+		mainLayout_->addWidget(stackedWidget_);
+        this->setCentralWidget(mainWidget_);
 
         logo_->setText(QString());
-        hide_button_->setText(QString());
-        maximize_button_->setText(QString());
-        close_button_->setText(QString());
+		hideButton_->setText(QString());
+		maximizeButton_->setText(QString());
+		closeButton_->setText(QString());
 
-        stacked_widget_->setCurrentIndex(-1);
+		stackedWidget_->setCurrentIndex(-1);
         QMetaObject::connectSlotsByName(this);
 
-        
+
         QFont f = QApplication::font();
         f.setStyleStrategy(QFont::PreferAntialias);
         QApplication::setFont(f);
@@ -367,37 +365,39 @@ namespace Ui
         }
 #endif // _WIN32
 
-		title_widget_->installEventFilter(event_filter_);
+		titleWidget_->installEventFilter(eventFilter_);
 		title_->setText("ICQ");
 		title_->setAttribute(Qt::WA_TransparentForMouseEvents);
 		logo_->setAttribute(Qt::WA_TransparentForMouseEvents);
 
 		setWindowTitle("ICQ");
 #ifdef _WIN32
-        setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowMinimizeButtonHint);
-        fake_parent_window_ = Utils::create_fake_parent_window();
+        setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowMinimizeButtonHint | Qt::WindowSystemMenuHint);
+        fake_parent_window_ = Utils::createFakeParentWindow();
 #else
-        title_widget_->hide();
+        titleWidget_->hide();
 #endif
 
 		title_->setMouseTracking(true);
 
-		connect(hide_button_, SIGNAL(clicked()), this, SLOT(minimize()), Qt::QueuedConnection);
-		connect(maximize_button_, SIGNAL(clicked()), this, SLOT(maximize()), Qt::QueuedConnection);
-		connect(close_button_, SIGNAL(clicked()), this, SLOT(hideWindow()), Qt::QueuedConnection);
+		connect(hideButton_, SIGNAL(clicked()), this, SLOT(minimize()), Qt::QueuedConnection);
+		connect(maximizeButton_, SIGNAL(clicked()), this, SLOT(maximize()), Qt::QueuedConnection);
+		connect(closeButton_, SIGNAL(clicked()), this, SLOT(hideWindow()), Qt::QueuedConnection);
 
-		hide_button_->setCursor(Qt::PointingHandCursor);
-		maximize_button_->setCursor(Qt::PointingHandCursor);
-		close_button_->setCursor(Qt::PointingHandCursor);
+		hideButton_->setCursor(Qt::PointingHandCursor);
+		maximizeButton_->setCursor(Qt::PointingHandCursor);
+		closeButton_->setCursor(Qt::PointingHandCursor);
 
-		connect(event_filter_, SIGNAL(doubleClick()), this, SLOT(maximize()), Qt::QueuedConnection);
-		connect(event_filter_, SIGNAL(moveRequest(QPoint)), this, SLOT(moveRequest(QPoint)), Qt::QueuedConnection);
-        connect(event_filter_, SIGNAL(checkPosition()), this, SLOT(checkPosition()), Qt::QueuedConnection);
+		connect(eventFilter_, SIGNAL(doubleClick()), this, SLOT(maximize()), Qt::QueuedConnection);
+		connect(eventFilter_, SIGNAL(moveRequest(QPoint)), this, SLOT(moveRequest(QPoint)), Qt::QueuedConnection);
+        connect(eventFilter_, SIGNAL(checkPosition()), this, SLOT(checkPosition()), Qt::QueuedConnection);
 
         connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipResetComplete()), this, SLOT(onVoipResetComplete()), Qt::QueuedConnection);
 
 		connect(Ui::GetDispatcher(), SIGNAL(needLogin()), this, SLOT(showLoginPage()), Qt::DirectConnection);
 		connect(&Utils::InterConnector::instance(), SIGNAL(showIconInTaskbar(bool)), this, SLOT(showIconInTaskbar(bool)), Qt::QueuedConnection);
+
+        connect(&Utils::InterConnector::instance(), SIGNAL(activateNextUnread()), this, SLOT(activateNextUnread()), Qt::QueuedConnection);
 
         connect(this, SIGNAL(needActivate()), this, SLOT(activate()), Qt::QueuedConnection);
 
@@ -406,9 +406,9 @@ namespace Ui
         if (platform::is_windows())
         {
             int shadowWidth = get_gui_settings()->get_shadow_width();
-            QBrush b = stacked_widget_->palette().background();
+            QBrush b = stackedWidget_->palette().background();
             QMatrix m;
-            m.translate(shadowWidth, title_widget_->height() + shadowWidth);
+            m.translate(shadowWidth, titleWidget_->height() + shadowWidth);
             b.setMatrix(m);
             Shadow_ = new ShadowWindow(b, shadowWidth);
             QPoint pos = mapToGlobal(QPoint(rect().x(), rect().y()));
@@ -425,16 +425,20 @@ namespace Ui
 #endif //_WIN32
 
         if (!get_gui_settings()->get_value<bool>(settings_show_in_taskbar, true))
-            hide_taskbar_icon();
+			hideTaskbarIcon();
 
 #ifdef __APPLE__
-        mac_support_->enableMacUpdater();
-        mac_support_->enableMacPreview(winId());
+        getMacSupport()->enableMacUpdater();
+        getMacSupport()->enableMacPreview(winId());
 #endif
 
         connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallIncomingAccepted(const voip_manager::ContactEx&)), this, SLOT(onVoipCallIncomingAccepted(const voip_manager::ContactEx&)), Qt::DirectConnection);
         connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallDestroyed(const voip_manager::ContactEx&)), this, SLOT(onVoipCallDestroyed(const voip_manager::ContactEx&)), Qt::DirectConnection);
         connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallCreated(const voip_manager::ContactEx&)), this, SLOT(onVoipCallCreated(const voip_manager::ContactEx&)), Qt::DirectConnection);
+
+        connect(Ui::GetDispatcher(), &core_dispatcher::appConfig, this, &MainWindow::onAppConfig, Qt::DirectConnection);
+
+        setFocus(Qt::ActiveWindowFocusReason);
 	}
 
 	MainWindow::~MainWindow()
@@ -445,30 +449,83 @@ namespace Ui
 #endif
 	}
 
-    void MainWindow::onOpenChat(const std::string& contact)
+    void MainWindow::onOpenChat(const std::string& _contact)
     {
         raise();
         activate();
 
-        if (!contact.empty()) {
-            Logic::GetContactListModel()->setCurrent(contact.c_str(), true);
+        if (!_contact.empty()) {
+            Logic::getContactListModel()->setCurrent(_contact.c_str(), true, true);
         }
     }
 
 	void MainWindow::activate()
 	{
         setVisible(true);
-        tray_icon_->Hide();
+        trayIcon_->Hide();
         activateWindow();
 #ifdef _WIN32
         ShowWindow((HWND)winId(), get_gui_settings()->get_value<bool>(settings_window_maximized, false) ? SW_MAXIMIZE : SW_RESTORE);
         SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 #endif //_WIN32
+        showIconInTaskbar(get_gui_settings()->get_value<bool>(settings_show_in_taskbar, false));
 #ifdef __APPLE__
-        mac_support_->activateWindow(winId());
-        mac_support_->updateMainMenu();
+        getMacSupport()->activateWindow(winId());
+        getMacSupport()->updateMainMenu();
 #endif //__APPLE__
 	}
+
+    void MainWindow::openGallery(const QString& _aimId, const Data::Image& _image, const QString& _localPath)
+    {
+        gallery_->openGallery(_aimId, _image, _localPath);
+    }
+
+    void MainWindow::closeGallery()
+    {
+        gallery_->closeGallery();
+    }
+
+    void MainWindow::playVideo(const QString& _path)
+    {
+        closeVideo();
+
+        const auto screen = getScreen();
+        const auto screenGeometry = QApplication::desktop()->screenGeometry(screen);
+
+        mplayer_ = new Ui::MultimediaViewer(this);
+
+        mplayer_->move(screenGeometry.topLeft());
+        mplayer_->resize(screenGeometry.size());
+        mplayer_->showFullScreen();
+
+        mplayer_->showWindow();
+        mplayer_->playMedia(_path);
+
+        MultimediaViewer* closedPlayer = mplayer_;
+
+        QObject::connect(closedPlayer, &Ui::MultimediaViewer::closed, this, [this, closedPlayer]()
+        {
+            if (closedPlayer == mplayer_)
+            {
+                mplayer_ = nullptr;
+            }
+
+            delete closedPlayer;
+
+            Logic::getRecentsModel()->sendLastRead();
+
+        }, Qt::QueuedConnection);
+    }
+
+    void MainWindow::closeVideo()
+    {
+        if (!mplayer_)
+        {
+            return;
+        }
+
+        mplayer_->close();
+    }
 
     void MainWindow::activateFromEventLoop()
     {
@@ -486,10 +543,10 @@ namespace Ui
 
     bool MainWindow::isMainPage() const
     {
-        if (main_page_ == 0)
+        if (mainPage_ == 0)
             return false;
-        
-        return main_page_->isContactDialog();
+
+        return mainPage_->isContactDialog();
     }
 
     int MainWindow::getScreen() const
@@ -502,46 +559,55 @@ namespace Ui
         SkipRead_ = true;
     }
 
-    HistoryControlPage* MainWindow::getHistoryPage(const QString& aimId) const
+    HistoryControlPage* MainWindow::getHistoryPage(const QString& _aimId) const
     {
-        return main_page_->getHistoryPage(aimId);
+        if (mainPage_)
+            return mainPage_->getHistoryPage(_aimId);
+        else
+            return nullptr;
     }
 
     MainPage* MainWindow::getMainPage() const
     {
-        assert(main_page_);
-        return main_page_;
+        assert(mainPage_);
+        return mainPage_;
     }
 
-    void MainWindow::insertTopWidget(const QString& aimId, QWidget* widget)
+    void MainWindow::insertTopWidget(const QString& _aimId, QWidget* _widget)
     {
-        main_page_->insertTopWidget(aimId, widget);
+        mainPage_->insertTopWidget(_aimId, _widget);
     }
 
-    void MainWindow::removeTopWidget(const QString& aimId)
+    void MainWindow::removeTopWidget(const QString& _aimId)
     {
-        main_page_->removeTopWidget(aimId);
+        if (mainPage_)
+            mainPage_->removeTopWidget(_aimId);
     }
 
-    void MainWindow::showSidebar(const QString& aimId, int page)
+    void MainWindow::showSidebar(const QString& _aimId, int _page)
     {
-        main_page_->showSidebar(aimId, page);
+        mainPage_->showSidebar(_aimId, _page);
     }
 
-    void MainWindow::setSidebarVisible(bool show)
+    void MainWindow::setSidebarVisible(bool _show)
     {
-        main_page_->setSidebarVisible(show);
+        mainPage_->setSidebarVisible(_show);
     }
 
     bool MainWindow::isSidebarVisible() const
     {
-        return main_page_->isSidebarVisible();
+        return mainPage_->isSidebarVisible();
     }
 
-	bool MainWindow::nativeEventFilter(const QByteArray& data, void *message, long *result)
+    void MainWindow::restoreSidebar()
+    {
+        mainPage_->restoreSidebar();
+    }
+
+	bool MainWindow::nativeEventFilter(const QByteArray& _data, void* _message, long* _result)
 	{
 #ifdef _WIN32
-		MSG* msg = (MSG*)(message);
+		MSG* msg = (MSG*)(_message);
 		if (msg->message == WM_NCHITTEST)
 		{
 			if (msg->hwnd != (HANDLE)winId())
@@ -552,7 +618,7 @@ namespace Ui
 			int boxWidth = Utils::scale_value(SIZE_BOX_WIDTH);
 			if (isMaximized())
 			{
-				*result = HTCLIENT;
+				*_result = HTCLIENT;
 				return true;
 			}
 
@@ -565,29 +631,29 @@ namespace Ui
 			if (x <= topLeft.x() + boxWidth)
 			{
 				if (y <= topLeft.y() + boxWidth)
-					*result = HTTOPLEFT;
+					*_result = HTTOPLEFT;
 				else if (y >= bottomRight.y() - boxWidth)
-					*result = HTBOTTOMLEFT;
+					*_result = HTBOTTOMLEFT;
 				else
-					*result = HTLEFT;
+					*_result = HTLEFT;
 			}
 			else if (x >= bottomRight.x() - boxWidth)
 			{
 				if (y <= topLeft.y() + boxWidth)
-					*result = HTTOPRIGHT;
+					*_result = HTTOPRIGHT;
 				else if (y >= bottomRight.y() - boxWidth)
-					*result = HTBOTTOMRIGHT;
+					*_result = HTBOTTOMRIGHT;
 				else
-					*result = HTRIGHT;
+					*_result = HTRIGHT;
 			}
 			else
 			{
 				if (y <= topLeft.y() + boxWidth)
-					*result = HTTOP;
+					*_result = HTTOP;
 				else if (y >= bottomRight.y() - boxWidth)
-					*result = HTBOTTOM;
+					*_result = HTBOTTOM;
 				else
-					*result = HTCLIENT;
+					*_result = HTCLIENT;
 			}
 			return true;
 		}
@@ -595,9 +661,12 @@ namespace Ui
 		{
 			setVisible(true);
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-            tray_icon_->Hide();
+            trayIcon_->Hide();
             if (!SkipRead_ && isMainPage())
-			    Logic::GetRecentsModel()->sendLastRead();
+            {
+			    Logic::getRecentsModel()->sendLastRead();
+                Logic::getUnknownsModel()->sendLastRead();
+            }
             if (!TaskBarIconHidden_)
                 SkipRead_ = false;
             TaskBarIconHidden_ = false;
@@ -647,9 +716,13 @@ namespace Ui
         else if (msg->message == WM_ACTIVATE)
         {
             if (!Shadow_)
+            {
                 return false;
+            }
 
-            if (msg->hwnd == (HWND)Shadow_->winId() && msg->wParam != WA_INACTIVE)
+            const auto isInactivate = (msg->wParam == WA_INACTIVE);
+            const auto isShadowWindow = (msg->hwnd == (HWND)Shadow_->winId());
+            if (isShadowWindow && !isInactivate)
             {
                 activate();
                 return false;
@@ -663,15 +736,14 @@ namespace Ui
         {
             checkPosition();
         }
-
-        if (msg->message == WM_POWERBROADCAST) 
+        if (msg->message == WM_POWERBROADCAST)
         {
-            if (msg->wParam == PBT_APMSUSPEND) 
+            if (msg->wParam == PBT_APMSUSPEND)
             {
                 gotoSleep();
             }
 
-            if (msg->wParam == PBT_APMRESUMESUSPEND) 
+            if (msg->wParam == PBT_APMRESUMESUSPEND)
             {
                 gotoWake();
             }
@@ -683,27 +755,133 @@ namespace Ui
             if (msg->wParam == WTS_SESSION_UNLOCK)
                 gotoWake();
         }
+        if (msg->message == WM_NCLBUTTONDOWN && msg->hwnd == (HWND)winId())
+        {
+            BYTE bFlag = 0;
+            switch (msg->wParam)
+            {
+            case HTTOP:
+                bFlag = WMSZ_TOP;
+                break;
+
+            case HTTOPLEFT:
+                bFlag = WMSZ_TOPLEFT;
+                break;
+
+            case HTTOPRIGHT:
+                bFlag = WMSZ_TOPRIGHT;
+                break;
+
+            case HTLEFT:
+                bFlag = WMSZ_LEFT;
+                break;
+
+            case HTRIGHT:
+                bFlag = WMSZ_RIGHT;
+                break;
+
+            case HTBOTTOM:
+                bFlag = WMSZ_BOTTOM;
+                break;
+
+            case HTBOTTOMLEFT:
+                bFlag = WMSZ_BOTTOMLEFT;
+                break;
+
+            case HTBOTTOMRIGHT:
+                bFlag = WMSZ_BOTTOMRIGHT;
+                break;
+            }
+
+            if (bFlag)
+            {
+                DefWindowProc(msg->hwnd, WM_SYSCOMMAND, (SC_SIZE | bFlag), msg->lParam);
+                return true;
+            }
+        }
+        if (msg->message == WM_SETCURSOR  && msg->hwnd == (HWND)winId())
+        {
+            LPCTSTR pszCur = NULL;
+            switch (LOWORD(msg->lParam))
+            {
+            case HTTOP:
+            case HTBOTTOM:
+                pszCur = IDC_SIZENS;
+                break;
+
+            case HTTOPLEFT:
+            case HTBOTTOMRIGHT:
+                pszCur = IDC_SIZENWSE;
+                break;
+
+            case HTLEFT:
+            case HTRIGHT:
+                pszCur = IDC_SIZEWE;
+                break;
+
+            case HTTOPRIGHT:
+            case HTBOTTOMLEFT:
+                pszCur = IDC_SIZENESW;
+                break;
+            }
+
+            if (pszCur)
+            {
+                SetCursor(LoadCursor(NULL, pszCur));
+                return true;
+            }
+        }
 #else
 
 #ifdef __APPLE__
-        return MacSupport::nativeEventFilter(data, message, result);
+        return MacSupport::nativeEventFilter(_data, _message, _result);
 #endif
 
 #endif //_WIN32
 		return false;
 	}
 
-	void MainWindow::resizeEvent(QResizeEvent* event)
+    void MainWindow::enterEvent(QEvent* _event)
+    {
+        QMainWindow::enterEvent(_event);
+
+#ifdef __APPLE__
+        if (qApp->activeWindow() != this && (mainPage_ == nullptr || !mainPage_->isVideoWindowActive()))
+        {
+            qApp->setActiveWindow(this);
+        }
+#endif
+
+        emit Utils::InterConnector::instance().historyControlPageFocusIn(Logic::getContactListModel()->selectedContact());
+    }
+
+    void MainWindow::leaveEvent(QEvent* _event)
+    {
+        QMainWindow::leaveEvent(_event);
+
+#ifdef __APPLE__
+        if (qApp->activeWindow() == this)
+            qApp->setActiveWindow(nullptr);
+#endif
+    }
+
+    void MainWindow::resizeEvent(QResizeEvent* _event)
 	{
         if (isMaximized())
         {
+            emit Utils::InterConnector::instance().closeAnyPopupMenu();
+            emit Utils::InterConnector::instance().closeAnyPopupWindow();
+
             get_gui_settings()->set_value(settings_window_maximized, true);
         }
         else
         {
+            emit Utils::InterConnector::instance().closeAnyPopupMenu();
+            emit Utils::InterConnector::instance().closeAnyPopupWindow();
+
             QRect rc = Ui::get_gui_settings()->get_value(settings_main_window_rect, QRect());
-            rc.setWidth(event->size().width());
-            rc.setHeight(event->size().height());
+            rc.setWidth(_event->size().width());
+            rc.setHeight(_event->size().height());
 
             get_gui_settings()->set_value(settings_main_window_rect, rc);
             get_gui_settings()->set_value(settings_window_maximized, false);
@@ -712,31 +890,27 @@ namespace Ui
         // GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::main_window_resize);
 
 #ifdef __APPLE__
-        mac_support_->updateMainMenu();
+        getMacSupport()->updateMainMenu();
 #endif
 	}
 
-	void MainWindow::moveEvent(QMoveEvent* event)
+	void MainWindow::moveEvent(QMoveEvent* _event)
 	{
         if (!isMaximized())
         {
 		    auto rc = Ui::get_gui_settings()->get_value<QRect>(settings_main_window_rect, QRect());
-		    rc.moveTo(event->pos().x(), event->pos().y());
+		    rc.moveTo(_event->pos().x(), _event->pos().y());
             Ui::get_gui_settings()->set_value<QRect>(settings_main_window_rect, rc);
         }
 	}
 
-	void MainWindow::changeEvent(QEvent* event)
+	void MainWindow::changeEvent(QEvent* _event)
 	{
-		if (event->type() == QEvent::WindowStateChange)
+		if (_event->type() == QEvent::WindowStateChange)
 		{
-            if (platform::is_apple() && !isMaximized())
-            {
-                emit Utils::InterConnector::instance().closeAnyPopupWindow();
-            }
-			maximize_button_->setProperty("MinimizeButton", isMaximized());
-			maximize_button_->setProperty("MaximizeButton", !isMaximized());
-			maximize_button_->setStyle(QApplication::style());
+			maximizeButton_->setProperty("Minimize", isMaximized());
+			maximizeButton_->setProperty("Maximize", !isMaximized());
+			maximizeButton_->setStyle(QApplication::style());
 
             if (callPanelMainEx) {
                 if (isMaximized()) {
@@ -748,13 +922,16 @@ namespace Ui
 
 			get_gui_settings()->set_value<bool>(settings_window_maximized, isMaximized());
 		}
-        else if (event->type() == QEvent::ActivationChange)
+        else if (_event->type() == QEvent::ActivationChange)
         {
             if (isActiveWindow())
             {
-                tray_icon_->Hide();
+                trayIcon_->Hide();
                 if (!SkipRead_ && isMainPage())
-                    Logic::GetRecentsModel()->sendLastRead();
+                {
+                    Logic::getRecentsModel()->sendLastRead();
+                    Logic::getUnknownsModel()->sendLastRead();
+                }
                 SkipRead_ = false;
             }
 
@@ -762,9 +939,14 @@ namespace Ui
             {
                 Shadow_->setActive(isActiveWindow());
             }
+
+            if (mainPage_)
+            {
+                mainPage_->notifyApplicationWindowActive(isActiveWindow());
+            }
         }
 
-        if (event->type() == QEvent::ApplicationStateChange)
+        if (_event->type() == QEvent::ApplicationStateChange)
         {
             if (Shadow_)
             {
@@ -772,47 +954,72 @@ namespace Ui
             }
         }
 
-        QMainWindow::changeEvent(event);
+        QMainWindow::changeEvent(_event);
 	}
 
-	void MainWindow::closeEvent(QCloseEvent* event)
+	void MainWindow::closeEvent(QCloseEvent* _event)
 	{
-		Previewer::ClosePreview();
+        Previewer::CloseMedia();
 
         if (!platform::is_windows())
         {
-            if (event->spontaneous())
+            if (_event->spontaneous())
             {
-                event->ignore();
+                _event->ignore();
 
                 hideWindow();
             }
         }
 	}
 
-    void MainWindow::keyPressEvent(QKeyEvent* event)
+    void MainWindow::keyPressEvent(QKeyEvent* _event)
     {
-        QWidget* w = stacked_widget_->currentWidget();
-        if (w && qobject_cast<MainPage*>(w) && event->matches(QKeySequence::Find))
-            main_page_->setSearchFocus();
+        QWidget* w = stackedWidget_->currentWidget();
+        if (w && qobject_cast<MainPage*>(w) && mainPage_ && _event->matches(QKeySequence::Find))
+            mainPage_->setSearchFocus();
 
 #ifndef __APPLE__
-        if (w && qobject_cast<MainPage*>(w) && event->key() == Qt::Key_Escape)
+        if (w && qobject_cast<MainPage*>(w) && _event->key() == Qt::Key_Escape)
             minimize();
 #endif
 
 #ifdef __linux__
-        if (w && qobject_cast<MainPage*>(w) && event->modifiers() | Qt::ControlModifier && event->key() == Qt::Key_Q)
+        if (w && qobject_cast<MainPage*>(w) && _event->modifiers() == Qt::ControlModifier && _event->key() == Qt::Key_Q)
             exit();
 #endif //__linux__
 
-        QMainWindow::keyPressEvent(event);
-    }
+#ifdef _WIN32
+        if (w && qobject_cast<MainPage*>(w) && mainPage_ && _event->matches(QKeySequence::NextChild))
+        {
+            mainPage_->nextChat();
+        }
 
-    //void MainWindow::paintEvent(QPaintEvent *_e)
-    //{
-    //  QWidget::paintEvent(_e);
-    //}
+        if (w && qobject_cast<MainPage*>(w) && mainPage_ && _event->matches(QKeySequence::PreviousChild))
+        {
+            mainPage_->prevChat();
+        }
+
+        if (w && qobject_cast<MainPage*>(w) && _event->modifiers() == Qt::CTRL && _event->key() == Qt::Key_F4)
+        {
+            Logic::getRecentsModel()->hideChat(Logic::getContactListModel()->selectedContact());
+        }
+
+        if (mainPage_ && _event->key() == Qt::Key_Left && _event->modifiers() == Qt::AltModifier)
+        {
+            mainPage_->leftTab();
+            setFocus(Qt::MouseFocusReason);
+        }
+
+        if (mainPage_ && _event->key() == Qt::Key_Right && _event->modifiers() == Qt::AltModifier)
+        {
+            mainPage_->rightTab();
+            setFocus(Qt::MouseFocusReason);
+        }
+
+#endif //_WIN32
+
+        QMainWindow::keyPressEvent(_event);
+    }
 
     void MainWindow::setBackgroundPixmap(QPixmap& _pixmap, const bool _tiling)
     {
@@ -822,30 +1029,31 @@ namespace Ui
             _pixmap = QPixmap(Utils::parse_image_name(":/resources/main_window/pat_100.png"));
         }
 
-        stacked_widget_->setImage(_pixmap, _tiling);
+		stackedWidget_->setImage(_pixmap, _tiling);
     }
 
     void MainWindow::initSizes()
     {
-        auto main_rect = Ui::get_gui_settings()->get_value(settings_main_window_rect, QRect(0, 0, Utils::scale_value(1000), Utils::scale_value(600)));
-        
-        resize(main_rect.width(), main_rect.height());
+        auto mainRect = Ui::get_gui_settings()->get_value(settings_main_window_rect, QRect(0, 0, Utils::scale_value(1000), Utils::scale_value(600)));
+
+        resize(mainRect.width(), mainRect.height());
+
         setMinimumHeight((qApp->desktop()->screenGeometry().height() >= Utils::scale_value(800)) ? Utils::scale_value(550) : qApp->desktop()->screenGeometry().height() * 0.7);
-        setMinimumWidth(Utils::scale_value(800));
-        
-        if (main_rect.left() == 0 && main_rect.top() == 0)
+        setMinimumWidth(Utils::GetMinWidthOfMainWindow());
+
+        if (mainRect.left() == 0 && mainRect.top() == 0)
         {
             QRect desktopRect = QDesktopWidget().availableGeometry(this);
-            
+
             QPoint center = desktopRect.center();
-            
+
             move(center.x() - width()*0.5, center.y()-height()*0.5);
-            
+
             get_gui_settings()->set_value(settings_main_window_rect, geometry());
         }
         else
         {
-            move(main_rect.left(), main_rect.top());
+            move(mainRect.left(), mainRect.top());
         }
     }
 
@@ -854,15 +1062,16 @@ namespace Ui
         initSizes();
 
         bool isMaximized = get_gui_settings()->get_value<bool>(settings_window_maximized, false);
+        
 		isMaximized ? showMaximized() : show();
-        maximize_button_->setProperty("MinimizeButton", isMaximized);
-        maximize_button_->setProperty("MaximizeButton", !isMaximized);
-        maximize_button_->setStyle(QApplication::style());
+		maximizeButton_->setProperty("Minimize", isMaximized);
+		maximizeButton_->setProperty("Maximize", !isMaximized);
+		maximizeButton_->setStyle(QApplication::style());
 
 #ifdef _WIN32
         if (isMaximized)
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-        
+
         WTSRegisterSessionNotification( (HWND)winId(), NOTIFY_FOR_THIS_SESSION);
 #endif //_WIN32
 	}
@@ -880,21 +1089,15 @@ namespace Ui
         if (y < desktopRect.y())
             maximize();
     }
-    
+
     void MainWindow::gotoSleep()
     {
-        if (main_page_ && main_page_->getProfileSettings())
-        {
-            main_page_->getProfileSettings()->invokeStateAway();
-        }
+        GetDispatcher()->invokeStateAway();
     }
-    
+
     void MainWindow::gotoWake()
     {
-        if (main_page_ && main_page_->getProfileSettings())
-        {
-            main_page_->getProfileSettings()->invokePreviousState();
-        }
+        GetDispatcher()->invokePreviousState();
     }
 
 	void MainWindow::maximize()
@@ -902,12 +1105,12 @@ namespace Ui
 		if (isMaximized())
 		{
 			showNormal();
-            auto main_rect = Ui::get_gui_settings()->get_value<QRect>(
+            auto mainRect = Ui::get_gui_settings()->get_value<QRect>(
                 settings_main_window_rect,
                 QRect(0, 0, Utils::scale_value(1000), Utils::scale_value(600)));
 
-			resize(main_rect.width(), main_rect.height());
-            move(main_rect.x(), main_rect.y() < 0 ? 0 : main_rect.y());
+			resize(mainRect.width(), mainRect.height());
+            move(mainRect.x(), mainRect.y() < 0 ? 0 : mainRect.y());
 #ifdef _WIN32
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 #endif //_WIN32
@@ -927,9 +1130,13 @@ namespace Ui
     {
         if (get_gui_settings()->get_value<bool>(settings_show_in_taskbar, true))
         {
-            showMinimized();
 #ifdef _WIN32
+            showMinimized();
             SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+#elif __APPLE__
+            MacSupport::minimizeWindow(winId());
+#else
+            showMinimized();
 #endif //_WIN32
         }
         else
@@ -938,17 +1145,17 @@ namespace Ui
         }
     }
 
-	void MainWindow::moveRequest(QPoint point)
+	void MainWindow::moveRequest(QPoint _point)
 	{
 		if (isMaximized())
 			maximize();
 		else
-			move(point);
+			move(_point);
 	}
 
-    void MainWindow::guiSettingsChanged(QString key)
+    void MainWindow::guiSettingsChanged(QString _key)
     {
-        if (key == settings_language || key == settings_scale_coefficient)
+        if (_key == settings_language || _key == settings_scale_coefficient)
         {
             //showLoginPage();
             //showMainPage();
@@ -958,27 +1165,28 @@ namespace Ui
     void MainWindow::clear_global_objects()
     {
         // delete main page
-        if (main_page_)
+        if (mainPage_)
         {
-            stacked_widget_->removeWidget(main_page_);
+			stackedWidget_->removeWidget(mainPage_);
             MainPage::reset();
-            main_page_ = 0;
+            mainPage_ = 0;
         }
 
         Logic::ResetContactListModel();
         Logic::ResetRecentsModel();
+        Logic::ResetUnknownsModel();
         Logic::ResetMessagesModel();
         Logic::ResetLiveChatsModel();
 
-        Ui::stickers::reset_cache();
+        Ui::Stickers::resetCache();
 
-        tray_icon_->forceUpdateIcon();
+        trayIcon_->forceUpdateIcon();
     }
 
-    void MainWindow::showMigrateAccountPage(QString accountId)
+    void MainWindow::showMigrateAccountPage(QString _accountId)
     {
 #ifdef __APPLE__
-        MacMigrationManager * manager = new MacMigrationManager(accountId);
+        MacMigrationManager * manager = new MacMigrationManager(_accountId);
 
         if (manager->getProfiles().size() == 1)
         {
@@ -990,12 +1198,12 @@ namespace Ui
             if (!accounts_page_)
             {
                 accounts_page_ = new AccountsPage(this, manager);
-                stacked_widget_->addWidget(accounts_page_);
+				stackedWidget_->addWidget(accounts_page_);
 
                 connect(accounts_page_, SIGNAL(account_selected()), this, SLOT(showMainPage()), Qt::QueuedConnection);
             }
 
-            stacked_widget_->setCurrentWidget(accounts_page_);
+			stackedWidget_->setCurrentWidget(accounts_page_);
 
             clear_global_objects();
         }
@@ -1007,15 +1215,15 @@ namespace Ui
 	void MainWindow::showLoginPage()
 	{
 #ifdef __APPLE__
-        mac_support_->createMenuBar(true);
+        getMacSupport()->createMenuBar(true);
 
-        mac_support_->forceEnglishInputSource();
+        getMacSupport()->forceEnglishInputSource();
 
         if (!get_gui_settings()->get_value<bool>(settings_mac_accounts_migrated, false))
         {
             if (MacMigrationManager::canMigrateAccount() > 0)
             {
-                main_page_ = nullptr;
+                mainPage_ = nullptr;
                 MainPage::reset();
                 showPromoPage();
                 return;
@@ -1023,49 +1231,47 @@ namespace Ui
         }
 #endif
 
-        if (!login_page_)
+        if (!loginPage_)
         {
-            login_page_ = new LoginPage(this, true /* is_login */);
-            stacked_widget_->addWidget(login_page_);
+            loginPage_ = new LoginPage(this, true /* is_login */);
+			stackedWidget_->addWidget(loginPage_);
 
-			connect(login_page_, SIGNAL(loggedIn()), this, SLOT(showMainPage()), Qt::QueuedConnection);
+			connect(loginPage_, SIGNAL(loggedIn()), this, SLOT(showMainPage()), Qt::QueuedConnection);
         }
 
-		stacked_widget_->setCurrentWidget(login_page_);
+		stackedWidget_->setCurrentWidget(loginPage_);
         GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::reg_page_phone);
-
-        login_page_->enableKeepLogedIn();
 
         clear_global_objects();
     }
 
 	void MainWindow::showMainPage()
 	{
-        if (!main_page_)
+        if (!mainPage_)
         {
-            main_page_ = MainPage::instance(this);
-            stacked_widget_->addWidget(main_page_);
+            mainPage_ = MainPage::instance(this);
+			stackedWidget_->addWidget(mainPage_);
         }
 #ifdef __APPLE__
-        mac_support_->createMenuBar(false);
+        getMacSupport()->createMenuBar(false);
 #endif
-        stacked_widget_->setCurrentWidget(main_page_);
+		stackedWidget_->setCurrentWidget(mainPage_);
 	}
 
     void MainWindow::showPromoPage()
     {
         initSizes();
-        
-        if (!promo_page_)
+
+        if (!promoPage_)
         {
-            promo_page_ = new PromoPage(this);
-            stacked_widget_->addWidget(promo_page_);
+            promoPage_ = new PromoPage(this);
+			stackedWidget_->addWidget(promoPage_);
         }
-        
+
 #ifdef __APPLE__
-        mac_support_->createMenuBar(true);
+        getMacSupport()->createMenuBar(true);
 #endif
-        stacked_widget_->setCurrentWidget(promo_page_);
+		stackedWidget_->setCurrentWidget(promoPage_);
     }
 
     void MainWindow::closePromoPage()
@@ -1079,7 +1285,7 @@ namespace Ui
 #else
         // TODO:
 #endif
-        promo_page_ = nullptr;
+        promoPage_ = nullptr;
         if (!get_gui_settings()->get_value(settings_keep_logged_in, true))// || !get_gui_settings()->contains_value(settings_keep_logged_in))
         {
             showLoginPage();
@@ -1093,7 +1299,7 @@ namespace Ui
     void MainWindow::checkForUpdates()
     {
 #ifdef __APPLE__
-        mac_support_->runMacUpdater();
+        getMacSupport()->runMacUpdater();
 #endif
     }
 
@@ -1101,11 +1307,11 @@ namespace Ui
     {
         if (_show)
         {
-            show_taskbar_icon();
+            showTaskbarIcon();
         }
         else
         {
-            hide_taskbar_icon();
+			hideTaskbarIcon();
         }
     }
 
@@ -1143,28 +1349,6 @@ namespace Ui
                                                       Qt::ControlModifier ));
             }
         }
-    }
-
-    void MainWindow::quote()
-    {
-        QClipboard * clip = QApplication::clipboard();
-
-        QString text = clip->text();
-
-        if (text.isEmpty()) return;
-
-        QStringList lines = text.split('\n');
-        text.clear();
-        for (auto line : lines)
-        {
-            if (!line.isEmpty())
-                text += ">";
-            text += line;
-            text += "\n";
-        }
-
-        HistoryControlPage * page = main_page_->getHistoryPage(Logic::GetContactListModel()->selectedContact());
-        page->quote(text);
     }
 
     void MainWindow::cut()
@@ -1236,69 +1420,85 @@ namespace Ui
     void MainWindow::activateSettings()
     {
         activate();
-        main_page_->settingsTabActivate();
+        mainPage_->settingsTabActivate();
     }
 
     void MainWindow::activateNextUnread()
     {
         activate();
-        main_page_->recentsTabActivate(true);
+        mainPage_->recentsTabActivate(true);
     }
 
     void MainWindow::activateNextChat()
     {
         activate();
-        main_page_->recentsTabActivate(false);
-        main_page_->selectRecentChat(Logic::GetRecentsModel()->nextAimId(Logic::GetContactListModel()->selectedContact()));
+        mainPage_->recentsTabActivate(false);
+        mainPage_->selectRecentChat(Logic::getRecentsModel()->nextAimId(Logic::getContactListModel()->selectedContact()));
     }
 
     void MainWindow::activatePrevChat()
     {
         activate();
-        main_page_->recentsTabActivate(false);
-        main_page_->selectRecentChat(Logic::GetRecentsModel()->prevAimId(Logic::GetContactListModel()->selectedContact()));
+        mainPage_->recentsTabActivate(false);
+        mainPage_->selectRecentChat(Logic::getRecentsModel()->prevAimId(Logic::getContactListModel()->selectedContact()));
     }
 
     void MainWindow::activateContactSearch()
     {
         activate();
-        main_page_->contactListActivate(true);
+        mainPage_->contactListActivate(true);
     }
 
     void MainWindow::activateAbout()
     {
         activate();
-        main_page_->settingsTabActivate(Utils::CommonSettingsType::CommonSettingsType_About);
+        mainPage_->settingsTabActivate(Utils::CommonSettingsType::CommonSettingsType_About);
     }
 
     void MainWindow::activateProfile()
     {
         activate();
-        main_page_->settingsTabActivate(Utils::CommonSettingsType::CommonSettingsType_Profile);
+        mainPage_->settingsTabActivate(Utils::CommonSettingsType::CommonSettingsType_Profile);
     }
 
     void MainWindow::closeCurrent()
     {
         activate();
-        Logic::GetRecentsModel()->hideChat(Logic::GetContactListModel()->selectedContact());
+        if (platform::is_apple())
+        {
+            auto selectedContact = Logic::getContactListModel()->selectedContact();
+            if (selectedContact.isEmpty())
+            {
+                hideWindow();
+            }
+            else
+            {
+                Logic::getContactListModel()->setCurrent("", true);
+            }
+        }
+        else
+        {
+            Logic::getRecentsModel()->hideChat(Logic::getContactListModel()->selectedContact());
+        }
     }
 
     void MainWindow::toggleFullScreen()
     {
 #ifdef __APPLE__
         if (!Utils::InterConnector::instance().isDragOverlay())
-            MacSupport::toggleFullScreen(this->winId());
+            MacSupport::toggleFullScreen();
 #endif
     }
 
     void MainWindow::updateMainMenu()
     {
 #ifdef __APPLE__
-        mac_support_->updateMainMenu();
+        getMacSupport()->updateMainMenu();
 #endif
     }
 
-    void MainWindow::exit() {
+    void MainWindow::exit()
+    {
 #ifdef STRIP_VOIP
         QApplication::exit();
 #else
@@ -1319,7 +1519,13 @@ namespace Ui
     void MainWindow::hideWindow()
     {
         TaskBarIconHidden_ = true;
+
+#ifdef __APPLE__
+        MacSupport::closeWindow(winId());
+#else
         hide();
+#endif
+
 #ifdef _WIN32
         SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 #endif //_WIN32
@@ -1327,40 +1533,75 @@ namespace Ui
 
     void MainWindow::pasteEmoji()
     {
-        getMainPage()->getContactDialog()->onSmilesMenu();
+        if (!Logic::getContactListModel()->selectedContact().isEmpty())
+        {
+#ifdef __APPLE__
+            MacSupport::showEmojiPanel();
+#else
+            getMainPage()->getContactDialog()->onSmilesMenu();
+#endif
+        }
     }
 
     void MainWindow::onVoipCallIncomingAccepted(const voip_manager::ContactEx& /*contact_ex*/) {
         assert(callPanelMainEx);
         if (callPanelMainEx) {
             callPanelMainEx->show();
-            if (title_widget_) {
-                title_widget_->hide();
+            if (titleWidget_) {
+                titleWidget_->hide();
             }
         }
     }
 
-    void MainWindow::onVoipCallCreated(const voip_manager::ContactEx& cont) {
-        if (!cont.incoming) {
+    void MainWindow::onVoipCallCreated(const voip_manager::ContactEx& _cont) {
+        if (!_cont.incoming) {
             assert(callPanelMainEx);
             if (callPanelMainEx) {
                 callPanelMainEx->show();
-                if (title_widget_) {
-                    title_widget_->hide();
+                if (titleWidget_) {
+                    titleWidget_->hide();
                 }
             }
         }
     }
 
-    void MainWindow::onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex) {
-        if (contact_ex.call_count <= 1) { // in this moment destroyed call is active, e.a. call_count + 1
+    void MainWindow::onVoipCallDestroyed(const voip_manager::ContactEx& _contactEx) {
+        if (_contactEx.call_count <= 1) { // in this moment destroyed call is active, e.a. call_count + 1
             assert(callPanelMainEx);
             if (callPanelMainEx) {
                 callPanelMainEx->hide();
-                if (title_widget_ && !platform::is_apple()) {
-                    title_widget_->show();
+                if (titleWidget_ && !platform::is_apple()) {
+                    titleWidget_->show();
                 }
             }
         }
     }
+
+	void MainWindow::onShowVideoWindow()
+	{
+		if (mainPage_)
+		{
+			mainPage_->showVideoWindow();
+		}
+	}
+
+    void MainWindow::onAppConfig()
+    {
+#ifdef __APPLE__
+        if (!GetAppConfig().isCrashEnable())
+        {
+            getMacSupport()->enableMacCrashReport();
+        }
+#endif
+
+    }
+    
+#ifdef __APPLE__
+    MacSupport* MainWindow::getMacSupport()
+    {
+        static MacSupport mac_support(this);
+        
+        return &mac_support;
+    }
+#endif //__APPPLE__
 }

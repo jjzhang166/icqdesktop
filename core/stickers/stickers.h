@@ -13,6 +13,10 @@ namespace core
         class binary_stream;
     }
 
+    namespace wim
+    {
+        enum class loader_errors;
+    }
 
     namespace stickers
     {
@@ -195,8 +199,8 @@ namespace core
             download_task(
                 const std::string& _source_url,
                 const std::wstring& _dest_file,
-                int32_t _set_id, 
-                int32_t _sticker_id, 
+                int32_t _set_id,
+                int32_t _sticker_id,
                 sticker_size _size);
 
             const std::string& get_source_url() const;
@@ -288,26 +292,26 @@ namespace core
 
             bool download_in_progress_;
 
-            int32_t error_;
+            wim::loader_errors error_;
             failed_step failed_step_;
-                        
+
             gui_request_params gui_request_params_;
-            
+
         public:
 
             face(const std::wstring& _stickers_path);
 
             std::shared_ptr<result_handler<const parse_result&>> parse(
-                std::shared_ptr<core::tools::binary_stream> _data, 
+                std::shared_ptr<core::tools::binary_stream> _data,
                 bool _insitu);
             std::shared_ptr<result_handler<const load_result&>> load_meta_from_local();
             std::shared_ptr<result_handler<bool>> save(std::shared_ptr<core::tools::binary_stream> _data);
             std::shared_ptr<result_handler<bool>> make_download_tasks();
             std::shared_ptr<result_handler<coll_helper>> serialize_meta(coll_helper _coll, const std::string& _size);
             std::shared_ptr<result_handler<tools::binary_stream&>> get_sticker(
-                int64_t _seq, 
-                int32_t _set_id, 
-                int32_t _sticker_id, 
+                int64_t _seq,
+                int32_t _set_id,
+                int32_t _sticker_id,
                 const core::sticker_size _size);
             std::shared_ptr<result_handler<bool, const download_task&>> get_next_meta_task();
             std::shared_ptr<result_handler<bool, const download_task&>> get_next_sticker_task();
@@ -317,12 +321,12 @@ namespace core
 
             void set_meta_requested();
             bool is_meta_requested();
-            
+
             void set_failed_step(failed_step _step);
             failed_step get_failed_step();
 
-            void set_last_error(int32_t _error);
-            int32_t get_last_error() const;
+            void set_last_error(wim::loader_errors _error);
+            wim::loader_errors get_last_error() const;
 
             void set_gui_request_params(const gui_request_params& _params);
             const gui_request_params& get_gui_request_params();

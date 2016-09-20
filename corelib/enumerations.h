@@ -37,77 +37,104 @@ namespace core
         return oss;
     }
 
+    enum class message_type
+    {
+        min,
 
-	enum class message_type
-	{
-		min,
 
         undefined,
-		base,
-		file_sharing,
-		sms,
-		sticker,
-		chat_event,
+        base,
+        file_sharing,
+        sms,
+        sticker,
+        chat_event,
         voip_event,
 
-		max
-	};
+        max
+    };
 
-	enum class preview_content_type
-	{
-		invalid,
+    enum class file_sharing_function
+    {
+        min,
 
-		image,
-
-		min = image,
-		max = image
-	};
-
-	enum class file_sharing_function
-	{
-		min,
-
-		download_file,
-		download_file_metainfo,
+        download_file,
+        download_file_metainfo,
         download_preview_metainfo,
-		check_local_copy_exists,
+        check_local_copy_exists,
 
-		max
-	};
+        max
+    };
 
-	enum class sticker_size
-	{
-		min,
+    enum class file_sharing_content_type
+    {
+        min,
 
-		small,
-		medium,
-		large,
+        undefined,
+        image,
+        gif,
+        video,
+        snap_image,
+        snap_gif,
+        snap_video,
+        ptt,
 
-		max
-	};
+        max
+    };
 
-	enum class chat_event_type
-	{
+    enum class typing_status
+    {
+        min,
+        
+        none,
+        typing,
+        typed,
+        
+        max,
+    };
+    
+    inline bool is_snap_file_sharing_content_type(const file_sharing_content_type _type)
+    {
+        assert(_type > file_sharing_content_type::min);
+        assert(_type < file_sharing_content_type::max);
+
+        return ((_type == file_sharing_content_type::snap_gif) ||
+                (_type == file_sharing_content_type::snap_image) ||
+                (_type == file_sharing_content_type::snap_video));
+    }
+
+    enum class sticker_size
+    {
+        min,
+
+        small,
+        medium,
+        large,
+
+        max
+    };
+
+    enum class chat_event_type
+    {
         // the codes are stored in a db thus do not reorder the items below
 
-		invalid,
+        invalid,
 
-		min,
+        min,
 
-		added_to_buddy_list,
+        added_to_buddy_list,
 
-		mchat_add_members,
-		mchat_invite,
-		mchat_leave,
-		mchat_del_members,
-		mchat_kicked,
+        mchat_add_members,
+        mchat_invite,
+        mchat_leave,
+        mchat_del_members,
+        mchat_kicked,
 
-		chat_name_modified,
+        chat_name_modified,
 
-		buddy_reg,
-		buddy_found,
+        buddy_reg,
+        buddy_found,
 
-		birthday,
+        birthday,
 
         avatar_modified,
 
@@ -117,8 +144,10 @@ namespace core
 
         message_deleted,
 
-		max
-	};
+        chat_rules_modified,
+
+        max
+    };
 
     enum class voip_event_type
     {
@@ -133,91 +162,91 @@ namespace core
         max
     };
 
-	inline std::ostream& operator<<(std::ostream &oss, const message_type arg)
-	{
-		switch(arg)
-		{
-			case message_type::base:
-				oss << "base";
-				break;
+    inline std::ostream& operator<<(std::ostream &oss, const message_type arg)
+    {
+        switch(arg)
+        {
+        case message_type::base:
+            oss << "base";
+            break;
 
-			case message_type::file_sharing:
-				oss << "file_sharing";
-				break;
+        case message_type::file_sharing:
+            oss << "file_sharing";
+            break;
 
-			case message_type::sticker:
-				oss << "sticker";
-				break;
+        case message_type::sticker:
+            oss << "sticker";
+            break;
 
-			case message_type::sms:
-				oss << "sms";
-				break;
+        case message_type::sms:
+            oss << "sms";
+            break;
 
-			default:
-				assert(!"unknown core::message_type value");
-				break;
-		}
+        default:
+            assert(!"unknown core::message_type value");
+            break;
+        }
 
-		return oss;
-	}
+        return oss;
+    }
 
-	inline std::ostream& operator<<(std::ostream &oss, const file_sharing_function arg)
-	{
-		assert(arg > file_sharing_function::min);
-		assert(arg < file_sharing_function::max);
+    inline std::ostream& operator<<(std::ostream &oss, const file_sharing_function arg)
+    {
+        assert(arg > file_sharing_function::min);
+        assert(arg < file_sharing_function::max);
 
-		switch(arg)
-		{
-			case file_sharing_function::check_local_copy_exists:
-				oss << "check_local_copy_exists";
-				break;
+        switch(arg)
+        {
+        case file_sharing_function::check_local_copy_exists:
+            oss << "check_local_copy_exists";
+            break;
 
-			case file_sharing_function::download_file:
-				oss << "download_file";
-				break;
+        case file_sharing_function::download_file:
+            oss << "download_file";
+            break;
 
-			case file_sharing_function::download_file_metainfo:
-				oss << "download_file_metainfo";
-				break;
+        case file_sharing_function::download_file_metainfo:
+            oss << "download_file_metainfo";
+            break;
 
-            case file_sharing_function::download_preview_metainfo:
-                oss << "download_preview_metainfo";
-                break;
+        case file_sharing_function::download_preview_metainfo:
+            oss << "download_preview_metainfo";
+            break;
 
-			default:
-				assert(!"unknown core::file_sharing_function value");
-				break;
-		}
+        default:
+            assert(!"unknown core::file_sharing_function value");
+            break;
+        }
 
-		return oss;
-	}
+        return oss;
+    }
 
-	inline std::ostream& operator<<(std::ostream &oss, const sticker_size arg)
-	{
-		assert(arg > sticker_size::min);
-		assert(arg < sticker_size::max);
+    inline std::ostream& operator<<(std::ostream &oss, const sticker_size arg)
+    {
+        assert(arg > sticker_size::min);
+        assert(arg < sticker_size::max);
 
-		switch(arg)
-		{
-		case sticker_size::small:
-			oss << "small";
-			break;
+        switch(arg)
+        {
+        case sticker_size::small:
+            oss << "small";
+            break;
 
-		case sticker_size::medium:
-			oss << "medium";
-			break;
+        case sticker_size::medium:
+            oss << "medium";
+            break;
 
-		case sticker_size::large:
-			oss << "large";
-			break;
+        case sticker_size::large:
+            oss << "large";
+            break;
 
-		default:
-			assert(!"unknown core::sticker_size value");
-			break;
-		}
+        default:
+            assert(!"unknown core::sticker_size value");
+            break;
+        }
 
-		return oss;
-	}
+        return oss;
+    }
 
     inline std::wostream& operator<<(std::wostream &oss, const sticker_size arg)
     {
@@ -256,9 +285,7 @@ namespace core
 
     namespace stats
     {
-        // NOTE : when adding new event, don't change old numbers!!!
-        // AND UPDATE this max number!
-        // current max used number is 164
+        // NOTE: don't change old numbers, add new one if necessary
         enum class stats_event_names
         {
             min = 0,
@@ -362,6 +389,7 @@ namespace core
             profile_members_list = 84,
             profile_call = 85,
             profile_video_call = 86,
+            profile_sidebar = 191,
 
             add_user_profile_page = 87,
             add_user_auth_widget = 89,
@@ -440,7 +468,7 @@ namespace core
             proxy_set = 160,
 
             strange_event = 162,
-            
+
             promo_skip  = 170,
             promo_next  = 171,
             promo_switch  = 172,
@@ -463,7 +491,7 @@ namespace core
             introduce_avatar_fail = 189,
             introduce_skip = 190,
 
-            max,
+            max = 192,
         };
 
         inline std::ostream& operator<<(std::ostream &oss, const stats_event_names arg)
@@ -542,7 +570,7 @@ namespace core
             case stats_event_names::spam_profile_page : oss << "Spam_Profile_Page"; break;
 
             // cl
-			case stats_event_names::recents_close: oss << "Recents_Close"; break;
+            case stats_event_names::recents_close: oss << "Recents_Close"; break;
             case stats_event_names::recents_read : oss << "Recents_Read"; break;
             case stats_event_names::recents_readall : oss << "Recents_Readall"; break;
 
@@ -571,9 +599,7 @@ namespace core
 
             // profile
             case stats_event_names::myprofile_open : oss << "Myprofile_Open"; break;
-
-            // statuses
-			case stats_event_names::myprofile_online: oss << "Myprofile_Online"; break;
+            case stats_event_names::myprofile_online: oss << "Myprofile_Online"; break;
             case stats_event_names::myprofile_invisible : oss << "Myprofile_Invisible"; break;
             case stats_event_names::myprofile_dnd : oss << "Myprofile_DND"; break;
             case stats_event_names::myprofile_away : oss << "Myprofile_Away"; break;
@@ -585,6 +611,8 @@ namespace core
             case stats_event_names::profile_members_list : oss << "Profile_Members_List"; break;
             case stats_event_names::profile_call : oss << "Profile_Call"; break;
             case stats_event_names::profile_video_call : oss << "Profile_Video_Call"; break;
+            case stats_event_names::profile_sidebar : oss << "profile_sidebar"; break;
+
             case stats_event_names::add_user_profile_page : oss << "Add_User_Profile_Page"; break;
             case stats_event_names::myprofile_edit : oss << "Myprofile_Edit"; break;
 
@@ -664,7 +692,7 @@ namespace core
 
             case stats_event_names::proxy_open : oss << "proxy_open"; break;
             case stats_event_names::proxy_set : oss << "proxy_set"; break;
-                    
+
             case stats_event_names::promo_skip : oss << "Promo_Skip"; break;
             case stats_event_names::promo_next : oss << "Promo_Next"; break;
             case stats_event_names::promo_switch : oss << "Promo_Switch"; break;
@@ -701,7 +729,7 @@ namespace core
     {
         assert(_state > profile_state::min);
         assert(_state < profile_state::max);
-        
+
         switch (_state)
         {
             case profile_state::online:    return stats::stats_event_names::myprofile_online;
@@ -741,11 +769,32 @@ namespace core
             case proxy_types::socks4: oss << "SOCKS4"; break;
             case proxy_types::socks5: oss << "SOCKS5"; break;
 
-        default:
-            assert(!"unknown core::proxy_types value");
-            break;
+            default:
+                assert(!"unknown core::proxy_types value");
+                break;
         }
 
+        return oss;
+    }
+
+    inline std::ostream& operator<<(std::ostream &oss, const file_sharing_content_type arg)
+    {
+        assert(arg > file_sharing_content_type::min);
+        assert(arg < file_sharing_content_type::max);
+
+        switch (arg)
+        {
+            case file_sharing_content_type::gif: return (oss << "gif");
+            case file_sharing_content_type::image: return (oss << "image");
+            case file_sharing_content_type::ptt: return (oss << "ptt");
+            case file_sharing_content_type::snap_gif: return (oss << "snap_gif");
+            case file_sharing_content_type::snap_image: return (oss << "snap_image");
+            case file_sharing_content_type::snap_video: return (oss << "snap_video");
+            case file_sharing_content_type::undefined: return (oss << "undefined");
+            case file_sharing_content_type::video: return (oss << "video");
+        }
+
+        assert(!"unexpected file sharing content type");
         return oss;
     }
 

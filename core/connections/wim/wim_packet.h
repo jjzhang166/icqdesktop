@@ -4,7 +4,7 @@
 #pragma once
 
 #include "../../async_task.h"
-#include "../../../corelib/common.h"
+#include "../../../common.shared/common.h"
 #include "../../proxy_settings.h"
 
 namespace core

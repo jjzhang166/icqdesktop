@@ -32,6 +32,8 @@ namespace
 
         virtual QSize GetSize() const override;
 
+        virtual QPixmap GetPixmap() const override;
+
 	private:
 		void PreparePixmap() const;
 
@@ -121,14 +123,14 @@ namespace
 	{
 		PreparePixmap();
 
-		return Pixmap_.width() / Pixmap_.devicePixelRatio();
+		return (Pixmap_.width() / Pixmap_.devicePixelRatio());
 	}
 
 	int32_t ThemePixmap::GetHeight() const
 	{
 		PreparePixmap();
 
-		return Pixmap_.height() / Pixmap_.devicePixelRatio();
+		return (Pixmap_.height() / Pixmap_.devicePixelRatio());
 	}
 
 	QRect ThemePixmap::GetRect() const
@@ -145,7 +147,17 @@ namespace
     {
         PreparePixmap();
 
+#ifdef __APPLE__
+        return QSize(Pixmap_.width() / Pixmap_.devicePixelRatio(), Pixmap_.height() / Pixmap_.devicePixelRatio());
+#else
         return Pixmap_.size();
+#endif
+    }
+
+    QPixmap ThemePixmap::GetPixmap() const
+    {
+        PreparePixmap();
+        return Pixmap_;
     }
 
 	void ThemePixmap::PreparePixmap() const
@@ -173,7 +185,7 @@ namespace
 		resPath = resPath.arg(GetThemeNameById(ThemeId_));
         Pixmap_.load(resPath);
 
-		assert(!Pixmap_.isNull() || "failed to load a pixmap from resources");
+		assert(!Pixmap_.isNull() || !"failed to load a pixmap from resources");
 
         Utils::check_pixel_ratio(Pixmap_);
 	}

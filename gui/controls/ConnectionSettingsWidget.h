@@ -39,10 +39,10 @@ namespace Ui
 
         void saveProxy() const;
         void fill();
-        int proxyTypeToIndex(core::proxy_types type) const;
+        int proxyTypeToIndex(core::proxy_types _type) const;
         void fillProxyTypesAndNames();
-        void setVisibleAuth(bool _use_auth);
-        void setVisibleParams(int _ix, bool _use_auth);
+        void setVisibleAuth(bool _useAuth);
+        void setVisibleParams(int _ix, bool _useAuth);
         void updateVisibleParams(int _ix);
     };
 }

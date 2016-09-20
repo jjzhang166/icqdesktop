@@ -1,0 +1,130 @@
+#include "stdafx.h"
+#include "MultimediaViewer.h"
+#include "VideoPlayer.h"
+#include "../../utils/utils.h"
+#include "../sounds/SoundsManager.h"
+
+namespace Ui
+{
+
+
+    MultimediaViewer::MultimediaViewer(QWidget* _parent)
+        :   QWidget(_parent), closed_(false)
+    {
+        setStyleSheet(Utils::LoadStyle(":/main_window/mplayer/mstyles.qss"));
+
+        setAttribute(Qt::WA_TranslucentBackground, true);
+                
+        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
+
+        QVBoxLayout* rootLayout = new QVBoxLayout();
+        rootLayout->setContentsMargins(0, 0, 0, 0);
+        rootLayout->setSpacing(0);
+        setLayout(rootLayout);
+
+        QWidget* rootWidget = new QWidget(this);
+
+        rootWidget->setStyleSheet("background: rgba(0,0,0,65%);");
+        rootLayout->addWidget(rootWidget);
+        //this->setCentralWidget(rootWidget);
+
+        setMouseTracking(true);
+        grabKeyboard();
+
+        setFocusPolicy(Qt::FocusPolicy::WheelFocus);
+
+        auto soundsManager = GetSoundsManager();
+    }
+
+    MultimediaViewer::~MultimediaViewer()
+    {
+        delete videoPlayer_;
+    }
+
+    void MultimediaViewer::paintEvent(QPaintEvent* _e)
+    {
+        QWidget::paintEvent(_e);
+    }
+
+    void MultimediaViewer::keyPressEvent(QKeyEvent *e)
+    {
+        if (e->key() == Qt::Key_Escape)
+        {
+            releaseKeyboardAndClose();
+        }
+    }
+
+    void MultimediaViewer::mousePressEvent(QMouseEvent*)
+    {
+        releaseKeyboardAndClose();
+    }
+
+    void MultimediaViewer::resizeEvent(QResizeEvent *event)
+    {
+        QWidget::resizeEvent(event);
+    }
+
+    void MultimediaViewer::releaseKeyboardAndClose()
+    {
+        closed_ = true;
+
+        showNormal();
+        
+        releaseKeyboard();
+        close();
+        
+        if (videoPlayer_)
+        {
+            videoPlayer_->close();
+        }
+
+        emit closed();
+    }
+
+    void MultimediaViewer::closeViewer()
+    {
+        if (closed_)
+            return;
+
+        releaseKeyboardAndClose();
+    }
+    
+    void MultimediaViewer::showWindow()
+    {
+        show();
+
+        videoPlayer_ = new VideoPlayer(this);
+
+        connect(videoPlayer_, &VideoPlayer::signalClose, this, [this]()
+        {
+            releaseKeyboardAndClose();
+        });
+
+        connect(videoPlayer_, &VideoPlayer::mediaLoaded, this, [this]()
+        {
+            emit mediaLoaded();
+        });
+
+        connect(videoPlayer_, &VideoPlayer::sizeChanged, this, [this](QSize _sz)
+        {
+            QRect thisRect = geometry();
+
+            videoPlayer_->move(
+                ((thisRect.width() - _sz.width()) / 2),
+                ((thisRect.height() - _sz.height()) / 2));
+
+        });
+
+
+        videoPlayer_->show();
+        videoPlayer_->setFocus();
+    }
+
+    void MultimediaViewer::playMedia(const QString& _mediaSource)
+    {
+        if (videoPlayer_)
+        {
+            videoPlayer_->play(_mediaSource);
+        }
+    }
+}

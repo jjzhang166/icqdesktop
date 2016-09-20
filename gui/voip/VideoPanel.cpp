@@ -1,434 +1,528 @@
 #include "stdafx.h"
 #include "VideoPanel.h"
+
+#include "DetachedVideoWnd.h"
+#include "VoipTools.h"
 #include "../core_dispatcher.h"
-#include "../../core/Voip/VoipManagerDefines.h"
+#include "../controls/ToolTipEx.h"
+#include "../main_window/MainPage.h"
+#include "../main_window/MainWindow.h"
+#include "../main_window/contact_list/ContactListModel.h"
 #include "../utils/utils.h"
 
 #define DISPLAY_ADD_CHAT_BUTTON 0
-#include "../main_window/contact_list/ContactListModel.h"
-#include "../utils/InterConnector.h"
-#include "../main_window/MainPage.h"
-#include "../main_window/MainWindow.h"
-#include "VoipTools.h"
+#define DEFAULT_ANIMATION_TIME  500
 
-const QString widgetWithBg      = "QWidget { color: transparent; background-color : rgba(0,0,0,0%); background: rgba(0,0,0,65%); }";
-const QString widgetWithoutBg   = "QWidget { color: transparent; background-color : rgba(0,0,0,0%); background: rgba(0,0,0,1%); }";
-const QString widgetWithoutBgEx = "QWidget { color: transparent; background-color : rgba(0,0,0,0%); background: rgba(0,0,0,0%); }";
+const QString vertSoundBg = "QWidget { background : #ffffffff; }";
+const QString horSoundBg = "QWidget { background : rgba(0,0,0,1%); }";
 
-const QString sliderGreenH = "QSlider:handle:horizontal { background: solid #579e1c; width: 8dip; height: 8dip; margin-top: -11dip; margin-bottom: -11dip; border-radius: 4dip; }"
-                             "QSlider:handle:horizontal:hover { background: solid #67bc21; border-radius: 4dip;}";
-const QString sliderRedH   = "QSlider:handle:horizontal { background: solid #992117; border-radius: 4dip; }";
+const QString sliderGreenH =
+    "QSlider:handle:horizontal { background: solid #579e1c; width: 8dip; height: 8dip; margin-top: -11dip; margin-bottom: -11dip; border-radius: 4dip; }"
+    "QSlider:handle:horizontal:hover { background: solid #67bc21; border-radius: 4dip;}";
 
-const QString sliderGreenV = "QSlider:handle:vertical { background: solid #579e1c; border: 1dip solid #579e1c; width: 8dip; height: 8dip; margin-left: -11dip; margin-right: -11dip; border-radius: 4dip; }"
-                             "QSlider:handle:vertical:hover { background: solid #67bc21; border-radius: 4dip; }";
-const QString sliderRedV   = "QSlider:handle:vertical { background: solid #992117; border-radius: 4dip; }";
+const QString sliderRedH =
+    "QSlider:handle:horizontal { background: solid #992117; width: 8dip; height: 8dip; margin-top: -11dip; margin-bottom: -11dip; border-radius: 4dip; }"
+    "QSlider:handle:horizontal:disabled { background: solid #992117; border-radius: 4dip; }";
 
-Ui::QSliderEx::QSliderEx(Qt::Orientation orientation, QWidget* parent)
-: QSlider(orientation, parent) {
+const QString sliderGreenV =
+    "QSlider:handle:vertical { background: solid #579e1c; border: 1dip solid #579e1c; width: 8dip; height: 8dip; margin-left: -11dip; margin-right: -11dip; border-radius: 4dip; }"
+    "QSlider:handle:vertical:hover { background: solid #67bc21; border-radius: 4dip; }";
+
+const QString sliderRedV =
+    "QSlider:handle:vertical { background: solid #992117; border: 1dip solid #579e1c; width: 8dip; height: 8dip; margin-left: -11dip; margin-right: -11dip; border-radius: 4dip; }"
+    "QSlider:handle:vertical:disabled { background: solid #992117; border-radius: 4dip; }";
+
+Ui::QSliderEx::QSliderEx(
+    Qt::Orientation _orientation,
+    QWidget* _parent)
+    : QSlider(_orientation, _parent)
+{
     
 }
 
-Ui::QSliderEx::~QSliderEx() {
+Ui::QSliderEx::~QSliderEx()
+{
     
 }
 
-void Ui::QSliderEx::mousePressEvent(QMouseEvent* ev) {
-    if (ev->button() == Qt::LeftButton)
+void Ui::QSliderEx::mousePressEvent(QMouseEvent* _ev)
+{
+    if (_ev->button() == Qt::LeftButton)
     {
         if (orientation() == Qt::Vertical)
-            setValue(minimum() + ((maximum()-minimum()) * (height()-ev->y())) / height() ) ;
+            setValue(minimum() + ((maximum()-minimum()) * (height()-_ev->y())) / height() ) ;
         else
-            setValue(minimum() + ((maximum()-minimum()) * ev->x()) / width() ) ;
+            setValue(minimum() + ((maximum()-minimum()) * _ev->x()) / width() ) ;
 
-        ev->accept();
+        _ev->accept();
     }
-    QSlider::mousePressEvent(ev);
+    QSlider::mousePressEvent(_ev);
  }
 
-bool Ui::__underMouse(QWidget& widg) {
-    auto rc = widg.rect();
-    auto pg = widg.mapToGlobal(rc.topLeft());
+bool Ui::onUnderMouse(QWidget& _widg)
+{
+    auto rc = _widg.rect();
+    auto pg = _widg.mapToGlobal(rc.topLeft());
     QRect rcg(pg.x(), pg.y(), rc.width(), rc.height());
     return rcg.contains(QCursor::pos());
 }
 
-Ui::QPushButtonEx::QPushButtonEx(QWidget* parent)
-	: QPushButton(parent) {
+Ui::QPushButtonEx::QPushButtonEx(QWidget* _parent)
+    : QPushButton(_parent)
+{
 
 }
 
-Ui::QPushButtonEx::~QPushButtonEx() {
+Ui::QPushButtonEx::~QPushButtonEx()
+{
 
 }
 
-void Ui::QPushButtonEx::enterEvent(QEvent* e) {
-	QPushButton::enterEvent(e);
-	emit onHover();
+void Ui::QPushButtonEx::enterEvent(QEvent* _e)
+{
+    QPushButton::enterEvent(_e);
+    emit onHover();
 }
 
-Ui::VolumeControl::VolumeControl(
-    QWidget* parent, 
-    bool horizontal,             
-    const QString& mutedBg, 
-    const QString& unmutedBg,
-    const std::function<void(QPushButton&, bool)>& onChangeStyle)
-	: QWidget(NULL)
-    , _parent(parent)
-    , _horizontal(horizontal)
-    , onChangeStyle_(onChangeStyle)
-    , _border_offset(Utils::scale_value(4))
-    , _rootWidget(NULL)
-    , _audioPlaybackDeviceMuted(false)
-    , mutedBg_(mutedBg)
+Ui::VolumeControl::VolumeControl
+(
+    QWidget* _parent, 
+    bool _horizontal,
+    bool _onMainWindow,
+    const QString& _backgroundStyle, 
+    const std::function<void(QPushButton&, bool)>& _onChangeStyle)
+    : QWidget(_parent, Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowStaysOnTopHint)
+    , parent_(_parent)
+    , horizontal_(_horizontal)
+    , onChangeStyle_(_onChangeStyle)
+    , rootWidget_(NULL)
+    , audioPlaybackDeviceMuted_(false)
+    , background_(_backgroundStyle)
     , checkMousePos_(this)
-    , unmutedBg_(unmutedBg)
-	, _actual_vol(0) {
-
-    setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
+    , actualVol_(0)
+    , onMainWindow_(_onMainWindow)
+{
+    //setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
     setAttribute(Qt::WA_NoSystemBackground, true);
     setAttribute(Qt::WA_TranslucentBackground, true);
-        
+    setStyleSheet(Utils::LoadStyle(":/voip/volume_control.qss"));
+
     setContentsMargins(0, 0, 0, 0);
 
-    if (horizontal) {
-        setProperty("VideoPanelVolumeSliderEx", true);
-    } else {
-        setProperty("VideoPanelVolumeSliderExV", true);
+    if (horizontal_)
+    {
+        setProperty("VolumeControlHor", true);
+    }
+    else
+    {
+        setProperty("VolumeControlVert", true);
     }
 
-	btn = new QPushButton(this);
-    btn->setCursor(QCursor(Qt::PointingHandCursor));
+    btn_ = new QPushButton(this);
+    btn_->setCursor(QCursor(Qt::PointingHandCursor));
 
-	slider = new QSliderEx(horizontal ? Qt::Horizontal : Qt::Vertical, this);
-    slider->setCursor(QCursor(Qt::PointingHandCursor));
+    slider_ = new QSliderEx(horizontal_ ? Qt::Horizontal : Qt::Vertical, this);
+    slider_->setCursor(QCursor(Qt::PointingHandCursor));
 
-    _rootWidget = new QWidget(this);
-	auto widg = _rootWidget;
-	widg->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+    rootWidget_ = new QWidget(this);
+    auto widg = rootWidget_;
+    widg->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
     widg->setContentsMargins(0, 0, 0, 0);
-	
-	QBoxLayout* l;
-    if (horizontal) {
-        l = new QHBoxLayout();
-    	l->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    } else {
-        l = new QVBoxLayout();
-    	l->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+
+    QBoxLayout* layout;
+    if (horizontal_)
+    {
+        layout = new QHBoxLayout();
+        layout->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    }
+    else
+    {
+        layout = new QVBoxLayout();
+        layout->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
     }
 
-	l->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(0, 0, 0, 0);
         
-    l->addSpacing(_border_offset);
-    if (horizontal) {
-        l->addWidget(btn);
-        l->addSpacing(Utils::scale_value(10));
-        l->addWidget(slider);
-    } else {
-        l->addWidget(slider);
-        l->addSpacing(Utils::scale_value(8));
-        l->addWidget(btn);
+    if (horizontal_)
+    {
+        layout->addWidget(btn_);
+        layout->addSpacing(Utils::scale_value(10));
+        layout->addWidget(slider_);
+    }
+    else
+    {
+        layout->addSpacing(Utils::scale_value(12));
+        layout->addWidget(slider_);
+        layout->addSpacing(Utils::scale_value(8));
+        layout->addWidget(btn_);
+        layout->addSpacing(Utils::scale_value(8));
     }
 
-    l->addSpacing(_border_offset);
-    widg->setLayout(l);
+    widg->setLayout(layout);
 
-    Utils::ApplyStyle(widg,   mutedBg_);
-    Utils::ApplyStyle(slider, widgetWithoutBgEx);
-    Utils::ApplyStyle(btn,    widgetWithoutBgEx);
+    Utils::ApplyStyle(widg, background_);
 
-    if (onChangeStyle_ != NULL && btn) {
-        onChangeStyle_(*btn, true);
+    if (onChangeStyle_ != NULL && btn_)
+    {
+        onChangeStyle_(*btn_, true);
     }
 
-    if (horizontal) {
-        slider->setProperty("VideoPanelVolumeSlider", true);
-    	slider->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred));
-    } else {
-        slider->setProperty("VideoPanelVolumeSliderV", true);
-	    slider->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
+    if (horizontal_)
+    {
+        slider_->setProperty("VolumeSliderHor", true);
+        slider_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred));
+    }
+    else
+    {
+        slider_->setProperty("VolumeSliderVert", true);
+        slider_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
     }
 
-    auto ll = new QHBoxLayout();
-    ll->setContentsMargins(0, 0, 0, 0);
-    ll->addWidget(widg);
-	setLayout(ll);
-	
-	connect(slider, SIGNAL(valueChanged(int)), this, SLOT(onVolumeChanged(int)), Qt::QueuedConnection);
-	connect(btn, SIGNAL(clicked()), this, SLOT(onMuteOnOffClicked()), Qt::QueuedConnection);
+    auto horLayout = new QHBoxLayout();
+    horLayout->setContentsMargins(0, 0, 0, 0);
+    horLayout->addWidget(widg);
+    setLayout(horLayout);
+
+    connect(slider_, SIGNAL(valueChanged(int)), this, SLOT(onVolumeChanged(int)), Qt::QueuedConnection);
+    connect(btn_, SIGNAL(clicked()), this, SLOT(onMuteOnOffClicked()), Qt::QueuedConnection);
     connect(&checkMousePos_, SIGNAL(timeout()), this, SLOT(onCheckMousePos()), Qt::QueuedConnection);
     checkMousePos_.setInterval(500);
 
-	QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMuteChanged(const std::string&,bool)), this, SLOT(onVoipMuteChanged(const std::string&,bool)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMuteChanged(const std::string&,bool)), this, SLOT(onVoipMuteChanged(const std::string&,bool)), Qt::DirectConnection);
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipVolumeChanged(const std::string&,int)), this, SLOT(onVoipVolumeChanged(const std::string&,int)), Qt::DirectConnection);
 }
 
-Ui::VolumeControl::~VolumeControl() {
+Ui::VolumeControl::~VolumeControl()
+{
 
 }
 
 void Ui::VolumeControl::onCheckMousePos()
 {
-    if (!__underMouse(*this)) {
+    if (!onUnderMouse(*this))
+    {
         hide();
     }
 }
 
-QPoint Ui::VolumeControl::getAnchorPoint() const {
-    const auto rcb = btn->rect();
+QPoint Ui::VolumeControl::getAnchorPoint() const
+{
+    const auto rcb = btn_->rect();
     const auto rcc = rect();
 
-    if (_horizontal) {
-        return QPoint(_border_offset, (rcc.height() - rcb.height()) / 2);
-    } else {
-        return QPoint((rcc.width() - rcb.width()) / 2, rcc.height() - rcb.height() - _border_offset);
+    if (horizontal_)
+    {
+        return QPoint(0, (rcc.height() - rcb.height()) / 2);
+    }
+    else
+    {
+        return QPoint((rcc.width() - rcb.width()) / 2, rcc.height() - rcb.height() - Utils::scale_value(8));
     }
 }
 
-void Ui::VolumeControl::_updateSlider()
+void Ui::VolumeControl::updateSlider()
 {
-    if (_horizontal) {
-        if (_audioPlaybackDeviceMuted || _actual_vol <= 0.0001f) {
-            Utils::ApplyStyle(slider, sliderRedH);
-        } else {
-            Utils::ApplyStyle(slider, sliderGreenH);
+    if (horizontal_)
+    {
+        if (audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f)
+        {
+            Utils::ApplyStyle(slider_, sliderRedH);
         }
-    } else {
-        if (_audioPlaybackDeviceMuted || _actual_vol <= 0.0001f) {
-            Utils::ApplyStyle(slider, sliderRedV);
-        } else {
-            Utils::ApplyStyle(slider, sliderGreenV);
+        else
+        {
+            Utils::ApplyStyle(slider_, sliderGreenH);
+        }
+    }
+    else
+    {
+        if (audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f)
+        {
+            Utils::ApplyStyle(slider_, sliderRedV);
+        }
+        else
+        {
+            Utils::ApplyStyle(slider_, sliderGreenV);
         }
     }
 }
 
-void Ui::VolumeControl::onVoipMuteChanged(const std::string& device_type, bool muted) {
-    if (device_type == "audio_playback") {
-        //slider->setEnabled(!muted);
-        slider->setVisible(!muted);
+void Ui::VolumeControl::onVoipMuteChanged(const std::string& _deviceType, bool _muted)
+{
+    if (_deviceType == "audio_playback")
+    {
+        slider_->setEnabled(!_muted);
+        //slider_->setVisible(!_muted);
 
-        _audioPlaybackDeviceMuted = muted;
-        if (_rootWidget) {
-            if (muted) {
-                Utils::ApplyStyle(_rootWidget, mutedBg_);
-                Utils::ApplyStyle(this, mutedBg_);
-            } else {
-                Utils::ApplyStyle(_rootWidget, unmutedBg_);
-                Utils::ApplyStyle(this, unmutedBg_);
-            }
-        }
-        _updateSlider();
-        Utils::ApplyStyle(slider, widgetWithoutBgEx);
-        Utils::ApplyStyle(btn, widgetWithoutBgEx);
+        audioPlaybackDeviceMuted_ = _muted;
+        updateSlider();
 
-        if (onChangeStyle_ != NULL && btn) {
-            onChangeStyle_(*btn, muted || _actual_vol <= 0.0001f);
+        if (onChangeStyle_ != NULL && btn_)
+        {
+            onChangeStyle_(*btn_, _muted || actualVol_ <= 0.0001f);
         }
-        emit onMuteChanged(muted || _actual_vol <= 0.0001f);
+        emit onMuteChanged(_muted || actualVol_ <= 0.0001f);
     }
 }
 
-void Ui::VolumeControl::onVolumeChanged(int vol) {
-    const int new_vol = std::max(std::min(100, vol), 0);
-    if (_actual_vol != new_vol) {
-		Ui::GetDispatcher()->getVoipController().setVolumeAPlayback(new_vol);
+void Ui::VolumeControl::onVolumeChanged(int _vol)
+{
+    const int newVol = std::max(std::min(100, _vol), 0);
+    if (actualVol_ != newVol)
+    {
+        Ui::GetDispatcher()->getVoipController().setVolumeAPlayback(newVol);
     }
 }
 
-void Ui::VolumeControl::onMuteOnOffClicked() {
-	Ui::GetDispatcher()->getVoipController().setSwitchAPlaybackMute();
+void Ui::VolumeControl::onMuteOnOffClicked()
+{
+    Ui::GetDispatcher()->getVoipController().setSwitchAPlaybackMute();
 }
 
-void Ui::VolumeControl::onVoipVolumeChanged(const std::string& device_type, int vol) {
-    if (device_type == "audio_playback") {
-        _actual_vol = std::max(std::min(100, vol), 0);
+void Ui::VolumeControl::onVoipVolumeChanged(const std::string& _deviceType, int _vol)
+{
+    if (_deviceType == "audio_playback")
+    {
+        actualVol_ = std::max(std::min(100, _vol), 0);
 
-        if (onChangeStyle_ != NULL && btn) {
-            onChangeStyle_(*btn, _audioPlaybackDeviceMuted || _actual_vol <= 0.0001f);
+        if (onChangeStyle_ != NULL && btn_)
+        {
+            onChangeStyle_(*btn_, audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f);
         }
-        emit onMuteChanged(_audioPlaybackDeviceMuted || _actual_vol <= 0.0001f);
+        emit onMuteChanged(audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f);
 
-        slider->blockSignals(true);
-        slider->setValue(_actual_vol);
-        slider->blockSignals(false);
+        slider_->blockSignals(true);
+        slider_->setValue(actualVol_);
+        slider_->blockSignals(false);
 
-        _updateSlider();
+        updateSlider();
     }
 }
 
-void Ui::VolumeControl::showEvent(QShowEvent* e) {
+void Ui::VolumeControl::showEvent(QShowEvent* _e)
+{
 #ifdef __APPLE__
     // Fix blikning of volume button.
-    btn->setAttribute(Qt::WA_UnderMouse);
+    if (onMainWindow_)
+    {
+        btn_->setAttribute(Qt::WA_UnderMouse);
+    }
 #endif
-    QWidget::showEvent(e);
+    QWidget::showEvent(_e);
     emit controlActivated(true);
     checkMousePos_.start();
 }
 
-void Ui::VolumeControl::hideEvent(QHideEvent* e) {
+void Ui::VolumeControl::hideEvent(QHideEvent* _e)
+{
     checkMousePos_.stop();
-    QWidget::hideEvent(e);
+    QWidget::hideEvent(_e);
     emit controlActivated(false);
 }
 
-void Ui::VolumeControl::leaveEvent(QEvent* e) {
-    QWidget::leaveEvent(e);
-	hide();
+void Ui::VolumeControl::leaveEvent(QEvent* _e)
+{
+    QWidget::leaveEvent(_e);
+    hide();
 }
 
-void Ui::VolumeControl::changeEvent(QEvent* e) {
-    QWidget::changeEvent(e);
-    if (e->type() == QEvent::WindowDeactivate) {
+void Ui::VolumeControl::changeEvent(QEvent* _e)
+{
+    QWidget::changeEvent(_e);
+    if (_e->type() == QEvent::WindowDeactivate)
+    {
         hide();
     }
 }
 
 #define internal_spacer_w  (Utils::scale_value(24))
 #define internal_spacer_w4 (Utils::scale_value(16))
+#define internal_spacer_w_small (Utils::scale_value(12))
 
-Ui::VideoPanel::VideoPanel(QWidget* parent, QWidget* container)
-: QWidget(NULL)
-, container_(container)
-, root_widget_(NULL)
-, _parent(parent)
-, mouse_under_panel_(false)
-, v_vol_control_(this, false, widgetWithoutBgEx, widgetWithBg, [] (QPushButton& btn, bool muted)
+Ui::VideoPanel::VideoPanel(
+    QWidget* _parent, QWidget* _container)
+    : QWidget(_parent, Qt::Window | Qt::FramelessWindowHint)
+    , container_(_container)
+    , rootWidget_(NULL)
+    , parent_(_parent)
+    , mouseUnderPanel_(false)
+    , vertVolControl_(
+        this, false, false, vertSoundBg, [] (QPushButton& _btn, bool _muted)
+    {
+        _btn.setProperty("CallPanelEnBtn", !_muted);
+        _btn.setProperty("CallPanelDisBtn", _muted);
+        _btn.setProperty("CallSoundOn", !_muted);
+        _btn.setProperty("CallSoundOff", _muted);
+        _btn.setStyle(QApplication::style());
+    })
+    , horVolControl_(
+        this, true, false, horSoundBg, [] (QPushButton& _btn, bool _muted)
+    {
+        _btn.setProperty("CallPanelEnBtn", !_muted);
+        _btn.setProperty("CallPanelDisBtn", _muted);
+        _btn.setProperty("CallSoundOn", !_muted);
+        _btn.setProperty("CallSoundOff", _muted);
+        _btn.setStyle(QApplication::style());
+    })
+        , fullScreenButton_(NULL)
+        , addChatButton_(NULL)
+        , settingsButton_(NULL)
+        , stopCallButton_(NULL)
+        , videoButton_(NULL)
+        , micButton_(NULL)
+        , soundOnOffButton_(NULL) 
+        , minimalBandwidthMode_(nullptr)
+        , minimalBandwidthTooltip_(nullptr)
 {
-    btn.setProperty("CallPanelEnBtn", !muted);
-    btn.setProperty("CallPanelDisBtn", muted);
-    btn.setProperty("CallSoundOn", !muted);
-    btn.setProperty("CallSoundOff", muted);
-    btn.setStyle(QApplication::style());
-})
-, h_vol_control_(this, true, widgetWithoutBgEx, widgetWithoutBg, [] (QPushButton& btn, bool muted)
-{
-    btn.setProperty("CallPanelEnBtn", !muted);
-    btn.setProperty("CallPanelDisBtn", muted);
-    btn.setProperty("CallSoundOn", !muted);
-    btn.setProperty("CallSoundOff", muted);
-    btn.setStyle(QApplication::style());
-})
-, fullscreen_button_(NULL)
-, add_chat_button_(NULL)
-, settings_button_(NULL)
-, stop_call_button_(NULL)
-, video_button_(NULL)
-, mic_button_(NULL)
-, sound_on_off_button_(NULL) {
+    setStyleSheet(Utils::LoadStyle(":/voip/video_panel.qss"));
     setProperty("VideoPanel", true);
-    setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint);
+    //setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_NoSystemBackground, true);
     setAttribute(Qt::WA_TranslucentBackground, true);  
 
-    QVBoxLayout* root_layout = new QVBoxLayout();
-    root_layout->setContentsMargins(0, 0, 0, 0);
-    root_layout->setSpacing(0);
-    root_layout->setAlignment(Qt::AlignVCenter);
-    setLayout(root_layout);
+    QVBoxLayout* rootLayout = new QVBoxLayout();
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+    rootLayout->setSpacing(0);
+    rootLayout->setAlignment(Qt::AlignVCenter);
+    setLayout(rootLayout);
 
-    root_widget_ = new QWidget(this);
-    root_widget_->setContentsMargins(0, 0, 0, 0);
-    root_widget_->setProperty("VideoPanel", true);
-    layout()->addWidget(root_widget_);
+    rootWidget_ = new QWidget(this);
+    rootWidget_->setContentsMargins(0, 0, 0, 0);
+    rootWidget_->setProperty("VideoPanel", true);
+    layout()->addWidget(rootWidget_);
     
     QHBoxLayout* layoutTarget = new QHBoxLayout();
     layoutTarget->setContentsMargins(0, 0, 0, 0);
     layoutTarget->setSpacing(0);
     layoutTarget->setAlignment(Qt::AlignVCenter);
-    root_widget_->setLayout(layoutTarget);
+    rootWidget_->setLayout(layoutTarget);
 
-    QWidget* parentWidget = root_widget_;
-    auto __addButton = [this, parentWidget, layoutTarget] (const char* propertyName, const char* slot)->QPushButton* {
+    QWidget* parentWidget = rootWidget_;
+    auto addButton = [this, parentWidget, layoutTarget] (const char* _propertyName, const char* _slot)->QPushButton*
+    {
         QPushButton* btn = new voipTools::BoundBox<QPushButton>(parentWidget);
-        if (propertyName != NULL) {
-            btn->setProperty(propertyName, true);
+        if (_propertyName != NULL)
+        {
+            btn->setProperty(_propertyName, true);
         }
         btn->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
         btn->setCursor(QCursor(Qt::PointingHandCursor));
         btn->setFlat(true);
         layoutTarget->addWidget(btn);
-        connect(btn, SIGNAL(clicked()), this, slot, Qt::QueuedConnection);
+        connect(btn, SIGNAL(clicked()), this, _slot, Qt::QueuedConnection);
         return btn;
     };
 
     QPushButton* btn = NULL;
     layoutTarget->addSpacing(internal_spacer_w4);
-    btn = __addButton("CallGoChat", SLOT(onClickGoChat()));
+    btn = addButton("CallGoChat", SLOT(onClickGoChat()));
     layoutTarget->addSpacing(internal_spacer_w);
 
-    layoutTarget->addSpacerItem(new QSpacerItem(1, 1, QSizePolicy::Expanding));
-    mic_button_ = __addButton("CallEnableMic", SLOT(onAudioOnOffClicked()));
-    mic_button_->setProperty("CallDisableMic", true);
+    minimalBandwidthMode_ = addButton("MinimalBandwithMode", SLOT(onMinimalBandwithMode()));
+    minimalBandwidthMode_->setProperty("MinimalBandwithMode", false);
+    minimalBandwidthMode_->hide(); // We will show it on call accepted.
+
+	leftSpacer_ = new QSpacerItem(1, 1, QSizePolicy::MinimumExpanding);
+    layoutTarget->addSpacerItem(leftSpacer_);
+    micButton_ = addButton("CallEnableMic", SLOT(onAudioOnOffClicked()));
+    micButton_->setProperty("CallDisableMic", false);
 
     layoutTarget->addSpacing(internal_spacer_w);
-    video_button_ = __addButton(NULL, SLOT(onVideoOnOffClicked()));
+    videoButton_ = addButton(NULL, SLOT(onVideoOnOffClicked()));
 
     layoutTarget->addSpacing(internal_spacer_w);
-    stop_call_button_ = __addButton("StopCallButton", SLOT(onHangUpButtonClicked()));
+    stopCallButton_ = addButton("StopCallButton", SLOT(onHangUpButtonClicked()));
 
-    if (DISPLAY_ADD_CHAT_BUTTON) {
+    if (DISPLAY_ADD_CHAT_BUTTON)
+    {
         layoutTarget->addSpacing(internal_spacer_w);
-        add_chat_button_ = __addButton("CallAddChat", SLOT(onClickAddChat()));
+        addChatButton_ = addButton("CallAddChat", SLOT(onClickAddChat()));
     }
 
     layoutTarget->addSpacing(internal_spacer_w);
-    sound_on_off_button_ = new voipTools::BoundBox<QPushButtonEx>(parentWidget);
-    sound_on_off_button_->setCursor(QCursor(Qt::PointingHandCursor));
-    sound_on_off_button_->setProperty("CallPanelEnBtn", true);
-	sound_on_off_button_->setProperty("CallSoundOn", true);
-    sound_on_off_button_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
-    sound_on_off_button_->setFlat(true);
-    connect(sound_on_off_button_, SIGNAL(onHover()), this, SLOT(onSoundOnOffHover()), Qt::QueuedConnection);
-    layoutTarget->addWidget(sound_on_off_button_);
+    soundOnOffButton_ = new voipTools::BoundBox<QPushButtonEx>(parentWidget);
+    soundOnOffButton_->setCursor(QCursor(Qt::PointingHandCursor));
+    soundOnOffButton_->setProperty("CallPanelEnBtn", true);
+    soundOnOffButton_->setProperty("CallSoundOn", true);
+    soundOnOffButton_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
+    soundOnOffButton_->setFlat(true);
+    // This button has no focus, because we show VolumeControl above this button.
+    soundOnOffButton_->setFocusPolicy(Qt::NoFocus);
+    connect(soundOnOffButton_, SIGNAL(onHover()), this, SLOT(onSoundOnOffHover()), Qt::QueuedConnection);
+    layoutTarget->addWidget(soundOnOffButton_);
 
-    layoutTarget->addSpacerItem(new QSpacerItem(1, 1, QSizePolicy::Expanding));
-    settings_button_ = __addButton("CallSettings", SLOT(onClickSettings()));
+	rightSpacer_ = new QSpacerItem(1, 1, QSizePolicy::MinimumExpanding);
+    layoutTarget->addSpacerItem(rightSpacer_);
+    settingsButton_ = addButton("CallSettings", SLOT(onClickSettings()));
 
     layoutTarget->addSpacing(internal_spacer_w);
-    fullscreen_button_ = __addButton(NULL, SLOT(_onFullscreenClicked()));
+    fullScreenButton_ = addButton(NULL, SLOT(_onFullscreenClicked()));
 
     layoutTarget->addSpacing(internal_spacer_w4);
 
-    _reset_hangup_text();
-    connect(&v_vol_control_, SIGNAL(controlActivated(bool)), this, SLOT(controlActivated(bool)), Qt::QueuedConnection);
-    connect(&h_vol_control_, SIGNAL(controlActivated(bool)), this, SLOT(controlActivated(bool)), Qt::QueuedConnection);
-    connect(&h_vol_control_, SIGNAL(onMuteChanged(bool)), this,    SLOT(onMuteChanged(bool)),    Qt::QueuedConnection);
+    minimalBandwidthTooltip_ = new Ui::ToolTipEx(minimalBandwidthMode_);
+
+    resetHangupText();
+    connect(&vertVolControl_, SIGNAL(controlActivated(bool)), this, SLOT(controlActivated(bool)), Qt::QueuedConnection);
+    connect(&horVolControl_, SIGNAL(controlActivated(bool)), this, SLOT(controlActivated(bool)), Qt::QueuedConnection);
+    connect(&horVolControl_, SIGNAL(onMuteChanged(bool)), this,    SLOT(onMuteChanged(bool)),    Qt::QueuedConnection);
 
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalAudio(bool)), this, SLOT(onVoipMediaLocalAudio(bool)), Qt::DirectConnection);
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMediaLocalVideo(bool)), this, SLOT(onVoipMediaLocalVideo(bool)), Qt::DirectConnection);
     QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), this, SLOT(onVoipCallNameChanged(const std::vector<voip_manager::Contact>&)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMinimalBandwidthChanged(bool)), this, SLOT(onVoipMinimalBandwidthChanged(bool)), Qt::DirectConnection);
 
-    h_vol_control_.hide();
-    v_vol_control_.hide();
+    horVolControl_.hide();
+    vertVolControl_.hide();
+
+    videoPanelEffect_ = new UIEffects(*this);
+    minimalBandwidthTooltipEffect_ = new UIEffects(*minimalBandwidthTooltip_);
+
+    hideBandwidthTooltipTimer = new QTimer();
+    hideBandwidthTooltipTimer->setInterval(3000);
+    connect(hideBandwidthTooltipTimer, SIGNAL(timeout()), this, SLOT(hideBandwidthTooltip()));
+
+    hideButtonList.push_back(minimalBandwidthMode_);
+    hideButtonList.push_back(settingsButton_);
 }
 
-Ui::VideoPanel::~VideoPanel() {
-	
+Ui::VideoPanel::~VideoPanel()
+{
+
 }
 
-void Ui::VideoPanel::keyReleaseEvent(QKeyEvent* e) {
-    QWidget::keyReleaseEvent(e);
-    if (e->key() == Qt::Key_Escape) {
+void Ui::VideoPanel::keyReleaseEvent(QKeyEvent* _e)
+{
+    QWidget::keyReleaseEvent(_e);
+    if (_e->key() == Qt::Key_Escape)
+    {
         emit onkeyEscPressed();
     }
 }
 
-void Ui::VideoPanel::controlActivated(bool activated) {
-    mouse_under_panel_ = activated;
-    if (__underMouse(*this)) { // this prevents multiple signalling of mouse enter/mouse leave
+void Ui::VideoPanel::controlActivated(bool _activated)
+{
+    mouseUnderPanel_ = _activated;
+    if (onUnderMouse(*this))
+    { // this prevents multiple signalling of mouse enter/mouse leave
         return;
     }
 
-    if (activated) {
+    if (_activated)
+    {
         emit onMouseEnter();
-    } else {
+    }
+    else
+    {
         emit onMouseLeave();
     }
 }
 
-void Ui::VideoPanel::onClickSettings() {
-    if (MainPage* mainPage = MainPage::instance()) {
-        if (MainWindow* wnd = static_cast<MainWindow*>(mainPage->window())) {
+void Ui::VideoPanel::onClickSettings()
+{
+    if (MainPage* mainPage = MainPage::instance())
+    {
+        if (MainWindow* wnd = static_cast<MainWindow*>(mainPage->window()))
+        {
             wnd->raise();
             wnd->activate();
         }
@@ -436,44 +530,104 @@ void Ui::VideoPanel::onClickSettings() {
     }
 }
 
-void Ui::VideoPanel::onClickGoChat() {
-    if (MainPage* mainPage = MainPage::instance()) {
-        if (MainWindow* wnd = static_cast<MainWindow*>(mainPage->window())) {
+void Ui::VideoPanel::onClickGoChat()
+{
+    if (MainPage* mainPage = MainPage::instance())
+    {
+        if (MainWindow* wnd = static_cast<MainWindow*>(mainPage->window()))
+        {
             wnd->raise();
             wnd->activate();
         }
     }
 
-    if (!active_contact_.empty()) {
-        Logic::GetContactListModel()->setCurrent(active_contact_.c_str(), true);
+    if (!activeContact_.empty())
+    {
+        Logic::getContactListModel()->setCurrent(activeContact_.c_str(), true, true);
     }
 }
 
-void Ui::VideoPanel::onVoipCallNameChanged(const std::vector<voip_manager::Contact>& contacts) {
-    if(contacts.empty()) {
+void Ui::VideoPanel::onMinimalBandwithMode()
+{
+    Ui::GetDispatcher()->getVoipController().switchMinimalBandwithMode();
+
+    minimalBandwidthMode_->setProperty("MinimalBandwithMode", !minimalBandwidthMode_->property("MinimalBandwithMode").toBool());
+    minimalBandwidthMode_->setStyle(QApplication::style());
+}
+
+void Ui::VideoPanel::onVoipMinimalBandwidthChanged (bool _bEnable)
+{
+    bool youTurnOn = minimalBandwidthMode_->property("MinimalBandwithMode").toBool() == _bEnable;
+
+    minimalBandwidthMode_->setProperty("MinimalBandwithMode", _bEnable);
+    minimalBandwidthMode_->setStyle(QApplication::style());
+
+    bool show = false;
+    emit showToolTip(show);
+    if (show)
+    {
+        if (_bEnable)
+        {
+            QString companionFullName;
+
+            emit companionName(companionFullName);
+
+            QString toolTipText = youTurnOn ? QT_TRANSLATE_NOOP("voip_pages", "Data saving enabled") : companionFullName + QT_TRANSLATE_NOOP("voip_pages", " enabled data saving");
+            minimalBandwidthTooltip_->setText(toolTipText);
+            minimalBandwidthTooltip_->show();
+            if (!youTurnOn)
+            {
+                emit showPanel();
+            }
+
+            bool autoHide = false;
+            emit autoHideToolTip(autoHide);
+
+            if (autoHide)
+            {
+                startToolTipHideTimer();
+            }
+        }
+        else
+        {
+            minimalBandwidthTooltip_->hide();
+            hideBandwidthTooltipTimer->stop();
+        }
+    }
+}
+
+void Ui::VideoPanel::onVoipCallNameChanged(const std::vector<voip_manager::Contact>& _contacts)
+{
+    if(_contacts.empty())
+    {
         return;
     }
-    active_contact_ = contacts[0].contact;
+    activeContact_ = _contacts[0].contact;
 }
 
-void Ui::VideoPanel::onClickAddChat() {
+void Ui::VideoPanel::onClickAddChat()
+{
     assert(false);
 }
 
-void Ui::VideoPanel::onSoundOnOffHover() {
+void Ui::VideoPanel::onSoundOnOffHover()
+{
     const auto rc = rect();
 
     VolumeControl* vc;
     int xOffset = 0, yOffset = 0;
     
-    if (rc.width() >= Utils::scale_value(660)) {
-        vc = &h_vol_control_;
+    if (rc.width() >= Utils::scale_value(660))
+    {
+        vc = &horVolControl_;
 #ifdef __APPLE__
         //xOffset = Utils::scale_value(6); // i don't know where appeared this offsets
         yOffset = Utils::scale_value(1);
 #endif
-    } else {
-        vc = &v_vol_control_;
+    }
+    else
+    {
+        vc = &vertVolControl_;
 #ifdef __APPLE__
         //yOffset = Utils::scale_value(-8);
         xOffset = Utils::scale_value(1);
@@ -481,7 +635,7 @@ void Ui::VideoPanel::onSoundOnOffHover() {
     }
 
     auto p = vc->getAnchorPoint();
-    auto p2 = sound_on_off_button_->mapToGlobal(sound_on_off_button_->rect().topLeft());
+    auto p2 = soundOnOffButton_->mapToGlobal(soundOnOffButton_->rect().topLeft());
     
     p2.setX(p2.x() - p.x() + xOffset);
     p2.setY(p2.y() - p.y() + yOffset);
@@ -495,84 +649,114 @@ void Ui::VideoPanel::onSoundOnOffHover() {
     vc->setFocus(Qt::OtherFocusReason);
 }
 
-void Ui::VideoPanel::onMuteChanged(bool muted) {
-    if (sound_on_off_button_) {
-        sound_on_off_button_->setProperty("CallPanelEnBtn", !muted);
-        sound_on_off_button_->setProperty("CallPanelDisBtn", muted);
+void Ui::VideoPanel::onMuteChanged(bool _muted)
+{
+    if (soundOnOffButton_)
+    {
+        soundOnOffButton_->setProperty("CallPanelEnBtn", !_muted);
+        soundOnOffButton_->setProperty("CallPanelDisBtn", _muted);
 
-        sound_on_off_button_->setProperty("CallSoundOn", !muted);
-        sound_on_off_button_->setProperty("CallSoundOff", muted);
-        sound_on_off_button_->setStyle(QApplication::style());
+        soundOnOffButton_->setProperty("CallSoundOn", !_muted);
+        soundOnOffButton_->setProperty("CallSoundOff", _muted);
+        soundOnOffButton_->setStyle(QApplication::style());
     }
 }
 
-void Ui::VideoPanel::setFullscreenMode(bool en) {
-    if (!fullscreen_button_) {
+void Ui::VideoPanel::setFullscreenMode(bool _en)
+{
+    if (!fullScreenButton_)
+    {
         return;
     }
 
-	fullscreen_button_->setProperty("CallFSOff", en);
-	fullscreen_button_->setProperty("CallFSOn", !en);
-    fullscreen_button_->setStyle(QApplication::style());
+    fullScreenButton_->setProperty("CallFSOff", _en);
+    fullScreenButton_->setProperty("CallFSOn", !_en);
+    fullScreenButton_->setStyle(QApplication::style());
 }
 
-void Ui::VideoPanel::_onFullscreenClicked() {
-	emit onFullscreenClicked();
+void Ui::VideoPanel::_onFullscreenClicked()
+{
+    emit onFullscreenClicked();
 }
 
-void Ui::VideoPanel::enterEvent(QEvent* e) {
-	QWidget::enterEvent(e);
-    if (!mouse_under_panel_) {
-	    emit onMouseEnter();
+void Ui::VideoPanel::enterEvent(QEvent* _e)
+{
+    QWidget::enterEvent(_e);
+    if (!mouseUnderPanel_)
+    {
+        emit onMouseEnter();
     }
 }
 
-void Ui::VideoPanel::leaveEvent(QEvent* e) {
-	QWidget::leaveEvent(e);
+void Ui::VideoPanel::leaveEvent(QEvent* _e)
+{
+    QWidget::leaveEvent(_e);
 
-    const bool focusOnVolumePanel = __underMouse(h_vol_control_) || __underMouse(v_vol_control_);
-    if (!focusOnVolumePanel) {
-    	emit onMouseLeave();
+    const bool focusOnVolumePanel = onUnderMouse(horVolControl_) || onUnderMouse(vertVolControl_);
+    if (!focusOnVolumePanel)
+    {
+        emit onMouseLeave();
     }
 }
 
-void Ui::VideoPanel::hideEvent(QHideEvent* e) {
-    QWidget::hideEvent(e);
-    h_vol_control_.hide();
-    v_vol_control_.hide();
+void Ui::VideoPanel::hideEvent(QHideEvent* _e)
+{
+    QWidget::hideEvent(_e);
+    horVolControl_.hide();
+    vertVolControl_.hide();
 }
 
-void Ui::VideoPanel::moveEvent(QMoveEvent* e) {
-    QWidget::moveEvent(e);
-    h_vol_control_.hide();
-    v_vol_control_.hide();
+void Ui::VideoPanel::moveEvent(QMoveEvent* _e)
+{
+    QWidget::moveEvent(_e);
+    horVolControl_.hide();
+    vertVolControl_.hide();
+
+    updateToolTipsPosition();
 }
 
-void Ui::VideoPanel::resizeEvent(QResizeEvent* e) {
-    QWidget::resizeEvent(e);
-    auto rc = rect();
+void Ui::VideoPanel::resizeEvent(QResizeEvent* _e)
+{
+    QWidget::resizeEvent(_e);
 
-    if (rc.width() >= Utils::scale_value(457)) {
-        if (settings_button_) {
-            settings_button_->show();
-        }
+    bool bVisibleButton = isNormalPanelMode();
 
-        if (add_chat_button_) {
-            add_chat_button_->show();
-        }
-    } else {
-        if (settings_button_) {
-            settings_button_->hide();
-        }
+	auto rootLayout = qobject_cast<QBoxLayout*>(rootWidget_->layout());
 
-        if (add_chat_button_) {
-            add_chat_button_->hide();
+    for (QWidget* button : hideButtonList)
+    {
+        if (button)
+        {
+            button->setVisible(bVisibleButton);
         }
     }
+
+	// Change spacers width, if video panel is too small.
+	if (rootLayout)
+	{
+		for (int i = 0; i < rootLayout->count(); i++)
+		{
+			QLayoutItem * item = rootLayout->itemAt(i);
+			bool isCorner = (i == 0 || i == rootLayout->count() - 1);
+			if (item)
+			{
+				QSpacerItem * spacer = item->spacerItem();
+				if (spacer && spacer != leftSpacer_ && spacer != rightSpacer_)
+				{
+					spacer->changeSize(isFitSpacersPanelMode() ? internal_spacer_w_small :
+						(isCorner ? internal_spacer_w4 : internal_spacer_w), 1, QSizePolicy::Fixed);
+				}
+			}
+		}
+
+		rootLayout->update();
+	}
     
 #ifdef __APPLE__
-    assert(_parent);
-    if (_parent && !_parent->isFullScreen()) {
+    assert(parent_);
+    if (parent_ && !parent_->isFullScreen())
+    {
+        auto rc = rect();
         QPainterPath path(QPointF(0, 0));
         path.addRoundedRect(rc.x(), rc.y(), rc.width(), rc.height(), Utils::scale_value(5), Utils::scale_value(5));
         
@@ -580,69 +764,70 @@ void Ui::VideoPanel::resizeEvent(QResizeEvent* e) {
         region = region + QRect(0, 0, rc.width(), Utils::scale_value(5));
         
         setMask(region);
-    } else {
+    }
+    else
+    {
         clearMask();
     }
 #endif
 
-    h_vol_control_.hide();
-    v_vol_control_.hide();
+    horVolControl_.hide();
+    vertVolControl_.hide();
 
-    /* WHEN I WILL KNOW HOW TO CHANGE PUSH BUTTON OPACITY, I WILL REMOVE REM FROM THIS CODE */
-    //float opacity = (float(rc.width()) - 403.0f) / 54.0f;
-    //opacity = std::min(std::max(0.0f, opacity), 1.0f);
-    //if (opacity < 0.001f) {
-    //    Ui_->settingsButton->hide();
-    //    Ui_->addChatButton->hide();
-    //} else if (opacity > 0.999f) {
-    //    Ui_->settingsButton->show();
-    //    Ui_->addChatButton->show();
-    //} else {
-    //    Ui_->settingsButton->setWindowOpacity(opacity);  <---------- HERE NEED TO CHANGE OPACITY !
-    //    Ui_->addChatButton->setWindowOpacity(opacity);
-    //}
+    updateToolTipsPosition();
 }
 
-void Ui::VideoPanel::_reset_hangup_text() {
-    if (stop_call_button_) {
-        stop_call_button_->setText("");
-        stop_call_button_->repaint();
+void Ui::VideoPanel::resetHangupText()
+{
+    if (stopCallButton_)
+    {
+        stopCallButton_->setText("");
+        stopCallButton_->repaint();
     }
 }
 
 
-void Ui::VideoPanel::onHangUpButtonClicked() {
-	Ui::GetDispatcher()->getVoipController().setHangup();
+void Ui::VideoPanel::onHangUpButtonClicked()
+{
+    Ui::GetDispatcher()->getVoipController().setHangup();
 }
 
-void Ui::VideoPanel::onVoipMediaLocalAudio(bool enabled) {
-    if (mic_button_) {
-        mic_button_->setProperty("CallPanelEnBtn", enabled);
-        mic_button_->setProperty("CallPanelDisBtn", !enabled);
-        mic_button_->setProperty("CallEnableMic", enabled);
-        mic_button_->setProperty("CallDisableMic", !enabled);
-        mic_button_->setStyle(QApplication::style());
+void Ui::VideoPanel::onVoipMediaLocalAudio(bool _enabled)
+{
+    if (micButton_)
+    {
+        micButton_->setProperty("CallPanelEnBtn", _enabled);
+        micButton_->setProperty("CallPanelDisBtn", !_enabled);
+        micButton_->setProperty("CallEnableMic", _enabled);
+        micButton_->setProperty("CallDisableMic", !_enabled);
+        micButton_->setStyle(QApplication::style());
     }
 }
 
-void Ui::VideoPanel::onVoipMediaLocalVideo(bool enabled) {
-    if (!video_button_) {
+void Ui::VideoPanel::onVoipMediaLocalVideo(bool _enabled)
+{
+    if (!videoButton_)
+    {
         return;
     }
-    video_button_->setProperty("CallPanelEnBtn", enabled);
-    video_button_->setProperty("CallPanelDisBtn", !enabled);
-    video_button_->setProperty("CallEnableCam", enabled);
-    video_button_->setProperty("CallDisableCam", !enabled);
-    video_button_->setStyle(QApplication::style());
+    videoButton_->setProperty("CallPanelEnBtn", _enabled);
+    videoButton_->setProperty("CallPanelDisBtn", !_enabled);
+    videoButton_->setProperty("CallEnableCam", _enabled);
+    videoButton_->setProperty("CallDisableCam", !_enabled);
+    videoButton_->setStyle(QApplication::style());
 }
 
 
-void Ui::VideoPanel::changeEvent(QEvent* e) {
-    QWidget::changeEvent(e);
+void Ui::VideoPanel::changeEvent(QEvent* _e)
+{
+    QWidget::changeEvent(_e);
 
-    if (e->type() == QEvent::ActivationChange) {
-        if (isActiveWindow() || (root_widget_ && root_widget_->isActiveWindow())) {
-            if (container_) {
+    if (_e->type() == QEvent::ActivationChange)
+    {
+        if (isActiveWindow() || (rootWidget_ && rootWidget_->isActiveWindow()))
+        {
+            if (container_)
+            {
                 container_->raise();
                 raise();
             }
@@ -650,10 +835,81 @@ void Ui::VideoPanel::changeEvent(QEvent* e) {
     }
 }
 
-void Ui::VideoPanel::onAudioOnOffClicked() {
-	Ui::GetDispatcher()->getVoipController().setSwitchACaptureMute();
+void Ui::VideoPanel::onAudioOnOffClicked()
+{
+    Ui::GetDispatcher()->getVoipController().setSwitchACaptureMute();
 }
 
-void Ui::VideoPanel::onVideoOnOffClicked() {
-	Ui::GetDispatcher()->getVoipController().setSwitchVCaptureMute();
+void Ui::VideoPanel::onVideoOnOffClicked()
+{
+    Ui::GetDispatcher()->getVoipController().setSwitchVCaptureMute();
+}
+
+void Ui::VideoPanel::updateToolTipsPosition()
+{
+    if (minimalBandwidthTooltip_)
+    {
+        minimalBandwidthTooltip_->updatePosition();
+    }
+}
+
+void Ui::VideoPanel::fadeIn(int _kAnimationDefDuration)
+{
+    videoPanelEffect_->fadeIn(_kAnimationDefDuration);
+    minimalBandwidthTooltipEffect_->fadeIn(_kAnimationDefDuration);
+}
+
+void Ui::VideoPanel::fadeOut(int _kAnimationDefDuration)
+{
+    videoPanelEffect_->fadeOut(_kAnimationDefDuration);
+    minimalBandwidthTooltipEffect_->fadeOut(_kAnimationDefDuration);
+    minimalBandwidthTooltip_->hide();
+    hideBandwidthTooltipTimer->stop();
+    
+    vertVolControl_.hide();
+    horVolControl_.hide();
+}
+
+void Ui::VideoPanel::hideBandwidthTooltip()
+{
+    minimalBandwidthTooltip_->hide();
+    hideBandwidthTooltipTimer->stop();
+}
+
+void Ui::VideoPanel::talkStarted()
+{
+    minimalBandwidthMode_->setVisible(isNormalPanelMode());
+}
+
+void Ui::VideoPanel::talkFinished()
+{
+    minimalBandwidthMode_->hide();
+}
+
+void Ui::VideoPanel::startToolTipHideTimer()
+{
+    if (minimalBandwidthTooltip_->isVisible())
+    {
+        hideBandwidthTooltipTimer->start();
+    }
+}
+
+bool Ui::VideoPanel::isActiveWindow()
+{
+    return QWidget::isActiveWindow() || vertVolControl_.isActiveWindow() ||
+        horVolControl_.isActiveWindow();
+}
+
+bool Ui::VideoPanel::isNormalPanelMode()
+{
+    auto rc = rect();
+
+    return (rc.width() >= Utils::scale_value(436));
+}
+
+bool Ui::VideoPanel::isFitSpacersPanelMode()
+{
+	auto rc = rect();
+
+	return (rc.width() < Utils::scale_value(520));
 }

@@ -4,11 +4,13 @@ namespace core
 {
     namespace wim
     {
+        typedef std::unordered_set<std::string> ignorelist_cache;
+
         class permit_info
         {
         private:
 
-            std::vector<std::string> ignore_aimid_list_;
+            ignorelist_cache ignore_aimid_list_;
 
         public:
 
@@ -16,7 +18,7 @@ namespace core
             virtual ~permit_info();
 
             int32_t parse_response_data(const rapidjson::Value& _node_results);
-            std::vector<std::string> get_ignore_list() const;
+            const ignorelist_cache& get_ignore_list() const;
         };
     }
 }

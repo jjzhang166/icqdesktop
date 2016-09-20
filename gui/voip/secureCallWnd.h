@@ -2,18 +2,20 @@
 #define __SECURE_CALL_WND_H__
 #include "../controls/TextEmojiWidget.h"
 
-namespace Ui {
+namespace Ui
+{
 
     class ImageContainer : public QWidget
-    { Q_OBJECT
+    {
+        Q_OBJECT
 
     public:
-        ImageContainer(QWidget* parent);
+        ImageContainer(QWidget* _parent);
         virtual ~ImageContainer();
 
     public:
-        void swapImagePack(std::vector<std::shared_ptr<QImage> >& images);
-        void setKerning(int kerning);
+        void swapImagePack(std::vector<std::shared_ptr<QImage> >& _images);
+        void setKerning(int _kerning);
 
     private:
         void calculateRectDraw();
@@ -29,24 +31,25 @@ namespace Ui {
     };
 
     class SecureCallWnd : public QMenu 
-    { Q_OBJECT
+    {
+        Q_OBJECT
 
         QVBoxLayout* rootLayout_;
         QWidget*     rootWidget_;
         ImageContainer* textSecureCode_;
 
     public:
-        SecureCallWnd(QWidget* parent = NULL);
+        SecureCallWnd(QWidget* _parent = NULL);
         virtual ~SecureCallWnd();
 
-        void setSecureCode(const std::string& text);
+        void setSecureCode(const std::string& _text);
 
     private:
-        void showEvent  (QShowEvent* e) override;
-        void hideEvent  (QHideEvent* e) override;
-        void changeEvent(QEvent* e)     override;
+        void showEvent  (QShowEvent* _e) override;
+        void hideEvent  (QHideEvent* _e) override;
+        void changeEvent(QEvent* _e)     override;
 
-        QLabel* createUniformLabel_(const QString& text, const unsigned fontSize, QSizePolicy policy = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+        QLabel* createUniformLabel_(const QString& _text, const unsigned _fontSize, QSizePolicy _policy = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         void updateMask();
 
     Q_SIGNALS:

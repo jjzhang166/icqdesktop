@@ -15,6 +15,7 @@
 #include "../events/fetch_event_user_added_to_buddy_list.h"
 #include "../events/fetch_event_typing.h"
 #include "../events/fetch_event_permit.h"
+#include "../events/fetch_event_imstate.h"
 
 #include "../events/webrtc.h"
 
@@ -165,10 +166,8 @@ int32_t fetch::parse_response_data(const rapidjson::Value& _data)
                         session_ended_ = true;
                     else if (event_type == "permitDeny")
                         push_event(std::make_shared<fetch_event_permit>())->parse(iter_event_data->value);
-                    /*
-                    else if (event_type == L"mchat")
-                    PushEvent(std::make_shared<fetch_event_mchat>())->Parse(wr);
-                    */
+                    else if (event_type == "imState")
+                        push_event(std::make_shared<fetch_event_imstate>())->parse(iter_event_data->value);
                 }
             }
         }
@@ -213,8 +212,7 @@ int32_t fetch::parse_response_data(const rapidjson::Value& _data)
 
     }
 
-
-    return 0;
+    return session_ended_ ? wpie_error_need_relogin : 0;
 }
 
 bool fetch::is_session_ended() const

@@ -9,7 +9,7 @@
 #ifndef VideoFrameMacos_h
 #define VideoFrameMacos_h
 
-#include "VideoFrame.h"
+#include "../VideoFrame.h"
 
 namespace platform_macos {
     
@@ -17,6 +17,7 @@ namespace platform_macos {
     void setAspectRatioForWindow(QWidget& wnd, float aspectRatio);
     bool windowIsOverlapped(QWidget* frame);
     void setWindowPosition(QWidget& widget, const QWidget& parent, const bool top);
+    void moveAboveParentWindow(QWidget& parent, QWidget& child);
     
     // @return true, if iTunes was paused.
     bool pauseiTunes();
@@ -28,6 +29,28 @@ namespace platform_macos {
     class GraphicsPanelMacos {
     public:
         static platform_specific::GraphicsPanel* create(QWidget* parent, std::vector<QWidget*>& panels);
+    };
+    
+    
+    // This class use Cocoa delegates and
+    // notificate us about start/finish fullscreen animation.
+    class FullScreenNotificaton : public QObject
+    {
+        Q_OBJECT
+    public:
+        FullScreenNotificaton (QWidget& parentWindow);
+        virtual ~FullScreenNotificaton ();
+        
+    Q_SIGNALS:
+        
+        void fullscreenAnimationStart();
+        void fullscreenAnimationFinish();
+        void activeSpaceDidChange();
+    protected:
+        
+        // Cocoa delegate
+        void* _delegate;
+        QWidget& _parentWindow;
     };
     
 }

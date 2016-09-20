@@ -32,8 +32,10 @@ namespace HistoryControl
 
         bool isImageBubbleVisible() const;
 
+        virtual void onVisibilityChanged(const bool isVisible) override;
+
     protected:
-        virtual void initializeInternal() override;
+        virtual void initialize() override;
 
         virtual bool isPlaceholderVisible() const override;
 
@@ -46,6 +48,8 @@ namespace HistoryControl
         virtual void mousePressEvent(QMouseEvent *e) override;
 
         virtual void mouseReleaseEvent(QMouseEvent *e) override;
+
+        virtual bool drag() override;
 
     private Q_SLOTS:
         void onImageDownloadError(qint64 seq, QString rawUri);

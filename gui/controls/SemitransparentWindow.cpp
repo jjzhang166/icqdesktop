@@ -38,5 +38,5 @@ namespace Ui
         QWidget::mousePressEvent(e);
         emit clicked();
     }
-    
+
 }

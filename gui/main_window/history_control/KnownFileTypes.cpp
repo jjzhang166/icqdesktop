@@ -9,27 +9,55 @@ namespace
 {
 	typedef std::map<QString, Themes::PixmapResourceId> Ext2IconMap;
 
+    typedef QSet<QString> QStringSet;
+
 	const Ext2IconMap& GetExt2IconMap();
+
+    const QStringSet& GetKnownImageExtensions();
+
+    const QStringSet& GetKnownVideoExtensions();
 }
 
-namespace HistoryControl
+namespace History
 {
 	const Themes::IThemePixmapSptr& GetIconByFilename(const QString &filename)
 	{
 		assert(!filename.isEmpty());
 
-		QFileInfo fi(filename);
-
-		const auto &map = GetExt2IconMap();
-
-		const auto iter = map.find(fi.suffix());
-		if (iter == map.end())
-		{
-			return Themes::GetPixmap(Themes::PixmapResourceId::FileSharingFileTypeIconUnknown);
-		}
-
-		return Themes::GetPixmap(iter->second);
+        const auto resId = GetIconIdByFilename(filename);
+		return Themes::GetPixmap(resId);
 	}
+
+    Themes::PixmapResourceId GetIconIdByFilename(const QString &filename)
+    {
+        assert(!filename.isEmpty());
+
+        QFileInfo fi(filename);
+
+        const auto &map = GetExt2IconMap();
+
+        const auto iter = map.find(fi.suffix());
+        if (iter != map.end())
+        {
+            return iter->second;
+        }
+
+        return Themes::PixmapResourceId::FileSharingFileTypeIconUnknown;
+    }
+
+    bool IsImageExtension(const QString &ext)
+    {
+        assert(!ext.isEmpty());
+
+        return GetKnownImageExtensions().contains(ext);
+    }
+
+    bool IsVideoExtension(const QString &ext)
+    {
+        assert(!ext.isEmpty());
+
+        return GetKnownVideoExtensions().contains(ext);
+    }
 }
 
 namespace
@@ -66,9 +94,14 @@ namespace
 
         map.emplace("ppt", PixmapResourceId::FileSharingFileTypeIconPpt);
 
-        map.emplace("wav", PixmapResourceId::FileSharingFileTypeIconSound);
-        map.emplace("mp3", PixmapResourceId::FileSharingFileTypeIconSound);
-        map.emplace("ogg", PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("wav",  PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("mp3",  PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("ogg",  PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("flac", PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("aac", PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("m4a", PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("aiff", PixmapResourceId::FileSharingFileTypeIconSound);
+        map.emplace("ape", PixmapResourceId::FileSharingFileTypeIconSound);
 
         map.emplace("log", PixmapResourceId::FileSharingFileTypeIconTxt);
         map.emplace("txt", PixmapResourceId::FileSharingFileTypeIconTxt);
@@ -78,6 +111,7 @@ namespace
         map.emplace("mkv", PixmapResourceId::FileSharingFileTypeIconVideo);
         map.emplace("wmv", PixmapResourceId::FileSharingFileTypeIconVideo);
         map.emplace("flv", PixmapResourceId::FileSharingFileTypeIconVideo);
+        map.emplace("webm", PixmapResourceId::FileSharingFileTypeIconVideo);
 
         map.emplace("doc",  PixmapResourceId::FileSharingFileTypeIconWord);
         map.emplace("docx", PixmapResourceId::FileSharingFileTypeIconWord);
@@ -88,4 +122,29 @@ namespace
 
 		return map;
 	}
+
+    const QStringSet& GetKnownImageExtensions()
+    {
+        static QStringSet knownExtensions;
+
+        if (knownExtensions.empty())
+        {
+            knownExtensions << "bmp" << "jpg" << "jpeg" << "png" << "tiff" << "tif" << "gif";
+        }
+
+        return knownExtensions;
+    }
+
+    const QStringSet& GetKnownVideoExtensions()
+    {
+        static QStringSet knownExtensions;
+
+        if (knownExtensions.empty())
+        {
+            knownExtensions << "avi" << "mkv" << "wmv" << "flv" << "3gp" << "mpeg4" << "webm" << "mov";
+        }
+
+        return knownExtensions;
+    }
+
 }

@@ -384,38 +384,48 @@ void core::wim::wim_packet::replace_log_messages(tools::binary_stream& _bs)
     if (!logdata || !sz)
         return;
 
-    std::string marker("\"text\":");
-
-    char* cursor = logdata;
-
-    while (cursor < end)
+    std::vector<std::string> vmarkers;
+    vmarkers.push_back("\"text\":");
+    vmarkers.push_back("\"message\":");
+    
+    auto replace_marker = [logdata, end](const std::string& _marker)
     {
-        cursor = std::search(cursor, end, marker.c_str(), marker.c_str() + marker.length());
-        cursor += marker.length();
-        if (cursor >= end)
-            return;
-
-        while (cursor < end && *cursor++ != '\"') {}
-        
+        char* cursor = logdata;
 
         while (cursor < end)
         {
-            if (*cursor == '\"')
-                break;
+            cursor = std::search(cursor, end, _marker.c_str(), _marker.c_str() + _marker.length());
+            cursor += _marker.length();
+            if (cursor >= end)
+                return;
 
-            if (*cursor == '\\')
+            while (cursor < end && *cursor++ != '\"') {}
+
+
+            while (cursor < end)
             {
+                if (*cursor == '\"')
+                    break;
+
+                if (*cursor == '\\')
+                {
+                    *cursor = '*';
+
+                    ++cursor;
+                    if (cursor >= end)
+                        return;
+                }
+
                 *cursor = '*';
 
                 ++cursor;
-                if (cursor >= end)
-                    return;
             }
-
-            *cursor = '*';
-
-            ++cursor;
         }
-    }
+    };
+    
 
+    for (const auto& _marker : vmarkers)
+    {
+        replace_marker(_marker);
+    }
 }

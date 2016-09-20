@@ -15,7 +15,7 @@ namespace
 {
     bool Contains(const std::string& first, const std::string& second)
     {
-        return tools::system::to_upper(first).find(second.c_str()) != std::string::npos;
+        return first.find(second.c_str()) != std::string::npos;
     }
 }
 
@@ -72,6 +72,8 @@ void cl_presence::serialize(rapidjson::Value& _node, rapidjson_allocator& _a)
 
 void cl_presence::unserialize(const rapidjson::Value& _node)
 {
+    search_cache_.clear();
+
     auto iter_state = _node.FindMember("state");
     auto iter_user_type = _node.FindMember("userType");
     auto iter_capabilities = _node.FindMember("capabilities");
@@ -144,11 +146,34 @@ void cl_presence::unserialize(const rapidjson::Value& _node)
 }
 
 
+void contactlist::update_cl(const contactlist& _cl)
+{
+    groups_ = _cl.groups_;
+
+    contacts_index_ = _cl.contacts_index_;
+
+    changed_ = true;
+}
+
+void contactlist::update_ignorelist(const ignorelist_cache& _ignorelist)
+{
+    ignorelist_ = _ignorelist;
+
+    changed_ = true;
+}
+
+
 void contactlist::update_presence(const std::string& _aimid, std::shared_ptr<cl_presence> _presence)
 {
     auto iter_contact = contacts_index_.find(_aimid);
     if (iter_contact == contacts_index_.end())
         return;
+
+    if (_presence->friendly_ != iter_contact->second->presence_->friendly_ ||
+        _presence->ab_contact_name_ != iter_contact->second->presence_->ab_contact_name_)
+    {
+        iter_contact->second->presence_->search_cache_.clear();
+    }
 
     iter_contact->second->presence_->state_ = _presence->state_;
     iter_contact->second->presence_->usertype_ = _presence->usertype_;
@@ -197,6 +222,19 @@ void contactlist::serialize(rapidjson::Value& _node, rapidjson_allocator& _a)
     }
 
     _node.AddMember("groups", node_groups, _a);
+
+    rapidjson::Value node_ignorelist(rapidjson::Type::kArrayType);
+
+    for (const auto& _aimid : ignorelist_)
+    {
+        rapidjson::Value node_aimid(rapidjson::Type::kObjectType);
+
+        node_aimid.AddMember("aimId", _aimid, _a);
+
+        node_ignorelist.PushBack(node_aimid, _a);
+    }
+
+    _node.AddMember("ignorelist", node_ignorelist, _a);
 }
 
 void core::wim::contactlist::serialize(icollection* _coll, const std::string& type)
@@ -222,6 +260,9 @@ void core::wim::contactlist::serialize(icollection* _coll, const std::string& ty
         for (auto iter_buddy = group->buddies_.begin(); iter_buddy != group->buddies_.end(); iter_buddy++)
         {
             auto buddy = (*iter_buddy);
+
+            if (is_ignored(buddy->aimid_))
+                continue;
 
             coll_helper contact_coll(_coll->create_collection(), true);
             contact_coll.set_value_as_string("aimId", buddy->aimid_);
@@ -249,23 +290,49 @@ void core::wim::contactlist::serialize(icollection* _coll, const std::string& ty
 bool core::wim::contactlist::search(std::vector<std::string> search_patterns)
 {
     for (std::vector<std::string>::iterator iter = search_patterns.begin(); iter != search_patterns.end(); ++iter)
+    {
         *iter = tools::system::to_upper(*iter);
+    }
+
     std::map< std::string, std::shared_ptr<cl_buddy> > casche;
     if (last_search_patterns_.empty() || search_patterns[0].find(last_search_patterns_[0].c_str()) == std::string::npos)
+    {
         casche = contacts_index_;
+    }
     else
+    {
         casche = search_cache_;
+    }
 
     std::map< std::string, std::shared_ptr<cl_buddy> > result;
     std::map< std::string, std::shared_ptr<cl_buddy> >::const_iterator iter = casche.begin();
+
     while (g_core->is_valid_search() && iter != casche.end())
     {
+        if (is_ignored(iter->first))
+        {
+            ++iter;
+            continue;
+        }
+
+        if (iter->second->presence_->search_cache_.is_empty())
+        {
+            iter->second->presence_->search_cache_.aimid_ = tools::system::to_upper(iter->second->aimid_);
+            iter->second->presence_->search_cache_.friendly_ = tools::system::to_upper(iter->second->presence_->friendly_);
+            iter->second->presence_->search_cache_.ab_ = tools::system::to_upper(iter->second->presence_->ab_contact_name_);
+        }
+
+        const auto& aimId = iter->second->presence_->search_cache_.aimid_;
+        const auto& friendly = iter->second->presence_->search_cache_.friendly_;
+        const auto& ab = iter->second->presence_->search_cache_.ab_;
+
         for (auto pattern : search_patterns)
         {
-            if ((Contains(iter->second->aimid_, pattern) || 
-                Contains(iter->second->presence_->friendly_, pattern) ||
-                Contains(iter->second->presence_->ab_contact_name_, pattern)) && iter->second->presence_->usertype_ != "sms")
+            if (iter->second->presence_->usertype_ != "sms" && (Contains(aimId, pattern) || Contains(friendly, pattern) || Contains(ab, pattern)))
+            {
                 result.insert(std::make_pair(iter->first, iter->second));
+                break;
+            }
         }
         ++iter;
     }
@@ -273,7 +340,7 @@ bool core::wim::contactlist::search(std::vector<std::string> search_patterns)
     if (g_core->end_search() == 0)
     {
         last_search_patterns_ = search_patterns;
-        search_cache_.swap(result);
+        search_cache_ = std::move(result);
         return true;
     }
 
@@ -300,6 +367,67 @@ void core::wim::contactlist::serialize_search(icollection* _coll)
     cl.set_value_as_array("contacts", contacts_array.get());
 }
 
+void contactlist::serialize_ignorelist(icollection* _coll)
+{
+    coll_helper cl(_coll, false);
+
+    ifptr<iarray> ignore_array(cl->create_array());
+
+    for (auto iter = ignorelist_.begin(); iter != ignorelist_.end(); ++iter)
+    {
+        coll_helper coll_chatter(cl->create_collection(), true);
+        ifptr<ivalue> val(cl->create_value());
+        val->set_as_string(iter->c_str(), (int32_t) iter->length());
+        ignore_array->push_back(val.get());
+    }
+
+    cl.set_value_as_array("aimids", ignore_array.get());
+}
+
+void contactlist::serialize_contact(const std::string& _aimid, icollection* _coll)
+{
+    coll_helper coll(_coll, false);
+        
+    ifptr<iarray> groups_array(_coll->create_array());
+    groups_array->reserve((int32_t) groups_.size());
+    
+    for (const auto& _group : groups_)
+    {
+        for (const auto& _buddy : _group->buddies_)
+        {
+            if (_buddy->aimid_ == _aimid)
+            {
+                coll_helper coll_group(_coll->create_collection(), true);
+                coll_group.set_value_as_string("group_name", _group->name_);
+                coll_group.set_value_as_int("group_id", _group->id_);
+                coll_group.set_value_as_bool("added", _group->added_);
+                coll_group.set_value_as_bool("removed", _group->removed_);
+
+                ifptr<iarray> contacts_array(_coll->create_array());
+
+                coll_helper coll_contact(coll->create_collection(), true);
+                coll_contact.set_value_as_string("aimId", _buddy->aimid_);
+
+                _buddy->presence_->serialize(coll_contact.get());
+
+                ifptr<ivalue> val_contact(_coll->create_value());
+                val_contact->set_as_collection(coll_contact.get());
+                contacts_array->push_back(val_contact.get());
+
+                ifptr<ivalue> val_group(_coll->create_value());
+                val_group->set_as_collection(coll_group.get());
+                groups_array->push_back(val_group.get());
+
+                coll_group.set_value_as_array("contacts", contacts_array.get());
+
+                coll.set_value_as_array("groups", groups_array.get());
+
+                return;
+            }
+        }
+    }
+}
+
 std::string contactlist::get_contact_friendly_name(const std::string& contact_login) {
     auto it = contacts_index_.find(contact_login);
     if (contacts_index_.end() != it && !!it->second->presence_) {
@@ -318,7 +446,7 @@ int32_t contactlist::unserialize(const rapidjson::Value& _node)
     if (iter_groups == _node.MemberEnd() || !iter_groups->value.IsArray())
         return 0;
 
-    for (auto iter_grp = iter_groups->value.Begin(); iter_grp != iter_groups->value.End(); iter_grp++)
+    for (auto iter_grp = iter_groups->value.Begin(); iter_grp != iter_groups->value.End(); ++iter_grp)
     {
         auto group = std::make_shared<core::wim::cl_group>();
 
@@ -345,7 +473,7 @@ int32_t contactlist::unserialize(const rapidjson::Value& _node)
         auto iter_buddies = iter_grp->FindMember("buddies");
         if (iter_buddies != iter_grp->MemberEnd() && iter_buddies->value.IsArray())
         {
-            for (auto iter_bd = iter_buddies->value.Begin(); iter_bd != iter_buddies->value.End(); iter_bd++)
+            for (auto iter_bd = iter_buddies->value.Begin(); iter_bd != iter_buddies->value.End(); ++iter_bd)
             {
                 auto buddy = std::make_shared<wim::cl_buddy>();
 
@@ -369,6 +497,20 @@ int32_t contactlist::unserialize(const rapidjson::Value& _node)
 
                 contacts_index_[buddy->aimid_] = buddy;
             }
+        }
+    }
+
+    auto iter_ignorelist = _node.FindMember("ignorelist");
+    if (iter_ignorelist == _node.MemberEnd() || !iter_ignorelist->value.IsArray())
+        return 0;
+
+    for (auto iter_ignore = iter_ignorelist->value.Begin(); iter_ignore != iter_ignorelist->value.End(); ++iter_ignore)
+    {
+        auto iter_aimid = iter_ignore->FindMember("aimId");
+
+        if (iter_aimid != iter_ignore->MemberEnd() || iter_aimid->value.IsString())
+        {
+            ignorelist_.emplace(iter_aimid->value.GetString());
         }
     }
 
@@ -523,14 +665,50 @@ void contactlist::merge_from_diff(const std::string& _type, std::shared_ptr<cont
     changed_ = true;
 }
 
-int contactlist::GetPhoneContactCounts() const
+int32_t contactlist::get_contacts_count() const
+{
+    return contacts_index_.size();
+}
+
+int32_t contactlist::get_phone_contacts_count() const
 {
     return std::count_if (contacts_index_.begin(), contacts_index_.end(), [](std::pair<std::string, std::shared_ptr<cl_buddy>> contact)
     {return contact.second.get()->aimid_.find("+") != contact.second.get()->aimid_.npos;});
 }
 
-int contactlist::GetGroupChatContactCounts() const
+int32_t contactlist::get_groupchat_contacts_count() const
 {
     return std::count_if (contacts_index_.begin(), contacts_index_.end(), [](std::pair<std::string, std::shared_ptr<cl_buddy>> contact)
     {return contact.second.get()->aimid_.find("@chat.agent") != contact.second.get()->aimid_.npos;});
+}
+
+void contactlist::add_to_ignorelist(const std::string& _aimid)
+{
+    ignorelist_.emplace(_aimid);
+
+    set_changed(true);
+}
+
+void contactlist::remove_from_ignorelist(const std::string& _aimid)
+{
+    auto iter = ignorelist_.find(_aimid);
+    if (iter != ignorelist_.end())
+        ignorelist_.erase(iter);
+
+    set_changed(true);
+}
+
+std::shared_ptr<cl_group> contactlist::get_first_group() const
+{
+    if (groups_.empty())
+    {
+        return nullptr;
+    }
+
+    return (*groups_.begin());
+}
+
+bool contactlist::is_ignored(const std::string& _aimid)
+{
+    return (ignorelist_.find(_aimid) != ignorelist_.end());
 }

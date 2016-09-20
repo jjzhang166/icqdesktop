@@ -7,32 +7,29 @@ namespace Ui
 
     namespace themes
     {
-        class theme;
-        typedef std::shared_ptr<theme> themePtr;
+        typedef std::shared_ptr<class theme> themePtr;
     }
 
 	class HistoryControlPageItem : public QWidget
 	{
         Q_OBJECT
 
-    protected:
-
-        virtual void drawLastReadAvatar(QPainter& _p, const QString& _aimid, const QString& _friendly, const int _rightPadding);
-
-    // template methods
 	public:
-        virtual QString formatRecentsText() const = 0;
-
-    public:
-		HistoryControlPageItem(QWidget *parent);
+        HistoryControlPageItem(QWidget *parent);
 
         virtual void clearSelection();
+
+        virtual QString formatRecentsText() const = 0;
 
         bool hasAvatar() const;
 
         bool hasTopMargin() const;
 
-        bool isSelected() const;
+        virtual bool isSelected() const;
+
+        virtual void onActivityChanged(const bool isActive);
+
+        virtual void onVisibilityChanged(const bool isVisible);
 
         virtual void setHasAvatar(const bool value);
 
@@ -44,7 +41,7 @@ namespace Ui
 
         virtual void setSender(const QString& _sender);
 
-        virtual QString getContact() const { return aimId_; }
+        const QString& getAimid() const { return aimId_; }
 
         virtual themes::themePtr theme() const;
 
@@ -52,17 +49,27 @@ namespace Ui
 
         virtual qint64 getId() const;
 
+        void setDeleted(const bool _isDeleted);
+
+        bool isDeleted() const;
+
+    protected:
+        virtual void drawLastReadAvatar(QPainter& _p, const QString& _aimid, const QString& _friendly, const int _rightPadding, const int _bottomPadding);
+
+        void setAimid(const QString &aimId);
+
     private:
+        bool Selected_;
 
         bool HasTopMargin_;
 
         bool HasAvatar_;
 
-    protected:
+        bool HasAvatarSet_;
+
+        bool isDeleted_;
+
         QString aimId_;
-
-        bool Selected_;
-
 	};
 
 }

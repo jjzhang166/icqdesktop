@@ -3,18 +3,10 @@
 #include "utils/translator.h"
 #include "../gui.shared/constants.h"
 #include "../common.shared/constants.h"
-#include "../common.shared/TestingTools.h"
+#include "../gui.shared/TestingTools.h"
 
 #include <thread>
-
-#if defined (_WIN32)
-
-#define WINVER 0x0500
-#define _WIN32_WINDOWS 0x0500
-#define _WIN32_WINNT 0x0600
-
 #include <array>
-#include <cassert>
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
@@ -30,17 +22,31 @@
 #include <iostream>
 #include <atomic>
 #include <codecvt>
-#include <assert.h>
-#include <xutility>
 #include <limits>
 #include <cmath>
 #include <mutex>
 #include <numeric>
 #include <fstream>
-
 #include <stdint.h>
+#include <condition_variable>
+#include <queue>
 
-#ifdef _WIN32
+#include <inttypes.h>
+
+#if defined __APPLE__ || defined __linux__
+#define  NO_ASSERTS
+#endif //__APPLE__ _LINUX_
+#include <cassert>
+#if defined NO_ASSERTS
+#define assert(e) { if (!(e)) puts("ASSERT: " #e); }
+#endif //NO_ASSERT
+
+#if defined (_WIN32)
+
+#define WINVER 0x0500
+#define _WIN32_WINDOWS 0x0500
+#define _WIN32_WINNT 0x0600
+
 #include <tchar.h>
 #include <strsafe.h>
 #include <sdkddkver.h>
@@ -57,7 +63,7 @@
 #include <atlbase.h>
 #include <atlstr.h>
 #include <atlwin.h>
-#endif //_WIN32
+
 
 #include <QResource>
 #include <QTranslator>
@@ -105,6 +111,7 @@
 #include <QWidget>
 #include <QTreeView>
 #include <QBoxLayout>
+#include <QStackedLayout>
 #include <QHeaderView>
 #include <QCompleter>
 #include <QStandardItemModel>
@@ -130,42 +137,29 @@
 #include <QTextBrowser>
 #include <QClipboard>
 #include <QGraphicsOpacityEffect>
-
 #include <QGraphicsDropShadowEffect>
 #include <QProxyStyle>
 #include <QDesktopServices>
 #include <QCheckBox>
-
+#include <QGraphicsView>
+#include <QtMultimediaWidgets/QGraphicsVideoItem>
 #include <QDesktopWidget>
 #include <QSystemTrayIcon>
 #include <QMenu>
-
 #include <QMovie>
 #include <QGestureEvent>
+#include <QtMultimedia/QMediaPlayer>
+#include <QtMultimediaWidgets/QVideoWidget>
+#include <QtEndian>
+#include <QDrag>
 
-#undef min
 #undef max
+#undef MAX
+#undef min
+#undef MIN
 #undef small
 
 #elif defined (__linux__)
-
-#include <functional>
-#include <unordered_map>
-#include <unordered_set>
-#include <memory>
-#include <type_traits>
-#include <map>
-#include <set>
-#include <array>
-#include <vector>
-#include <stack>
-#include <sstream>
-#include <iomanip>
-#include <atomic>
-#include <codecvt>
-#include <assert.h>
-#include <limits>
-#include <stdint.h>
 
 #include <QtCore/qresource.h>
 #include <QtCore/qtranslator.h>
@@ -205,7 +199,6 @@
 #include <QtCore/qsize.h>
 #include <QtCore/qmutex.h>
 #include <QtWidgets/qscrollbar.h>
-
 #include <QtConcurrent/qtconcurrentcompilertest.h>
 #include <QtConcurrent/qtconcurrentexception.h>
 #include <QtConcurrent/qtconcurrentfilter.h>
@@ -221,12 +214,12 @@
 #include <QtConcurrent/qtconcurrentstoredfunctioncall.h>
 #include <QtConcurrent/qtconcurrentthreadengine.h>
 #include <QtConcurrent/qtconcurrentversion.h>
-
 #include <QtCore/qmap.h>
 #include <QtCore/qtextstream.h>
 #include <QtWidgets/qwidget.h>
 #include <QtWidgets/qtreeview.h>
 #include <QtWidgets/qboxlayout.h>
+#include <QtWidgets/qstackedlayout.h>
 #include <QtWidgets/qheaderview.h>
 #include <QtWidgets/qcompleter.h>
 #include <QtGui/qstandarditemmodel.h>
@@ -266,33 +259,10 @@
 #include <QtWidgets/qgesture.h>
 #include <QtCore/quuid.h>
 #include <QtCore/qurlquery.h>
-
-#define assert(e) { }
-
-#include "../corelib/common.h"
-
+#include <QtCore/qendian.h>
+#include <QtGui/qdrag.h>
 #else
-
-#include <functional>
-#include <unordered_map>
-#include <unordered_set>
-#include <memory>
-#include <type_traits>
-#include <map>
-#include <set>
-#include <array>
-#include <vector>
-#include <stack>
-#include <deque>
-#include <sstream>
-#include <iomanip>
-#include <atomic>
-#include <codecvt>
-#include <assert.h>
-#include <limits>
-
-#include <stdint.h>
-
+#include "macconfig.h"
 #import <QtCore/qresource.h>
 #import <QtCore/qtranslator.h>
 #import <QtGui/qscreen.h>
@@ -331,7 +301,6 @@
 #import <QtCore/qsize.h>
 #import <QtCore/qmutex.h>
 #import <QtWidgets/qscrollbar.h>
-
 #import <QtConcurrent/qtconcurrentcompilertest.h>
 #import <QtConcurrent/qtconcurrentexception.h>
 #import <QtConcurrent/qtconcurrentfilter.h>
@@ -347,12 +316,12 @@
 #import <QtConcurrent/qtconcurrentstoredfunctioncall.h>
 #import <QtConcurrent/qtconcurrentthreadengine.h>
 #import <QtConcurrent/qtconcurrentversion.h>
-
 #import <QtCore/qmap.h>
 #import <QtCore/qtextstream.h>
 #import <QtWidgets/qwidget.h>
 #import <QtWidgets/qtreeview.h>
 #import <QtWidgets/qboxlayout.h>
+#import <QtWidgets/qstackedlayout.h>
 #import <QtWidgets/qheaderview.h>
 #import <QtWidgets/qcompleter.h>
 #import <QtGui/qstandarditemmodel.h>
@@ -393,23 +362,15 @@
 #import <QtWidgets/qgesture.h>
 #import <QtCore/QUuid.h>
 #import <QtCore/qurlquery.h>
-/*
-#import <QtNetwork/qnetworkrequest.h>
-#import <QtNetwork/qnetworkreply.h>
-#import <QtNetwork/qnetworkaccessmanager.h>
-#import <QtNetwork/qhttpmultipart.h>
-#import <QtCore/qurlquery.h>
-*/
-
-#define assert(e) { if (!(e)) puts("ASSERT: " #e); }
-
-#include "macconfig.h"
-
-//#include <QGraphicsDropShadowEffect>
-//#include <QProxyStyle>
+#import <QtMultimedia/QMediaPlayer.h>
+#import <QtCore/qendian.h>
+#import <QtGui/qdrag.h>
 #endif // _WIN32
 
-#include "../corelib/common.h"
-#ifndef _WIN32
-    #define MAC_OS
-#endif
+#include "../common.shared/common.h"
+
+namespace openal
+{
+#include <AL/al.h>
+#include <AL/alc.h>
+}

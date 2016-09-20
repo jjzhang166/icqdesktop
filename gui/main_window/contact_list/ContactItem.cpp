@@ -4,16 +4,16 @@
 
 namespace Logic
 {
-	ContactItem::ContactItem(Data::Contact *contact)
-		: contact_(contact)
+	ContactItem::ContactItem(Data::Contact* _contact)
+		: contact_(_contact)
 		, visible_(true)
         , isYouAdmin_(false)
 	{
 	}
 
-	bool ContactItem::operator== (const ContactItem& other) const
+	bool ContactItem::operator== (const ContactItem& _other) const
 	{
-		return contact_->AimId_ == other.Get()->AimId_;
+		return contact_->AimId_ == _other.Get()->AimId_;
 	}
 
 	bool ContactItem::is_visible() const
@@ -21,9 +21,9 @@ namespace Logic
 		return visible_;
 	}
 
-	void ContactItem::set_visible(bool visible)
+	void ContactItem::set_visible(bool _visible)
 	{
-		visible_ = visible;
+		visible_ = _visible;
 	}
 
 	bool ContactItem::is_not_auth() const
@@ -85,14 +85,14 @@ namespace Logic
 		return contact_->IsChecked_;
 	}
 
-	void ContactItem::set_checked(bool _is_checked)
+	void ContactItem::set_checked(bool _isChecked)
 	{
-		contact_->IsChecked_ = _is_checked;
+		contact_->IsChecked_ = _isChecked;
 	}
 
-    void ContactItem::set_chat_admin(bool value)
+    void ContactItem::set_chat_admin(bool _value)
     {
-        isYouAdmin_ = value;
+        isYouAdmin_ = _value;
     }
 
     bool ContactItem::is_you_admin() const
@@ -100,9 +100,9 @@ namespace Logic
         return isYouAdmin_;
     }
 
-	void ContactItem::set_input_text(const QString& _input_text)
+	void ContactItem::set_input_text(const QString& _inputText)
 	{
-		input_text_ = _input_text;
+		input_text_ = _inputText;
 	}
 
 	QString ContactItem::get_input_text() const
@@ -115,7 +115,7 @@ namespace Logic
 		profile_ = _profile;
 	}
 
-	profile_ptr ContactItem::get_contact_profile() const
+	profile_ptr ContactItem::getContactProfile() const
 	{
 		return profile_;
 	}

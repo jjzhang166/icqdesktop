@@ -9,11 +9,12 @@ namespace Ui
         Q_OBJECT
 
     public:
-
         MessageItemBase(QWidget* _parent);
-        virtual ~MessageItemBase();
+
+        virtual ~MessageItemBase() = 0;
 
         virtual bool isOutgoing() const = 0;
+
     };
 
 }

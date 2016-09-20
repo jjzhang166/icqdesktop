@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "threadpool.h"
-#include "../../common.shared/crash_handler.h"
+
+#ifdef _WIN32
+    #include "../common.shared/win32/crash_handler.h"
+#endif
 
 using namespace core;
 using namespace tools;
@@ -51,7 +54,7 @@ bool threadpool::run_task_impl()
         }
 
         nextTask = std::move(tasks_.front());
-        tasks_.pop();
+        tasks_.pop_front();
     }
 
     nextTask();
@@ -60,6 +63,9 @@ bool threadpool::run_task_impl()
 
 bool threadpool::run_task()
 {
+    if (build::is_debug())
+        return run_task_impl();
+
 #ifdef _WIN32
      __try
 #endif // _WIN32
@@ -93,7 +99,7 @@ threadpool::~threadpool()
 
 }
 
-bool threadpool::enqueue(const task _task)
+bool threadpool::push_back(const task _task)
 {
     {
         std::unique_lock<std::mutex> lock(queue_mutex_);
@@ -110,7 +116,7 @@ bool threadpool::enqueue(const task _task)
 #endif //__linux__
 
 #ifdef _WIN32
-        tasks_.emplace([_task]
+        tasks_.emplace_back([_task]
         {
             core::dump::crash_handler handler;
             handler.set_product_bundle("icq.desktop");
@@ -118,7 +124,40 @@ bool threadpool::enqueue(const task _task)
             _task();
         });
 #else
-        tasks_.emplace(_task);
+        tasks_.emplace_back(_task);
+#endif // _WIN32
+    }
+
+    condition_.notify_one();
+
+    return true;
+}
+
+bool threadpool::push_front(const task _task)
+{
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex_);
+        if (stop_)
+        {
+            return false;
+        }
+#ifdef __linux__
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGPIPE);
+        if (pthread_sigmask(SIG_BLOCK, &set, NULL) != 0)
+            assert(false);
+#endif //__linux__
+
+#ifdef _WIN32
+        tasks_.emplace_front([_task]
+        {
+            core::dump::crash_handler handler;
+            handler.set_thread_exception_handlers();
+            _task();
+        });
+#else
+        tasks_.emplace_front(_task);
 #endif // _WIN32
     }
 

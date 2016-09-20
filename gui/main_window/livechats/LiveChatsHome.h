@@ -10,11 +10,11 @@ namespace Ui
     {
         Q_OBJECT
     public:
-        LiveChatHomeWidget(QWidget* _parent, const Data::ChatInfo& info);
+        LiveChatHomeWidget(QWidget* _parent, const Data::ChatInfo& _info);
         virtual ~LiveChatHomeWidget();
 
     protected:
-        virtual void paintEvent(QPaintEvent* e);
+        virtual void paintEvent(QPaintEvent* _e);
 
     private Q_SLOTS:
         void joinButtonClicked();
@@ -28,7 +28,6 @@ namespace Ui
         Data::ChatInfo info_;
         LiveChatProfileWidget* profile_;
         QPushButton* joinButton_;
-        QString joinedLivechat_;
     };
 
     class LiveChatHome : public QWidget
@@ -40,7 +39,7 @@ namespace Ui
         virtual ~LiveChatHome();
 
     protected:
-        virtual void paintEvent(QPaintEvent* e);
+        virtual void paintEvent(QPaintEvent* _e);
 
     private Q_SLOTS:
         void liveChatSelected(Data::ChatInfo);

@@ -1,88 +1,84 @@
 #include "stdafx.h"
 #include "ContactListModel.h"
-#include "../../cache/avatars/AvatarStorage.h"
 
-#include "../history_control/MessagesModel.h"
+#include "contact_profile.h"
+#include "RecentsModel.h"
+#include "UnknownsModel.h"
+#include "../MainWindow.h"
+#include "../history_control/HistoryControlPage.h"
 #include "../../core_dispatcher.h"
 #include "../../gui_settings.h"
-#include "../../utils/profiling/auto_stop_watch.h"
-#include "contact_profile.h"
-#include "../../utils/utils.h"
-#include "../../core_dispatcher.h"
-#include "../../utils/InterConnector.h"
-#include "../../utils/gui_coll_helper.h"
 #include "../../my_info.h"
-#include "RecentsModel.h"
-#include "../history_control/HistoryControlPage.h"
-#include "../MainWindow.h"
-#include "../../controls/GeneralDialog.h"
-#include "Common.h"
+#include "../../utils/gui_coll_helper.h"
+#include "../../utils/InterConnector.h"
+#include "../../utils/utils.h"
+#include "../../cache/avatars/AvatarStorage.h"
 
 namespace
 {
     struct ItemLessThan
     {
-        inline bool operator() (const Logic::ContactItem& first, const Logic::ContactItem& second)
+        inline bool operator() (const Logic::ContactItem& _first, const Logic::ContactItem& _second)
         {
-            if (first.Get()->GroupId_ == second.Get()->GroupId_)
+            if (_first.Get()->GroupId_ == _second.Get()->GroupId_)
             {
-                if (first.is_group() && second.is_group())
+                if (_first.is_group() && _second.is_group())
                     return false;
 
-                if (first.is_group())
+                if (_first.is_group())
                     return true;
 
-                if (second.is_group())
+                if (_second.is_group())
                     return false;
 
-                return first.Get()->GetDisplayName().toUpper() < second.Get()->GetDisplayName().toUpper();
+                return _first.Get()->GetDisplayName().toUpper() < _second.Get()->GetDisplayName().toUpper();
             }
 
-            return first.Get()->GroupId_ < second.Get()->GroupId_;
+            return _first.Get()->GroupId_ < _second.Get()->GroupId_;
         }
     };
 
-    bool IsActiveContact(const Logic::ContactItem &contact)
+    bool IsActiveContact(const Logic::ContactItem& _contact)
     {
-        return (contact.is_online() || contact.recently() || contact.Get()->Is_chat_) && !contact.is_group();
+        return (_contact.is_online() || _contact.recently() || _contact.Get()->Is_chat_) && !_contact.is_group();
     }
 
     struct ItemLessThanNoGroups
     {
-        inline bool operator() (const Logic::ContactItem& first, const Logic::ContactItem& second)
+        inline bool operator() (const Logic::ContactItem& _first, const Logic::ContactItem& _second)
         {
-            if (first.Get()->IsChecked_ != second.Get()->IsChecked_)
-                return first.Get()->IsChecked_;
+            if (_first.Get()->IsChecked_ != _second.Get()->IsChecked_)
+                return _first.Get()->IsChecked_;
 
-            if (IsActiveContact(first) != IsActiveContact(second))
-                return IsActiveContact(first);
+            if (IsActiveContact(_first) != IsActiveContact(_second))
+                return IsActiveContact(_first);
 
-            return first.Get()->GetDisplayName().toUpper() < second.Get()->GetDisplayName().toUpper();
+            return _first.Get()->GetDisplayName().toUpper() < _second.Get()->GetDisplayName().toUpper();
         }
     };
 
     struct ItemLessThanSelectMembers
     {
-        inline bool operator() (const Logic::ContactItem& first, const Logic::ContactItem& second)
+        inline bool operator() (const Logic::ContactItem& _first, const Logic::ContactItem& _second)
         {
-            if (first.Get()->IsChecked_ != second.Get()->IsChecked_)
-                return first.Get()->IsChecked_;
+            if (_first.Get()->IsChecked_ != _second.Get()->IsChecked_)
+                return _first.Get()->IsChecked_;
 
-            if (IsActiveContact(first) != IsActiveContact(second))
-                return IsActiveContact(first);
+            if (IsActiveContact(_first) != IsActiveContact(_second))
+                return IsActiveContact(_first);
 
-            const auto& first_name = first.Get()->GetDisplayName().toUpper();
-            const auto& second_name = second.Get()->GetDisplayName().toUpper();
+            const auto& firstName = _first.Get()->GetDisplayName().toUpper();
+            const auto& secondName = _second.Get()->GetDisplayName().toUpper();
 
-            if (first_name[0].isLetter() != second_name[0].isLetter())
-                return first_name[0].isLetter();
+            if (firstName[0].isLetter() != secondName[0].isLetter())
+                return firstName[0].isLetter();
 
             std::function<bool(QChar)> is_latin = [](QChar _c){return ((_c >= 'a' && _c <= 'z') || (_c >= 'A' && _c <= 'Z'));};
 
-            if (is_latin(first_name[0]) != is_latin(second_name[0]))
-                return !is_latin(first_name[0]);
+            if (is_latin(firstName[0]) != is_latin(secondName[0]))
+                return !is_latin(firstName[0]);
 
-            return first_name < second_name;
+            return firstName < secondName;
         }
     };
 
@@ -93,8 +89,8 @@ namespace Logic
 {
     std::unique_ptr<ContactListModel> g_contact_list_model;
 
-    ContactListModel::ContactListModel(QObject *parent)
-        : CustomAbstractListModel(parent)
+    ContactListModel::ContactListModel(QObject* _parent)
+        : CustomAbstractListModel(_parent)
         , scrollPosition_(0)
         , minVisibleIndex_(0)
         , maxVisibleIndex_(0)
@@ -103,6 +99,7 @@ namespace Logic
         , searchRequested_(false)
         , isWithCheckedBox_(false)
         , gotPageCallback_(nullptr)
+        , is_index_valid_(true)
     {
         // !!!temporary, on dlg_state engine must add contact to contactlist and send changes to gui
         connect(Ui::GetDispatcher(), SIGNAL(dlgState(Data::DlgState)), this, SLOT(dlgState(Data::DlgState)), Qt::QueuedConnection);
@@ -118,16 +115,18 @@ namespace Logic
         timer_->setInterval(REFRESH_TIMER);
         connect(timer_, &QTimer::timeout, this, &Logic::ContactListModel::refresh, Qt::QueuedConnection);
 
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownRemove,
+                this, &Logic::ContactListModel::authDeleteContact, Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownAdd,
-            this, &Logic::ContactListModel::auth_add_contact, Qt::QueuedConnection);
+            this, &Logic::ContactListModel::authAddContact, Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownAdd,
             this, &Logic::ContactListModel::stats_auth_add_contact, Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownSpam,
             this, &Logic::ContactListModel::unknown_contact_profile_spam_contact, Qt::QueuedConnection);
-        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownSpam, 
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownSpam,
             this, &Logic::ContactListModel::stats_spam_profile, Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownIgnore,
-            this, &Logic::ContactListModel::auth_ignore_contact, Qt::QueuedConnection);
+            this, &Logic::ContactListModel::authIgnoreContact, Qt::QueuedConnection);
     }
 
     int ContactListModel::rowCount(const QModelIndex &) const
@@ -137,40 +136,40 @@ namespace Logic
         return visibleCount + 1;
     }
 
-    int ContactListModel::getAbsIndexByVisibleIndex(int cur, int* visibleCount, int iter_limit) const
+    int ContactListModel::getAbsIndexByVisibleIndex(int _cur, int* _visibleCount, int _iterLimit) const
     {
         bool groups_enabled = Ui::get_gui_settings()->get_value<bool>(settings_cl_groups_enabled, false);
         int iter = 0;
-        *visibleCount = -1;
-        for (;*visibleCount < cur && (unsigned)iter < contacts_.size() && iter < iter_limit; ++iter)
+        *_visibleCount = -1;
+        for (;*_visibleCount < _cur && (unsigned)iter < contacts_.size() && iter < _iterLimit; ++iter)
         {
-            if (contacts_[iter].is_visible() && (groups_enabled || !contacts_[iter].is_group()))
+            if (contacts_[getIndexByOrderedIndex(iter)].is_visible() && (groups_enabled || !contacts_[getIndexByOrderedIndex(iter)].is_group()))
             {
-                ++*visibleCount;
+                ++*_visibleCount;
             }
         }
         return iter;
     }
 
-    QModelIndex ContactListModel::contactIndex(const QString& aimId)
+    QModelIndex ContactListModel::contactIndex(const QString& _aimId)
     {
         int visibleCount = 0;
-        auto contact_index = indexes_.find(aimId);
-        getAbsIndexByVisibleIndex(contact_index.value(), &visibleCount, contact_index.value());
+        auto contact_index = getOrderIndexByAimid(_aimId);
+        getAbsIndexByVisibleIndex(contact_index, &visibleCount, contact_index);
 
         return index(visibleCount + 1);
     }
 
-    QVariant ContactListModel::data(const QModelIndex &i, int r) const
+    QVariant ContactListModel::data(const QModelIndex& _i, int _r) const
     {
-        int cur = i.row();
+        int cur = _i.row();
 
-        if (!i.isValid() || (unsigned)cur >= contacts_.size())
+        if (!_i.isValid() || (unsigned)cur >= contacts_.size())
         {
             return QVariant();
         }
 
-        if (r == Qt::DisplayRole)
+        if (_r == Qt::DisplayRole)
         {
             if (maxVisibleIndex_ == 0 && minVisibleIndex_ == 0)
                 maxVisibleIndex_ = minVisibleIndex_ = cur;
@@ -183,9 +182,9 @@ namespace Logic
 
         int visibleCount = -1;
         auto iter = getAbsIndexByVisibleIndex(cur, &visibleCount, (int)contacts_.size());
-        auto cont = contacts_[iter - 1].Get();
+        auto cont = contacts_[getIndexByOrderedIndex(iter - 1)].Get();
 
-        if (Testing::isAccessibleRole(r))
+        if (Testing::isAccessibleRole(_r))
             return cont->AimId_;
 
         return QVariant::fromValue(cont);
@@ -196,88 +195,114 @@ namespace Logic
         if (!currentAimdId_.isEmpty())
             return currentAimdId_;
 
-        QString recentsFirstContact = Logic::GetRecentsModel()->firstContact();
+        QString recentsFirstContact = Logic::getRecentsModel()->firstContact();
         if (!recentsFirstContact.isEmpty())
             return recentsFirstContact;
 
         if (!contacts_.empty())
-            return contacts_.front().get_aimid();
+            return contacts_[getIndexByOrderedIndex(0)].get_aimid();
 
         return QString();
     }
 
-    Qt::ItemFlags ContactListModel::flags(const QModelIndex &i) const
+    Qt::ItemFlags ContactListModel::flags(const QModelIndex& _i) const
     {
-        if (!i.isValid())
+        if (!_i.isValid())
             return Qt::ItemIsEnabled;
 
-        unsigned flags = QAbstractItemModel::flags(i) | Qt::ItemIsEnabled;
+        unsigned flags = QAbstractItemModel::flags(_i) | Qt::ItemIsEnabled;
 
         int visibleCount = -1;
-        auto iter = getAbsIndexByVisibleIndex(i.row(), &visibleCount, (int)contacts_.size());
-        auto cont = contacts_[iter - 1].Get();
+        auto iter = getAbsIndexByVisibleIndex(_i.row(), &visibleCount, (int)contacts_.size());
+        auto cont = contacts_[getIndexByOrderedIndex(iter - 1)].Get();
 
-        if (i.row() == 0 || cont->GetType() == Data::GROUP)
+        if (_i.row() == 0 || cont->GetType() == Data::GROUP)
             flags |= ~Qt::ItemIsSelectable;
         flags |= ~Qt::ItemIsEditable;
 
         return (Qt::ItemFlags)flags;
     }
 
-    void ContactListModel::searchResult(QStringList result)
+    void ContactListModel::searchResult(QStringList _result)
     {
         unsigned size = (unsigned)match_.size();
-        match_ = GetContactListModel()->getSearchedContacts(result.toStdList());
+        match_ = getContactListModel()->getSearchedContacts(_result.toStdList());
         emit dataChanged(index(0), index(size));
-        if (!result.isEmpty())
+        if (!_result.isEmpty())
             emit results();
     }
 
-    bool ContactListModel::isShowInSelectMembers(const ContactItem& item)
+    bool ContactListModel::isVisibleItem(const ContactItem& _item)
     {
-        return (!isWithCheckedBox_ || (!item.is_chat() && Ui::MyInfo()->aimId() != item.get_aimid()));
+        if (!isWithCheckedBox_)
+        {
+            return true;
+        }
+
+        if (_item.is_chat())
+        {
+            return false;
+        }
+
+        return (Ui::MyInfo()->aimId() != _item.get_aimid());
     }
 
-    std::vector<ContactItem> ContactListModel::getSearchedContacts(std::list<QString> contacts)
+    std::vector<ContactItem> ContactListModel::getSearchedContacts(std::list<QString> _contacts)
     {
-        std::vector<ContactItem> result = GetCheckedContacts();		
-        for (const auto &contact : contacts)
+        std::vector<ContactItem> result = GetCheckedContacts();
+        for (const auto &contact : _contacts)
         {
-            auto item = contacts_[indexes_.value(contact)];
-            if (!item.is_group() && !item.is_checked())
+            const auto contactIndex = getIndexByOrderedIndex(getOrderIndexByAimid(contact));
+            assert(contactIndex >= 0);
+            assert(contactIndex < contacts_.size());
+
+            const auto isIndexOutOfRange = ((contactIndex < 0) || (contactIndex >= contacts_.size()));
+            if (isIndexOutOfRange)
             {
-                if (isShowInSelectMembers(item))
-                    result.emplace_back(item);
+                continue;
+            }
+
+            auto item = contacts_[contactIndex];
+            if (!item.is_group() &&
+                !item.is_checked() &&
+                isVisibleItem(item))
+            {
+                result.emplace_back(item);
             }
         }
 
         return result;
     }
 
-    std::vector<ContactItem> ContactListModel::getSearchedContacts()
+    std::vector<ContactItem> ContactListModel::getSearchedContacts(bool _isClSorting)
     {
         // return GetSearchedContacts(contacts);
+        if (!_isClSorting)
+            sortByRecents();
 
         std::vector<ContactItem> result = GetCheckedContacts();
-        for (auto iter = contacts_.begin(); iter != contacts_.end(); ++iter)
+        auto& list = _isClSorting ? sorted_index_cl_ : sorted_index_recents_;
+        for (auto idx : list)
         {
-            if (!iter->is_group() && !iter->is_checked())
+            auto iter = contacts_.begin() + idx;
+            if (!iter->is_group() &&
+                !iter->is_checked() &&
+                isVisibleItem(*iter))
             {
-                if (isShowInSelectMembers(*iter))
-                    result.emplace_back(*iter);
+                result.emplace_back(*iter);
             }
         }
 
         return result;
     }
 
-    void ContactListModel::searchPatternChanged(QString p)
+    void ContactListModel::searchPatternChanged(QString _p)
     {
-        searchPatterns_ = Utils::GetPossibleStrings(p);
-        if (p.isEmpty())
+        searchPatterns_ = Utils::GetPossibleStrings(_p);
+        if (_p.isEmpty())
         {
             unsigned size = (unsigned)match_.size();
-            match_ = GetContactListModel()->getSearchedContacts();
+            match_ = getContactListModel()->getSearchedContacts(true /* isClSorting */);
             emit dataChanged(index(0), index(size));
             return;
         }
@@ -310,27 +335,24 @@ namespace Logic
         match_.clear();
     }
 
-    int ContactListModel::addItem(Data::Contact *contact)
+    int ContactListModel::addItem(Data::Contact* _contact)
     {
-        {
-            int visibleCount = -1;
-            getAbsIndexByVisibleIndex((int)contacts_.size(), &visibleCount, (int)contacts_.size());
-            if ((visibleCount + 1) <= 1)
-                emit Utils::InterConnector::instance().hideNoContactsYet();
-        }
-
-        auto item = getContactItem(contact->AimId_);
+        auto item = getContactItem(_contact->AimId_);
         if (item != nullptr)
         {
-            item->Get()->ApplyBuddy(contact);
-            Logic::GetAvatarStorage()->UpdateDefaultAvatarIfNeed(contact->AimId_);
+            item->Get()->ApplyBuddy(_contact);
+            Logic::GetAvatarStorage()->UpdateDefaultAvatarIfNeed(_contact->AimId_);
         }
         else
         {
-            contacts_.emplace_back(contact);
-            indexes_.insert(contact->AimId_, (int)contacts_.size() - 1);
+            contacts_.emplace_back(_contact);
+            sorted_index_cl_.emplace_back((int)contacts_.size() - 1);
+            sorted_index_recents_.emplace_back((int)contacts_.size() - 1);
+            indexes_.insert(_contact->AimId_, (int)contacts_.size() - 1);
+            emit dataChanged(index((int)contacts_.size() - 1), index((int)contacts_.size() - 1));
         }
 
+        updatePlaceholders();
         return (int)contacts_.size();
     }
 
@@ -338,21 +360,23 @@ namespace Logic
     {
         indexes_.clear();
         unsigned i = 0;
-        for (const auto &contact : contacts_)
+
+        for (const auto &order_index : sorted_index_cl_)
         {
-            indexes_.insert(contact.Get()->AimId_, i);
+            indexes_.insert(contacts_[order_index].Get()->AimId_, i);
             ++i;
         }
+        is_index_valid_ = true;
     }
 
-    void ContactListModel::contactList(std::shared_ptr<Data::ContactList> _cl, QString type)
+    void ContactListModel::contactList(std::shared_ptr<Data::ContactList> _cl, QString _type)
     {
         const int size = (int)contacts_.size();
         beginInsertRows(QModelIndex(), size, _cl->size() + size);
 
         for (auto iter : _cl->uniqueKeys())
         {
-            if (type != "deleted")
+            if (_type != "deleted")
             {
                 if (iter->UserType_ != "sms")
                 {
@@ -364,15 +388,7 @@ namespace Logic
             }
             else
             {
-                QString aimid = iter->AimId_;
-                auto cont = std::find_if(contacts_.begin(), contacts_.end(), [aimid](const ContactItem& item) { return item.Get()->AimId_ == aimid; });
-                if (cont != contacts_.end())
-                {
-                    if (cont->is_live_chat())
-                        emit liveChatRemoved(aimid);
-                    contacts_.erase(cont);
-                }
-                emit contact_removed(aimid);
+                innerRemoveContact(iter->AimId_);
             }
         }
 
@@ -382,7 +398,7 @@ namespace Logic
             if (std::find(groupIds.begin(), groupIds.end(), iter->Id_) != groupIds.end())
                 continue;
 
-            if (type != "deleted")
+            if (_type != "deleted")
             {
                 groupIds.push_back(iter->Id_);
                 Data::Group* group = new Data::Group();
@@ -393,6 +409,7 @@ namespace Logic
             {
                 int id = iter->Id_;
                 contacts_.erase(std::remove_if(contacts_.begin(), contacts_.end(), [id](const ContactItem& item) { return item.Get()->GroupId_ == id; }), contacts_.end());
+                is_index_valid_ = false;
             }
         }
 
@@ -400,18 +417,20 @@ namespace Logic
         endInsertRows();
 
         rebuild_index();
+        updatePlaceholders();
+    }
 
+    void ContactListModel::updatePlaceholders()
+    {
+        int visibleCount = -1;
+        getAbsIndexByVisibleIndex((int)contacts_.size(), &visibleCount, (int)contacts_.size());
+        if ((visibleCount + 1) == 0)
         {
-            int visibleCount = -1;
-            getAbsIndexByVisibleIndex((int)contacts_.size(), &visibleCount, (int)contacts_.size());
-            if ((visibleCount + 1) == 0)
-            {
-                emit Utils::InterConnector::instance().showNoContactsYet();
-                emit Utils::InterConnector::instance().showNoRecentsYet();
-            }
-            else if (size == 0)
-                emit Utils::InterConnector::instance().hideNoContactsYet();
+            emit Utils::InterConnector::instance().showNoContactsYet();
+            emit Utils::InterConnector::instance().showNoRecentsYet();
         }
+        else if (visibleCount == 0)
+            emit Utils::InterConnector::instance().hideNoContactsYet();
     }
 
     void ContactListModel::dlgState(Data::DlgState _dlgState)
@@ -428,91 +447,115 @@ namespace Logic
         }
     }
 
-    void ContactListModel::contactRemoved(QString contact)
+    int ContactListModel::innerRemoveContact(const QString& _aimId)
     {
-        contacts_.erase(std::remove_if(contacts_.begin(), contacts_.end(), [contact](const ContactItem& item) { return item.Get()->AimId_ == contact; }), contacts_.end());
-        rebuild_index();
-        emit contact_removed(contact);
+        size_t idx = 0;
+        for ( ; idx < contacts_.size(); ++idx)
         {
-            int visibleCount = -1;
-            getAbsIndexByVisibleIndex((int)contacts_.size(), &visibleCount, (int)contacts_.size());
-            emit Utils::InterConnector::instance().showPlaceholder(Utils::PlaceholdersType::PlaceholdersType_IntroduceYourself);
-
-            if ((visibleCount + 1) == 0)
-                emit Utils::InterConnector::instance().showNoContactsYet();
+            if (contacts_[idx].Get()->AimId_ == _aimId)
+                break;
         }
+
+        auto cont = contacts_.begin() + idx;
+        if (cont == contacts_.end())
+            return contacts_.size();
+
+        if (cont->is_live_chat())
+            emit liveChatRemoved(_aimId);
+
+        contacts_.erase(cont);
+        is_index_valid_ = false;
+        emit contact_removed(_aimId);
+        return idx;
+    }
+
+    void ContactListModel::updateIndexesListAfterRemoveContact(std::vector<int>& _list, int _index)
+    {
+        _list.erase(std::remove(_list.begin(), _list.end(), _index), _list.end());
+        for (auto& idx : _list)
+        {
+            if (idx > _index)
+            {
+                idx -= 1;
+            }
+        }
+    }
+
+    void ContactListModel::contactRemoved(QString _contact)
+    {
+        auto removedIdx = innerRemoveContact(_contact);
+        updateIndexesListAfterRemoveContact(sorted_index_cl_, removedIdx);
+        updateIndexesListAfterRemoveContact(sorted_index_recents_, removedIdx);
+        rebuild_index();
+        updatePlaceholders();
     }
 
     void ContactListModel::refresh()
     {
         sort();
         rebuild_index();
-        for (int i = minVisibleIndex_; i <= maxVisibleIndex_; ++i)
-            emit dataChanged(index(i), index(i));
+        emit dataChanged(index(minVisibleIndex_), index(maxVisibleIndex_));
     }
 
     void ContactListModel::refreshList()
     {
-        for (int i = minVisibleIndex_; i <= maxVisibleIndex_; ++i)
-            emit dataChanged(index(i), index(i));
+        emit dataChanged(index(minVisibleIndex_), index(maxVisibleIndex_));
     }
 
-    void ContactListModel::avatarLoaded(QString aimId)
+    void ContactListModel::avatarLoaded(QString _aimId)
     {
-        QHash<QString, int>::const_iterator iter = indexes_.find(aimId);
-        if (iter != indexes_.end())
+        auto idx = getOrderIndexByAimid(_aimId);
+        if (idx != -1)
         {
-            emit dataChanged(index(iter.value()), index(iter.value()));
+            emit dataChanged(index(idx), index(idx));
         }
     }
 
-    void ContactListModel::presense(Data::Buddy* presence)
+    void ContactListModel::presense(Data::Buddy* _presence)
     {
-        QHash<QString, int>::const_iterator iter = indexes_.find(presence->AimId_);
-        if (iter != indexes_.end())
+        auto idx = getOrderIndexByAimid(_presence->AimId_);
+        if (idx != -1)
         {
-            auto iconId = contacts_[iter.value()].Get()->iconId_;
-            auto bigIconId = contacts_[iter.value()].Get()->bigIconId_;
-            auto largeIconId = contacts_[iter.value()].Get()->largeIconId_;
-            if (/*presence->iconId_ != iconId || presence->bigIconId_ != bigIconId || */presence->largeIconId_ != largeIconId) // large icon would be enough
+            auto contact = contacts_[getIndexByOrderedIndex(idx)].Get();
+            auto iconId = contact->iconId_;
+            auto bigIconId = contact->bigIconId_;
+            auto largeIconId = contact->largeIconId_;
+            if (/*_presence->iconId_ != iconId || _presence->bigIconId_ != bigIconId || */_presence->largeIconId_ != largeIconId) // large icon would be enough
             {
-                GetAvatarStorage()->UpdateAvatar(presence->AimId_);
+                GetAvatarStorage()->UpdateAvatar(_presence->AimId_);
             }
-            
-            contacts_[iter.value()].Get()->ApplyBuddy(presence);
-            pushChange(iter.value());
-            emit contactChanged(presence->AimId_);
+
+            contact->ApplyBuddy(_presence);
+            pushChange(idx);
+            emit contactChanged(_presence->AimId_);
             if (!timer_->isActive())
                 timer_->start();
         }
     }
 
-    void ContactListModel::groupClicked(int groupId)
+    void ContactListModel::groupClicked(int _groupId)
     {
-        auto contact_index = 0;
-
-        for (auto &contact : contacts_)
+        for (size_t contactIndex = 0; contactIndex < contacts_.size(); ++contactIndex)
         {
-            if (contact.Get()->GroupId_ == groupId && !contact.is_group())
+            auto &contact = contacts_[getIndexByOrderedIndex(contactIndex)];
+            if (contact.Get()->GroupId_ == _groupId && !contact.is_group())
             {
                 contact.set_visible(!contact.is_visible());
-                emit dataChanged(index(contact_index), index(contact_index));
+                emit dataChanged(index(contactIndex), index(contactIndex));
             }
-
-            ++contact_index;
         }
     }
 
-    void ContactListModel::scrolled(int value)
+    void ContactListModel::scrolled(int _value)
     {
         minVisibleIndex_ = 0;
         maxVisibleIndex_ = 0;
-        scrollPosition_ = value;
+        scrollPosition_ = _value;
     }
 
-    void ContactListModel::pushChange(int i)
+    void ContactListModel::pushChange(int _i)
     {
-        updatedItems_.push_back(i);
+        updatedItems_.push_back(_i);
         int scrollPos = scrollPosition_;
         QTimer::singleShot(2000, [this, scrollPos](){ if (scrollPosition_ == scrollPos) processChanges(); });
     }
@@ -531,8 +574,16 @@ namespace Logic
         updatedItems_.clear();
     }
 
-    void ContactListModel::setCurrent(QString _aimId, bool sel, bool needSwitchTab, std::function<void(Ui::HistoryControlPage*)> _gotPageCallback)
+    void ContactListModel::setCurrent(QString _aimId, bool _sel, bool _needSwitchTab, std::function<void(Ui::HistoryControlPage*)> _gotPageCallback)
     {
+        if (!currentAimdId_.isEmpty())
+        {
+            Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+            collection.set_value_as_qstring("contact", currentAimdId_);
+            collection.set_value_as_int("status", (int32_t)core::typing_status::typed);
+            Ui::GetDispatcher()->post_message_to_core("message/typing", collection.get());
+        }
+
         if (_gotPageCallback)
         {
             auto page = Utils::InterConnector::instance().getMainWindow()->getHistoryPage(_aimId);
@@ -546,21 +597,31 @@ namespace Logic
             }
         }
 
-        currentAimdId_ = _aimId;
-        if (sel && !currentAimdId_.isEmpty())
-            emit select(currentAimdId_);
-        else
-            emit selectedContactChanged(currentAimdId_);
+        if (platform::is_apple() && _aimId.isEmpty() && !currentAimdId_.isEmpty())
+            emit leave_dialog(currentAimdId_);
 
-        if (needSwitchTab)
+        currentAimdId_ = _aimId;
+        if (_sel && !currentAimdId_.isEmpty())
+            emit select(currentAimdId_);
+       // else
+         //   emit selectedContactChanged(currentAimdId_);
+
+        if (_needSwitchTab)
             emit switchTab(_aimId);
+
+        auto recentState = Logic::getRecentsModel()->getDlgState(_aimId, false);
+        auto unknownState = Logic::getUnknownsModel()->getDlgState(_aimId, false);
+        if (recentState.AimId_ != _aimId && unknownState.AimId_ == _aimId)
+            emit Utils::InterConnector::instance().unknownsGoSeeThem();
+        else if (!_aimId.isEmpty())
+            emit Utils::InterConnector::instance().unknownsGoBack();
     }
 
-    void ContactListModel::setCurrentCallbackHappened(Ui::HistoryControlPage *page)
+    void ContactListModel::setCurrentCallbackHappened(Ui::HistoryControlPage* _page)
     {
         if (gotPageCallback_)
         {
-            gotPageCallback_(page);
+            gotPageCallback_(_page);
             gotPageCallback_ = nullptr;
         }
     }
@@ -569,7 +630,11 @@ namespace Logic
     {
         if (!contacts_.size())
             return;
+        updateSortedIndexesList(sorted_index_cl_, getLessFuncCL());
+    }
 
+    std::function<bool (const Logic::ContactItem&, const Logic::ContactItem&)> ContactListModel::getLessFuncCL() const
+    {
         std::function<bool (const Logic::ContactItem&, const Logic::ContactItem&)> less = ItemLessThanNoGroups();
 
         // if (GetIsWithCheckedBox())
@@ -579,8 +644,50 @@ namespace Logic
             less = ItemLessThan();
         else
             less = ItemLessThanNoGroups();
+        return less;
+    }
 
-        std::sort(contacts_.begin(), contacts_.end(), less);
+    void ContactListModel::updateSortedIndexesList(std::vector<int>& _list, std::function<bool (const Logic::ContactItem&, const Logic::ContactItem&)> _less)
+    {
+        _list.resize(contacts_.size());
+        std::iota(_list.begin(), _list.end(), 0);
+
+        std::sort(_list.begin(), _list.end(), [_less, this] (int a, int b)
+            {
+                return _less(contacts_[a], contacts_[b]);
+            });
+    }
+
+    void ContactListModel::sortByRecents()
+    {
+        if (!contacts_.size())
+            return;
+
+        sorted_index_recents_.clear();
+        std::unordered_set<int> used_contacts;
+
+        auto recents = Logic::getRecentsModel()->getSortedRecentsContacts();
+
+        for (const auto& contact : recents)
+        {
+            auto idx = sorted_index_cl_[getOrderIndexByAimid(contact)];
+            sorted_index_recents_.push_back(idx);
+            used_contacts.insert(idx);
+        }
+
+        for (size_t i = 0; i < sorted_index_cl_.size(); ++i)
+        {
+            auto idx = sorted_index_cl_[i];
+            if (used_contacts.find(idx) == used_contacts.end())
+            {
+                sorted_index_recents_.push_back(idx);
+            }
+        }
+    }
+
+    bool ContactListModel::contains(const QString& _aimdId) const
+    {
+        return indexes_.find(_aimdId) != indexes_.end();
     }
 
     QString ContactListModel::selectedContact() const
@@ -600,6 +707,15 @@ namespace Logic
         return contact == nullptr ? QString() : contact->Get()->State_;
     }
 
+    void ContactListModel::setContactVisible(const QString& _aimId, bool visible)
+    {
+        auto item = getContactItem(_aimId);
+        if (item)
+            item->set_visible(visible);
+
+        emit dataChanged(index(0), index(indexes_.size()));
+    }
+
     ContactItem* ContactListModel::getContactItem(const QString& _aimId)
     {
         return const_cast<ContactItem*>(static_cast<const ContactListModel*>(this)->getContactItem(_aimId));
@@ -607,31 +723,30 @@ namespace Logic
 
     const ContactItem* ContactListModel::getContactItem(const QString& _aimId) const
     {
-        auto iter = indexes_.find(_aimId);
-        if (iter == indexes_.end())
+        auto idx = getOrderIndexByAimid(_aimId);
+        if (idx == -1)
             return nullptr;
 
-        int idx = iter.value();
         if (idx >= (int) contacts_.size())
             return nullptr;
 
-        return &contacts_[idx];
+        return &contacts_[getIndexByOrderedIndex(idx)];
 	}
 
-	QString ContactListModel::getDisplayName(const QString& aimId) const
+	QString ContactListModel::getDisplayName(const QString& _aimId) const
 	{
-		auto ci = getContactItem(aimId);
+		auto ci = getContactItem(_aimId);
 		if (!ci)
 		{
-			return aimId;
+			return _aimId;
 		}
 
 		return ci->Get()->GetDisplayName();
 	}
 
-	bool ContactListModel::isChat(const QString& aimId) const
+	bool ContactListModel::isChat(const QString& _aimId) const
 	{
-		auto ci = getContactItem(aimId);
+		auto ci = getContactItem(_aimId);
 		if (!ci)
 		{
 			return false;
@@ -640,9 +755,9 @@ namespace Logic
 		return ci->is_chat();
 	}
 
-	bool ContactListModel::isMuted(const QString& aimId) const
+	bool ContactListModel::isMuted(const QString& _aimId) const
 	{
-		auto ci = getContactItem(aimId);
+		auto ci = getContactItem(_aimId);
 		if (!ci)
 		{
 			return false;
@@ -651,9 +766,9 @@ namespace Logic
 		return ci->is_muted();
 	}
 
-    bool ContactListModel::isLiveChat(const QString& aimId) const
+    bool ContactListModel::isLiveChat(const QString& _aimId) const
     {
-        auto ci = getContactItem(aimId);
+        auto ci = getContactItem(_aimId);
         if (!ci)
         {
             return false;
@@ -662,9 +777,9 @@ namespace Logic
         return ci->is_live_chat();
     }
 
-    bool ContactListModel::isOfficial(const QString& aimId) const
+    bool ContactListModel::isOfficial(const QString& _aimId) const
     {
-        auto ci = getContactItem(aimId);
+        auto ci = getContactItem(_aimId);
         if (!ci)
         {
             return false;
@@ -673,9 +788,9 @@ namespace Logic
         return ci->is_official();
     }
 
-    bool ContactListModel::isNotAuth(const QString& aimId) const
+    bool ContactListModel::isNotAuth(const QString& _aimId) const
     {
-        auto ci = getContactItem(aimId);
+        auto ci = getContactItem(_aimId);
         if (!ci)
         {
             return false;
@@ -684,9 +799,9 @@ namespace Logic
         return ci->is_not_auth();
     }
 
-    QString ContactListModel::getState(const QString& aimId) const
+    QString ContactListModel::getState(const QString& _aimId) const
     {
-        auto ci = getContactItem(aimId);
+        auto ci = getContactItem(_aimId);
         if (!ci)
         {
             return "";
@@ -694,9 +809,9 @@ namespace Logic
 		return ci->Get()->GetState();
 	}
 
-    QDateTime ContactListModel::getLastSeen(const QString& aimId) const
+    QDateTime ContactListModel::getLastSeen(const QString& _aimId) const
     {
-        auto ci = getContactItem(aimId);
+        auto ci = getContactItem(_aimId);
         if (!ci)
         {
             return QDateTime::currentDateTime();
@@ -705,7 +820,7 @@ namespace Logic
         return ci->Get()->GetLastSeen();
     }
 
-    ContactListModel* GetContactListModel()
+    ContactListModel* getContactListModel()
     {
         if (!g_contact_list_model)
             g_contact_list_model.reset(new ContactListModel(0));
@@ -719,9 +834,9 @@ namespace Logic
             g_contact_list_model.reset();
     }
 
-    QString ContactListModel::getInputText(const QString& aimId) const
+    QString ContactListModel::getInputText(const QString& _aimId) const
     {
-        auto ci = getContactItem(aimId);
+        auto ci = getContactItem(_aimId);
         if (!ci)
         {
             return "";
@@ -730,9 +845,9 @@ namespace Logic
         return ci->get_input_text();
     }
 
-    void ContactListModel::setInputText(const QString& aimId, const QString& _text)
+    void ContactListModel::setInputText(const QString& _aimId, const QString& _text)
     {
-        auto ci = getContactItem(aimId);
+        auto ci = getContactItem(_aimId);
         if (!ci)
         {
             return;
@@ -741,9 +856,9 @@ namespace Logic
         ci->set_input_text(_text);
     }
 
-    void ContactListModel::get_contact_profile(const QString& _aimId, std::function<void(profile_ptr, int32_t error)> _call_back)
+    void ContactListModel::getContactProfile(const QString& _aimId, std::function<void(profile_ptr, int32_t error)> _callBack)
     {
-        profile_ptr profile; 
+        profile_ptr profile;
 
         if (!_aimId.isEmpty())
         {
@@ -751,7 +866,7 @@ namespace Logic
 
             if (ci)
             {
-                profile = ci->get_contact_profile();
+                profile = ci->getContactProfile();
             }
         }
 
@@ -759,7 +874,7 @@ namespace Logic
         {
             emit profile_loaded(profile);
 
-            _call_back(profile, 0);
+            _callBack(profile, 0);
         }
 
         if (!profile)
@@ -768,14 +883,8 @@ namespace Logic
 
             collection.set_value_as_qstring("aimid", _aimId);
 
-            std::weak_ptr<bool> wr_ref = ref_;
-
-            Ui::GetDispatcher()->post_message_to_core("contacts/profile/get", collection.get(), [this, _call_back, wr_ref](core::icollection* _coll)
+            Ui::GetDispatcher()->post_message_to_core("contacts/profile/get", collection.get(), this, [this, _callBack](core::icollection* _coll)
             {
-                auto ref = wr_ref.lock();
-                if (!ref)
-                    return;
-
                 Ui::gui_coll_helper coll(_coll, false);
 
                 QString aimid = coll.get_value_as_string("aimid");
@@ -798,37 +907,31 @@ namespace Logic
 
                         emit profile_loaded(profile);
 
-                        _call_back(profile, 0);
+                        _callBack(profile, 0);
                     }
                 }
                 else
                 {
-                    _call_back(nullptr, 0);
+                    _callBack(nullptr, 0);
                 }
             });
         }
     }
 
-    void ContactListModel::add_contact_to_contact_list(const QString& _aimid, std::function<void(bool)> _call_back)
+    void ContactListModel::addContactToCL(const QString& _aimId, std::function<void(bool)> _callBack)
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_qstring("contact", _aimid);
+        collection.set_value_as_qstring("contact", _aimId);
         collection.set_value_as_qstring("group", "General");
         collection.set_value_as_qstring("message", QT_TRANSLATE_NOOP("contact_list","Hello. Please add me to your contact list"));
 
-        std::weak_ptr<bool> wr_ref = ref_;
-
-        Ui::GetDispatcher()->post_message_to_core("contacts/add", collection.get(), [this, _aimid, _call_back, wr_ref](core::icollection* _coll)
+        Ui::GetDispatcher()->post_message_to_core("contacts/add", collection.get(), this, [this, _aimId, _callBack](core::icollection* _coll)
         {
-            auto ref = wr_ref.lock();
-            if (!ref)
-                return;
-
-            Logic::ContactItem* item = getContactItem(_aimid);
+            Logic::ContactItem* item = getContactItem(_aimId);
             if (item && item->is_not_auth())
             {
                 item->reset_not_auth();
-                emit contactChanged(_aimid);
+                emit contactChanged(_aimId);
             }
 
             Ui::gui_coll_helper coll(_coll, false);
@@ -836,114 +939,122 @@ namespace Logic
             QString contact = coll.get_value_as_string("contact");
             int32_t err = coll.get_value_as_int("error");
 
-            _call_back(err == 0);
+            _callBack(err == 0);
             emit contact_added(contact, (err == 0));
             emit needSwitchToRecents();
         });
     }
 
-    void ContactListModel::rename_contact(const QString& _aimid, const QString& _friendly)
+    void ContactListModel::renameContact(const QString& _aimId, const QString& _friendly)
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
 
-        collection.set_value_as_qstring("contact", _aimid);
+        collection.set_value_as_qstring("contact", _aimId);
         collection.set_value_as_qstring("friendly", _friendly);
 
         Ui::GetDispatcher()->post_message_to_core("contacts/rename", collection.get());
     }
 
-    void ContactListModel::rename_chat(const QString& _aimid, const QString& _friendly)
+    void ContactListModel::renameChat(const QString& _aimId, const QString& _friendly)
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
 
-        collection.set_value_as_qstring("aimid", _aimid);
+        collection.set_value_as_qstring("aimid", _aimId);
         collection.set_value_as_qstring("m_chat_name", _friendly);
         Ui::GetDispatcher()->post_message_to_core("modify_chat", collection.get());
     }
 
-    void ContactListModel::remove_contact_from_contact_list(const QString& _aimid)
+    void ContactListModel::removeContactFromCL(const QString& _aimId)
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_qstring("contact", _aimid);
+        collection.set_value_as_qstring("contact", _aimId);
         Ui::GetDispatcher()->post_message_to_core("contacts/remove", collection.get());
     }
 
-    bool ContactListModel::block_spam_contact(const QString& _aimid, bool _with_confirmation /*= true*/)
+    void ContactListModel::removeContactsFromModel(const QVector<QString>& _vcontacts)
+    {
+        bool exist = false;
+
+        for (const auto _aimid : _vcontacts)
+        {
+            if (getContactItem(_aimid))
+            {
+                exist = true;
+
+                emit Ui::GetDispatcher()->contactRemoved(_aimid);
+            }
+        }
+    }
+
+    bool ContactListModel::blockAndSpamContact(const QString& _aimId, bool _withConfirmation /*= true*/)
     {
         bool confirm = false;
-        if (_with_confirmation)
+        if (_withConfirmation)
         {
             confirm = Utils::GetConfirmationWithTwoButtons(
                 QT_TRANSLATE_NOOP("popup_window", "Cancel"),
                 QT_TRANSLATE_NOOP("popup_window", "Yes"),
                 QT_TRANSLATE_NOOP("popup_window", "Are you sure this contact is spam?"),
-                Logic::GetContactListModel()->getDisplayName(_aimid),
+                Logic::getContactListModel()->getDisplayName(_aimId),
                 NULL);
         }
 
-        if (confirm || !_with_confirmation)
+        if (confirm || !_withConfirmation)
         {
             Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-            collection.set_value_as_qstring("contact", _aimid);
+            collection.set_value_as_qstring("contact", _aimId);
             Ui::GetDispatcher()->post_message_to_core("contacts/block", collection.get());
         }
         return confirm;
     }
 
-    void ContactListModel::ignore_contact(const QString& _aimid, bool ignore)
+    void ContactListModel::ignoreContact(const QString& _aimId, bool _ignore)
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_qstring("contact", _aimid);
-        collection.set_value_as_bool("ignore", ignore);
+        collection.set_value_as_qstring("contact", _aimId);
+        collection.set_value_as_bool("ignore", _ignore);
         Ui::GetDispatcher()->post_message_to_core("contacts/ignore", collection.get());
 
-		if (ignore)
+		if (_ignore)
 		{
-			emit ignoreContact(_aimid);
+			emit ignoreContact(_aimId);
 		}
     }
 
-    bool ContactListModel::ignore_and_remove_from_cl_contact(const QString& _aimid)
+    bool ContactListModel::ignoreContactWithConfirm(const QString& _aimId)
     {
         auto confirm = Utils::GetConfirmationWithTwoButtons(
             QT_TRANSLATE_NOOP("popup_window", "Cancel"),
             QT_TRANSLATE_NOOP("popup_window", "Yes"),
             QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to move contact to ignore list?"),
-            Logic::GetContactListModel()->getDisplayName(_aimid),
+            Logic::getContactListModel()->getDisplayName(_aimId),
             NULL);
 
         if (confirm)
         {
-            Logic::GetContactListModel()->ignore_contact(_aimid, true);
-            Logic::GetContactListModel()->remove_contact_from_contact_list(_aimid);
+            Logic::getContactListModel()->ignoreContact(_aimId, true);
         }
         return confirm;
     }
 
-    bool ContactListModel::isYouAdmin(const QString& aimId)
+    bool ContactListModel::isYouAdmin(const QString& _aimId)
     {
-        auto cont = getContactItem(aimId);
+        auto cont = getContactItem(_aimId);
         if (cont)
             return cont->is_you_admin();
 
         return false;
     }
 
-    void ContactListModel::get_ignore_list()
+    void ContactListModel::getIgnoreList()
     {
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
         Ui::GetDispatcher()->post_message_to_core("contacts/get_ignore", collection.get());
     }
 
-    void ContactListModel::emitChanged(int first, int last)
+    void ContactListModel::emitChanged(int _first, int _last)
     {
-        emit dataChanged(index(first), index(last));
-    }
-
-    void ContactListModel::ChangeChecked(const QString &_aimid)
-    {
-        auto item = getContactItem(_aimid);
-        item->set_checked(!item->is_checked());
+        emit dataChanged(index(_first), index(_last));
     }
 
     std::vector<ContactItem> ContactListModel::GetCheckedContacts() const
@@ -967,12 +1078,17 @@ namespace Logic
         }
     }
 
-    void ContactListModel::setChecked(QString& _aimid)
+    void ContactListModel::setChecked(const QString& _aimid, bool _isChecked)
     {
-        getContactItem(_aimid)->set_checked(true);
+        getContactItem(_aimid)->set_checked(_isChecked);
     }
 
-    bool ContactListModel::setIsWithCheckedBox()
+    bool ContactListModel::getIsChecked(const QString& _aimId) const
+    {
+        return getContactItem(_aimId)->is_checked();
+    }
+
+    bool ContactListModel::isWithCheckedBox()
     {
         return isWithCheckedBox_;
     }
@@ -982,64 +1098,63 @@ namespace Logic
         isWithCheckedBox_ = _isWithCheckedBox;
     }
 
-    void ContactListModel::auth_add_contact(QString _aimid)
+    void ContactListModel::authAddContact(QString _aimId)
     {
-        add_contact_to_contact_list(_aimid);
-        // connect(Logic::GetContactListModel(), SIGNAL(contact_added(QString, bool)), this, SLOT(contact_authorized(QString, bool)));
+        addContactToCL(_aimId);
+        // connect(Logic::getContactListModel(), SIGNAL(contact_added(QString, bool)), this, SLOT(contactAuthorized(QString, bool)));
     }
 
-    void ContactListModel::stats_auth_add_contact(QString _aimid)
+    void ContactListModel::stats_auth_add_contact(QString _aimId)
     {
         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::add_user_dialog);
     }
 
-    void ContactListModel::unknown_contact_profile_spam_contact(QString _aimid)
+    void ContactListModel::unknown_contact_profile_spam_contact(QString _aimId)
     {
-        if (block_spam_contact(_aimid))
+        if (blockAndSpamContact(_aimId))
             emit Utils::InterConnector::instance().profileSettingsBack();
     }
 
-    void ContactListModel::auth_spam_contact(QString _aimid)
+    void ContactListModel::authBlockContact(QString _aimId)
     {
-        block_spam_contact(_aimid, false);
+        blockAndSpamContact(_aimId, false);
 
         emit Utils::InterConnector::instance().profileSettingsBack();
     }
 
-    void ContactListModel::auth_delete_contact(QString _aimid)
+    void ContactListModel::authDeleteContact(QString _aimId)
     {
-        remove_contact_from_contact_list(_aimid);
+        removeContactFromCL(_aimId);
 
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_qstring("contact", _aimid);
+        collection.set_value_as_qstring("contact", _aimId);
         Ui::GetDispatcher()->post_message_to_core("dialogs/hide", collection.get());
     }
 
-    void ContactListModel::auth_ignore_contact(QString _aimid)
+    void ContactListModel::authIgnoreContact(QString _aimId)
     {
-        if (ignore_and_remove_from_cl_contact(_aimid))
+        if (ignoreContactWithConfirm(_aimId))
         {
             Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::ignore_profile_page);
             emit Utils::InterConnector::instance().profileSettingsBack();
         }
     }
 
-    void ContactListModel::stats_spam_profile(QString _aimid)
+    void ContactListModel::stats_spam_profile(QString _aimId)
     {
         Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::spam_profile_page);
     }
 
     void ContactListModel::chatInfo(qint64, std::shared_ptr<Data::ChatInfo> info)
     {
-        auto iter = indexes_.find(info->AimId_);
-        if (iter == indexes_.end())
+        auto idx = getOrderIndexByAimid(info->AimId_);
+        if (idx == -1)
             return;
 
-        int idx = iter.value();
         if (idx >= (int) contacts_.size())
             return;
 
-        contacts_[idx].set_chat_admin(info->YourRole_ == "admin" || info->YourRole_ == "moder");
+        contacts_[getIndexByOrderedIndex(idx)].set_chat_admin(info->YourRole_ == "admin" || info->YourRole_ == "moder");
     }
 
 
@@ -1057,5 +1172,62 @@ namespace Logic
         {
             emit needJoinLiveChat(_stamp);
         }
+    }
+
+    void ContactListModel::next()
+    {
+        int current = 0;
+        if (!currentAimdId_.isEmpty())
+        {
+            auto idx = getOrderIndexByAimid(currentAimdId_);
+            if (idx != -1)
+                current = idx;
+        }
+
+        ++current;
+
+        for (auto iter = indexes_.begin(); iter != indexes_.end(); ++iter)
+        {
+            if (iter.value() == current)
+            {
+                setCurrent(iter.key(), true, false);
+                break;
+            }
+        }
+    }
+
+    void ContactListModel::prev()
+    {
+        int current = 0;
+        if (!currentAimdId_.isEmpty())
+        {
+            auto idx = getOrderIndexByAimid(currentAimdId_);
+            if (idx != -1)
+                current = idx;
+        }
+
+        --current;
+
+        for (auto iter = indexes_.begin(); iter != indexes_.end(); ++iter)
+        {
+            if (iter.value() == current)
+            {
+                setCurrent(iter.key(), true, false);
+                break;
+            }
+        }
+    }
+
+    int ContactListModel::getIndexByOrderedIndex(int _index) const
+    {
+        return sorted_index_cl_[_index];
+    }
+
+    int ContactListModel::getOrderIndexByAimid(const QString& _aimId) const
+    {
+        assert(is_index_valid_);
+
+        auto item = indexes_.find(_aimId);
+        return item != indexes_.end() ? item.value() : -1;
     }
 }

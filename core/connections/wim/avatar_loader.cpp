@@ -70,7 +70,7 @@ const std::string avatar_loader::get_avatar_type_by_size(int32_t _size) const
         return "floorBigBuddyIcon";
     }
 
-    return "buddyIcon";
+    return "ceilBigBuddyIcon";
 }
 
 const std::wstring avatar_loader::get_avatar_path(const std::wstring& _im_data_path, const std::string& _contact, const std::string _avatar_type)
@@ -90,7 +90,8 @@ bool load_avatar_from_file(std::shared_ptr<avatar_context> _context)
         return false;
 
     boost::filesystem::wpath path(_context->avatar_file_path_);
-    _context->write_time_ = last_write_time(path);
+    if (!_context->force_)
+        _context->write_time_ = last_write_time(path);
     if (!_context->avatar_data_.load_from_file(_context->avatar_file_path_))
         return false;
 

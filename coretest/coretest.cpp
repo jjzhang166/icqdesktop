@@ -36,7 +36,7 @@ class gui_connector : public core::iconnector
 	}
 
 	// iconnector interface
-	virtual void link(iconnector*) override
+	virtual void link(iconnector*, const common::core_gui_settings&) override
 	{
 
 	}
@@ -81,7 +81,7 @@ void gui_thread_func()
 		return;
 
 	gui_connector connector;
-	core_connector->link(&connector);
+	core_connector->link(&connector, common::core_gui_settings());
 		
 	MSG msg = {0};
 	while (GetMessage(&msg, 0, 0, 0))

@@ -1,46 +1,52 @@
 #include "stdafx.h"
+
+#include "../fonts.h"
+#include "../utils/InterConnector.h"
+#include "../utils/utils.h"
+
 #include "FlatMenu.h"
 
-#include "../utils/utils.h"
-#include "../utils/InterConnector.h"
+#ifdef __APPLE__
+#   include "../utils/macos/mac_support.h"
+#endif
+
+namespace
+{
+    const QString MENU_STYLE =
+        "QMenu { background-color: #f2f2f2; border: 1px solid #cccccc; }"
+        "QMenu::item { background-color: transparent; color: #282828;"
+        "height: 36dip; padding-right: 12dip; }"
+        "QMenu::item:selected { background-color: #e2e2e2;"
+        "height: 36dip; padding-right: 12dip; }";
+}
 
 namespace Ui
 {
-    int FlatMenuStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
+    int FlatMenuStyle::pixelMetric(PixelMetric _metric, const QStyleOption* _option, const QWidget* _widget) const
     {
-        int s = QProxyStyle::pixelMetric(metric, option, widget);
-        if (metric == QStyle::PM_SmallIconSize)
+        int s = QProxyStyle::pixelMetric(_metric, _option, _widget);
+        if (_metric == QStyle::PM_SmallIconSize)
         {
             s = Utils::scale_value(24);
         }
         return s;
     }
 
-    FlatMenu::FlatMenu(QWidget* parent/* = nullptr*/):
-        QMenu(parent), iconSticked_(false)
-    {
-        setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint);
-        setStyle(new FlatMenuStyle());
-        setStyleSheet(QString("QMenu {\
-                       background-color: #f2f2f2;\
-                       border: 1px solid #cccccc;\
-                       }\
-                       QMenu::item {\
-                       background-color: transparent;\
-                       color: #000000;\
-                       height: %1px;\
-                       }\
-                       QMenu::item:selected\
-                       {\
-                       background-color: #e2e2e2;\
-                       height: %1px;\
-                       }").arg(Utils::scale_value(40)));
+    int FlatMenu::shown_ = 0;
 
-        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16));
+    FlatMenu::FlatMenu(QWidget* _parent/* = nullptr*/)
+        :QMenu(_parent),
+        iconSticked_(false)
+    {
+        setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint | Qt::WindowStaysOnTopHint);
+        setStyle(new FlatMenuStyle());
+        Utils::ApplyStyle(this, MENU_STYLE);
+
+        QFont font = Fonts::appFontScaled(16);
         setFont(font);
         if (platform::is_apple())
         {
-            QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupWindow()), this, SLOT(close()));
+            QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupMenu()), this, SLOT(close()));
         }
     }
 
@@ -49,24 +55,25 @@ namespace Ui
         //
     }
 
-    void FlatMenu::paintEvent(QPaintEvent *event)
+    void FlatMenu::paintEvent(QPaintEvent* _event)
     {
-        QMenu::paintEvent(event);
+        QMenu::paintEvent(_event);
         QPainter p(this);
         p.setClipRect(0, 0, geometry().width(), geometry().height());
         setMask(p.clipRegion());
     }
 
-    void FlatMenu::hideEvent(QHideEvent* event)
+    void FlatMenu::hideEvent(QHideEvent* _event)
     {
-        QMenu::hideEvent(event);
+        QMenu::hideEvent(_event);
+        --shown_;
     }
 
-    void FlatMenu::showEvent(QShowEvent* event)
+    void FlatMenu::showEvent(QShowEvent* _event)
     {
         if (!parentWidget())
         {
-            return QMenu::showEvent(event);
+            return QMenu::showEvent(_event);
         }
         auto posx = pos().x();
         auto posy = pos().y();
@@ -87,15 +94,17 @@ namespace Ui
         {
             move(pos().x(), pos().y() - parentWidget()->geometry().height() - geometry().height());
         }
+        ++shown_;
     }
 
-    void FlatMenu::setExpandDirection(Qt::Alignment direction)
+    void FlatMenu::setExpandDirection(Qt::Alignment _direction)
     {
-        expandDirection_ = direction;
+        expandDirection_ = _direction;
     }
-    
+
     void FlatMenu::stickToIcon()
     {
         iconSticked_ = true;
     }
+
 }

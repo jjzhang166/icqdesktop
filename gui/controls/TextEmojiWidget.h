@@ -1,32 +1,35 @@
 #pragma once
+
+#include "../fonts.h"
 #include "../utils/utils.h"
+
 #include "LabelEx.h"
 
 namespace Ui
 {
-	class tew_lex;
+	class TewLex;
 	struct paint_info;
     class LabelEx;
 
-	typedef std::list<std::shared_ptr<tew_lex>> tew_lex_list;
+	typedef std::list<std::shared_ptr<TewLex>> TewTexText;
 
-	class compiled_text
+	class CompiledText
 	{
-		tew_lex_list	lexs_;
+        TewTexText	lexs_;
 
 		int				width_;
         int				height_;
         int             kerning_;
 
 	public:
-		compiled_text();
+		CompiledText();
 
-		void push_back(std::shared_ptr<tew_lex> _lex);
+		void push_back(std::shared_ptr<TewLex> _lex);
 		int draw(QPainter& _painter, int _x, int _y, int _w);
         int draw(QPainter& _painter, int _x, int _y, int _w, int _h);
 		int width(QPainter& _painter);
         int height(QPainter& _painter);
-        void setKerning(int kerning) { kerning_ = kerning; }
+        void setKerning(int _kerning) { kerning_ = _kerning; }
 	};
 
 	enum TextEmojiAlign
@@ -46,8 +49,9 @@ namespace Ui
 		QColor							color_;
 		QString							text_;
 		TextEmojiAlign					align_;
-		std::unique_ptr<compiled_text>	compiled_text_;
-		int								size_to_baseline_;
+		std::unique_ptr<CompiledText>	compiledText_;
+        QString                         sourceText_;
+		int								sizeToBaseline_;
 		int								descent_;
         bool                            ellipsis_;
         bool                            multiline_;
@@ -67,9 +71,9 @@ namespace Ui
         void clicked();
         void rightClicked();
         void setSize(int, int);
-        
+
     public:
-        TextEmojiWidget(QWidget* _parent, Utils::FontsFamily _font_family, int _font_size, const QColor& _color, int _size_to_baseline = -1);
+        TextEmojiWidget(QWidget* _parent, Fonts::FontFamily _fontFamily, Fonts::FontStyle _fontStyle, int _fontSize, const QColor& _color, int _sizeToBaseline = -1);
 		virtual ~TextEmojiWidget();
 
 		int ascent();
@@ -81,17 +85,19 @@ namespace Ui
 
         void setColor(const QColor& _color);
 
-        void set_ellipsis(bool _v);
-        void set_multiline(bool _v);
-        void set_selectable(bool _v);
-        
-        void set_size_to_baseline(int v);
+        void setEllipsis(bool _v);
+        void setMultiline(bool _v);
+        void setSelectable(bool _v);
 
-        void setSizePolicy(QSizePolicy::Policy hor, QSizePolicy::Policy ver);
+        void setSizeToBaseline(int v);
+
+        void setSizePolicy(QSizePolicy::Policy _hor, QSizePolicy::Policy _ver);
+
+        void setSourceText(const QString& source);
 
     private:
         static TextEmojiWidgetEvents& events();
-        
+
         Utils::SignalsDisconnector disconnector_;
 	};
 
@@ -115,26 +121,26 @@ namespace Ui
     class TextEmojiLabel : public LabelEx
     {
     private:
-        std::unique_ptr< compiled_text >    compiled_text_;
-        int                                 size_to_baseline_;
+        std::unique_ptr< CompiledText >    compiledText_;
+        int                                 sizeToBaseline_;
         int                                 ascent_;
         int                                 descent_;
-        int                                 left_offset_;
+        int                                 leftOffset_;
         int                                 kerning_;
 
     protected:
-        void internalDraw(QPainter& painter, const QRect& rc);
-        int internalWidth(QPainter& painter);
-        void paintEvent(QPaintEvent* event) override;
+        void internalDraw(QPainter& _painter, const QRect& _rc);
+        int internalWidth(QPainter& _painter);
+        void paintEvent(QPaintEvent* _event) override;
 
     public:
         TextEmojiLabel(QWidget* _parent = nullptr);
         ~TextEmojiLabel();
 
-        void setSizeToBaseline(int size);
-        void setText(const QString& text);
-        void setSizeToOffset(int size);
-        void setKerning(int kerning);
+        void setSizeToBaseline(int _size);
+        void setText(const QString& _text);
+        void setSizeToOffset(int _size);
+        void setKerning(int _kerning);
 
         int ascent() const
         {

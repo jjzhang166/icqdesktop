@@ -13,7 +13,6 @@ Most libraries in the following directories made by other people and organizatio
 * [zlib License]
 * [Sparkle MiT]
 * [Qt LGPLv3]
-
  
 
 [libcurl MIT/X]: <https://curl.haxx.se/docs/copyright.html>

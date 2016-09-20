@@ -2,11 +2,7 @@
 
 #include "../../types/message.h"
 #include "../../types/typing.h"
-
-namespace Ui
-{
-	class ContactListItem;
-}
+#include "Common.h"
 
 namespace Logic
 {
@@ -17,16 +13,24 @@ namespace Logic
 		RecentItemDelegate(QObject* parent);
 
 		void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-		void paint(QPainter *painter, const QStyleOptionViewItem &option, const Data::DlgState& dlgState, bool fromAlert = false, bool dragOverlay = false) const;
+		void paint(QPainter *painter, const QStyleOptionViewItem &option, const Data::DlgState& dlgState, bool dragOverlay) const;
+
 		QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 		QSize sizeHintForAlert() const;
-		int itemSize() const;
+
 		void blockState(bool value);
-        
+
         void addTyping(const TypingFires& _typing);
         void removeTyping(const TypingFires& _typing);
 
         void setDragIndex(const QModelIndex& index);
+
+        void setPictOnlyView(bool _pictOnlyView);
+        bool getPictOnlyView() const;
+
+        void setFixedWidth(int _newWidth);
+
+        void setRegim(int _regim);
 
 	private:
 
@@ -47,5 +51,6 @@ namespace Logic
 
 		bool StateBlocked_;
         QModelIndex DragIndex_;
+        ContactList::ViewParams viewParams_;
 	};
 }

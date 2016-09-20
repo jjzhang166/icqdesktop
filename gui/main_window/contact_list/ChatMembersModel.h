@@ -35,54 +35,59 @@ namespace Logic
     private Q_SLOTS:
         void avatarLoaded(QString);
         void chatBlocked(QList<Data::ChatMemberInfo>);
+        void chatPending(QList<Data::ChatMemberInfo>);
 
     public:
-        ChatMembersModel(QObject *parent);
-        ChatMembersModel(std::shared_ptr<Data::ChatInfo> &info, QObject *parent);
+        ChatMembersModel(QObject* _parent);
+        ChatMembersModel(std::shared_ptr<Data::ChatInfo>& _info, QObject* _parent);
 
         ~ChatMembersModel();
 
-        int rowCount(const QModelIndex &parent = QModelIndex()) const;
-        QVariant data(const QModelIndex &index, int role) const;
-        Qt::ItemFlags flags(const QModelIndex &index) const;
-        void setSelectEnabled(bool value);
+        int rowCount(const QModelIndex& _parent = QModelIndex()) const;
+        QVariant data(const QModelIndex& _index, int _role) const;
+        Qt::ItemFlags flags(const QModelIndex& _index) const;
+        void setSelectEnabled(bool _value);
 
         const Data::ChatMemberInfo* getMemberItem(const QString& _aimId) const;
-        void remove_contact_from_member_list(const QString& _aimid);
-        int get_members_count() const;
-        void load_all_members();
-        void load_all_members(const QString& aimId, int count);
-        void init_for_single(const QString& aimId);
-        void admins_only();
-        void load_blocked();
-        bool is_full_list_loaded_;
-        bool is_short_view_;
+        int getMembersCount() const;
+        void loadAllMembers();
+        void loadAllMembers(const QString& _aimId, int _count);
+        void initForSingle(const QString& _aimId);
+        void adminsOnly();
+        void loadBlocked();
+        void loadPending();
+        bool isFullListLoaded_;
+        bool isShortView_;
 
-        bool is_contact_in_chat(const QString& AimdId_) const;
-        QString get_chat_aimid() const;
-        void update_info(std::shared_ptr<Data::ChatInfo> &_info, bool _is_all_chat_info);
-        static qint64  load_all_members(QString _aimid, int _limit, QObject* _recv);
-        static bool receive_members(qint64 _send_seq, qint64 _seq, QObject* _recv);
-        unsigned get_visible_rows_count() const;
+        bool isContactInChat(const QString& _aimId) const;
+        QString getChatAimId() const;
+        void updateInfo(std::shared_ptr<Data::ChatInfo> &_info, bool _isAllChatInfo);
+        static qint64  loadAllMembers(QString _aimId, int _limit, QObject* _recv);
+        static bool receiveMembers(qint64 _sendSeq, qint64 _seq, QObject* _recv);
+        unsigned getVisibleRowsCount() const;
 
-        bool is_admin() const;
-        bool is_moder() const;
+        bool isAdmin() const;
+        bool isModer() const;
+        void clear();
+
+        std::vector<Data::ChatMemberInfo> getMembers() { return members_; }
 
     private:
         mutable std::vector<Data::ChatMemberInfo>   members_;
-        int                                         members_count_;
+        int                                         membersCount_;
         std::shared_ptr<Data::ChatInfo>             info_;
         QString                                     AimId_;
-        qint64                                      ChatInfoSequence_;
+        qint64                                      chatInfoSequence_;
         QString                                     YourRole_;
         bool                                        selectEnabled_;
+        bool                                        single_;
 
         friend class SearchMembersModel;
     };
 
-    ChatMembersModel* GetChatMembersModel();
-    void SetChatMembersModel(ChatMembersModel*);
+    ChatMembersModel* getChatMembersModel();
+    void setChatMembersModel(ChatMembersModel*);
 
-    void UpdateIgnoredModel(const QVector<QString>& _ignored_list);
-    ChatMembersModel* GetIgnoreModel();
+    void updateIgnoredModel(const QVector<QString>& _ignoredList);
+    ChatMembersModel* getIgnoreModel();
 }

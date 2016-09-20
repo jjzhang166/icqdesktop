@@ -15,7 +15,7 @@ namespace core
     const static std::string flurry_url = "https://data.flurry.com/aah.do";
 
 #ifdef DEBUG
-    const static uint32_t send_interval_ms = 1000 * 20 * 1; // 20 seconds for debug
+    const static uint32_t send_interval_ms = 1000 * 60 * 1; // 1 minute for debug
 #else 
     const static uint32_t send_interval_ms = 1000 * 60 * 60; // 1 hour for release
 #endif // DEBUG
@@ -73,7 +73,7 @@ namespace core
             std::string events_to_json(events_ci begin, events_ci end, time_t _start_time) const;
             std::chrono::system_clock::time_point last_sent_time_;
             std::vector<std::string> get_post_data() const;
-            static bool send(const proxy_settings& _user_proxy, const std::string& post_data);
+            static bool send(const proxy_settings& _user_proxy, const std::string& post_data, const std::wstring& _file_name);
 
             void serialize(tools::binary_stream& _bs) const;
             bool unserialize(tools::binary_stream& _bs);

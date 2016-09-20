@@ -2,8 +2,11 @@
 #include "VideoFrameWin32.h"
 #include <windows.h>
 
-platform_win32::GraphicsPanelWin32::GraphicsPanelWin32(QWidget* parent, std::vector<QWidget*>&/* panels*/) 
-: platform_specific::GraphicsPanel(parent) {
+platform_win32::GraphicsPanelWin32::GraphicsPanelWin32(
+    QWidget* _parent,
+    std::vector<QWidget*>&/* panels*/) 
+    : platform_specific::GraphicsPanel(_parent)
+{
 
     //for (unsigned ix = 0; ix < panels.size(); ix++) {
     //    assert(parent);
@@ -28,6 +31,7 @@ platform_win32::GraphicsPanelWin32::GraphicsPanelWin32(QWidget* parent, std::vec
     //}
 }
 
-platform_win32::GraphicsPanelWin32::~GraphicsPanelWin32() {
+platform_win32::GraphicsPanelWin32::~GraphicsPanelWin32()
+{
 
 }

@@ -27,8 +27,6 @@ QLabel#settings_topic_label
 
 QPushButton
 {
-    font-family: "%FONT_FAMILY%";
-    font-weight: %FONT_WEIGHT%;
     border: none;
     min-height: 56dip;
     color: #282828;
@@ -39,10 +37,10 @@ QPushButton
 
 QPushButton:hover
 {
-    background-color: rgba(220, 220, 220, 40%);
+    background-color: #7fe8eded;
 }
 
 QPushButton:checked
 {
-    background-color: rgba(202, 230, 179, 70%);
+    background-color: #7fd9dddd;
 }

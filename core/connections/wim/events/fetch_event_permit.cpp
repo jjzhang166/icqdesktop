@@ -16,7 +16,7 @@ fetch_event_permit::~fetch_event_permit()
 {
 }
 
-std::vector<std::string> fetch_event_permit::ignore_list() const 
+const ignorelist_cache& fetch_event_permit::ignore_list() const 
 {
     return permit_info_->get_ignore_list(); 
 }

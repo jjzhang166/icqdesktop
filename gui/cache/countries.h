@@ -7,23 +7,17 @@ namespace Ui
 		struct country
 		{
 			const int		phone_code_;
-			const int		region_;
-			const int		type_;
 			const QString	name_;
-			const QString	code_;
+			const QString	iso_code_;
 			
 			country(
 				int _phone_code,
-				int _region,
-				int _type,
 				const QString& _name, 
-				const QString& _code)
+				const QString& _iso_code)
 				:
 				phone_code_(_phone_code),
-				region_(_region),
-				type_(_type),
 				name_(_name),
-				code_(_code)
+				iso_code_(_iso_code)
 			{
 
 			}

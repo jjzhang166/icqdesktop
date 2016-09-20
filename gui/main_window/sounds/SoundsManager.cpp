@@ -3,6 +3,7 @@
 
 #include "../../gui_settings.h"
 #include "../contact_list/ContactListModel.h"
+#include "../../utils/InterConnector.h"
 
 #include "MpegLoader.h"
 
@@ -13,19 +14,19 @@ namespace Ui
 {
     void PlayingData::init()
     {
-        alGenSources(1, &Source_);
-        alSourcef(Source_, AL_PITCH, 1.f);
-        alSourcef(Source_, AL_GAIN, 1.f);
-        alSource3f(Source_, AL_POSITION, 0, 0, 0);
-        alSource3f(Source_, AL_VELOCITY, 0, 0, 0);
-        alSourcei(Source_, AL_LOOPING, 0);
-        alGenBuffers(1, &Buffer_);
+        openal::alGenSources(1, &Source_);
+        openal::alSourcef(Source_, AL_PITCH, 1.f);
+        openal::alSourcef(Source_, AL_GAIN, 1.f);
+        openal::alSource3f(Source_, AL_POSITION, 0, 0, 0);
+        openal::alSource3f(Source_, AL_VELOCITY, 0, 0, 0);
+        openal::alSourcei(Source_, AL_LOOPING, 0);
+        openal::alGenBuffers(1, &Buffer_);
     }
 
     void PlayingData::setBuffer(const QByteArray& data, qint64 freq, qint64 fmt)
     {
-        alBufferData(Buffer_, fmt, data.constData(), data.size(), freq);
-        alSourcei(Source_, AL_BUFFER, Buffer_);
+        openal::alBufferData(Buffer_, fmt, data.constData(), data.size(), freq);
+        openal::alSourcei(Source_, AL_BUFFER, Buffer_);
     }
 
     void PlayingData::play()
@@ -33,7 +34,7 @@ namespace Ui
         if (isEmpty())
             return;
 
-        alSourcePlay(Source_);
+        openal::alSourcePlay(Source_);
     }
 
     void PlayingData::pause()
@@ -41,7 +42,7 @@ namespace Ui
         if (isEmpty())
             return;
 
-        alSourcePause(Source_);
+        openal::alSourcePause(Source_);
     }
 
     void PlayingData::stop()
@@ -49,11 +50,11 @@ namespace Ui
         if (isEmpty())
             return;
 
-        alSourceStop(Source_);
-        if (alIsBuffer(Buffer_)) 
+        openal::alSourceStop(Source_);
+        if (openal::alIsBuffer(Buffer_)) 
         {
-            alSourcei(Source_, AL_BUFFER, 0);
-            alDeleteBuffers(1, &Buffer_);
+            openal::alSourcei(Source_, AL_BUFFER, 0);
+            openal::alDeleteBuffers(1, &Buffer_);
         }
     }
 
@@ -69,7 +70,7 @@ namespace Ui
         if (!isEmpty())
         {
             stop();
-            alDeleteSources(1, &Source_);
+            openal::alDeleteSources(1, &Source_);
             clear();
         }
     }
@@ -79,12 +80,12 @@ namespace Ui
         return Id_ == -1;
     }
 
-    ALenum PlayingData::state() const
+    openal::ALenum PlayingData::state() const
     {
-        ALenum state = AL_NONE;
+        openal::ALenum state = AL_NONE;
         if (!isEmpty())
         {
-            alGetSourcei(Source_, AL_SOURCE_STATE, &state);
+            openal::alGetSourcei(Source_, AL_SOURCE_STATE, &state);
         }
         return state;
     }
@@ -110,7 +111,7 @@ namespace Ui
         PttTimer_->setSingleShot(true);
         connect(PttTimer_, SIGNAL(timeout()), this, SLOT(checkPttState()), Qt::QueuedConnection);
 
-        connect(Logic::GetContactListModel(), SIGNAL(selectedContactChanged(QString)), this, SLOT(contactChanged(QString)), Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::historyControlReady, this, &SoundsManager::contactChanged, Qt::QueuedConnection);
 	}
 
 	SoundsManager::~SoundsManager()
@@ -132,8 +133,8 @@ namespace Ui
     {
         if (CurPlay_.Source_ != 0)
         {
-            ALenum state;
-            alGetSourcei(CurPlay_.Source_, AL_SOURCE_STATE, &state);
+            openal::ALenum state;
+            openal::alGetSourcei(CurPlay_.Source_, AL_SOURCE_STATE, &state);
             if (state == AL_PLAYING || state == AL_INITIAL)
             {
                 PttTimer_->start();
@@ -268,7 +269,7 @@ namespace Ui
         CurPlay_.setBuffer(result, frequency, format);
 
         int err;
-        if ((err = alGetError()) == AL_NO_ERROR)
+        if ((err = openal::alGetError()) == AL_NO_ERROR)
         {
             CurPlay_.Id_ = ++AlId;
             CurPlay_.play();
@@ -300,18 +301,18 @@ namespace Ui
 
     void SoundsManager::initOpenAl()
     {
-        AlAudioDevice_ = alcOpenDevice(NULL);
-        AlAudioContext_ = alcCreateContext(AlAudioDevice_, NULL);
-        alcMakeContextCurrent(AlAudioContext_);
+        AlAudioDevice_ = openal::alcOpenDevice(NULL);
+        AlAudioContext_ = openal::alcCreateContext(AlAudioDevice_, NULL);
+        openal::alcMakeContextCurrent(AlAudioContext_);
 
-        ALfloat v[] = { 0.f, 0.f, -1.f, 0.f, 1.f, 0.f };
-        alListener3f(AL_POSITION, 0.f, 0.f, 0.f);
-        alListener3f(AL_VELOCITY, 0.f, 0.f, 0.f);
-        alListenerfv(AL_ORIENTATION, v);
+        openal::ALfloat v[] = { 0.f, 0.f, -1.f, 0.f, 1.f, 0.f };
+        openal::alListener3f(AL_POSITION, 0.f, 0.f, 0.f);
+        openal::alListener3f(AL_VELOCITY, 0.f, 0.f, 0.f);
+        openal::alListenerfv(AL_ORIENTATION, v);
 
-        alDistanceModel(AL_NONE);
+        openal::alDistanceModel(AL_NONE);
 
-        if (alGetError() == AL_NO_ERROR)
+        if (openal::alGetError() == AL_NO_ERROR)
             AlInited_ = true;
     }
     
@@ -341,7 +342,7 @@ namespace Ui
         Incoming_.setBuffer(result, frequency, format);
         
         int err;
-        if ((err = alGetError()) == AL_NO_ERROR)
+        if ((err = openal::alGetError()) == AL_NO_ERROR)
         {
             Incoming_.Id_ = ++AlId;
         }
@@ -373,7 +374,7 @@ namespace Ui
         Outgoing_.setBuffer(result, frequency, format);
         
         int err;
-        if ((err = alGetError()) == AL_NO_ERROR)
+        if ((err = openal::alGetError()) == AL_NO_ERROR)
         {
             Outgoing_.Id_ = ++AlId;
         }
@@ -404,14 +405,14 @@ namespace Ui
 
         if (AlAudioContext_)
         {
-            alcMakeContextCurrent(NULL);
-            alcDestroyContext(AlAudioContext_);
+            openal::alcMakeContextCurrent(NULL);
+            openal::alcDestroyContext(AlAudioContext_);
             AlAudioContext_ = 0;
         }
 
         if (AlAudioDevice_)
         {
-            alcCloseDevice(AlAudioDevice_);
+            openal::alcCloseDevice(AlAudioDevice_);
             AlAudioDevice_ = 0;
         }
 

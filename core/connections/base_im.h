@@ -22,6 +22,7 @@ namespace core
     enum class message_type;
     enum class sticker_size;
     enum class profile_state;
+    enum class typing_status;
     class auto_callback;
 
     namespace wim {
@@ -32,7 +33,9 @@ namespace core
     namespace archive
     {
         class message_header;
+        class quote;
         typedef std::list<int64_t>		msgids_list;
+        typedef std::vector<quote>      quotes_vec;
     }
 
     namespace stickers
@@ -49,7 +52,7 @@ namespace core
 
     class base_im
     {
-        voip_manager::VoipManager& voip_manager_;
+        std::shared_ptr<voip_manager::VoipManager> voip_manager_;
         int32_t id_;
 
         // stickers
@@ -68,7 +71,8 @@ namespace core
         std::wstring get_file_name_by_url(const std::string& _url);
         std::wstring get_stickers_path();
         std::wstring get_themes_path();
-        std::wstring get_im_downloads_path(const std::string& alt);
+        std::wstring get_im_downloads_path(const std::string &alt);
+        std::wstring get_content_cache_path();
 
         virtual std::string _get_protocol_uid() = 0;
         void set_id(int32_t _id);
@@ -78,7 +82,7 @@ namespace core
         std::shared_ptr<themes::face> get_themes();
 
     public:
-        base_im(const im_login_id& _login, voip_manager::VoipManager& _voip_manager);
+        base_im(const im_login_id& _login, std::shared_ptr<voip_manager::VoipManager> _voip_manager);
         virtual ~base_im();
 
         virtual void connect() = 0;
@@ -102,7 +106,7 @@ namespace core
         virtual void erase_auth_data() = 0; // when logout
         virtual void start_session(bool _is_ping = false) = 0;
         virtual void handle_net_error(int32_t err) = 0;
-        
+
         virtual void phoneinfo(int64_t _seq, const std::string &phone, const std::string &gui_locale) = 0;
 
         // messaging functions
@@ -111,8 +115,10 @@ namespace core
             const std::string& _contact,
             const std::string& _message,
             const core::message_type _type,
-            const std::string& _internal_id) = 0;
-        virtual void send_message_typing(const int64_t _seq, const std::string& _contact) = 0;
+            const std::string& _internal_id,
+            const core::archive::quotes_vec& _quotes) = 0;
+
+        virtual void send_message_typing(const int64_t _seq, const std::string& _contact, const core::typing_status& _status) = 0;
 
         // feedback
         virtual void send_feedback(const int64_t, const std::string &url, const std::map<std::string, std::string> &fields, const std::vector<std::string> &files) = 0;
@@ -127,10 +133,12 @@ namespace core
         virtual void modify_chat(int64_t _seq, const std::string& _aimid, const std::string& _m_chat_name) = 0;
 
         // avatar function
-        virtual void get_contact_avatar(int64_t _seq, const std::string& _contact, int32_t _avatar_size) = 0;
+        virtual void get_contact_avatar(int64_t _seq, const std::string& _contact, int32_t _avatar_size, bool _force) = 0;
         virtual void show_contact_avatar(int64_t _seq, const std::string& _contact, int32_t _avatar_size) = 0;
 
         // history functions
+        virtual void get_archive_images(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) = 0;
+        virtual void repair_archive_images(int64_t _seq_, const std::string& _contact) = 0;
         virtual void get_archive_messages(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) = 0;
         virtual void get_archive_index(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) = 0;
         virtual void get_archive_messages_buddies(int64_t _seq_, const std::string& _contact, std::shared_ptr<archive::msgids_list> _ids) = 0;
@@ -148,11 +156,14 @@ namespace core
         virtual void get_chat_home(int64_t _seq, const std::string& _tag) = 0;
         virtual void get_chat_info(int64_t _seq, const std::string& _aimid, const std::string& _stamp, int32_t _limit) = 0;
         virtual void get_chat_blocked(int64_t _seq, const std::string& _aimid) = 0;
+        virtual void get_chat_pending(int64_t _seq, const std::string& _aimid) = 0;
         virtual void get_themes_meta(int64_t _seq, const ThemesScale _themes_scale) = 0;
+        virtual void resolve_pending(int64_t _seq, const std::string& _aimid, const std::vector<std::string>& _contact, bool _approve) = 0;
 
         virtual void mod_chat_name(int64_t _seq, const std::string& _aimid, const std::string& _name) = 0;
         virtual void mod_chat_about(int64_t _seq, const std::string& _aimid, const std::string& _about) = 0;
         virtual void mod_chat_public(int64_t _seq, const std::string& _aimid, bool _public) = 0;
+        virtual void mod_chat_join(int64_t _seq, const std::string& _aimid, bool _approved) = 0;
         virtual void block_chat_member(int64_t _seq, const std::string& _aimid, const std::string& _contact, bool _block) = 0;
         virtual void set_chat_member_role(int64_t _seq, const std::string& _aimid, const std::string& _contact, const std::string& _role) = 0;
 
@@ -204,6 +215,8 @@ namespace core
         virtual void on_voip_mute_switch();
 		virtual void on_voip_set_mute(bool mute);
         virtual void on_voip_mute_incoming_call_sounds(bool mute);
+		virtual void on_voip_minimal_bandwidth_switch();
+
 
         virtual void post_voip_msg_to_server(const voip_manager::VoipProtoMsg& msg) = 0;
         virtual void post_voip_alloc_to_server(const std::string& data) = 0;
@@ -219,7 +232,10 @@ namespace core
         virtual void upload_file_sharing(
             const int64_t _seq,
             const std::string& _contact,
-            const std::string& _file_name) = 0;
+            const std::string& _file_name,
+            std::shared_ptr<core::tools::binary_stream> _data,
+            const std::string& _extension) = 0;
+
         virtual void download_file_sharing(
             const int64_t _seq,
             const std::string& _contact,
@@ -227,12 +243,29 @@ namespace core
             const std::string& _download_dir,
             const std::string& _filename,
             const file_sharing_function _function) = 0;
+
+        virtual void request_file_direct_uri(
+            const int64_t _seq,
+            const std::string& _file_url) = 0;
+
         virtual void download_image(
             const int64_t _seq,
+            const std::string& _contact_aimid,
             const std::string& _file_url,
             const std::string& _destination,
             const bool _download_preview,
+            const int32_t _preview_width,
             const int32_t _preview_height) = 0;
+
+        virtual void download_link_preview(
+            const int64_t _seq,
+            const std::string& _contact_aimid,
+            const std::string& _url,
+            const int32_t _preview_width,
+            const int32_t _preview_height) = 0;
+
+        virtual void cancel_loader_task(const int64_t _task_id) = 0;
+
         virtual void abort_file_sharing_download(
             const int64_t _seq,
             const int64_t _process_seq) = 0;
@@ -240,6 +273,10 @@ namespace core
             const int64_t _seq,
             const std::string & _contact,
             const std::string &_process_seq) = 0;
+        virtual void raise_download_priority(
+            const int64_t _task_id) = 0;
+        virtual void raise_contact_downloads_priority(
+            const std::string &_contact_aimid) = 0;
 
         virtual void set_played(const std::string& url, bool played) = 0;
         virtual void speech_to_text(int64_t _seq, const std::string& _url, const std::string& _locale) = 0;
@@ -263,6 +300,9 @@ namespace core
         virtual void save_auth_to_export(std::function<void()> _on_result) = 0;
         virtual void set_show_promo_in_auth(bool _need_promo) = 0;
         virtual void start_after_close_promo() = 0;
+
+        virtual void read_snap(const uint64_t _snap_id, const std::string& _aimId, const bool _mark_prev_snaps_read) = 0;
+        virtual void download_snap_metainfo(const int64_t seq, const std::string& _contact_aimid, const std::string &ttl_id) = 0;
     };
 
 }

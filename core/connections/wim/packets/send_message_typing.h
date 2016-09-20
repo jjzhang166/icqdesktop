@@ -15,6 +15,8 @@ namespace core
 
 namespace core
 {
+    enum class typing_status;
+    
     namespace wim
     {
         class send_message_typing: public wim_packet
@@ -23,9 +25,10 @@ namespace core
             virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
 
             const std::string contact_;
-
+            const core::typing_status status_;
+            
         public:
-            send_message_typing(const wim_packet_params& _params, const std::string& _contact);
+            send_message_typing(const wim_packet_params& _params, const std::string& _contact, const core::typing_status& _status);
             virtual ~send_message_typing();
         };
 

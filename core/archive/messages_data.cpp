@@ -17,7 +17,7 @@ messages_data::~messages_data()
 }
 
 
-bool messages_data::get_messages(headers_list& _headers, history_block& _messages)
+bool messages_data::get_messages(headers_list& _headers, history_block& _messages) const
 {
     auto p_storage = storage_.get();
     archive::storage_mode mode;
@@ -70,7 +70,7 @@ bool messages_data::get_messages(headers_list& _headers, history_block& _message
     return res;
 }
 
-history_block messages_data::get_message_modifications(const message_header& _header)
+history_block messages_data::get_message_modifications(const message_header& _header) const
 {
     if (!_header.is_modified())
     {

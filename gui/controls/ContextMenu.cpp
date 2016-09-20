@@ -1,74 +1,84 @@
 #include "stdafx.h"
+
 #include "ContextMenu.h"
+
+#include "../fonts.h"
 #include "../utils/utils.h"
 #include "../utils/InterConnector.h"
 
+#ifdef __APPLE__
+#   include "../utils/macos/mac_support.h"
+#endif
+
+namespace
+{
+    const QString MENU_STYLE =
+        "QMenu { background-color: #f2f2f2; border: 1px solid #cccccc; }"
+        "QMenu::item { background-color: transparent; color: #282828;"
+        "height: %2; padding-left: %1; padding-right: 12dip; }"
+        "QMenu::item:selected { background-color: #e2e2e2;"
+        "height: %2; padding-left: %1; padding-right: 12dip; }"
+        "QMenu::item:disabled { background-color: transparent; color: gray;"
+        "height: %2; padding-left: %1; padding-right: 12dip; }"
+        "QMenu::item:disabled:selected { background-color: transparent; color: gray;"
+        "height: %2; padding-left: %1; padding-right: 12dip; }"
+        "QMenu::icon { padding-left: 22dip; }";
+}
+
 namespace Ui
 {
-    int MenuStyle::pixelMetric(PixelMetric metric, const QStyleOption * option, const QWidget * widget) const
+    int MenuStyle::pixelMetric(PixelMetric _metric, const QStyleOption* _option, const QWidget* _widget) const
     {
-        int s = QProxyStyle::pixelMetric(metric, option, widget);
-        if (metric == QStyle::PM_SmallIconSize) {
+        int s = QProxyStyle::pixelMetric(_metric, _option, _widget);
+        if (_metric == QStyle::PM_SmallIconSize)
+        {
             s = Utils::scale_value(20);
         }
         return s;
     }
 
-    ContextMenu::ContextMenu(QWidget* parent)
-        : QMenu(parent)
+    ContextMenu::ContextMenu(QWidget* _parent)
+        : QMenu(_parent)
         , InvertRight_(false)
         , Indent_(0)
     {
-        setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint);
-        setStyle(new MenuStyle());
-		setStyleSheet(QString("QMenu {\
-                       background-color: #f2f2f2;\
-                       border: 1px solid #cccccc;\
-                       }\
-                       QMenu::item {\
-                       padding-left: %1px;\
-                       background-color: transparent;\
-                       color: #000000;\
-                       padding-top: %4px;\
-                       padding-bottom: %4px;\
-                       padding-right: %2px;\
-                       }\
-                       QMenu::item:selected\
-                       {\
-                       background-color: #e2e2e2;\
-                       padding-left: %1px;\
-                       padding-top: %4px;\
-                       padding-bottom: %4px;\
-                       padding-right: %2px;\
-                       }\
-                       QMenu::icon\
-                       {\
-                       padding-left:%3px;\
-                       }").arg(Utils::scale_value(40)).arg(Utils::scale_value(12)).arg(Utils::scale_value(22)).arg(Utils::scale_value(6)));
+        applyStyle(this, true, Utils::scale_value(16), Utils::scale_value(36));
+    }
 
-        QFont font = Utils::appFont(Utils::FontsFamily::SEGOE_UI, Utils::scale_value(16));
-        setFont(font);
+    void ContextMenu::applyStyle(QMenu* menu, bool withPadding, int fonSize, int height)
+    {
+        menu->setWindowFlags(menu->windowFlags() | Qt::NoDropShadowWindowHint | Qt::WindowStaysOnTopHint);
+        menu->setStyle(new MenuStyle());
+        QString style = MENU_STYLE.arg(withPadding ? Utils::scale_value(40) : Utils::scale_value(12)).arg(height);
+        Utils::ApplyStyle(menu, style);
+        auto font = Fonts::appFont(fonSize);
+        menu->setFont(font);
         if (platform::is_apple())
         {
-            QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupWindow()), this, SLOT(close()));
+            QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupMenu()), menu, SLOT(close()));
         }
     }
 
-    QAction* ContextMenu::addActionWithIcon(const QIcon& icon, const QString& name, const QVariant& data)
+    QAction* ContextMenu::addActionWithIcon(const QIcon& _icon, const QString& _name, const QVariant& _data)
     {
-        QAction* action = addAction(icon, name);
-        action->setData(data);
+        QAction* action = addAction(_icon, _name);
+        action->setData(_data);
         return action;
     }
 
-    QAction* ContextMenu::addActionWithIcon(const QIcon& icon, const QString& name, const QObject *receiver, const char* member)
+    QAction* ContextMenu::addActionWithIcon(const QIcon& _icon, const QString& _name, const QObject* _receiver, const char* _member)
     {
-        return addAction(icon, name, receiver, member);
+        return addAction(_icon, _name, _receiver, _member);
     }
 
-    bool ContextMenu::hasAction(const QString& command)
+    QAction* ContextMenu::addActionWithIcon(const QString& _iconPath, const QString& _name, const QVariant& _data)
     {
-        assert(!command.isEmpty());
+        return addActionWithIcon(QIcon(Utils::parse_image_name(_iconPath)), _name, _data);
+    }
+
+    bool ContextMenu::hasAction(const QString& _command)
+    {
+        assert(!_command.isEmpty());
 
         for (const auto action : actions())
         {
@@ -81,7 +91,7 @@ namespace Ui
             }
 
             const auto actionCommand = commandIter->toString();
-            if (actionCommand == command)
+            if (actionCommand == _command)
             {
                 return true;
             }
@@ -90,9 +100,9 @@ namespace Ui
         return false;
     }
 
-    void ContextMenu::removeAction(const QString& command)
+    void ContextMenu::removeAction(const QString& _command)
     {
-        assert(!command.isEmpty());
+        assert(!_command.isEmpty());
 
         for (auto action : actions())
         {
@@ -105,7 +115,7 @@ namespace Ui
             }
 
             const auto actionCommand = commandIter->toString();
-            if (actionCommand == command)
+            if (actionCommand == _command)
             {
                 QWidget::removeAction(action);
 
@@ -114,20 +124,20 @@ namespace Ui
         }
     }
 
-    void ContextMenu::invertRight(bool invert)
+    void ContextMenu::invertRight(bool _invert)
     {
-        InvertRight_ = invert;
+        InvertRight_ = _invert;
     }
 
-    void ContextMenu::setIndent(int indent)
+    void ContextMenu::setIndent(int _indent)
     {
-        Indent_ = indent;
+        Indent_ = _indent;
     }
 
-	void ContextMenu::popup(const QPoint &pos, QAction *at)
+	void ContextMenu::popup(const QPoint& _pos, QAction* _at)
 	{
-		Pos_ = pos;
-		QMenu::popup(pos, at);
+		Pos_ = _pos;
+		QMenu::popup(_pos, _at);
 	}
 
     void ContextMenu::clear()
@@ -135,9 +145,9 @@ namespace Ui
         QMenu::clear();
     }
 
-    void ContextMenu::hideEvent(QHideEvent *e)
+    void ContextMenu::hideEvent(QHideEvent* _e)
     {
-        QMenu::hideEvent(e);
+        QMenu::hideEvent(_e);
     }
 
     void ContextMenu::showEvent(QShowEvent*)

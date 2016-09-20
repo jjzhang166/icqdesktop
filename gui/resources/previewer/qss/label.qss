@@ -1,0 +1,5 @@
+QLabel[GalleryLabel="true"]
+{
+    color: white;
+    font-size: 16dip;
+}

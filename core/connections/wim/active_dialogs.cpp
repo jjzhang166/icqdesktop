@@ -161,6 +161,8 @@ size_t active_dialogs::size() const
 
 void active_dialogs::enumerate(std::function<void(const active_dialog&)> _callback)
 {
-    for (auto iter = dialogs_.rbegin(); iter != dialogs_.rend(); iter++)
-        _callback(*iter);
+    for (const auto& _dialog : boost::adaptors::reverse(dialogs_))
+    {
+        _callback(_dialog);
+    }
 }

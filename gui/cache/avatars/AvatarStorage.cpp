@@ -1,16 +1,22 @@
 #include "stdafx.h"
 #include "AvatarStorage.h"
-#include "../../main_window/contact_list/ContactListModel.h"
 
 #include "../../core_dispatcher.h"
-#include "../../utils/utils.h"
+#include "../../main_window/contact_list/ContactListModel.h"
+#include "../../main_window/history_control/HistoryControlPage.h"
 #include "../../utils/gui_coll_helper.h"
+#include "../../utils/utils.h"
+#include "../../utils/InterConnector.h"
 
 namespace
 {
-	QString CreateKey(const QString &aimId, const int sizePx);
+	QString CreateKey(const QString& _aimId, const int _sizePx);
 
 	static int CLEANUP_TIMEOUT = 5 * 60 * 1000; //5min
+
+    static int CREATE_TIMEOUT = 2 * 60 * 1000; //2min
+
+    static int REQUEST_TIMEOUT = 15 * 1000; //15 sec
 }
 
 namespace Logic
@@ -23,6 +29,7 @@ namespace Logic
 		Timer_->start();
 
         connect(Ui::GetDispatcher(), SIGNAL(avatarLoaded(const QString&, QPixmap*, int)), this, SLOT(avatarLoaded(const QString&, QPixmap*, int)), Qt::QueuedConnection);
+        connect(Ui::GetDispatcher(), SIGNAL(chatInfo(qint64, std::shared_ptr<Data::ChatInfo>)), this, SLOT(chatInfo(qint64, std::shared_ptr<Data::ChatInfo>)), Qt::QueuedConnection);
 		connect(Timer_, SIGNAL(timeout()), this, SLOT(cleanup()), Qt::QueuedConnection);
 	}
 
@@ -30,15 +37,15 @@ namespace Logic
 	{
 	}
 
-	const QPixmapSCptr& AvatarStorage::Get(const QString& aimId, const QString& displayName, const int sizePx, const bool isFilled, bool& isDefault, bool regenerate)
+	const QPixmapSCptr& AvatarStorage::Get(const QString& _aimId, const QString& _displayName, const int _sizePx, const bool _isFilled, bool& _isDefault, bool _regenerate)
 	{
-		assert(!aimId.isEmpty());
-		assert(sizePx > 0);
+		assert(!_aimId.isEmpty());
+		assert(_sizePx > 0);
 
-		TimesCache_[aimId] = QDateTime::currentDateTime();
+		TimesCache_[_aimId] = QDateTime::currentDateTime();
 
-		Out isDefault = !LoadedAvatars_.contains(aimId);
-		const auto key = CreateKey(aimId, sizePx);
+		Out _isDefault = !LoadedAvatars_.contains(_aimId);
+		const auto key = CreateKey(_aimId, _sizePx);
 
 		auto iterByAimIdAndSize = AvatarsByAimIdAndSize_.find(key);
 		if (iterByAimIdAndSize != AvatarsByAimIdAndSize_.end())
@@ -46,19 +53,19 @@ namespace Logic
 			return iterByAimIdAndSize->second;
 		}
 
-		auto iterByAimId = AvatarsByAimId_.find(aimId);
+		auto iterByAimId = AvatarsByAimId_.find(_aimId);
 		if (iterByAimId == AvatarsByAimId_.end())
 		{
-			auto drawDisplayName = displayName.trimmed();
+			auto drawDisplayName = _displayName.trimmed();
 			if (drawDisplayName.isEmpty())
             {
-				drawDisplayName = GetContactListModel()->getDisplayName(aimId).trimmed();
+				drawDisplayName = getContactListModel()->getDisplayName(_aimId).trimmed();
             }
 
-			auto defaultAvatar = Utils::GetDefaultAvatar(aimId, drawDisplayName, sizePx, isFilled);
+			auto defaultAvatar = Utils::getDefaultAvatar(_aimId, drawDisplayName, _sizePx, _isFilled);
 			assert(defaultAvatar);
 
-			const auto result = AvatarsByAimId_.emplace(aimId, std::make_shared<QPixmap>(std::move(defaultAvatar)));
+			const auto result = AvatarsByAimId_.emplace(_aimId, std::make_shared<QPixmap>(std::move(defaultAvatar)));
 			assert(result.second);
 
 			iterByAimId = result.first;
@@ -67,41 +74,41 @@ namespace Logic
 		const auto &avatarByAimId = *iterByAimId->second;
         assert(!avatarByAimId.isNull());
 
-		const auto regenerateAvatar = ((avatarByAimId.width() < sizePx) && isDefault);
-		if (regenerateAvatar || regenerate)
+		const auto regenerateAvatar = ((avatarByAimId.width() < _sizePx) && _isDefault) && _aimId != _displayName;
+		if (regenerateAvatar || _regenerate)
 		{
 			AvatarsByAimId_.erase(iterByAimId);
-			CleanupSecondaryCaches(aimId);
-			return Get(aimId, displayName, sizePx, isFilled, isDefault, regenerate);
+			CleanupSecondaryCaches(_aimId);
+			return Get(_aimId, _displayName, _sizePx, _isFilled, _isDefault, _regenerate);
 		}
 
         int avatarWidth = avatarByAimId.width();
         int avatarHeight = avatarByAimId.height();
         QPixmap scaledImage;
         if (avatarHeight >= avatarWidth)
-            scaledImage = avatarByAimId.scaledToWidth(sizePx, Qt::SmoothTransformation);
+            scaledImage = avatarByAimId.scaledToWidth(_sizePx, Qt::SmoothTransformation);
         else
-            scaledImage = avatarByAimId.scaledToHeight(sizePx, Qt::SmoothTransformation);
+            scaledImage = avatarByAimId.scaledToHeight(_sizePx, Qt::SmoothTransformation);
 
 		const auto result = AvatarsByAimIdAndSize_.emplace(key, std::make_shared<QPixmap>(std::move(scaledImage)));
 		assert(result.second);
 
-		auto requestedAvatarsIter = RequestedAvatars_.find(aimId);
-		if (requestedAvatarsIter == RequestedAvatars_.end() || (avatarByAimId.width() < sizePx && avatarByAimId.height() < sizePx))
+		auto requestedAvatarsIter = RequestedAvatars_.find(_aimId);
+		if (requestedAvatarsIter == RequestedAvatars_.end() || (avatarByAimId.width() < _sizePx && avatarByAimId.height() < _sizePx))
 		{
 			Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-			collection.set_value_as_qstring("contact", aimId);
-            collection.set_value_as_int("size", sizePx); //request only needed size
+			collection.set_value_as_qstring("contact", _aimId);
+            collection.set_value_as_int("size", _sizePx); //request only needed size
 
 			Ui::GetDispatcher()->post_message_to_core("avatars/get", collection.get());
 
-			RequestedAvatars_.insert(aimId);
+			RequestedAvatars_.insert(_aimId);
 		}
         else
         {
             Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-            collection.set_value_as_qstring("contact", aimId);
-            collection.set_value_as_int("size", sizePx); //request only needed size
+            collection.set_value_as_qstring("contact", _aimId);
+            collection.set_value_as_int("size", _sizePx); //request only needed size
 
             Ui::GetDispatcher()->post_message_to_core("avatars/show", collection.get());
         }
@@ -109,39 +116,61 @@ namespace Logic
 		return result.first->second;
 	}
 
-    void AvatarStorage::UpdateAvatar(const QString& aimId)
+    void AvatarStorage::UpdateAvatar(const QString& _aimId, bool force)
     {
-        if (TimesCache_.find(aimId) != TimesCache_.end())
+        if (!force && LoadedAvatars_.contains(_aimId))
+            return;
+
+        if (TimesCache_.find(_aimId) != TimesCache_.end())
         {
-            AvatarsByAimId_.erase(aimId);
-            CleanupSecondaryCaches(aimId);
-            RequestedAvatars_.erase(aimId);
-            LoadedAvatars_.removeAll(aimId);
-            TimesCache_.erase(aimId);
+            auto iter = AvatarsByAimId_.find(_aimId);
+            if (iter != AvatarsByAimId_.end())
+            {
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_qstring("contact", _aimId);
+                collection.set_value_as_int("size", iter->second->height());
+                collection.set_value_as_bool("force", true);
+                Ui::GetDispatcher()->post_message_to_core("avatars/get", collection.get());
+            }
+
+            AvatarsByAimId_.erase(_aimId);
+            CleanupSecondaryCaches(_aimId);
+            RequestedAvatars_.erase(_aimId);
+            LoadedAvatars_.removeAll(_aimId);
+            TimesCache_.erase(_aimId);
         }
     }
     
-	const QPixmapSCptr& AvatarStorage::GetRounded(const QString& aimId, const QString& display_name, const int sizePx, const QString &state, const bool isFilled, bool& isDefault, bool regenerate, bool from_cl)
+    void AvatarStorage::ForceRequest(const QString& _aimId, const int _sizePx)
+    {
+        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+        collection.set_value_as_qstring("contact", _aimId);
+        collection.set_value_as_int("size", _sizePx);
+        collection.set_value_as_bool("force", true);
+        Ui::GetDispatcher()->post_message_to_core("avatars/get", collection.get());
+    }
+    
+	const QPixmapSCptr& AvatarStorage::GetRounded(const QString& _aimId, const QString& _displayName, const int _sizePx, const QString& _state, const bool _isFilled, bool& _isDefault, bool _regenerate, bool mini_icons)
 	{
-		assert(!aimId.isEmpty());
-		assert(sizePx > 0);
+		assert(!_aimId.isEmpty());
+		assert(_sizePx > 0);
 
-		const auto &avatar = Get(aimId, display_name, sizePx, isFilled, isDefault, regenerate);
+		const auto &avatar = Get(_aimId, _displayName, _sizePx, _isFilled, _isDefault, _regenerate);
         if (avatar->isNull())
         {
             assert(!"avatar is null");
             return avatar;
         }
 
-		return GetRounded(*avatar, aimId, state, from_cl, isDefault);
+		return GetRounded(*avatar, _aimId, _state, mini_icons, _isDefault);
 	}
 
-	QString AvatarStorage::GetLocal(const QString& aimId, const QString& display_name, const int sizePx, const bool isFilled)
+	QString AvatarStorage::GetLocal(const QString& _aimId, const QString& _displayName, const int _sizePx, const bool _isFilled)
 	{
 		bool isDefault = false;
-		QPixmapSCptr avatar = Get(aimId, display_name, sizePx, isFilled, isDefault, false);
+		QPixmapSCptr avatar = Get(_aimId, _displayName, _sizePx, _isFilled, isDefault, false);
 
-		QFile file(QString(QDir::tempPath() + "/%1_%2.png").arg(aimId).arg(isDefault ? "_def" : "_"));
+		QFile file(QString(QDir::tempPath() + "/%1_%2.png").arg(_aimId).arg(isDefault ? "_def" : "_"));
 		if (!file.exists())
 		{
 			file.open(QIODevice::WriteOnly);
@@ -152,59 +181,117 @@ namespace Logic
 		return fileInfo.absoluteFilePath();
 	}
 
-	void AvatarStorage::avatarLoaded(const QString &aimId, QPixmap *pixmap, int size)
+	void AvatarStorage::avatarLoaded(const QString& _aimId, QPixmap* _pixmap, int _size)
 	{
-		if (!pixmap)
+		if (!_pixmap)
 		{
-			return;
+            if (Logic::getContactListModel()->isChat(_aimId) && !ChatInfoRequested_.contains(_aimId))
+            {
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_qstring("aimid", _aimId);
+                collection.set_value_as_int("limit", 1);
+                Ui::GetDispatcher()->post_message_to_core("chats/info/get", collection.get());
+                ChatInfoRequested_.insert(_aimId, _size);
+            }
+
+            return;
 		}
 
-		assert(!aimId.isEmpty());
+        if (_pixmap->isNull())
+        {
+            if (!LoadedAvatarsFails_.contains(_aimId))
+            {
+                LoadedAvatarsFails_ << _aimId;
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_qstring("contact", _aimId);
+                collection.set_value_as_int("size", _size);
+                collection.set_value_as_bool("force", true);
 
-        QPixmapSCptr avatar(pixmap);
-        auto scaledImage = avatar->scaled(size, size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                Ui::GetDispatcher()->post_message_to_core("avatars/get", collection.get());
+            }
+
+            return;
+        }
+
+		assert(!_aimId.isEmpty());
+        LoadedAvatarsFails_.removeAll(_aimId);
+
+        QPixmapSCptr avatar(_pixmap);
+        auto scaledImage = avatar->scaled(_size, _size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         QPixmapSCptr cache = std::make_shared<QPixmap>(std::move(scaledImage));
-		auto iterPixmap = AvatarsByAimId_.find(aimId);
+		auto iterPixmap = AvatarsByAimId_.find(_aimId);
 		if (iterPixmap != AvatarsByAimId_.end())
 		{
 			iterPixmap->second = cache;
 		}
 		else
 		{
-			AvatarsByAimId_.emplace(aimId, cache);
+			AvatarsByAimId_.emplace(_aimId, cache);
 		}
 
-		CleanupSecondaryCaches(aimId);
+		CleanupSecondaryCaches(_aimId);
 
-		LoadedAvatars_ << aimId;
+		LoadedAvatars_ << _aimId;
 
-		emit avatarChanged(aimId);
+		emit avatarChanged(_aimId);
 	}
 
-    void AvatarStorage::UpdateDefaultAvatarIfNeed(const QString& aimId)
+    void AvatarStorage::chatInfo(qint64, std::shared_ptr<Data::ChatInfo> _info)
     {
-        assert(!aimId.isEmpty());
-
-        if (LoadedAvatars_.contains(aimId))
+        if (!ChatInfoRequested_.contains(_info->AimId_))
             return;
 
-        if (AvatarsByAimId_.find(aimId) != AvatarsByAimId_.end())
-            AvatarsByAimId_.erase(aimId);
-        CleanupSecondaryCaches(aimId);
-        emit avatarChanged(aimId);
+        auto createTime = QDateTime::fromTime_t(_info->CreateTime_);
+        if (createTime.msecsTo(QDateTime::currentDateTime()) < CREATE_TIMEOUT)
+        {
+            QString aimId = _info->AimId_;
+            int size = ChatInfoRequested_[_info->AimId_];
+            QTimer::singleShot(REQUEST_TIMEOUT, [aimId, size]() 
+            {
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_qstring("contact", aimId);
+                collection.set_value_as_int("size", size);
+                collection.set_value_as_bool("force", true);
+                Ui::GetDispatcher()->post_message_to_core("avatars/get", collection.get());
+            });
+        }
+
+        ChatInfoRequested_.remove(_info->AimId_);
+    }
+
+    void AvatarStorage::UpdateDefaultAvatarIfNeed(const QString& _aimId)
+    {
+        assert(!_aimId.isEmpty());
+
+        if (LoadedAvatars_.contains(_aimId))
+            return;
+
+        if (AvatarsByAimId_.find(_aimId) != AvatarsByAimId_.end())
+            AvatarsByAimId_.erase(_aimId);
+        CleanupSecondaryCaches(_aimId);
+        emit avatarChanged(_aimId);
     }
 
 	void AvatarStorage::cleanup()
 	{
 		QDateTime now = QDateTime::currentDateTime();
+        auto historyPage = Utils::InterConnector::instance().getHistoryPage(Logic::getContactListModel()->selectedContact());
 		for (std::map<QString, QDateTime>::iterator iter = TimesCache_.begin(); iter != TimesCache_.end();)
 		{
 			if (iter->second.msecsTo(now) >= CLEANUP_TIMEOUT)
 			{
-				AvatarsByAimId_.erase(iter->first);
-				CleanupSecondaryCaches(iter->first);
-				RequestedAvatars_.erase(iter->first);
-				LoadedAvatars_.removeAll(iter->first);
+                auto aimId = iter->first;
+                if (Logic::getContactListModel()->contains(aimId) || (historyPage && historyPage->contains(aimId)))
+                {
+                    iter->second = now;
+                    ++iter;
+                    continue;
+                }
+
+				AvatarsByAimId_.erase(aimId);
+				CleanupSecondaryCaches(aimId);
+				RequestedAvatars_.erase(aimId);
+				LoadedAvatars_.removeAll(aimId);
 				iter = TimesCache_.erase(iter);
 			}
 			else
@@ -215,14 +302,14 @@ namespace Logic
 	}
 
     // TODO : use two-step hash here
-	void AvatarStorage::CleanupSecondaryCaches(const QString &aimId)
+	void AvatarStorage::CleanupSecondaryCaches(const QString& _aimId)
 	{
-		const auto cleanupSecondaryCache = [&aimId](CacheMap &cache)
+		const auto cleanupSecondaryCache = [&_aimId](CacheMap &cache)
 		{
 			for (auto i = cache.begin(); i != cache.end(); ++i)
 			{
 				const auto &key = i->first;
-				if (!key.startsWith(aimId))
+				if (!key.startsWith(_aimId))
 				{
 					continue;
 				}
@@ -237,7 +324,7 @@ namespace Logic
 					}
 
 					const auto &key = i->first;
-					if (!key.startsWith(aimId))
+					if (!key.startsWith(_aimId))
 					{
 						break;
 					}
@@ -251,23 +338,23 @@ namespace Logic
 		cleanupSecondaryCache(AvatarsByAimIdAndSize_);
 	}
 
-	const QPixmapSCptr& AvatarStorage::GetRounded(const QPixmap &avatar, const QString &aimId, const QString &state, bool from_cl, bool isDefault)
+	const QPixmapSCptr& AvatarStorage::GetRounded(const QPixmap& _avatar, const QString& _aimId, const QString& _state, bool mini_icons, bool _isDefault)
 	{
-		assert(!avatar.isNull());
-		assert(!aimId.isEmpty());
+		assert(!_avatar.isNull());
+		assert(!_aimId.isEmpty());
 
 		QString key;
 		key.reserve(128);
-		key += aimId;
+		key += _aimId;
 		key += "/";
-		key += QString::number(avatar.width());
+		key += QString::number(_avatar.width());
 		key += "/";
-		key += state;
+		key += _state;
 
 		auto i = RoundedAvatarsByAimIdAndSize_.find(key);
 		if (i == RoundedAvatarsByAimIdAndSize_.end())
 		{
-			const auto roundedAvatar = Utils::RoundImage(avatar, state, isDefault, from_cl);
+			const auto roundedAvatar = Utils::roundImage(_avatar, _state, _isDefault, mini_icons);
 			i = RoundedAvatarsByAimIdAndSize_
 				.emplace(
 					key,
@@ -287,17 +374,17 @@ namespace Logic
 
 namespace
 {
-	QString CreateKey(const QString &aimId, const int sizePx)
+	QString CreateKey(const QString &_aimId, const int _sizePx)
 	{
-		assert(!aimId.isEmpty());
-		assert(sizePx > 0);
+		assert(!_aimId.isEmpty());
+		assert(_sizePx > 0);
 
 		QString result;
 		result.reserve(128);
 
-		result += aimId;
+		result += _aimId;
 		result += "/";
-		result += QString::number(sizePx);
+		result += QString::number(_sizePx);
 
 		return result;
 	}

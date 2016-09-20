@@ -5,7 +5,6 @@
 #include "../controls/TextEditEx.h"
 #include "../utils/log/log.h"
 #include "../utils/SChar.h"
-#include "../utils/profiling/auto_stop_watch.h"
 
 namespace
 {
@@ -24,7 +23,7 @@ namespace
 
 		const ResourceMap& GetResources() const;
 
-        static void AddSoftHyphenIfNeed(QString& output, const QString& word, bool isWordWrapEnabled);
+        static bool AddSoftHyphenIfNeed(QString& output, const QString& word, bool isWordWrapEnabled);
 
 	private:
 
@@ -103,7 +102,7 @@ namespace Logic
         if (platform::is_apple())
         {
             doc.setDocumentMargin(0);
-            
+
             return;
         }
 
@@ -221,14 +220,13 @@ namespace
 			if (convertLinks && ConvertEmail())
 			{
 				continue;
-			}
+            }
 
-#ifndef __APPLE__
-            if (ConvertEmoji(_emojiSize, _aligment))
+            if (!platform::is_apple() &&
+                ConvertEmoji(_emojiSize, _aligment))
 			{
 				continue;
 			}
-#endif //__APPLE__
 
 			ConvertPlainCharacter(breakDocument);
 		}
@@ -243,13 +241,15 @@ namespace
 		UriCallback_ = nullptr;
 	}
 
-    void Text2DocConverter::AddSoftHyphenIfNeed(QString& output, const QString& word, bool isWordWrapEnabled)
+    bool Text2DocConverter::AddSoftHyphenIfNeed(QString& output, const QString& word, bool isWordWrapEnabled)
     {
         const auto applyHyphen = (isWordWrapEnabled && (word.length() >= WORD_WRAP_LIMIT));
         if (applyHyphen)
         {
             output += QChar::SoftHyphen;
         }
+
+        return applyHyphen;
     }
 
 	const ResourceMap& Text2DocConverter::InsertEmoji(int _main, int _ext, QTextCursor& _cursor)
@@ -332,14 +332,20 @@ namespace
 
 		const auto probablyHttp = firstSchemeChar.EqualToI('h');
 		const auto probablyFtp = firstSchemeChar.EqualToI('f');
+        const auto probablyWww = firstSchemeChar.EqualToI('w');
 
-		if (!probablyHttp && !probablyFtp)
+		if (!probablyHttp && !probablyFtp && !probablyWww)
 		{
 			return false;
 		}
 
-		// [h]ttp://x or [f]tp://x
-		const auto minLength = (probablyHttp ? 8 : 7);
+		// [h]ttp://x or [f]tp://x or www.x
+		auto minLength = 0;
+        if (probablyHttp) minLength = 8;
+        else if (probablyFtp) minLength = 7;
+        else if (probablyWww) minLength = 4;
+        assert(minLength > 0);
+
 		if (IsEos(minLength))
 		{
 			return false;
@@ -364,12 +370,19 @@ namespace
 			return false;
 		}
 
+        static const QString STR_WW("ww");
+        if (probablyWww && rest.compare(STR_WW, Qt::CaseInsensitive))
+        {
+            PopInputCursor();
+            return false;
+        }
+
 		UrlAccum_.resize(0);
 		UrlAccum_ += firstSchemeChar.ToQChar();
 		UrlAccum_ += rest;
 
 		const auto lastSchemeChar = PeekSChar();
-		if (lastSchemeChar.EqualToI('s'))
+		if (lastSchemeChar.EqualToI('s') || lastSchemeChar.EqualToI('.'))
 		{
 			ReadSChar();
 			UrlAccum_ += lastSchemeChar.ToQString();
@@ -407,18 +420,25 @@ namespace
 
 		ReadSChar();
 
-        if (IsHtmlEscapingEnabled())
+        auto insertNewLine = [this] ()
         {
-            static const QString HTML_NEWLINE("<br/>");
-		    Buffer_ += HTML_NEWLINE;
-        }
-        else
-        {
-            static const QString TEXT_NEWLINE("\n");
-            Buffer_ += TEXT_NEWLINE;
-        }
+            if (IsHtmlEscapingEnabled())
+            {
+                static const QString HTML_NEWLINE("<br/>");
+                Buffer_ += HTML_NEWLINE;
+            }
+            else
+            {
+                static const QString TEXT_NEWLINE("\n");
+                Buffer_ += TEXT_NEWLINE;
+            }
+        };
 
+        insertNewLine();
         LastWord_.resize(0);
+
+        if (!platform::is_apple() && PeekSChar().IsEmoji())
+            insertNewLine();
 
 		if (!ch.IsCarriageReturn())
 		{
@@ -442,7 +462,7 @@ namespace
         const auto nextCharStr = nextChar.ToQString();
 
         const auto isNextCharSpace = nextChar.IsSpace();
-        
+
         const auto isEmoji = nextChar.IsEmoji();
 
         if (isNextCharSpace)
@@ -474,25 +494,48 @@ namespace
 		}
 
         if (!isEmoji)
+        {
             AddSoftHyphenIfNeed(Buffer_, LastWord_, isWordWrapEnabled);
+        }
+
+        /* this crushes emojis with skin tones
+        const auto applyOsxEmojiFix = (
+            platform::is_apple() &&
+            isEmoji &&
+            !Buffer_.endsWith(QChar::SoftHyphen));
+        if (applyOsxEmojiFix)
+        {
+            Buffer_ += QChar::SoftHyphen;
+        }
+        */
+
 	}
 
 	bool Text2DocConverter::ExtractUrl(QString &url, const bool breakDocument)
 	{
 		PushInputCursor();
 
-        static const QString SCHEME_TAIL("://");
+        static const QString WWW_SERVICE("www.");
 
-		const auto schemeTail = ReadString(3);
-		if (schemeTail != SCHEME_TAIL)
-		{
-			PopInputCursor();
-			return false;
-		}
+        const auto hasSchemeTail = (url != WWW_SERVICE);
+        if (hasSchemeTail)
+        {
+            static const QString SCHEME_TAIL("://");
 
-		url += schemeTail;
+		    const auto schemeTail = ReadString(3);
+
+            const auto schemeError = (schemeTail != SCHEME_TAIL);
+		    if (schemeError)
+		    {
+			    PopInputCursor();
+			    return false;
+		    }
+
+		    url += schemeTail;
+        }
 
         auto isWordWrapEnabled = breakDocument;
+        auto expectingPortNumber = true;
 		for(;;)
 		{
 			const auto nextChar = PeekSChar();
@@ -501,7 +544,18 @@ namespace
 				break;
 			}
 
-            if (nextChar.IsColon())
+            if (nextChar.EqualTo('/'))
+            {
+                // https://jira.mail.ru/browse/IMDESKTOP-2518
+
+                // no port numbers after the slash character
+                expectingPortNumber = false;
+
+                // reenable word wrap if needed
+                isWordWrapEnabled = breakDocument;
+            }
+
+            if (nextChar.IsColon() && expectingPortNumber)
             {
                 isWordWrapEnabled = false;
             }

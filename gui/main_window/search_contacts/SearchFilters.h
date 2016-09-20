@@ -11,7 +11,7 @@ namespace Ui
         Q_OBJECT
 
             LineEditEx*	keyword_;
-        QPushButton*	search_button_;
+        QPushButton*	searchButton_;
 
 Q_SIGNALS:
 
@@ -27,8 +27,8 @@ Q_SIGNALS:
 
     public:
 
-        void on_focus();
-        void on_search_results();
+        void onFocus();
+        void onSearchResults();
 
         SearchFilters(QWidget* _parent);
         virtual ~SearchFilters();

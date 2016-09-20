@@ -9,7 +9,7 @@ Q_SIGNALS:
 		void clicked();
 
 	public:
-		LabelEx(QWidget* parent);
+		LabelEx(QWidget* _parent);
 
 	protected:
 		virtual void mouseReleaseEvent(QMouseEvent*);

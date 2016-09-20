@@ -44,7 +44,7 @@ int32_t get_chat_home::init_request(std::shared_ptr<core::http_request_simple> _
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     doc.Accept(writer);
 
-    _request->push_post_parameter(buffer.GetString(), "");
+    _request->push_post_parameter(buffer.GetString(), std::string());
 
     return 0;
 }

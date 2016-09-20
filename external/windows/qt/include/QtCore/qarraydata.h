@@ -336,7 +336,7 @@ namespace QtPrivate {
         union { T type_must_be_POD; } dummy; Q_UNUSED(dummy)
 
         QArrayDataPointerRef<T> result = { QTypedArrayData<T>::allocate(N) };
-        Q_CHECK_Ptr(result.ptr);
+        Q_CHECK_PTR(result.ptr);
 
         ::memcpy(result.ptr->data(), array, N * sizeof(T));
         result.ptr->size = N;

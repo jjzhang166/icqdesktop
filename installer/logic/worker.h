@@ -36,7 +36,7 @@ Q_SIGNALS:
                     installer::error err = current_task_watcher_->result();
                     if (!err.is_ok())
                     {
-                        emit error(err);				
+                        emit error(err);
                     }
                     else
                     {

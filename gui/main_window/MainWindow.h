@@ -7,6 +7,16 @@ class MacSupport;
 
 class QApplication;
 
+namespace Data
+{
+    struct Image;
+}
+
+namespace Previewer
+{
+    class GalleryWidget;
+}
+
 namespace Utils
 {
     struct ProxySettings;
@@ -14,7 +24,6 @@ namespace Utils
 
 namespace Ui
 {
-    class main_window;
     class MainPage;
     class LoginPage;
     class PromoPage;
@@ -24,21 +33,22 @@ namespace Ui
     class TrayIcon;
     class HistoryControlPage;
     class BackgroundWidget;
-    
+    class MultimediaViewer;
+
     class ShadowWindow : public QWidget
     {
         Q_OBJECT
 
     public:
 
-        ShadowWindow(QBrush brush, int shadowWidth);
-        void setActive(bool value);
+        ShadowWindow(QBrush _brush, int _shadowWidth);
+        void setActive(bool _value);
 
     protected:
-        virtual void paintEvent(QPaintEvent *e);
+        virtual void paintEvent(QPaintEvent* _e);
 
     private:
-        void setGradientColor(QGradient& gradient);
+        void setGradientColor(QGradient& _gradient);
 
     private:
         int ShadowWidth_;
@@ -56,10 +66,10 @@ Q_SIGNALS:
         void checkPosition();
 
     public:
-        TitleWidgetEventFilter(QObject* parent);
+        TitleWidgetEventFilter(QObject* _parent);
 
     protected:
-        bool eventFilter(QObject* obj, QEvent* event);
+        bool eventFilter(QObject* _obj, QEvent* _event);
 
     private:
         QPoint clickPos;
@@ -73,12 +83,11 @@ Q_SIGNALS:
         void needActivate();
 
     public Q_SLOTS:
-
         void showPromoPage();
         void closePromoPage();
         void showLoginPage();
         void showMainPage();
-        void showMigrateAccountPage(QString accountId);
+        void showMigrateAccountPage(QString _accountId);
         void checkForUpdates();
         void showIconInTaskbar(bool);
         void activate();
@@ -88,7 +97,6 @@ Q_SIGNALS:
         void exit();
 
     private Q_SLOTS:
-
         void maximize();
         void moveRequest(QPoint);
         void minimize();
@@ -98,7 +106,6 @@ Q_SIGNALS:
         void copy();
         void cut();
         void paste();
-        void quote();
         void undo();
         void redo();
         void activateSettings();
@@ -113,14 +120,22 @@ Q_SIGNALS:
         void pasteEmoji();
         void checkPosition();
 
-        void onOpenChat(const std::string& contact);
-        void onVoipCallIncomingAccepted(const voip_manager::ContactEx& contact_ex);
-        void onVoipCallCreated(const voip_manager::ContactEx& contact_ex);
-        void onVoipCallDestroyed(const voip_manager::ContactEx& contact_ex);
+        void onOpenChat(const std::string& _contact);
+        void onVoipCallIncomingAccepted(const voip_manager::ContactEx& _contact_ex);
+        void onVoipCallCreated(const voip_manager::ContactEx& _contact_ex);
+        void onVoipCallDestroyed(const voip_manager::ContactEx& _contact_ex);
+		void onShowVideoWindow();
+        void onAppConfig();
 
     public:
-        MainWindow(QApplication* app);
+        MainWindow(QApplication* _app);
         ~MainWindow();
+
+        void openGallery(const QString& _aimId, const Data::Image& _image, const QString& _localPath);
+        void closeGallery();
+
+        void playVideo(const QString& _path);
+        void closeVideo();
 
         void activateFromEventLoop();
         bool isActive() const;
@@ -130,55 +145,61 @@ Q_SIGNALS:
         int getScreen() const;
         void skipRead(); //skip next sending last read by window activation
 
-        HistoryControlPage* getHistoryPage(const QString& aimId) const;
+        HistoryControlPage* getHistoryPage(const QString& _aimId) const;
         MainPage* getMainPage() const;
 
-        void insertTopWidget(const QString& aimId, QWidget* widget);
-        void removeTopWidget(const QString& aimId);
+        void insertTopWidget(const QString& _aimId, QWidget* _widget);
+        void removeTopWidget(const QString& _aimId);
 
-        void showSidebar(const QString& aimId, int page);
-        void setSidebarVisible(bool show);
+        void showSidebar(const QString& _aimId, int _page);
+        void setSidebarVisible(bool _show);
         bool isSidebarVisible() const;
-        
-        void showMenuBarIcon(bool show);
+        void restoreSidebar();
+
+        void showMenuBarIcon(bool _show);
 
     private:
         void initSizes();
         void initSettings();
 
     protected:
-        bool nativeEventFilter(const QByteArray &, void * message, long * result);
+        bool nativeEventFilter(const QByteArray &, void* _message, long* _result);
 
-        virtual void resizeEvent(QResizeEvent* event);
-        virtual void moveEvent(QMoveEvent* event);
-        virtual void changeEvent(QEvent* event);
-        virtual void closeEvent(QCloseEvent* event);
-        virtual void keyPressEvent(QKeyEvent* event);
-        void hide_taskbar_icon();
-        void show_taskbar_icon();
+        virtual void enterEvent(QEvent* _event);
+        virtual void leaveEvent(QEvent* _event);
+        virtual void resizeEvent(QResizeEvent* _event);
+        virtual void moveEvent(QMoveEvent* _event);
+        virtual void changeEvent(QEvent* _event);
+        virtual void closeEvent(QCloseEvent* _event);
+        virtual void keyPressEvent(QKeyEvent* _event);
+        void hideTaskbarIcon();
+        void showTaskbarIcon();
         void clear_global_objects();
 
     private:
-        MainPage* main_page_;
-        LoginPage* login_page_;
-        PromoPage* promo_page_;
+        Previewer::GalleryWidget* gallery_;
+        MainPage* mainPage_;
+        LoginPage* loginPage_;
+        PromoPage* promoPage_;
         QApplication* app_;
-        TitleWidgetEventFilter* event_filter_;
-        TrayIcon* tray_icon_;
+        TitleWidgetEventFilter* eventFilter_;
+        TrayIcon* trayIcon_;
         QPixmap backgroundPixmap_;
-        QWidget *main_widget_;
-        QVBoxLayout *vertical_layout_;
-        QWidget *title_widget_;
-        QHBoxLayout *horizontal_layout_;
+        QWidget *mainWidget_;
+        QVBoxLayout *mainLayout_;
+        QWidget *titleWidget_;
+        QHBoxLayout *titleLayout_;
         QPushButton *logo_;
         QLabel *title_;
-        QSpacerItem *horizontal_spacer_;
-        QPushButton *hide_button_;
-        QPushButton *maximize_button_;
-        QPushButton *close_button_;
-        BackgroundWidget *stacked_widget_;
+        QSpacerItem *spacer_;
+        QPushButton *hideButton_;
+        QPushButton *maximizeButton_;
+        QPushButton *closeButton_;
+        BackgroundWidget *stackedWidget_;
         ShadowWindow* Shadow_;
         CallPanelMainEx* callPanelMainEx;
+        MultimediaViewer* mplayer_;
+
         bool SkipRead_;
         bool TaskBarIconHidden_;
 
@@ -186,7 +207,7 @@ Q_SIGNALS:
         HWND fake_parent_window_;
 #endif //_WIN32
 #ifdef __APPLE__
-        MacSupport*   mac_support_;
+        MacSupport* getMacSupport();
         AccountsPage* accounts_page_;
 #endif
 	};

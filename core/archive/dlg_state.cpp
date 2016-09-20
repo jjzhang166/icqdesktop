@@ -34,6 +34,7 @@ enum dlg_state_fields
     del_up_to = 11,
     friendly = 12,
     official = 13,
+    fake = 14,
 };
 
 dlg_state::dlg_state()
@@ -45,6 +46,7 @@ dlg_state::dlg_state()
     , last_message_(new history_message())
     , visible_(true)
     , official_(false)
+    , fake_(false)
     , del_up_to_(-1)
 {
 }
@@ -68,6 +70,7 @@ void dlg_state::copy_from(const dlg_state& _state)
     theirs_last_read_ = _state.theirs_last_read_;
     theirs_last_delivered_ = _state.theirs_last_delivered_;
     visible_ = _state.visible_;
+    fake_ = _state.fake_;
     *last_message_ = *_state.last_message_;
     last_message_friendly_ = _state.last_message_friendly_;
     dlg_state_patch_version_ = _state.dlg_state_patch_version_;
@@ -222,6 +225,7 @@ void dlg_state::serialize(core::tools::binary_stream& _data) const
     state_pack.push_child(core::tools::tlv(dlg_state_fields::last_message_friendly, get_last_message_friendly()));
     state_pack.push_child(core::tools::tlv(dlg_state_fields::friendly, get_friendly()));
     state_pack.push_child(core::tools::tlv(dlg_state_fields::official, get_official()));
+    state_pack.push_child(core::tools::tlv(dlg_state_fields::fake, get_fake()));
 
     if (has_history_patch_version())
     {
@@ -262,6 +266,7 @@ bool dlg_state::unserialize(core::tools::binary_stream& _data)
     auto tlv_last_message_friendly = state_pack.get_item(dlg_state_fields::last_message_friendly);
     auto tlv_friendly = state_pack.get_item(dlg_state_fields::friendly);
     auto tlv_official = state_pack.get_item(dlg_state_fields::official);
+    auto tlv_fake = state_pack.get_item(dlg_state_fields::fake);
 
     if (!tlv_unreads_count || !tlv_last_msg_id || !tlv_yours_last_read || !tlv_theirs_last_read ||
         !tlv_theirs_last_delivered || !tlv_last_message || !tlv_visible)
@@ -301,6 +306,11 @@ bool dlg_state::unserialize(core::tools::binary_stream& _data)
     if (tlv_official)
     {
         set_official(tlv_official->get_value<bool>());
+    }
+
+    if (tlv_fake)
+    {
+        set_fake(tlv_fake->get_value<bool>());
     }
 
     core::tools::binary_stream bs_message = tlv_last_message->get_value<core::tools::binary_stream>();
@@ -404,9 +414,28 @@ void archive_state::merge_state(const dlg_state& _new_state, Out dlg_state_chang
 {
     Out _changes.initial_fill_ = state_->is_empty();
 
+    const auto update_history_patch = (
+                                       _new_state.has_history_patch_version() &&
+                                       (_new_state.get_history_patch_version() != state_->get_history_patch_version())
+                                       );
+
+    const auto patch_version_changed = (!_new_state.get_dlg_state_patch_version().empty() && _new_state.get_dlg_state_patch_version() != state_->get_history_patch_version());
+
+    if (!_new_state.has_last_msgid() && !_new_state.get_last_message().has_msgid() && _new_state.get_last_message().get_internal_id().empty())
+    {
+        assert(!"corrupted dlg state");
+        return;
+    }
+
+    if (!update_history_patch && !patch_version_changed && _new_state.has_last_msgid() && state_->has_last_msgid() && _new_state.get_last_msgid() < state_->get_last_msgid())
+    {
+        return;
+    }
+
     state_->set_last_msgid(_new_state.get_last_msgid());
     state_->set_unread_count(_new_state.get_unread_count());
     state_->set_visible(_new_state.get_visible());
+    state_->set_fake(_new_state.get_fake());
     state_->set_official(_new_state.get_official());
     state_->set_theirs_last_read(_new_state.get_theirs_last_read());
     state_->set_theirs_last_delivered(_new_state.get_theirs_last_delivered());
@@ -449,11 +478,6 @@ void archive_state::merge_state(const dlg_state& _new_state, Out dlg_state_chang
     {
         state_->set_last_message_friendly(new_last_message.get_sender_friendly());
     }
-
-    const auto update_history_patch = (
-        _new_state.has_history_patch_version() &&
-        (_new_state.get_history_patch_version() != state_->get_history_patch_version())
-    );
 
     Out _changes.history_patch_version_changed_ = update_history_patch;
 

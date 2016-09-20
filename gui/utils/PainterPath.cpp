@@ -10,22 +10,26 @@ namespace Utils
     QPainterPath renderMessageBubble(
         const QSize &size,
         const int32_t borderRadius,
-        const bool isOutgoing)
+        const bool isOutgoing,
+        const RenderBubbleFlags flags)
     {
         assert(size.isValid());
 
         return renderMessageBubble(
             QRect(QPoint(0, 0), size),
             borderRadius,
-            isOutgoing
-        );
+            isOutgoing,
+            flags);
     }
 
     QPainterPath renderMessageBubble(
         const QRect &rect,
         const int32_t borderRadius,
-        const bool isOutgoing)
+        const bool isOutgoing,
+        const RenderBubbleFlags flags)
     {
+        (void)isOutgoing;
+
         assert(rect.isValid());
         assert(borderRadius > 0);
         assert((borderRadius * 2) <= rect.width());
@@ -33,59 +37,105 @@ namespace Utils
 
         const auto borderDiameter = (borderRadius * 2);
 
-        const auto heightMinusBorder = (rect.height() - borderDiameter);
-        const auto widthMinusBorder = (rect.width() - borderDiameter);
+        const auto bottomMinusBorder = (rect.bottom() - borderDiameter);
+        const auto rightMinusBorder = (rect.right() - borderDiameter);
 
-        assert(heightMinusBorder >= 0);
-        assert(widthMinusBorder >= 0);
+        assert(bottomMinusBorder >= 0);
+        assert(rightMinusBorder >= 0);
 
         QPainterPath clipPath;
 
-        auto x = 0;
-        auto y = 0;
+        auto x = rect.left();
+        auto y = rect.top();
 
         // lt
 
-        x += borderRadius;
+        const auto isLeftTopRoundingEnabled = ((flags & RenderBubble_LeftTopRounded) != 0);
+        if (isLeftTopRoundingEnabled)
+        {
+            x += borderRadius;
 
-        clipPath.moveTo(x, y);
+            clipPath.moveTo(x, y);
 
-        clipPath.arcTo(0, 0, borderDiameter, borderDiameter, 90, 90);
+            clipPath.arcTo(rect.left(), rect.top(), borderDiameter, borderDiameter, 90, 90);
+        }
+        else
+        {
+            assert(!"not implemented yet!");
+        }
 
         // lb
 
-        x = 0;
-        y = heightMinusBorder;
-        clipPath.lineTo(x, y);
+        const auto isLeftBottomRoundingEnabled = ((flags & RenderBubble_LeftBottomRounded) != 0);
+        if (isLeftBottomRoundingEnabled)
+        {
+            x = rect.left();
+            y = bottomMinusBorder;
+            clipPath.lineTo(x, y);
 
-        clipPath.arcTo(x, y, borderDiameter, borderDiameter, 180, 90);
+            clipPath.arcTo(x, y, borderDiameter, borderDiameter, 180, 90);
+        }
+        else
+        {
+            x = rect.left();
+            y = rect.bottom();
+            clipPath.lineTo(x, y);
+        }
 
         // rb
 
-        x = widthMinusBorder;
-        y = rect.height();
-        clipPath.lineTo(x, y);
+        const auto isRightBottomRoundingEnabled = ((flags & RenderBubble_RightBottomRounded) != 0);
+        if (isRightBottomRoundingEnabled)
+        {
+            x = rightMinusBorder;
+            y = rect.bottom();
+            clipPath.lineTo(x, y);
 
-        y -= borderDiameter;
-        clipPath.arcTo(x, y, borderDiameter, borderDiameter, 270, 90);
+            y -= borderDiameter;
+            clipPath.arcTo(x, y, borderDiameter, borderDiameter, 270, 90);
+        }
+        else
+        {
+            x = rect.right();
+            y = rect.bottom();
+            clipPath.lineTo(x, y);
+        }
 
         // rt
 
-        x = rect.width();
-        y = borderDiameter;
-        clipPath.lineTo(x, y);
+        const auto isRightTopRoundingEnabled = ((flags & RenderBubble_RightTopRounded) != 0);
+        if (isRightTopRoundingEnabled)
+        {
+            x = rect.right();
+            y = (rect.top() + borderDiameter);
+            clipPath.lineTo(x, y);
 
-        x -= borderDiameter;
-        y -= borderDiameter;
-        clipPath.arcTo(x, y, borderDiameter, borderDiameter, 0, 90);
+            x -= borderDiameter;
+            y -= borderDiameter;
+            clipPath.arcTo(x, y, borderDiameter, borderDiameter, 0, 90);
+        }
+        else
+        {
+            x = rect.right();
+            y = rect.top();
+
+            clipPath.lineTo(x, y);
+        }
 
         // the final closure
 
-        x = borderRadius;
-        y = 0;
-        clipPath.lineTo(x, y);
-
-        clipPath = clipPath.translated(rect.left(), rect.top());
+        if (isLeftBottomRoundingEnabled)
+        {
+            x = rect.left();
+            y = rect.top();
+            clipPath.lineTo(x, y);
+        }
+        else
+        {
+            x = (rect.left() + borderRadius);
+            y = rect.top();
+            clipPath.lineTo(x, y);
+        }
 
         return clipPath;
     }

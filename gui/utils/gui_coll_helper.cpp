@@ -3,8 +3,8 @@
 
 namespace Ui
 {
-	gui_coll_helper::gui_coll_helper(core::icollection* _collection, bool auto_release)
-		: core::coll_helper(_collection, auto_release)
+	gui_coll_helper::gui_coll_helper(core::icollection* _collection, bool _autoRelease)
+		: core::coll_helper(_collection, _autoRelease)
 	{
 
 	}

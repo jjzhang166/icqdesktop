@@ -1,19 +1,44 @@
 #include "stdafx.h"
 #include "AuthWidget.h"
-#include "../../../core_dispatcher.h"
-#include "../../../utils/utils.h"
-#include "../../../utils/InterConnector.h"
-#include "../../../controls/ContactAvatarWidget.h"
-#include "../../../cache/avatars/AvatarStorage.h"
-#include "../../../controls/TextEmojiWidget.h"
-#include "../../contact_list/ContactListModel.h"
+
 #include "../../contact_list/contact_profile.h"
+#include "../../contact_list/ContactListModel.h"
+#include "../../../core_dispatcher.h"
+#include "../../../controls/CommonStyle.h"
+#include "../../../controls/ContactAvatarWidget.h"
+#include "../../../controls/TextEmojiWidget.h"
+#include "../../../utils/InterConnector.h"
+#include "../../../utils/utils.h"
 
 namespace
 {
-    const int avatar_size = 180;
-    const int avatar_upper_space = 40;
+    const int AVATAR_SIZE = 180;
+    const int AVATAR_UPPER_SPACE = 40;
+    const int NAME_FONTSIZE = 32;
+    const int INFO_FONTSIZE = 16;
+    const int BUTTON_FONTSIZE = 18;
 
+    const QString AUTH_WIDGET_STYLE =
+        "background-color: #e5ffffff;"
+        "border-width: 0dip;"
+        "border-style: solid;"
+        "border-radius: 8dip;";
+
+    const QString BUTTON_ADD_STYLE = QString(
+        "QPushButton { background-color: transparent; border: none; color: %1; }"
+        "QPushButton:hover { color: %2; }"
+        "QPushButton:pressed { color: %3; } ")
+        .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColor()))
+        .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorHovered()))
+        .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getLinkColorPressed()));
+
+    const QString RED_BUTTON_STYLE = QString(
+        "QPushButton { background-color: transparent; border: none; color: %1; }"
+        "QPushButton:hover { color: %2; }"
+        "QPushButton:pressed { color: %3; } ")
+        .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getRedLinkColor()))
+        .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getRedLinkColorHovered()))
+        .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getRedLinkColorPressed()));
 }
 
 namespace Ui
@@ -23,76 +48,77 @@ namespace Ui
         :	QWidget(_parent),
         aimid_(_aimid),
         ref_(new bool(false)),
-        name_(new TextEmojiWidget(this, Utils::FontsFamily::SEGOE_UI_LIGHT, Utils::scale_value(32), QColor(0x28, 0x28, 0x28), Utils::scale_value(38))),
-        info_(new TextEmojiWidget(this, Utils::FontsFamily::SEGOE_UI_LIGHT, Utils::scale_value(16), QColor(0x28, 0x28, 0x28), Utils::scale_value(27) - name_->descent()))
+        name_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::FontStyle::LIGHT, Utils::scale_value(NAME_FONTSIZE), CommonStyle::getTextCommonColor(), Utils::scale_value(38))),
+        info_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::FontStyle::LIGHT, Utils::scale_value(INFO_FONTSIZE), CommonStyle::getTextCommonColor(), Utils::scale_value(27) - name_->descent()))
     {
         setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
 
-        QVBoxLayout* root_layout = new QVBoxLayout();
-        root_layout->setSpacing(0);
-        root_layout->setContentsMargins(0, 0, 0, Utils::scale_value(22));
-        root_layout->setAlignment(Qt::AlignTop);
+        QVBoxLayout* rootLayout = new QVBoxLayout();
+        rootLayout->setSpacing(0);
+        rootLayout->setContentsMargins(0, 0, 0, Utils::scale_value(22));
+        rootLayout->setAlignment(Qt::AlignTop);
 
-        root_layout->addSpacing(Utils::scale_value(avatar_size - avatar_upper_space));
+        rootLayout->addSpacing(Utils::scale_value(AVATAR_SIZE - AVATAR_UPPER_SPACE));
 
-        name_->setObjectName("contact_name");
         name_->setText(_aimid, TextEmojiAlign::allign_center);
-
-        info_->setObjectName("contact_info");
+        name_->setStyleSheet("background-color: transparent");
         info_->setText("", TextEmojiAlign::allign_center);
+        info_->setStyleSheet("background-color: transparent;");
+        rootLayout->addWidget(name_);
+        rootLayout->addWidget(info_);
 
-        root_layout->addWidget(name_);
-        root_layout->addWidget(info_);
+        QHBoxLayout* buttonsLayout = new QHBoxLayout();
+        buttonsLayout->addSpacing(Utils::scale_value(40));
 
-        QHBoxLayout* buttons_layout = new QHBoxLayout();
-        buttons_layout->addSpacing(Utils::scale_value(40));
+        QPushButton* buttonAdd = new QPushButton(this);
+        buttonAdd->setFont(Fonts::appFontScaled(BUTTON_FONTSIZE));
+        Utils::ApplyStyle(buttonAdd, BUTTON_ADD_STYLE);
+        buttonAdd->setText(QT_TRANSLATE_NOOP("auth_widget","Add"));
+        buttonAdd->setCursor(Qt::PointingHandCursor);
+        connect(buttonAdd, &QPushButton::clicked, [this]() { emit addContact(); });
 
-        QPushButton* button_add = new QPushButton(this);
-        button_add->setObjectName("button_add");
-        button_add->setText(QT_TRANSLATE_NOOP("auth_widget","Add"));
-        button_add->setCursor(Qt::PointingHandCursor);
-        connect(button_add, &QPushButton::clicked, [this]() { emit add_contact(); });
+        QPushButton* buttonSpam = new QPushButton(this);
+        buttonSpam->setFont(Fonts::appFontScaled(BUTTON_FONTSIZE));
+        Utils::ApplyStyle(buttonSpam, RED_BUTTON_STYLE);
+        buttonSpam->setText(QT_TRANSLATE_NOOP("auth_widget", "Block"));
+        buttonSpam->setCursor(Qt::PointingHandCursor);
+        connect(buttonSpam, &QPushButton::clicked, [this]() { emit spamContact(); });
 
-        QPushButton* button_spam = new QPushButton(this);
-        button_spam->setObjectName("button_spam");
-        button_spam->setText(QT_TRANSLATE_NOOP("auth_widget", "Block"));
-        button_spam->setCursor(Qt::PointingHandCursor);
-        connect(button_spam, &QPushButton::clicked, [this]() { emit spam_contact(); });
+        QPushButton* buttonDelete = new QPushButton(this);
+        buttonDelete->setFont(Fonts::appFontScaled(BUTTON_FONTSIZE));
+        Utils::ApplyStyle(buttonDelete, RED_BUTTON_STYLE);
+        buttonDelete->setText(QT_TRANSLATE_NOOP("auth_widget", "Delete"));
+        buttonDelete->setCursor(Qt::PointingHandCursor);
+        connect(buttonDelete, &QPushButton::clicked, [this]() { emit deleteContact(); });
 
-        QPushButton* button_delete = new QPushButton(this);
-        button_delete->setObjectName("button_delete");
-        button_delete->setText(QT_TRANSLATE_NOOP("auth_widget", "Delete"));
-        button_delete->setCursor(Qt::PointingHandCursor);
-        connect(button_delete, &QPushButton::clicked, [this]() { emit delete_contact(); });
+        buttonsLayout->addWidget(buttonAdd);
+        buttonsLayout->addWidget(buttonSpam);
+        buttonsLayout->addWidget(buttonDelete);
 
-        buttons_layout->addWidget(button_add);
-        buttons_layout->addWidget(button_spam);
-        buttons_layout->addWidget(button_delete);
+        buttonsLayout->setContentsMargins(0, 0, 0, 0);
+        buttonsLayout->setSpacing(Utils::scale_value(40));
 
-        buttons_layout->setContentsMargins(0, 0, 0, 0);
-        buttons_layout->setSpacing(Utils::scale_value(40));
+        buttonsLayout->addSpacing(Utils::scale_value(40));
 
-        buttons_layout->addSpacing(Utils::scale_value(40));
-
-        root_layout->addSpacing(Utils::scale_value(12));
-        root_layout->addLayout(buttons_layout);
+        rootLayout->addSpacing(Utils::scale_value(12));
+        rootLayout->addLayout(buttonsLayout);
 
         std::weak_ptr<bool> wr_ref = ref_;
 
-        Logic::GetContactListModel()->get_contact_profile(aimid_, [this, wr_ref](Logic::profile_ptr _profile, int32_t /*error*/)
+        Logic::getContactListModel()->getContactProfile(aimid_, [this, wr_ref](Logic::profile_ptr _profile, int32_t /*error*/)
         {
             auto ref = wr_ref.lock();
             if (!ref)
                 return;
 
             if (_profile)
-                init_from_profile(_profile);
+                initFromProfile(_profile);
         });
 
-        setLayout(root_layout);
+        setLayout(rootLayout);
     }
 
-    void ContactInfoWidget::init_from_profile(Logic::profile_ptr _profile)
+    void ContactInfoWidget::initFromProfile(Logic::profile_ptr _profile)
     {
         name_->setText(_profile->get_contact_name(), TextEmojiAlign::allign_center);
 
@@ -115,7 +141,7 @@ namespace Ui
         {
             QDateTime birthdate = QDateTime::fromMSecsSinceEpoch((qint64) _profile->get_birthdate() * 1000, Qt::LocalTime);
 
-            int age = Utils::calc_age(birthdate);
+            int age = Utils::calcAge(birthdate);
 
             if (age > 0)
             {
@@ -149,58 +175,58 @@ namespace Ui
 
     AuthWidget::AuthWidget(QWidget* _parent, const QString& _aimid)
         :	QWidget(_parent),
-        root_layout_(new QVBoxLayout()),
-        avatar_(new ContactAvatarWidget(this, _aimid, Logic::GetContactListModel()->getDisplayName(_aimid), Utils::scale_value(avatar_size), true)),
+        rootLayout_(new QVBoxLayout()),
+        avatar_(new ContactAvatarWidget(this, _aimid, Logic::getContactListModel()->getDisplayName(_aimid), Utils::scale_value(AVATAR_SIZE), true)),
         aimid_(_aimid),
-        info_widget_(new ContactInfoWidget(this, _aimid))
+        infoWidget_(new ContactInfoWidget(this, _aimid))
     {
         avatar_->setCursor(Qt::PointingHandCursor);
 
-        setStyleSheet(Utils::LoadStyle(":/main_window/history_control/auth_widget/auth_widget.qss", Utils::get_scale_coefficient(), true));
+        Utils::ApplyStyle(infoWidget_, AUTH_WIDGET_STYLE);
 
-        root_layout_->setSpacing(0);
-        root_layout_->setContentsMargins(0, Utils::scale_value(avatar_upper_space), 0, 0);
+        rootLayout_->setSpacing(0);
+        rootLayout_->setContentsMargins(0, Utils::scale_value(AVATAR_UPPER_SPACE), 0, 0);
 
-        QHBoxLayout* info_layout = new QHBoxLayout();
-        info_layout->setSpacing(0);
-        info_layout->setContentsMargins(0, 0, 0, 0);
-        info_layout->setAlignment(Qt::AlignHCenter);
+        QHBoxLayout* infoLayout = new QHBoxLayout();
+        infoLayout->setSpacing(0);
+        infoLayout->setContentsMargins(0, 0, 0, 0);
+        infoLayout->setAlignment(Qt::AlignHCenter);
 
         auto h_spacer_l = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
         auto h_spacer_r = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-        info_layout->addSpacerItem(h_spacer_l);
-        info_layout->addWidget(info_widget_);
-        info_layout->addSpacerItem(h_spacer_r);
+        infoLayout->addSpacerItem(h_spacer_l);
+        infoLayout->addWidget(infoWidget_);
+        infoLayout->addSpacerItem(h_spacer_r);
 
-        root_layout_->addLayout(info_layout);
+        rootLayout_->addLayout(infoLayout);
 
-        setLayout(root_layout_);
+        setLayout(rootLayout_);
 
         avatar_->raise();
+       
+        connect(avatar_, SIGNAL(clicked()), this, SLOT(avatarClicked()), Qt::QueuedConnection);
 
-        connect(avatar_, SIGNAL(clicked()), this, SLOT(avatar_clicked()), Qt::QueuedConnection);
-
-        connect(info_widget_, &ContactInfoWidget::add_contact, [this](){ emit add_contact(aimid_); });
-        connect(info_widget_, &ContactInfoWidget::spam_contact, [this](){ emit spam_contact(aimid_); });
-        connect(info_widget_, &ContactInfoWidget::delete_contact, [this](){ emit delete_contact(aimid_); });
+        connect(infoWidget_, &ContactInfoWidget::addContact, [this](){ emit addContact(aimid_); });
+        connect(infoWidget_, &ContactInfoWidget::spamContact, [this](){ emit spamContact(aimid_); });
+        connect(infoWidget_, &ContactInfoWidget::deleteContact, [this](){ emit deleteContact(aimid_); });
     }
 
     AuthWidget::~AuthWidget()
     {
     }
 
-    void AuthWidget::place_avatar()
+    void AuthWidget::placeAvatar()
     {
         QRect rc = geometry();
 
-        int x = (rc.width() - Utils::scale_value(avatar_size)) / 2;
+        int x = (rc.width() - Utils::scale_value(AVATAR_SIZE)) / 2;
         int y = 0;
 
         avatar_->move(x, y);
     }
 
-    void AuthWidget::avatar_clicked()
+    void AuthWidget::avatarClicked()
     {
         emit Utils::InterConnector::instance().profileSettingsShow(aimid_);
         GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::profile_auth_widget);
@@ -208,7 +234,7 @@ namespace Ui
 
     void AuthWidget::resizeEvent(QResizeEvent * _e)
     {
-        place_avatar();
+        placeAvatar();
 
         QWidget::resizeEvent(_e);
     }

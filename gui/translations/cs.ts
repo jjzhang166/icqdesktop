@@ -12,6 +12,10 @@
         <translation>Znovu</translation>
     </message>
     <message>
+        <source>Cu&amp;t</source>
+        <translation>Vyjmout</translation>
+    </message>
+    <message>
         <source>&amp;Copy</source>
         <translation>Kopírovat</translation>
     </message>
@@ -20,16 +24,12 @@
         <translation>Vložit</translation>
     </message>
     <message>
-        <source>Cu&amp;t</source>
-        <translation>Vyjmout</translation>
+        <source>Delete</source>
+        <translation>Vymazat</translation>
     </message>
     <message>
         <source>Select All</source>
         <translation>Vybrat vše</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Smazat</translation>
     </message>
 </context>
 <context>
@@ -291,6 +291,14 @@ fotografii</translation>
         <source>You have joined group</source>
         <translation>Připojil ses ke skupině</translation>
     </message>
+    <message>
+        <source>You changed chat rules to &quot;</source>
+        <translation>Změnili jste pravidla chatu na &quot;</translation>
+    </message>
+    <message>
+        <source> changed chat rules to &quot;</source>
+        <translation> změnil pravidla chatu na &quot;</translation>
+    </message>
 </context>
 <context>
     <name>chat_page</name>
@@ -365,6 +373,66 @@ fotografii</translation>
     <message>
         <source>Official account</source>
         <translation>Oficiální účet</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>Přeposlat</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Kopírovat</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Zrušit</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Náhled</translation>
+    </message>
+    <message>
+        <source>Set to all</source>
+        <translation>Nastavit všem</translation>
+    </message>
+    <message>
+        <source>Set</source>
+        <translation>Nastavit</translation>
+    </message>
+    <message>
+        <source> of </source>
+        <translation> z </translation>
+    </message>
+    <message>
+        <source>Drop files to place</source>
+        <translation>Drop souborů zde</translation>
+    </message>
+    <message>
+        <source>Show in folder</source>
+        <translation>Zobrazit ve složce</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Soubor</translation>
+    </message>
+    <message>
+        <source>typing</source>
+        <translation>píše</translation>
+    </message>
+    <message>
+        <source>are typing</source>
+        <translation>píšou</translation>
+    </message>
+    <message>
+        <source>Snap expired</source>
+        <translation>Platnost snapu skončila</translation>
+    </message>
+    <message>
+        <source>Not authorized</source>
+        <translation>Neautorizovaný</translation>
+    </message>
+    <message>
+        <source>forwarded messages</source>
+        <translation>přeposlané zprávy</translation>
     </message>
 </context>
 <context>
@@ -486,6 +554,26 @@ fotografii</translation>
     <message>
         <source>Create Groupchat</source>
         <translation>Vytvořit skupinu chatu</translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation>Video</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Soubor</translation>
+    </message>
+    <message>
+        <source>Unknown contacts</source>
+        <translation>Neznámé kontakty</translation>
+    </message>
+    <message>
+        <source>Close All</source>
+        <translation>Zavřít vše</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Hledat</translation>
     </message>
 </context>
 <context>
@@ -637,6 +725,10 @@ fotografii</translation>
         <source>Delete</source>
         <translation>Vymazat</translation>
     </message>
+    <message>
+        <source>Forward</source>
+        <translation>Přeposlat</translation>
+    </message>
 </context>
 <context>
     <name>countries</name>
@@ -697,20 +789,8 @@ fotografii</translation>
         <translation>Montserrat</translation>
     </message>
     <message>
-        <source>Nevis</source>
-        <translation>Nevis</translation>
-    </message>
-    <message>
-        <source>St. Kitts</source>
-        <translation>Svatý Kryštof</translation>
-    </message>
-    <message>
         <source>Saint Kitts and Nevis</source>
         <translation>Svatý Kryštof a Nevis</translation>
-    </message>
-    <message>
-        <source>St. Vincent and the Grenadines</source>
-        <translation>Svatý Vincenc a Grenadiny</translation>
     </message>
     <message>
         <source>Trinidad and Tobago</source>
@@ -721,24 +801,8 @@ fotografii</translation>
         <translation>Ostrovy Turks a Caicos</translation>
     </message>
     <message>
-        <source>Barbuda</source>
-        <translation>Barbuda</translation>
-    </message>
-    <message>
-        <source>Puerto Rico, Common Wealth of</source>
-        <translation>Puerto Rico, společný Bohatství</translation>
-    </message>
-    <message>
         <source>Saint Lucia</source>
         <translation>Svatá Lucie</translation>
-    </message>
-    <message>
-        <source>Virgin Islands of the United States</source>
-        <translation>Panenské ostrovy Spojených států</translation>
-    </message>
-    <message>
-        <source>Canary Islands</source>
-        <translation>Kanárské ostrovy</translation>
     </message>
     <message>
         <source>Egypt</source>
@@ -755,10 +819,6 @@ fotografii</translation>
     <message>
         <source>Tunisia</source>
         <translation>Tunisko</translation>
-    </message>
-    <message>
-        <source>Libyan Arab Jamahiriya</source>
-        <translation>Libye</translation>
     </message>
     <message>
         <source>Gambia</source>
@@ -839,14 +899,6 @@ fotografii</translation>
     <message>
         <source>Gabon</source>
         <translation>Gabon</translation>
-    </message>
-    <message>
-        <source>Congo, (Republic of the)</source>
-        <translation>Kongo</translation>
-    </message>
-    <message>
-        <source>Congo, Democratic Republic of (Zaire)</source>
-        <translation>Konžská demokratická republika (Zair)</translation>
     </message>
     <message>
         <source>Angola</source>
@@ -1077,10 +1129,6 @@ fotografii</translation>
         <translation>Ukrajina</translation>
     </message>
     <message>
-        <source>Yugoslavia</source>
-        <translation>Jugoslávie</translation>
-    </message>
-    <message>
         <source>Croatia</source>
         <translation>Chorvatsko</translation>
     </message>
@@ -1123,14 +1171,6 @@ fotografii</translation>
     <message>
         <source>United Kingdom</source>
         <translation>Spojené království</translation>
-    </message>
-    <message>
-        <source>Wales</source>
-        <translation>Wales</translation>
-    </message>
-    <message>
-        <source>Scotland</source>
-        <translation>Skotsko</translation>
     </message>
     <message>
         <source>Denmark</source>
@@ -1225,10 +1265,6 @@ fotografii</translation>
         <translation>Guadeloupe</translation>
     </message>
     <message>
-        <source>French Antilles</source>
-        <translation>Francouzské Antily</translation>
-    </message>
-    <message>
         <source>Antilles</source>
         <translation>Antily</translation>
     </message>
@@ -1277,10 +1313,6 @@ fotografii</translation>
         <translation>Austrálie</translation>
     </message>
     <message>
-        <source>Cocos (Keeling) Islands</source>
-        <translation>Kokosové ostrovy (Keeling)</translation>
-    </message>
-    <message>
         <source>Indonesia</source>
         <translation>Indonésie</translation>
     </message>
@@ -1299,18 +1331,6 @@ fotografii</translation>
     <message>
         <source>Thailand</source>
         <translation>Thajsko</translation>
-    </message>
-    <message>
-        <source>Saipan Island</source>
-        <translation>Saipan (ostrov)</translation>
-    </message>
-    <message>
-        <source>Rota Island</source>
-        <translation>Rota (ostrov)</translation>
-    </message>
-    <message>
-        <source>Tinian Island</source>
-        <translation>Tinian (ostrov)</translation>
     </message>
     <message>
         <source>Guam, US Territory of</source>
@@ -1373,10 +1393,6 @@ fotografii</translation>
         <translation>Samoa</translation>
     </message>
     <message>
-        <source>Western Samoa</source>
-        <translation>Západní Samoa</translation>
-    </message>
-    <message>
         <source>Kiribati</source>
         <translation>Kiribati</translation>
     </message>
@@ -1395,10 +1411,6 @@ fotografii</translation>
     <message>
         <source>Tokelau</source>
         <translation>Tokelau</translation>
-    </message>
-    <message>
-        <source>Micronesia, Federated States of</source>
-        <translation>Mikronésie, Federativní státy</translation>
     </message>
     <message>
         <source>Marshall Islands</source>
@@ -1431,14 +1443,6 @@ fotografii</translation>
     <message>
         <source>Japan</source>
         <translation>Japonsko</translation>
-    </message>
-    <message>
-        <source>Korea (South Korea), Republic of</source>
-        <translation>Korejská republika</translation>
-    </message>
-    <message>
-        <source>Viet Nam</source>
-        <translation>Vietnam</translation>
     </message>
     <message>
         <source>Hong Kong</source>
@@ -1553,10 +1557,6 @@ fotografii</translation>
         <translation>Nepál</translation>
     </message>
     <message>
-        <source>Iran (Islamic Republic of)</source>
-        <translation>Írán (islámská republika)</translation>
-    </message>
-    <message>
         <source>Azerbaijan</source>
         <translation>Ázerbajdžán</translation>
     </message>
@@ -1577,47 +1577,88 @@ fotografii</translation>
         <translation>Guinea-Bissau</translation>
     </message>
     <message>
-        <source>St. Helena</source>
-        <translation>St. Helena</translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Serbia</source>
-        <translation>Srbsko</translation>
-    </message>
-    <message>
-        <source>Yugoslavia - Montenegro</source>
-        <translation>Černá Hora</translation>
-    </message>
-    <message>
         <source>Macedonia (F.Y.R.O.M.)</source>
         <translation>Makedonie</translation>
-    </message>
-    <message>
-        <source>St. Pierre and Miquelon</source>
-        <translation>St. Pierre a Miquelon</translation>
-    </message>
-    <message>
-        <source>Korea (North Korea), Democratic People&apos;s Republic of</source>
-        <translation>Korejská lidově demokratická republika</translation>
     </message>
     <message>
         <source>Lao People&apos;s Democratic Republic</source>
         <translation>Laoská lidově demokratická republika</translation>
     </message>
-</context>
-<context>
-    <name>filesharing_widget</name>
     <message>
-        <source>Show in folder</source>
-        <translation>Zobrazit ve složce</translation>
+        <source>Northern Mariana Islands</source>
+        <translation>Severní Mariany</translation>
     </message>
     <message>
-        <source>File</source>
-        <translation>Soubor</translation>
+        <source>Saint Vincent and the Grenadines</source>
+        <translation>Svatý Vincenc a Grenadiny</translation>
     </message>
     <message>
-        <source>Drop files to place</source>
-        <translation>Drop souborů zde</translation>
+        <source>Puerto Rico</source>
+        <translation>Portoriko</translation>
+    </message>
+    <message>
+        <source>US Virgin Islands</source>
+        <translation>Americké Panenské ostrovy</translation>
+    </message>
+    <message>
+        <source>Libya</source>
+        <translation>Libye</translation>
+    </message>
+    <message>
+        <source>Congo, Republic of</source>
+        <translation>Republika Kongo</translation>
+    </message>
+    <message>
+        <source>Congo, Democratic Republic of</source>
+        <translation>Demokratická republika Kongo</translation>
+    </message>
+    <message>
+        <source>Cocos Islands</source>
+        <translation>Kokosové ostrovy</translation>
+    </message>
+    <message>
+        <source>East Timor</source>
+        <translation>Východní Timor</translation>
+    </message>
+    <message>
+        <source>American Samoa</source>
+        <translation>Americká Samoa</translation>
+    </message>
+    <message>
+        <source>Vietnam</source>
+        <translation>Vietnam</translation>
+    </message>
+    <message>
+        <source>Iran, Islamic Republic of</source>
+        <translation>Írán</translation>
+    </message>
+    <message>
+        <source>Saint Helena</source>
+        <translation>Svatá Helena</translation>
+    </message>
+    <message>
+        <source>Serbia</source>
+        <translation>Srbsko</translation>
+    </message>
+    <message>
+        <source>Montenegro</source>
+        <translation>Černá Hora</translation>
+    </message>
+    <message>
+        <source>Saint Pierre and Miquelon</source>
+        <translation>Saint-Pierre a Miquelon</translation>
+    </message>
+    <message>
+        <source>South Korea</source>
+        <translation>Jižní Korea</translation>
+    </message>
+    <message>
+        <source>North Korea (DPRK)</source>
+        <translation>Severní Korea</translation>
+    </message>
+    <message>
+        <source>Federated States of Micronesia</source>
+        <translation>Federativní státy Mikronésie</translation>
     </message>
 </context>
 <context>
@@ -1635,10 +1676,6 @@ fotografii</translation>
         <translation>Nejsi účastníkem tohoto skupinového chatu</translation>
     </message>
     <message>
-        <source>View all </source>
-        <translation>Zobrazit vše </translation>
-    </message>
-    <message>
         <source>Add to chat</source>
         <translation>Přidat do chatu</translation>
     </message>
@@ -1651,7 +1688,7 @@ fotografii</translation>
     <name>input_widget</name>
     <message>
         <source>EMOJI</source>
-        <translation>EMOJI</translation>
+        <translation>EMODŽI</translation>
     </message>
     <message>
         <source>RECENTS</source>
@@ -1660,6 +1697,58 @@ fotografii</translation>
     <message>
         <source>Message</source>
         <translation>Zpráva</translation>
+    </message>
+    <message>
+        <source>Send image</source>
+        <translation>Odeslat obrázek</translation>
+    </message>
+    <message>
+        <source>Send file</source>
+        <translation>Odeslat soubor</translation>
+    </message>
+    <message>
+        <source>image</source>
+        <comment>1</comment>
+        <translation>obrázek</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>2</comment>
+        <translation>obrázky</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>5</comment>
+        <translation>obrázky</translation>
+    </message>
+    <message>
+        <source>images</source>
+        <comment>21</comment>
+        <translation>obrázky</translation>
+    </message>
+    <message>
+        <source>file</source>
+        <comment>1</comment>
+        <translation>soubor</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>2</comment>
+        <translation>soubory</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>5</comment>
+        <translation>soubory</translation>
+    </message>
+    <message>
+        <source>files</source>
+        <comment>21</comment>
+        <translation>soubory</translation>
+    </message>
+    <message>
+        <source>Send %1 %2 %3 %4</source>
+        <translation>Odeslat %1 %2 %3 %4</translation>
     </message>
 </context>
 <context>
@@ -1707,6 +1796,10 @@ fotografii</translation>
     <message>
         <source>Open</source>
         <translation>Otevřít</translation>
+    </message>
+    <message>
+        <source>Waiting for approval</source>
+        <translation>Čeká se na schválení</translation>
     </message>
 </context>
 <context>
@@ -1796,6 +1889,109 @@ your phone number</source>
         <source>Code from SMS</source>
         <translation>Kód ze SMS</translation>
     </message>
+    <message>
+        <source>Forgot password?</source>
+        <translation>Zapomněl/a jsi heslo?</translation>
+    </message>
+</context>
+<context>
+    <name>macos_menu</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>Upravit</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation>Zpět</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation>Znovu</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation>Vyjmout</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Kopírovat</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Vložit</translation>
+    </message>
+    <message>
+        <source>Paste as Quote</source>
+        <translation>Vložit jako citát</translation>
+    </message>
+    <message>
+        <source>Contact</source>
+        <translation>Kontakt</translation>
+    </message>
+    <message>
+        <source>Add Buddy</source>
+        <translation>Přidat přítele</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Profil</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Zavřít</translation>
+    </message>
+    <message>
+        <source>View</source>
+        <translation>Zobrazení</translation>
+    </message>
+    <message>
+        <source>Next Unread Message</source>
+        <translation>Další nepřečtená zpráva</translation>
+    </message>
+    <message>
+        <source>Enter Full Screen</source>
+        <translation>Spustit režim celé obrazovky</translation>
+    </message>
+    <message>
+        <source>Exit Full Screen</source>
+        <translation>Ukončit režim celé obrazovky</translation>
+    </message>
+    <message>
+        <source>Window</source>
+        <translation>Okno</translation>
+    </message>
+    <message>
+        <source>Select Next Chat</source>
+        <translation>Vybrat další chat</translation>
+    </message>
+    <message>
+        <source>Select Previous Chat</source>
+        <translation>Vybrat předchozí chat</translation>
+    </message>
+    <message>
+        <source>Minimize</source>
+        <translation>Minimalizovat</translation>
+    </message>
+    <message>
+        <source>Main Window</source>
+        <translation>Hlavní okno</translation>
+    </message>
+    <message>
+        <source>Check For Updates...</source>
+        <translation>Zjistit aktualizace…</translation>
+    </message>
+    <message>
+        <source>About...</source>
+        <translation>O nás...</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Nastavení</translation>
+    </message>
+    <message>
+        <source>Emoji &amp; Symbols</source>
+        <translation>Emodži &amp; Symboly</translation>
+    </message>
 </context>
 <context>
     <name>notifications_alert</name>
@@ -1841,10 +2037,6 @@ your phone number</source>
     <message>
         <source>Continue</source>
         <translation>Pokračovat</translation>
-    </message>
-    <message>
-        <source>Skip</source>
-        <translation>Přeskočit</translation>
     </message>
     <message>
         <source>Your nickname cannot be longer than 20 symbols</source>
@@ -1940,6 +2132,57 @@ your phone number</source>
     <message>
         <source>Are you sure you want to revoke admin role?</source>
         <translation>Opravdu chceš zrušit úlohu správce?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete message?</source>
+        <translation>Opravdu chceš smazat zprávu?</translation>
+    </message>
+    <message>
+        <source>Delete message</source>
+        <translation>Smazat zprávu</translation>
+    </message>
+    <message>
+        <source>Share link</source>
+        <translation>Sdílet odkaz na chat</translation>
+    </message>
+    <message>
+        <source>Copy link and close</source>
+        <translation>Zkopírovat odkaz a zavřít</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>Přeposlat</translation>
+    </message>
+    <message>
+        <source>Ignored contacts</source>
+        <translation>Ignorace</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Hotovo</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirmation</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>previewer</name>
+    <message>
+        <source>Unable to download the image</source>
+        <translation>Obrázek nelze stáhnout</translation>
+    </message>
+    <message>
+        <source>%1 of %2</source>
+        <translation>%1 z %2</translation>
+    </message>
+    <message>
+        <source>Loading...</source>
+        <translation>Nahrávám...</translation>
     </message>
 </context>
 <context>
@@ -2062,10 +2305,6 @@ your phone number</source>
 <context>
     <name>settings_pages</name>
     <message>
-        <source>General settings</source>
-        <translation>Obecná nastavení</translation>
-    </message>
-    <message>
         <source>Launch ICQ when system starts</source>
         <translation>Spustit ICQ po spuštění systému</translation>
     </message>
@@ -2082,24 +2321,12 @@ your phone number</source>
         <translation>Zobrazovat ikonu na hlavním panelu</translation>
     </message>
     <message>
-        <source>Save to:</source>
-        <translation>Uložit do:</translation>
-    </message>
-    <message>
         <source>Choose new path</source>
         <translation>Vybrat novou cestu</translation>
     </message>
     <message>
         <source>Send message by:</source>
         <translation>Zprávu odesílat:</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>Soukromí</translation>
-    </message>
-    <message>
-        <source>Show last message in recents</source>
-        <translation>Zobrazovat náhledy zpráv</translation>
     </message>
     <message>
         <source>Preview images and videos</source>
@@ -2229,6 +2456,26 @@ your phone number</source>
         <source>Show in menu bar</source>
         <translation>Zobrazit v nabídkovém panelu</translation>
     </message>
+    <message>
+        <source>Launch minimized</source>
+        <translation>Spuštění minimalizováno</translation>
+    </message>
+    <message>
+        <source>Application</source>
+        <translation>Aplikace</translation>
+    </message>
+    <message>
+        <source>Chat</source>
+        <translation>Chat</translation>
+    </message>
+    <message>
+        <source>Save files to:</source>
+        <translation>Uložit soubory do:</translation>
+    </message>
+    <message>
+        <source>Chat list compact mode</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>sidebar</name>
@@ -2267,10 +2514,6 @@ your phone number</source>
     <message>
         <source>Admins</source>
         <translation>Administrátoři</translation>
-    </message>
-    <message>
-        <source>All members</source>
-        <translation>Všichni účastníci</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -2429,10 +2672,6 @@ your phone number</source>
         <translation>Veřejný chat</translation>
     </message>
     <message>
-        <source>Chat description</source>
-        <translation>Popis chatu</translation>
-    </message>
-    <message>
         <source>Revoke admin role</source>
         <translation>Odebrat roli administrátora</translation>
     </message>
@@ -2449,14 +2688,6 @@ your phone number</source>
         <translation>Odstranit z chatu</translation>
     </message>
     <message>
-        <source>Change chat name</source>
-        <translation>Změnit název chatu</translation>
-    </message>
-    <message>
-        <source>Change chat description</source>
-        <translation>Změnit popis chatu</translation>
-    </message>
-    <message>
         <source>Rename</source>
         <translation>Přejmenovat</translation>
     </message>
@@ -2470,24 +2701,73 @@ Please edit phone number and try again.</source>
         <translation>Toto telefonní číslo již bylo připojeno k jinému účtu.
 Uprav telefonní číslo a opakuj akci.</translation>
     </message>
-</context>
-<context>
-    <name>top_theme_widget</name>
     <message>
-        <source>Preview</source>
-        <translation>Náhled</translation>
+        <source>Copy link to chat</source>
+        <translation>Zkopírovat odkaz do chatu</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation>Zrušit</translation>
+        <source>Approve All</source>
+        <translation>Schválit vše</translation>
     </message>
     <message>
-        <source>Set to all</source>
-        <translation>Nastavit všem</translation>
+        <source>Approve All (</source>
+        <translation>Schválit vše (</translation>
     </message>
     <message>
-        <source>Set</source>
-        <translation>Nastavit</translation>
+        <source>Waiting for approval</source>
+        <translation>Čeká se na schválení</translation>
+    </message>
+    <message>
+        <source>link copied</source>
+        <translation>odkaz zkopírován</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Připojení se schválením</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>Chat bude vidět každý</translation>
+    </message>
+    <message>
+        <source>Admin approval required to join</source>
+        <translation>Pro připojení je nutné schválení správce</translation>
+    </message>
+    <message>
+        <source>more</source>
+        <translation>více</translation>
+    </message>
+    <message>
+        <source>edit</source>
+        <translation>upravit</translation>
+    </message>
+    <message>
+        <source>NAME</source>
+        <translation>JMÉNO</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION</source>
+        <translation>POPIS</translation>
+    </message>
+    <message>
+        <source>hide</source>
+        <translation>skrýt</translation>
+    </message>
+    <message>
+        <source>Add your description</source>
+        <translation>Přidej svůj popis</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Nastavení chatu</translation>
+    </message>
+    <message>
+        <source>Members</source>
+        <translation>Účastníci</translation>
+    </message>
+    <message>
+        <source>Birthday</source>
+        <translation>narozeniny</translation>
     </message>
 </context>
 <context>
@@ -2511,17 +2791,6 @@ Uprav telefonní číslo a opakuj akci.</translation>
     <message>
         <source>Open</source>
         <translation>Otevřít</translation>
-    </message>
-</context>
-<context>
-    <name>typing_widget</name>
-    <message>
-        <source>typing</source>
-        <translation>píše</translation>
-    </message>
-    <message>
-        <source>are typing</source>
-        <translation>píšou</translation>
     </message>
 </context>
 <context>
@@ -2573,6 +2842,18 @@ Uprav telefonní číslo a opakuj akci.</translation>
     <message>
         <source>Ringing...</source>
         <translation>Volám...</translation>
+    </message>
+    <message>
+        <source>Return to call</source>
+        <translation>Návrat k hovoru</translation>
+    </message>
+    <message>
+        <source>Data saving enabled</source>
+        <translation>Ukládání dat povoleno</translation>
+    </message>
+    <message>
+        <source> enabled data saving</source>
+        <translation> povolil/a ukládání dat</translation>
     </message>
 </context>
 </TS>

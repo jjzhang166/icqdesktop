@@ -1,30 +1,31 @@
 #include "stdafx.h"
 #include "TrayIcon.h"
+
+#include "RecentMessagesAlert.h"
 #include "../MainWindow.h"
+#include "../contact_list/ContactListModel.h"
+#include "../contact_list/RecentItemDelegate.h"
+#include "../contact_list/RecentsModel.h"
+#include "../contact_list/UnknownsModel.h"
+#include "../sounds/SoundsManager.h"
 #include "../../core_dispatcher.h"
 #include "../../gui_settings.h"
-#include "../../utils/utils.h"
+#include "../../my_info.h"
+#include "../../controls/ContextMenu.h"
 #include "../../utils/gui_coll_helper.h"
 #include "../../utils/InterConnector.h"
-#include "../../utils/profiling/auto_stop_watch.h"
-#include "../../controls/ContextMenu.h"
-#include "../contact_list/RecentItemDelegate.h"
-#include "../contact_list/ContactListModel.h"
-#include "../contact_list/RecentsModel.h"
-#include "../sounds/SoundsManager.h"
-#include "RecentMessagesAlert.h"
+#include "../../utils/utils.h"
 
-#include "../../my_info.h"
 
 #ifdef _WIN32
-#   include "toast_notifications/ToastManager.h"
+#   include "toast_notifications/win32/ToastManager.h"
 typedef HRESULT (__stdcall *QueryUserNotificationState)(QUERY_USER_NOTIFICATION_STATE *pquns);
 typedef BOOL (__stdcall *QuerySystemParametersInfo)(__in UINT uiAction, __in UINT uiParam, __inout_opt PVOID pvParam, __in UINT fWinIni);
 #else
 
 #ifdef __APPLE__
-#   include "notification_center/NotificationCenterManager.h"
-#   include "../../utils/mac_support.h"
+#   include "notification_center/macos/NotificationCenterManager.h"
+#   include "../../utils/macos/mac_support.h"
 #endif
 
 #endif //_WIN32
@@ -68,13 +69,20 @@ namespace Ui
 #endif //_WIN32
 		init();
         
-        connect(Ui::GetDispatcher(), SIGNAL(login_complete()), this, SLOT(loggedIn()), Qt::QueuedConnection);
+        connect(Ui::GetDispatcher(), SIGNAL(im_created()), this, SLOT(loggedIn()), Qt::QueuedConnection);
+        //connect(Ui::GetDispatcher(), SIGNAL(loginComplete()), this, SLOT(loggedIn()), Qt::QueuedConnection);
 		connect(MessageAlert_, SIGNAL(messageClicked(QString)), this, SLOT(messageClicked(QString)), Qt::QueuedConnection);
-		connect(Logic::GetContactListModel(), SIGNAL(selectedContactChanged(QString)), this, SLOT(clearNotifications(QString)), Qt::QueuedConnection);
-		connect(Logic::GetContactListModel(), SIGNAL(contactChanged(QString)), this, SLOT(updateIcon()), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(contactChanged(QString)), this, SLOT(updateIcon()), Qt::QueuedConnection);
         connect(Ui::GetDispatcher(), SIGNAL(myInfo()), this, SLOT(myInfo()));
         connect(Ui::GetDispatcher(), SIGNAL(needLogin()), this, SLOT(loggedOut()), Qt::QueuedConnection);
-        
+
+        connect(&Utils::InterConnector::instance(), SIGNAL(historyControlPageFocusIn(QString)), this, SLOT(clearNotifications(QString)), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(selectedContactChanged(QString)), this, SLOT(clearNotifications(QString)), Qt::QueuedConnection);
+        connect(Logic::getRecentsModel(), SIGNAL(readStateChanged(QString)), this, SLOT(clearNotifications(QString)), Qt::QueuedConnection);
+        connect(Logic::getUnknownsModel(), SIGNAL(readStateChanged(QString)), this, SLOT(clearNotifications(QString)), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(contact_removed(QString)), this, SLOT(clearNotifications(QString)), Qt::QueuedConnection);
+        connect(Ui::GetDispatcher(), SIGNAL(activeDialogHide(QString)), this, SLOT(clearNotifications(QString)), Qt::QueuedConnection);
+
 #ifdef __APPLE__
         ncSupported(); //setup notification manager
         setVisible(get_gui_settings()->get_value(settings_show_in_menubar, true));
@@ -96,7 +104,7 @@ namespace Ui
 
     void TrayIcon::forceUpdateIcon()
     {
-        bool unreads = Logic::GetRecentsModel()->totalUnreads() != 0;
+        bool unreads = (Logic::getRecentsModel()->totalUnreads() + Logic::getUnknownsModel()->totalUnreads()) != 0;
         HaveUnreads_ = unreads;
 #ifdef _WIN32
         if (ptbl)
@@ -133,14 +141,13 @@ namespace Ui
             state = "online";
         }
         
-        bool unreads = Logic::GetRecentsModel()->totalUnreads() != 0;
+        bool unreads = (Logic::getRecentsModel()->totalUnreads() + Logic::getUnknownsModel()->totalUnreads()) != 0;
         QString iconResource(QString(":resources/main_window/mac_tray/icq_osxlogo_%1_%2%3_100.png").
                              arg(state).arg(MacSupport::currentTheme()).
                              arg(unreads?"_unread":""));
-        bool visible = (Icon_ ? Icon_->isVisible() : true);
+
         QIcon icon(Utils::parse_image_name(iconResource));
         Icon_->setIcon(icon);
-        Icon_->setVisible(visible);
 #endif
     }
     
@@ -190,7 +197,7 @@ namespace Ui
     
 	void TrayIcon::updateIcon()
 	{
-		bool unreads = Logic::GetRecentsModel()->totalUnreads() != 0;
+		bool unreads = (Logic::getRecentsModel()->totalUnreads() + Logic::getUnknownsModel()->totalUnreads()) != 0;
 		if (unreads != HaveUnreads_)
 		{
 			HaveUnreads_ = unreads;
@@ -232,18 +239,23 @@ namespace Ui
 		bool canNotify = state.Visible_ && (!ShowedMessages_.contains(state.AimId_) || (state.LastMsgId_ != -1 && ShowedMessages_[state.AimId_] < state.LastMsgId_));
         if (state.GetText().isEmpty())
             canNotify = false;
+        
+        if (Logic::getUnknownsModel()->contactIndex(state.AimId_).isValid())
+            canNotify = false;
 
 		if (!state.Outgoing_)
 		{
-			if (state.UnreadCount_ != 0 && canNotify && !Logic::GetContactListModel()->isMuted(state.AimId_))
+			if (state.UnreadCount_ != 0 && canNotify && !Logic::getContactListModel()->isMuted(state.AimId_))
 			{
 				ShowedMessages_[state.AimId_] = state.LastMsgId_;
 				if (canShowNotifications())
-					showMessage(state);
-#ifdef _WIN32
-                if (canShowNotificationsWin())
-#endif //_WIN32
-				    GetSoundsManager()->playIncomingMessage();
+                    showMessage(state);
+#ifdef __APPLE__
+                if (!MainWindow_->isActive() || MacSupport::previewIsShown())
+#else
+                if (!MainWindow_->isActive())
+#endif //__APPLE__
+                    GetSoundsManager()->playIncomingMessage();
 			}
 		}
 
@@ -252,7 +264,7 @@ namespace Ui
 		    markShowed(state.AimId_);
         
 #ifdef __APPLE__
-        NotificationCenterManager::updateBadgeIcon(Logic::GetRecentsModel()->totalUnreads());
+        NotificationCenterManager::updateBadgeIcon(Logic::getRecentsModel()->totalUnreads() + Logic::getUnknownsModel()->totalUnreads());
 #endif
 	}
 
@@ -270,12 +282,13 @@ namespace Ui
         
         if (!aimId.isEmpty())
         {
-            if (Logic::GetContactListModel()->selectedContact() != aimId)
+            if (Logic::getContactListModel()->selectedContact() != aimId)
                 Utils::InterConnector::instance().getMainWindow()->skipRead();
-            Logic::GetContactListModel()->setCurrent(aimId, true, true);
+            Logic::getContactListModel()->setCurrent(aimId, true, true);
         }
         
         MainWindow_->activateFromEventLoop();
+        emit Utils::InterConnector::instance().closeAnyPopupMenu();
         emit Utils::InterConnector::instance().closeAnyPopupWindow();
 	    GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::alert_click);
     }
@@ -473,7 +486,8 @@ namespace Ui
 
     void TrayIcon::loggedIn()
     {
-        connect(Logic::GetRecentsModel(), SIGNAL(dlgStateHandled(Data::DlgState)), this, SLOT(dlgState(Data::DlgState)), Qt::QueuedConnection);
+        connect(Logic::getRecentsModel(), SIGNAL(dlgStateHandled(Data::DlgState)), this, SLOT(dlgState(Data::DlgState)), Qt::QueuedConnection);
+        connect(Logic::getUnknownsModel(), SIGNAL(dlgStateHandled(Data::DlgState)), this, SLOT(dlgState(Data::DlgState)), Qt::QueuedConnection);
     }
 
     void TrayIcon::loggedOut()

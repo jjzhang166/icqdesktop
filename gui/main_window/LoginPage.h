@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../types/common_phone.h"
+
 namespace core
 {
     namespace stats
@@ -14,7 +16,7 @@ namespace Ui
 	class CountrySearchCombobox;
     class CustomButton;
     class BackButton;
-
+    
 	class LoginPage : public QWidget
 	{
 		Q_OBJECT
@@ -41,6 +43,7 @@ namespace Ui
 		void emptyPhoneRemove();
         void stats_edit_phone();
         void stats_resend_sms();
+        void phoneInfoResult(qint64, Data::PhoneInfo);
 
     public Q_SLOTS:
 		void prevPage();
@@ -49,47 +52,50 @@ namespace Ui
         void openProxySettings();
 
 	public:
-		LoginPage(QWidget* parent, bool is_login);
+		LoginPage(QWidget* _parent, bool _isLogin);
 		~LoginPage();
-        
-        void enableKeepLogedIn();
 
 	protected:
-		virtual void keyPressEvent(QKeyEvent* event);
-		virtual void paintEvent(QPaintEvent* event);
+		virtual void keyPressEvent(QKeyEvent* _event) override;
+		virtual void paintEvent(QPaintEvent* _event) override;
+        virtual void showEvent(QShowEvent *_event) override;
 
 	private:
 		void init();
-		void initLoginSubPage(int index);
-		void setErrorText(int result);
-        void updateErrors(int result);
+		void initLoginSubPage(int _index);
+		void setErrorText(int _result);
+        void setErrorText(const QString& _customError);
+        void updateErrors(int _result);
 
 	private:
 		QTimer*						timer_;
-		LineEditEx*					country_code_;
+		LineEditEx*					countryCode_;
 		LineEditEx*					phone_;
 		CountrySearchCombobox*		combobox_;
-		unsigned int				remaining_seconds_;
-		QString						prev_country_code_;
+		unsigned int				remainingSeconds_;
+		QString						prevCountryCode_;
 
-		QStackedWidget*				login_staked_widget_;
-		QPushButton*				next_page_link_;
-		QWidget*					country_search_widget_;
-        BackButton*                 prev_page_link_;
-        QPushButton*                proxy_settings_link_;
-		QPushButton*				edit_phone_button_;
-		QPushButton*				switch_login_link_;
-		QPushButton*				resend_button_;
-		QFrame*						phone_widget_;
-		QLineEdit*					uin_login_edit_;
-		QLineEdit*					uin_password_edit_;
-        QCheckBox*                  keep_logged_;
-		QLineEdit*					code_edit_;
-		QLabel*						error_label_;
-		QLabel*						entered_phone_;
-		QLabel*						hint_label_;
-        bool                        is_login_;
-        int64_t                     send_seq_;
-        int                         code_length_;
+		QStackedWidget*				loginStakedWidget;
+		QPushButton*				nextButton;
+		QWidget*					countrySearchWidget;
+        BackButton*                 backButton;
+        QPushButton*                proxySettingsButton;
+		QPushButton*				editPhoneButton;
+		QPushButton*				switchButton;
+		QPushButton*				resendButton;
+		QFrame*						phoneWidget;
+		QLineEdit*					uinEdit;
+		QLineEdit*					passwordEdit;
+        QCheckBox*                  keepLogged;
+		QLineEdit*					codeEdit;
+		QLabel*						errorLabel;
+		QLabel*						enteredPhone;
+		QLabel*						hintLabel;
+        QPushButton*				passwordForgottenLabel;
+        bool                        isLogin_;
+        int64_t                     sendSeq_;
+        int                         codeLength_;
+        
+        Data::PhoneInfo             receivedPhoneInfo_;
 	};
 }

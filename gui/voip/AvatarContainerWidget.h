@@ -6,17 +6,19 @@
 
 namespace Ui {
     
-    class AvatarContainerWidget : public QWidget { Q_OBJECT
+    class AvatarContainerWidget : public QWidget
+    {
+        Q_OBJECT
     Q_SIGNALS:
 
     public:
-        AvatarContainerWidget(QWidget* parent, int avatarSize, int x_offset = 0, int y_offset = 0, int border_w = 0);
+        AvatarContainerWidget(QWidget* _parent, int avatarSize, int _xOffset = 0, int _yOffset = 0, int _borderW = 0);
         virtual ~AvatarContainerWidget();
 
-        void setOverlap(float per01);
-        void addAvatar(const std::string& userId);
-        void removeAvatar(const std::string& userId);
-        void dropExcess(const std::vector<std::string>& users);
+        void setOverlap(float _per01);
+        void addAvatar(const std::string& _userId);
+        void removeAvatar(const std::string& _userId);
+        void dropExcess(const std::vector<std::string>& _users);
 
     protected:
         void paintEvent(QPaintEvent*) override;
@@ -26,19 +28,19 @@ namespace Ui {
         void _avatarChanged(QString);
 
     private:
-        std::map<std::string, Logic::QPixmapSCptr> _avatars;
-        std::vector<QRect> _avatarRects;
-        float _overlapPer01;
+        std::map<std::string, Logic::QPixmapSCptr> avatars_;
+        std::vector<QRect> avatarRects_;
+        float overlapPer01_;
 
-        int _avatarSize;
-        int _x_offset; 
-        int _y_offset;
-        //int _border_w;
-        QPixmap* _border;
+        int avatarSize_;
+        int xOffset_; 
+        int yOffset_;
+        //int borderW_;
+        QPixmap* border_;
 
-        void _addAvatarTo(const std::string& userId, std::map<std::string, Logic::QPixmapSCptr>& avatars);
-        std::vector<QRect> _calculateAvatarPositions(const QRect& rcParent, QSize& avatars_size);
-        QSize _calculateAvatarSize();
+        void addAvatarTo(const std::string& _userId, std::map<std::string, Logic::QPixmapSCptr>& _avatars);
+        std::vector<QRect> calculateAvatarPositions(const QRect& _rcParent, QSize& _avatarsSize);
+        QSize calculateAvatarSize();
     };
 
 }

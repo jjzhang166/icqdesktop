@@ -11,20 +11,24 @@
 
 #include <QtWidgets/qwidget.h>
 
-namespace platform_specific {
+namespace platform_specific
+{
     
-    class GraphicsPanel : public QWidget{
+    class GraphicsPanel : public QWidget
+    {
     public:
-        static GraphicsPanel* create(QWidget* parent, std::vector<QWidget*>& panels);
+        static GraphicsPanel* create(QWidget* _parent, std::vector<QWidget*>& _panels);
 
-        GraphicsPanel(QWidget* parent) : QWidget(parent) {}
+        GraphicsPanel(QWidget* _parent) : QWidget(_parent) {}
         virtual ~GraphicsPanel() { }
         
         virtual WId frameId() const;
 
-        virtual void addPanels(std::vector<QWidget*>& panels);
+        virtual void addPanels(std::vector<QWidget*>& _panels);
         virtual void clearPanels();
-        virtual void fullscreenModeChanged(bool fullscreen);
+        virtual void fullscreenModeChanged(bool _fullscreen);
+        virtual void fullscreenAnimationStart();
+        virtual void fullscreenAnimationFinish();
     };
     
 }

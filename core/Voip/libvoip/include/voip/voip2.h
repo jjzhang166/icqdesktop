@@ -114,14 +114,15 @@ enum VoipOutgoingMsg {
 */
 #define ANIMATION_CURVE_SAMPLERATE_HZ 50
 enum { kMaxAnimationCurveLen = 500 };
-enum AnimationTypes {
-    kAnimationType_Connecting = 0,
-    kAnimationType_Reconnecting,
+
+enum VisualEffectTypes {
+    kVisualEffectType_Connecting = 0,
+    kVisualEffectType_Reconnecting,
     //----------------------------
-    kAnimationType_Total
+    kVisualEffectType_Total
 };
 
-struct AnimationContext {
+struct VisualEffectContext {
     unsigned animationPeriodMs; // can be less then animation duration
 
     unsigned width;
@@ -133,26 +134,33 @@ struct AnimationContext {
     int xOffset; // from viewport center
     int yOffset; // from viewport center
 
-    unsigned animation_curve_len;
-    unsigned color_bgra_animation_curve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
-    float geometry_animation_curve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
+    unsigned curveLength;
+    unsigned colorBGRACurve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
+    float geometryCurve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
 };
 
 //#define WindowSettingsThemesCount 2
 typedef enum {
     WindowTheme_One = 0,
     WindowTheme_Two = 1,
-    WindowTheme_Total = 2
+    WindowTheme_Three = 2,
+    WindowTheme_Four = 3,
+    WindowTheme_Total = 4
 } WindowThemeType;
 
 struct WindowSettings {
 
     WindowThemeType theme;
     
-    struct AvatarMain {
+    struct {
         // picture size
         unsigned width;
         unsigned height;
+        // picture size at connecting time zero if unused
+        // width  * connectingSizeRatio
+        // height * connectingSizeRatio
+        float connectingSizeRatio;
+        
         // text size
         unsigned textWidth;
         unsigned textHeight;
@@ -162,15 +170,15 @@ struct WindowSettings {
         // signed (up/down) offset in percents (-100..100) of the (HEIGHT/2) of the draw rect
         signed offsetVertical;
 
-        // Avatar offset form the viewport frame
+        // Avatar offset from the viewport frame
         unsigned offsetTop;
         unsigned offsetBottom;
         unsigned offsetLeft;
         unsigned offsetRight;
 
         ChannelStatusContext status;
-        // Avatar color rings animations
-        AnimationContext animation[kAnimationType_Total];
+        // Avatar color rings
+        VisualEffectContext visualEffect[kVisualEffectType_Total];
 
         hbmp_t   logoImage;
         unsigned logoPosition;// combination of values from Position enum, if (hwnd == NULL) sets position for all windows
@@ -222,8 +230,8 @@ struct WindowSettings {
     unsigned gap_width_pix;
 
     // Avatar bounce animation
-    unsigned  animation_curve_len;   // in samples
-    float     animation_curve[kMaxAnimationCurveLen];     // sampled at 50Hz (20ms step), 5 sec max
+    unsigned  avatarAnimationCurveLen;   // in samples
+    float     avatarAnimationCurve[kMaxAnimationCurveLen];     // sampled at 50Hz (20ms step), 5 sec max
 
     // Glow animation
     unsigned      statusGlowRadius;           // 0 - disable glow effect, otherwise set radius
@@ -497,7 +505,6 @@ public:
     virtual void WindowSetControlsStatus    (hwnd_t wnd, bool visible, unsigned off_left, unsigned off_top, unsigned off_right, unsigned off_bottom, unsigned period_ms, bool enableOverlap) = 0;
     virtual void WindowAddButton            (ButtonType type, ButtonPosition position) = 0;
     virtual void WindowSetAvatarPosition    (hwnd_t wnd, unsigned position) = 0; // position - combination of values from Position enum, if (hwnd == NULL) sets position for all windows
-    virtual void WindowUpdateAvatarSettings (hwnd_t wnd, voip2::WindowThemeType theme, const voip2::WindowSettings::AvatarMain& avatarMain) = 0;
     virtual void WindowSetTheme             (hwnd_t wnd, voip2::WindowThemeType theme) = 0;
 
 #if (__PLATFORM_WINPHONE || WINDOWS_PHONE) && defined(__cplusplus_winrt)

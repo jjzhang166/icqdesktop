@@ -23,7 +23,7 @@ int32_t get_flags::init_request(std::shared_ptr<core::http_request_simple> _requ
 
     ss_url << c_wim_host << "db/getFlags" <<
         "?f=json" <<
-        "&aimsid=" << get_params().aimsid_ <<
+        "&aimsid=" << escape_symbols(get_params().aimsid_) <<
         "&r=" <<  core::tools::system::generate_guid();
 
     _request->set_url(ss_url.str());

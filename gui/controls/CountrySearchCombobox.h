@@ -14,10 +14,10 @@ namespace Ui
 		Q_OBJECT
 
 	public:
-		SearchComboboxView(QWidget* parent);
+		SearchComboboxView(QWidget* _parent);
 
 	protected:
-		void paintEvent(QPaintEvent *event);
+		void paintEvent(QPaintEvent* _event);
 	};
 
 	class CountrySearchCombobox : public QWidget
@@ -35,20 +35,19 @@ namespace Ui
         void setFocusOut();
 
 	public:
-		CountrySearchCombobox(QWidget* parent);
+		CountrySearchCombobox(QWidget* _parent);
 
-		void setEditBoxClass(char* className);
-		void setComboboxViewClass(char* className);
-		void setClass(char* className);
+		void setComboboxViewClass(char* _className);
+		void setClass(char* _className);
 
-		void setSources(QMap<QString, QString>  sources);
-		void setPlaceholder(QString placeholder);
-		bool selectItem(QString item);
-		bool containsCode(QString code);
+		void setSources(QMap<QString, QString>  _sources);
+		void setPlaceholder(QString _placeholder);
+		bool selectItem(QString _item);
+		bool containsCode(QString _code);
 
 	private:
 		void initLayout();
-		QString getValue(const QString& key);
+		QString getValue(const QString& _key);
         void resizeEvent(QResizeEvent *_e);
 
 	private:

@@ -6,7 +6,7 @@
 #include "../core_dispatcher.h"
 
 #ifdef __APPLE__
-#include "mac_support.h"
+#include "macos/mac_support.h"
 #endif
 
 namespace Utils
@@ -49,7 +49,7 @@ namespace Utils
 
 		for (const auto& country : cntrs)
 		{
-			if (country.code_ == searchedCounry)
+			if (country.iso_code_ == searchedCounry)
 			{
 				result += QVariant(country.phone_code_).toString();
 				break;

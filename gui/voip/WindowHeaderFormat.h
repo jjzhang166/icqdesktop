@@ -13,6 +13,7 @@ namespace Ui
 		kVPH_ShowClose  = 0x0010,
         kVPH_ShowLogo   = 0x0020,
         kVPH_ShowSecure = 0x0040,
+		kVPH_BackToVideo = 0x0080,
 
 		kVPH_ShowAll = 0xffff
 	};

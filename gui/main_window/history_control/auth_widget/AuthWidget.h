@@ -19,9 +19,9 @@ namespace Ui
 
     Q_SIGNALS:
 
-        void add_contact();
-        void delete_contact();
-        void spam_contact();
+        void addContact();
+        void deleteContact();
+        void spamContact();
 
     private:
 
@@ -36,7 +36,7 @@ namespace Ui
 
         virtual void paintEvent(QPaintEvent* _e) override;
 
-        void init_from_profile(Logic::profile_ptr _profile);
+        void initFromProfile(Logic::profile_ptr _profile);
 
     public:
 
@@ -50,21 +50,21 @@ namespace Ui
 
     private Q_SLOTS:
 
-        void avatar_clicked();
+        void avatarClicked();
 
     Q_SIGNALS:
 
-        void add_contact(QString _contact);
-        void delete_contact(QString _contact);
-        void spam_contact(QString _contact);
+        void addContact(QString _contact);
+        void deleteContact(QString _contact);
+        void spamContact(QString _contact);
 
     protected:
 
         const QString			aimid_;
 
-        QVBoxLayout*			root_layout_;
+        QVBoxLayout*			rootLayout_;
         ContactAvatarWidget*	avatar_;
-        ContactInfoWidget*		info_widget_;
+        ContactInfoWidget*		infoWidget_;
 
         virtual void resizeEvent(QResizeEvent * _e) override;
 
@@ -72,7 +72,7 @@ namespace Ui
 
     public:
 
-        void place_avatar();
+        void placeAvatar();
 
         AuthWidget(QWidget* _parent, const QString& _aimid);
         virtual ~AuthWidget();

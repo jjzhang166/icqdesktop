@@ -12,31 +12,28 @@ namespace Ui
     {
         Q_OBJECT
 
-        QVBoxLayout* root_layout_;
-        SearchFilters* filters_widget_;
-        SearchResults* results_widget_;
+        QVBoxLayout* rootLayout_;
+        SearchFilters* filtersWidget_;
+        SearchResults* resultsWidget_;
 
-        search_params active_filters_;
+        search_params activeFilters_;
 
-        bool request_in_progress_;
-        bool no_more_items_;
+        bool requestInProgress_;
+        bool noMoreItems_;
 
         std::shared_ptr<bool>	ref_;
 
-        void on_search_result(gui_coll_helper _coll);
-        void on_search_result2(gui_coll_helper _coll);
-        void search(const search_params& _filters);
-        void search2(const std::string& keyword, const std::string& phonenumber, const std::string& tag);
+        void onSearchResult2(gui_coll_helper _coll);
+        void search2(const std::string& _keyword, const std::string& _phoneNumber, const std::string& _tag);
 
     private Q_SLOTS:
 
-        void on_search(search_params _filters);
-        void on_search2(search_params _filters);
-        void on_need_more_results(int _skip_count);
-        void on_add_contact(QString _contact);
-        void on_msg_contact(QString _contact);
-        void on_call_contact(QString _contact);
-        void on_contact_info(QString _contact);
+        void onSearch2(search_params _filters);
+        void onNeedMoreResults(int);
+        void onAddContact(QString _contact);
+        void onMsgContact(QString _contact);
+        void onCallContact(QString _contact);
+        void onContactInfo(QString _contact);
 
     protected:
 
@@ -44,7 +41,7 @@ namespace Ui
 
     public:
 
-        void on_focus();
+        void onFocus();
 
         SearchContactsWidget(QWidget* _parent);
         virtual ~SearchContactsWidget(void);

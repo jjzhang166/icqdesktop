@@ -195,8 +195,8 @@ void web_file_info::serialize(core::tools::binary_stream& _bs) const
     pack.push_child(tlv(info_fileds::is_previewable, is_previewable_));
     pack.push_child(tlv(info_fileds::file_dlink, file_dlink_));
     pack.push_child(tlv(info_fileds::mime, mime_));
-    pack.push_child(tlv(info_fileds::md5, md5_));	
-    pack.push_child(tlv(info_fileds::file_preview, file_preview_));	
+    pack.push_child(tlv(info_fileds::md5, md5_));
+    pack.push_child(tlv(info_fileds::file_preview, file_preview_));
     pack.push_child(tlv(info_fileds::file_preview_2k, file_preview_2k_));
     pack.push_child(tlv(info_fileds::file_id, file_id_));
     pack.push_child(tlv(info_fileds::played, played_));

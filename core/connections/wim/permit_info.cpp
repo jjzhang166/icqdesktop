@@ -24,13 +24,13 @@ int32_t permit_info::parse_response_data(const rapidjson::Value& _node_results)
     for (auto iter = ignores->value.Begin(); iter != ignores->value.End(); ++iter)
     {
         std::string aimid = iter->GetString();
-        ignore_aimid_list_.emplace_back(aimid);
+        ignore_aimid_list_.emplace(aimid);
     }
 
     return 0;
 }
 
-std::vector<std::string> permit_info::get_ignore_list() const
+const ignorelist_cache& permit_info::get_ignore_list() const
 {
     return ignore_aimid_list_;
 }

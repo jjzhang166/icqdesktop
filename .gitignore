@@ -12,12 +12,14 @@ corelib/[Dd]ebug/*
 gui/[Dd]ebug/*
 coretest/[Dd]ebug/*
 bin/[Dd]ebug/*
+mplayer/[Dd]ebug/*
 
 core/[Rr]elease/*
 corelib/[Rr]elease/*
 gui/[Rr]elease/*
 coretest/[Rr]elease/*
 bin/[Rr]elease/*
+mplayer/[Rr]elease/*
 
 ICQReleaseDebug/
 ReleaseDebug/
@@ -87,15 +89,17 @@ core/build/core.build/Debug/core.build/Objects-normal/x86_64/*
 core/build/Debug/libcore.a
 external/gigabase_377/Debug/*
 external/gigabase_377/Release/*
+!core/Voip/libvoip/lib/[Rr]elease/*
 
 #xcode
 **/*.DS_Store
 **/*.xcuserstate
 **/*.xcbkptlist
-**/*.xcuserdata                                                                                                                                                     
-*.xcuserstate                                                                                                                                                  
-build/                                                                                                                                                         
-*.xcuserdatad/                                                                                                                                                 
+**/*.xcuserdata
+xcschememanagement.plist
+*.xcuserstate
+build/
+*.xcuserdatad/
 *.idea/
 
 mac/ICQ/libcorelib.dylib

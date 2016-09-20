@@ -4,6 +4,7 @@
 #include "../../../core_dispatcher.h"
 #include "../../../gui_settings.h"
 #include "../../sounds/SoundsManager.h"
+#include "../../contact_list/ContactListModel.h"
 #include "../../../utils/gui_coll_helper.h"
 #include "../../../controls/TextEditEx.h"
 #include "../MessagesModel.h"
@@ -62,23 +63,22 @@ namespace HistoryControl
         RestartTimer_->setSingleShot(true);
         connect(RestartTimer_, SIGNAL(timeout()), this, SLOT(restartTextrecognition()), Qt::QueuedConnection);
         connect(Logic::GetMessagesModel(), SIGNAL(pttPlayed(qint64)), this, SLOT(pttPlayed(qint64)), Qt::QueuedConnection);
+
+        QTime time;
+        if (duration < 60)
+            time.setHMS(0, 0, duration);
+        else
+            time.setHMS(0, duration / 60, duration % 60);
+        DurationText_ = time.toString("mm:ss");
     }
 
     PttAudioWidget::~PttAudioWidget()
     {
     }
 
-    void PttAudioWidget::initializeInternal()
+    void PttAudioWidget::initialize()
     {
         setFixedHeight(Utils::scale_value(widget_height));
-        QTime time;
-        int duration = Duration_ / 1000;
-
-        if (duration < 60)
-            time.setHMS(0, 0, duration);
-        else
-            time.setHMS(0, duration / 60, duration % 60);
-        DurationText_ = time.toString("mm:ss");
 
         connect(Ui::GetDispatcher(), SIGNAL(fileSharingMetadataDownloaded(qint64, QString, QString, QString, QString, QString, qint64, bool)),
             SLOT(setFileInfo(qint64, QString, QString, QString, QString, QString, qint64, bool)), Qt::QueuedConnection);
@@ -90,8 +90,12 @@ namespace HistoryControl
             Uri_,
             Ui::get_gui_settings()->get_value<QString>(settings_download_directory, Utils::DefaultDownloadsPath()),
             QString(),
-            core::file_sharing_function::download_file_metainfo
-        );
+            core::file_sharing_function::download_file_metainfo);
+    }
+
+    bool PttAudioWidget::drag()
+    {
+        return Utils::dragUrl(this, QPixmap(getPlayImagePath()), Uri_);
     }
 
     int32_t PttAudioWidget::actualContentWidth()
@@ -109,22 +113,8 @@ namespace HistoryControl
         return true;
     }
 
-    void PttAudioWidget::render(QPainter &p)
+    QString PttAudioWidget::getPlayImagePath()
     {
-        p.save();
-
-        updateHeight();
-
-        int theme_id = Ui::get_qt_theme_settings()->themeIdForContact(aimId_);
-
-        p.fillPath(getBodyPath(QRect(0, 0, width(), height()), Ui::MessageStyle::getBorderRadius(), IsOutgoing_, false), Ui::MessageStyle::getBodyBrush(IsOutgoing_, Selected_, theme_id));
-        auto progressPath = getProgressPath(QRect(0, 0, width(), Utils::scale_value(widget_height)), Ui::MessageStyle::getBorderRadius(), IsOutgoing_, HaveText_);
-        QBrush progressBrush(IsOutgoing_ ?
-            QColor(0x0, 0x0, 0x0, (int32_t)(0.12 * 255)) :
-            QColor(0x0, 0x0, 0x0, (int32_t)(0.2 * 255)));
-
-        p.fillPath(progressPath, progressBrush);
-
         QString playImage;
         switch (AudioState_)
         {
@@ -158,6 +148,26 @@ namespace HistoryControl
         }
 
         playImage += ".png";
+        return playImage;
+    }
+
+    void PttAudioWidget::render(QPainter &p)
+    {
+        p.save();
+
+        updateHeight();
+
+        int theme_id = Ui::get_qt_theme_settings()->themeIdForContact(aimId_);
+
+        p.fillPath(getBodyPath(QRect(0, 0, width(), height()), Ui::MessageStyle::getBorderRadius(), IsOutgoing_, false), Ui::MessageStyle::getBodyBrush(IsOutgoing_, Selected_, theme_id));
+        auto progressPath = getProgressPath(QRect(0, 0, width(), Utils::scale_value(widget_height)), Ui::MessageStyle::getBorderRadius(), IsOutgoing_, HaveText_);
+        QBrush progressBrush(IsOutgoing_ ?
+            QColor(0x0, 0x0, 0x0, (int32_t)(0.12 * 255)) :
+            QColor(0x0, 0x0, 0x0, (int32_t)(0.2 * 255)));
+
+        p.fillPath(progressPath, progressBrush);
+
+        QString playImage = getPlayImagePath();
 
         double ratio = Utils::scale_bitmap(1);
 
@@ -211,7 +221,7 @@ namespace HistoryControl
         }
         QFont f = Ui::MessageStyle::getTextFont();
         p.setFont(f);
-        QPen penText(QColor("#282828"));
+        QPen penText(Ui::MessageStyle::getTextColor());
         p.setPen(penText);
         int textWidth = QFontMetrics(f).width(DurationText_);
         Utils::drawText(p, QPointF(Ui::MessageStyle::getBubbleHorPadding() + Utils::scale_value(play_button_right_margin) + Utils::scale_value(play_button_size) / 2 + textWidth, Utils::scale_value(widget_height) / 2), Qt::AlignHCenter | Qt::AlignVCenter, DurationText_);
@@ -462,7 +472,7 @@ namespace HistoryControl
 
     void PttAudioWidget::pttPlayed(qint64 id)
     {
-        if (id == PrevId_)
+        if (id == PrevId_ && Logic::getContactListModel()->selectedContact() == Contact_)
         {
             if (!Played_)
             {
@@ -579,7 +589,7 @@ namespace HistoryControl
             stopDownloadAnimation();
             if (!PttText_)
             {
-                PttText_ = new Ui::TextEditEx(this, Utils::FontsFamily::SEGOE_UI, Utils::scale_value(15), QColor("#282828"), false, true);
+                PttText_ = new Ui::TextEditEx(this, Ui::MessageStyle::getTextFont(), Ui::MessageStyle::getTextColor(), false, true);
                 PttText_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
                 PttText_->setFixedWidth(width() - Ui::MessageStyle::getBubbleHorPadding() - Ui::MessageStyle::getBubbleHorPadding());
                 PttText_->setFrameStyle(QFrame::NoFrame);
@@ -775,7 +785,7 @@ namespace HistoryControl
     QPainterPath PttAudioWidget::getBodyPath(
         const QRect &rect,
         const int32_t borderRadius,
-        const bool isOutgoing, const bool skipArc)
+        const bool /*isOutgoing*/, const bool skipArc)
     {
         const auto borderDiameter = (borderRadius * 2);
 
@@ -787,30 +797,20 @@ namespace HistoryControl
         auto x = 0;
         auto y = 0;
 
-        if (isOutgoing)
-        {
-            x += borderRadius;
-        }
-
+        x += borderRadius;
         clipPath.moveTo(x, y);
-
-        if (isOutgoing)
-        {
-            clipPath.arcTo(0, 0, borderDiameter, borderDiameter, 90, 90);
-        }
+        clipPath.arcTo(0, 0, borderDiameter, borderDiameter, 90, 90);
 
         x = 0;
         y = skipArc ? rect.height() : heightMinusBorder;
         clipPath.lineTo(x, y);
-
         if (!skipArc)
             clipPath.arcTo(x, y, borderDiameter, borderDiameter, 180, 90);
 
-        x = ((isOutgoing || skipArc) ? rect.width() : widthMinusBorder);
+        x = widthMinusBorder;
         y = rect.height();
         clipPath.lineTo(x, y);
-
-        if (!isOutgoing && !skipArc)
+        if (!skipArc)
         {
             y -= borderDiameter;
             clipPath.arcTo(x, y, borderDiameter, borderDiameter, 270, 90);
@@ -824,11 +824,11 @@ namespace HistoryControl
         y -= borderDiameter;
         clipPath.arcTo(x, y, borderDiameter, borderDiameter, 0, 90);
 
-        x = (isOutgoing ? borderRadius : 0);
+        x = 0;
         y = 0;
-
         clipPath.lineTo(x, y);
         clipPath = clipPath.translated(rect.left(), rect.top());
+
         return clipPath;
     }
 

@@ -31,10 +31,6 @@ namespace core
             virtual int32_t on_response_error_code() override;
             
         public:
-            bool restart_;
-            bool finish_;
-            std::string new_tag_;
-            
             search_contacts_response response_;
             
             search_contacts2(const wim_packet_params& _packet_params, const std::string& keyword, const std::string& phonenumber, const std::string& tag);

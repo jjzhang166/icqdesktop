@@ -40,6 +40,29 @@ namespace Log
 
 }
 
+QTextStream& operator <<(QTextStream &oss, const core::file_sharing_content_type arg)
+{
+    using namespace core;
+
+    assert(arg > file_sharing_content_type::min);
+    assert(arg < file_sharing_content_type::max);
+
+    switch (arg)
+    {
+    case file_sharing_content_type::gif: return (oss << "gif");
+    case file_sharing_content_type::image: return (oss << "image");
+    case file_sharing_content_type::ptt: return (oss << "ptt");
+    case file_sharing_content_type::snap_gif: return (oss << "snap_gif");
+    case file_sharing_content_type::snap_image: return (oss << "snap_image");
+    case file_sharing_content_type::snap_video: return (oss << "snap_video");
+    case file_sharing_content_type::undefined: return (oss << "undefined");
+    case file_sharing_content_type::video: return (oss << "video");
+    }
+
+    assert(!"unexpected file sharing content type");
+    return (oss << "#unknown");
+}
+
 namespace
 {
 	void log(const QString &type, const QString &area, const QString &text)

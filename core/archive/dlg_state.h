@@ -28,6 +28,8 @@ namespace core
 
             bool visible_;
 
+            bool fake_;
+
             bool official_;
 
             std::string last_message_friendly_;
@@ -71,6 +73,9 @@ namespace core
 
             void set_visible(bool _val) { visible_ = _val; }
             bool get_visible() const { return visible_; }
+
+            void set_fake(bool _val) { fake_ = _val; }
+            bool get_fake() const { return fake_; }
 
             void set_friendly(const std::string& _friendly) {friendly_ = _friendly;}
             const std::string& get_friendly() const {return friendly_;}

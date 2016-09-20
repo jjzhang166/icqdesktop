@@ -58,9 +58,12 @@ Q_SIGNALS:
         void themesSettingsBack();
         void profileSettingsDoMessage(QString uin);
         void profileSettingsUnknownAdd(QString uin);
+        void profileSettingsUnknownRemove(QString uin);
         void profileSettingsUnknownIgnore(QString uin);
         void profileSettingsUnknownSpam(QString uin);
         void profileSettingsUpdateInterface();
+        
+        void generalSettingsContactUsShown();
 
         void attachPhoneBack();
         void attachUinBack();
@@ -82,13 +85,26 @@ Q_SIGNALS:
         void setTheme(QString);
 
         void closeAnyPopupWindow();
+        void closeAnyPopupMenu();
 
         void forceRefreshList(QAbstractItemModel *, bool);
         void updateFocus();
         void liveChatsShow();
         
         void schemeUrlClicked(QString);
-        void setAvatar(int error);
+        void setAvatar(qint64 _seq, int error);
+
+        void historyControlPageFocusIn(QString);
+        
+        void unknownsGoSeeThem();
+        void unknownsGoBack();
+        void unknownsDeleteThemAll();
+        
+        void liveChatSelected();
+
+        void activateNextUnread();
+
+        void historyControlReady(QString);
 
     public:
         static InterConnector& instance();
@@ -105,6 +121,7 @@ Q_SIGNALS:
         void showSidebar(const QString& aimId, int page);
         void setSidebarVisible(bool show);
         bool isSidebarVisible() const;
+        void restoreSidebar();
 
         void setDragOverlay(bool enable);
         bool isDragOverlay() const;

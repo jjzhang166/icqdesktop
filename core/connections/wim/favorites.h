@@ -32,8 +32,10 @@ namespace core
         public:
             size_t size() const;
 
-            bool is_changed() { return changed_; }
+            bool is_changed() const { return changed_; }
             void set_changed(bool _changed) { changed_ = _changed; }
+
+            const std::list<favorite>& contacts() const { return contacts_; }
 
             favorites();
             virtual ~favorites();
