@@ -178,14 +178,23 @@ void core::im_container::fromInternalProxySettings2Voip(const core::proxy_settin
     using namespace voip_manager;
 
     if (!proxySettings.use_proxy_) {
-        voipProxySettings.type          = VoipProxySettings::kProxyType_None;
+        voipProxySettings.type     = VoipProxySettings::kProxyType_None;
     } else {
         switch (proxySettings.proxy_type_) {
-        case 0:  voipProxySettings.type = VoipProxySettings::kProxyType_Http;
-        case 4:  voipProxySettings.type = VoipProxySettings::kProxyType_Socks4;
-        case 5:  voipProxySettings.type = VoipProxySettings::kProxyType_Socks5;
-        case 6:  voipProxySettings.type = VoipProxySettings::kProxyType_Socks4a;
-        default: voipProxySettings.type = VoipProxySettings::kProxyType_None;
+        case 0:
+            voipProxySettings.type = VoipProxySettings::kProxyType_Http;
+            break;
+        case 4:
+            voipProxySettings.type = VoipProxySettings::kProxyType_Socks4;
+            break;
+        case 5:
+            voipProxySettings.type = VoipProxySettings::kProxyType_Socks5;
+            break;
+        case 6:
+            voipProxySettings.type = VoipProxySettings::kProxyType_Socks4a;
+            break;
+        default:
+            voipProxySettings.type = VoipProxySettings::kProxyType_None;
         }
     }
 
