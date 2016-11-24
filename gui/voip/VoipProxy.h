@@ -20,14 +20,19 @@ namespace voip_manager
     struct FrameSize;
 }
 
+namespace voip_masks
+{
+    class MaskManager;
+}
+
 namespace voip_proxy
 {
 
     enum EvoipDevTypes
     {
-        kvoipDevTypeUndefined      = 0,
-        kvoipDevTypeAudioPlayback = 1,
-        kvoipDevTypeAudioCapture  = 2,
+        kvoipDevTypeUndefined     = 0,
+        kvoipDevTypeAudioCapture  = 1,
+        kvoipDevTypeAudioPlayback = 2,
         kvoipDevTypeVideoCapture  = 3
     };
 
@@ -75,7 +80,7 @@ namespace voip_proxy
         void onVoipCallNameChanged(const std::vector<voip_manager::Contact>& _contacts);
         void onVoipCallIncoming(const std::string& _account, const std::string& _contact);
         void onVoipCallIncomingAccepted(const voip_manager::ContactEx& _contactEx);
-        void onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>& _devices);
+        void onVoipDeviceListUpdated(voip_proxy::EvoipDevTypes deviceType, const std::vector<voip_proxy::device_desc>& _devices);
         void onVoipMediaLocalAudio(bool _enabled);
         void onVoipMediaLocalVideo(bool _enabled);
         void onVoipMediaRemoteVideo(bool _enabled);
@@ -91,6 +96,8 @@ namespace voip_proxy
         void onVoipWindowAddComplete(quintptr _winId);
         void onVoipUpdateCipherState(const voip_manager::CipherState& _state);
         void onVoipMinimalBandwidthChanged(bool _enable);
+		void onVoipMaskEngineEnable(bool _enable);
+		void onVoipLoadMaskResult(const std::string& path, bool result);
 
         private Q_SLOTS:
         void _updateCallTime();
@@ -98,6 +105,7 @@ namespace voip_proxy
 
 		void updateUserAvatar(const voip_manager::ContactEx& _contactEx);
 		void updateUserAvatar(const std::string& _account, const std::string& _contact);
+        void updateVoipMaskEngineEnable(bool _enable);
 
     private:
         voip_manager::CipherState cipherState_;
@@ -110,6 +118,11 @@ namespace voip_proxy
         std::list<voip_manager::Contact> connectedPeerList_;
         bool haveEstablishedConnection_;
         bool                 iTunesWasPaused_;
+        std::unique_ptr<voip_masks::MaskManager> maskManager_;
+        bool                 maskEngineEnable_;
+
+        // For each device type.
+        std::vector<device_desc> devices_[3];
 
         void _loadUserBitmaps(Ui::gui_coll_helper& _collection, const std::string& _contact, int _size);
 
@@ -163,6 +176,17 @@ namespace voip_proxy
 
         void handlePacket(core::coll_helper& _collParams);
         static std::string formatCallName(const std::vector<std::string>& _names, const char* _clip);
+
+		void loadMask(const std::string& maskPath);
+
+		void setWindowSetPrimary(quintptr _hwnd, const char* _contact);
+
+        voip_masks::MaskManager* getMaskManager() const;
+
+        bool isMaskEngineEnabled() const;
+        void initMaskEngine() const;
+
+        const std::vector<device_desc>& deviceList(EvoipDevTypes type);
     };
 }
 

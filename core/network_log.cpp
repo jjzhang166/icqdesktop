@@ -83,8 +83,6 @@ namespace core
 
         static auto re = sregex::compile("(?P<index>\\d+)\\.net\\.txt");
 
-        int64_t max_index = -1;
-
         std::map<int64_t, std::string> files;
 
         boost::filesystem::directory_iterator dir_entry(_logs_directory);

@@ -32,6 +32,8 @@ namespace voip_manager {
         std::shared_ptr<IDeviceManager>     get_device_manager    ();
         std::shared_ptr<IConnectionManager> get_connection_manager();
         std::shared_ptr<IVoipManager>       get_voip_manager      ();
+		std::shared_ptr<IMaskManager>       get_mask_manager      ();
+
     };
 }
 

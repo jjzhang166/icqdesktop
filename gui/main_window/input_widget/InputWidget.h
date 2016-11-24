@@ -9,6 +9,12 @@ namespace Ui
 {
     class PictureWidget;
 
+    enum DisableReason
+    {
+        ReadOnlyChat = 0,
+        NotAMember = 1,
+    };
+
     class input_edit : public TextEditEx
     {
 
@@ -26,6 +32,8 @@ Q_SIGNALS:
         void smilesMenuSignal();
         void sendMessage(QString);
         void editFocusOut();
+        void ctrlFPressedInInputWidget();
+        void needUpdateSizes();
 
     public Q_SLOTS:
         void quote(QList<Data::Quote>);
@@ -40,6 +48,7 @@ Q_SIGNALS:
         void clear_quote(const QString&);
         void clear_files(const QString&);
         void clear();
+        void updateSizes();
 
         void insert_emoji(int32_t _main, int32_t _ext);
         void send_sticker(int32_t _set_id, int32_t _sticker_id);
@@ -51,6 +60,8 @@ Q_SIGNALS:
         void stats_message_send();
 
         void onFilesCancel();
+        void disableActionClicked(const QString&);
+        void chatRoleChanged(QString);
 
     public:
 
@@ -58,6 +69,9 @@ Q_SIGNALS:
         ~InputWidget();
         void hide();
         void hideNoClear();
+
+        void disable(DisableReason reason);
+        void enable();
 
         Q_PROPERTY(int current_height READ get_current_height WRITE set_current_height)
 
@@ -87,18 +101,21 @@ Q_SIGNALS:
         QWidget* quote_line_;
         QWidget* quote_block_;
         QWidget* files_block_;
+        QWidget* input_disabled_block_;
         QPushButton* cancel_quote_;
         QPushButton* cancel_files_;
         QMap<QString, QList<Data::Quote>> quotes_;
         QMap<QString, QStringList> files_to_send_;
         PictureWidget* file_preview_;
         QLabel* files_label_;
+        QLabel* disable_label_;
         QMap<QString, QPixmap> image_buffer_;
 
         int active_height_;
         int need_height_;
         int active_document_height_;
         bool is_initializing_;
+        QMap<QString, DisableReason>  disabled_;
 
     protected:
 

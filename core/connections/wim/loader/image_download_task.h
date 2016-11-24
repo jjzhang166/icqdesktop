@@ -31,6 +31,8 @@ public:
 
     virtual loader_errors run() override;
 
+    virtual std::string to_log_str() const override;
+
     tools::binary_stream& get_image_preview_data();
 
 private:

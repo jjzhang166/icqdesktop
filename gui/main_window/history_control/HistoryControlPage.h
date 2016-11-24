@@ -77,7 +77,7 @@ Q_SIGNALS:
 		MessagesWidgetEventFilter(
 			QWidget* _buttonsWidget,
 			const QString& _contactName,
-            QTextBrowser* _contactNameWidget,
+            TextEmojiWidget* _contactNameWidget,
             MessagesScrollArea* _scrollArea,
 			QWidget* _firstOverlay,
 			QWidget* _secondOverlay,
@@ -110,7 +110,7 @@ Q_SIGNALS:
         QDate Date_;
         QPoint MousePos_;
         QString ContactName_;
-        QTextBrowser* ContactNameWidget_;
+        TextEmojiWidget* ContactNameWidget_;
         QTimer* Timer_;
         QWidget* FirstOverlay_;
 		QWidget* SecondOverlay_;
@@ -153,8 +153,8 @@ Q_SIGNALS:
 	    Q_OBJECT
 
 	Q_SIGNALS:
-		void requestMoreMessagesSignal();
-		void insertNextMessageSignal();
+		void requestMoreMessagesSignal(bool _isMoveToBottomIfNeed);
+		void insertNextMessageSignal(bool _isMoveToBottomIfNeed, int64_t _mess_id);
 		void needRemove(Logic::MessageKey);
 		void quote(QList<Data::Quote>);
         void updateMembers();
@@ -173,12 +173,12 @@ Q_SIGNALS:
 
         ~HistoryControlPage();
 
-		void updateNewPlate(bool);
+		void updateState(bool);
 		qint64 getNewPlateId() const;
 		void newPlateShowed();
 		bool newPlateBlocked() const;
 		void open();
-        bool requestMoreMessagesAsync(const char* _dbgWhere);
+        bool requestMoreMessagesAsync(const char* _dbgWhere, bool _isMoveToBottomIfNeed = true);
         QString aimId() const;
         void cancelSelection();
 
@@ -190,6 +190,7 @@ Q_SIGNALS:
 
         void update(QString);
         void updateMoreButton();
+        void updateItems();
 
         bool contains(const QString& _aimId) const;
 
@@ -207,22 +208,22 @@ Q_SIGNALS:
 		void callVideoButtonClicked();
 		void callAudioButtonClicked();
 		void moreButtonClicked();
-		void sourceReady(QString _aimId);
+		void sourceReady(QString _aimId, bool _is_search, int64_t _mess_id);
 		void updated(QList<Logic::MessageKey>, QString, unsigned);
 		void deleted(QList<Logic::MessageKey>, QString);
-		void requestMoreMessagesSlot();
+		void requestMoreMessagesSlot(bool _isMoveToBottomIfNeed);
 		void downPressed();
 		void autoScroll(bool);
 		void chatInfo(qint64, std::shared_ptr<Data::ChatInfo>);
         void chatInfoFailed(qint64 _seq, core::group_chat_info_errors);
         void updateChatInfo();
-        void onReachedFetchingDistance();
+        void onReachedFetchingDistance(bool _isMoveToBottomIfNeed = true);
         void fetchMore(QString);
         void nameClicked();
         void editMembers();
 
 		void contactChanged(QString);
-		void insertNextMessageSlot();
+		void insertNextMessageSlot(bool _isMoveToBottomIfNeed, int64_t _mess_id);
 		void removeWidget(Logic::MessageKey);
 
 		void copy(QString);
@@ -252,6 +253,7 @@ Q_SIGNALS:
 	    void updateName();
         void blockUser(const QString& _aimId, bool _blockUser);
         void changeRole(const QString& _aimId, bool _moder);
+        void readonly(const QString& _aimId, bool _readonly);
 
 		class PositionInfo;
         int setThemeId_;
@@ -291,8 +293,8 @@ Q_SIGNALS:
         bool isStateFetching() const;
         bool isStateIdle() const;
         bool isStateInserting() const;
-        void postInsertNextMessageSignal(const char* _dbgWhere);
-        void postponeMessagesRequest(const char* _dbgWhere);
+        void postInsertNextMessageSignal(const char* _dbgWhere, bool _isMoveToBottomIfNeed = true, int64_t _mess_id = -1);
+        void postponeMessagesRequest(const char* _dbgWhere, bool _isDown);
         void switchToIdleState(const char* _dbgWhere);
         void switchToInsertingState(const char* _dbgWhere);
         void switchToFetchingState(const char* _dbgWhere);
@@ -306,6 +308,7 @@ Q_SIGNALS:
         bool                                    isContactStatusClickable_;
         bool                                    isMessagesRequestPostponed_;
         bool                                    isPublicChat_;
+        bool                                    isMessagesRequestPostponedDown_;
         char const*                             dbgWherePostponed_;
         Logic::ChatMembersModel*                chatMembersModel_;
         LabelEx*                                contactStatus_;
@@ -323,7 +326,9 @@ Q_SIGNALS:
         QPushButton*                            videoCallButton_;
         QSpacerItem*                            verticalSpacer_;
         QString									aimId_;
-        QTextBrowser*                           contactName_;
+        qint64                                  seenMsgId_;
+
+        TextEmojiWidget*                        contactName_;
         QWidget*                                contactStatusWidget_;
         QWidget*                                contactWidget_;
         ServiceMessageItem*						messagesOverlayFirst_;
@@ -332,6 +337,6 @@ Q_SIGNALS:
         std::list<ItemData>                     itemsData_;
         std::set<Logic::MessageKey>				removeRequests_;
         TopWidget*                              topWidget_;
-
+        ClickWidget*                            nameWidget_;
 	};
 }

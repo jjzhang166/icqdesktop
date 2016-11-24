@@ -15,7 +15,7 @@
 #define VOIP_VIDEO_PANEL_BTN_OFFSET (Utils::scale_value(40))
 
 Ui::IncomingCallControls::IncomingCallControls(QWidget* _parent)
-    : QWidget(_parent, Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint)
+    : BaseBottomVideoPanel(_parent)
     , rootWidget_(NULL)
     , parent_(_parent)
 {

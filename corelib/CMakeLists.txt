@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.2)
+cmake_minimum_required(VERSION 3.4)
 
 project(corelib)
 
@@ -39,7 +39,6 @@ elseif(APPLE)
     find_library(MAC_CORE_AUDIO CoreAudio)
     find_library(MAC_AV_FOUNDATION AVFoundation)
     find_library(MAC_FOUNDATION Foundation)
-    set(MAC_ICONV "${ICQ_EXTERNAL_PLATFORM}/libiconv.a")
 
     mark_as_advanced(
         MAC_VIDEO_TOOLBOX
@@ -55,8 +54,7 @@ elseif(APPLE)
         MAC_CORE_GRAPHICS
         MAC_CORE_AUDIO
         MAC_AV_FOUNDATION
-        MAC_FOUNDATION
-        MAC_ICONV)
+        MAC_FOUNDATION)
 
     set(SYSTEM_LIBRARIES
         ${MAC_VIDEO_TOOLBOX}
@@ -72,12 +70,9 @@ elseif(APPLE)
         ${MAC_CORE_GRAPHICS}
         ${MAC_CORE_AUDIO}
         ${MAC_AV_FOUNDATION}
-        ${MAC_FOUNDATION}
-        ${MAC_ICONV}
-        ldap
-        z)
+        ${MAC_FOUNDATION})
 elseif(LINUX)
-	set(SYSTEM_LIBRARIES ${ICQ_EXTERNAL_PLATFORM}/libminizip.a)
+    set(SYSTEM_LIBRARIES ${ICQ_EXTERNAL_PLATFORM}/libminizip.a)
 endif()
 
 
@@ -100,19 +95,29 @@ if(MSVC)
     use_precompiled_header_msvc("stdafx.h" "${SUBPROJECT_ROOT}/stdafx.cpp" ${SUBPROJECT_SOURCES})
 elseif(APPLE)
     use_precompiled_header_mac(PCH_BIN "${SUBPROJECT_ROOT}/stdafx.h" ${SUBPROJECT_SOURCES})
-    add_library(${PROJECT_NAME} SHARED ${SUBPROJECT_SOURCES} ${SUBPROJECT_HEADERS} ${PCH_BIN})
+    add_library(${PROJECT_NAME} ${SUBPROJECT_SOURCES} ${SUBPROJECT_HEADERS} ${PCH_BIN})
 elseif(LINUX)
     use_precompiled_header_linux(PCH_BIN "${SUBPROJECT_ROOT}/stdafx.h" ${SUBPROJECT_SOURCES})
-    add_library(${PROJECT_NAME} STATIC ${SUBPROJECT_SOURCES} ${SUBPROJECT_HEADERS} ${PCH_BIN})
+    add_library(${PROJECT_NAME} ${SUBPROJECT_SOURCES} ${SUBPROJECT_HEADERS} ${PCH_BIN})
 endif()
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_range_for)
 
-target_link_libraries(${PROJECT_NAME}
-    core
-    ${Boost_LIBRARIES}
-    ${VOIP_LIBRARIES}
-    ${CURL_LIBRARIES}
-    ${OPENSSL_LIBRARIES}
-    ${LIBCRYPTO_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    ${SYSTEM_LIBRARIES})
+if(ICQ_CORELIB_STATIC_LINKING)
+    target_link_libraries(${PROJECT_NAME}
+        ${SYSTEM_LIBRARIES}
+        core
+        ${Boost_LIBRARIES}
+        ${OPENSSL_LIBRARIES}
+        ${LIBCRYPTO_LIBRARIES}
+        ${CURL_LIBRARIES})
+else()
+    target_link_libraries(${PROJECT_NAME}
+        ${SYSTEM_LIBRARIES}
+        ${Boost_LIBRARIES}
+        core
+        ${OPENSSL_LIBRARIES}
+        ${LIBCRYPTO_LIBRARIES}
+        ${CURL_LIBRARIES}
+        ${VOIP_LIBRARIES}
+        ${ZLIB_LIBRARIES})
+endif()

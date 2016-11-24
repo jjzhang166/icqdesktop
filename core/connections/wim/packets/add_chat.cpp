@@ -44,7 +44,7 @@ int32_t add_chat::parse_response_data(const rapidjson::Value& _data)
     return 0;
 }
 
-int add_chat::get_members_count() const
+int32_t add_chat::get_members_count() const
 {
-    return m_chat_members.size();
+    return (int32_t)m_chat_members.size();
 }

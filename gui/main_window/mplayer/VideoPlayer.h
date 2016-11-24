@@ -27,6 +27,7 @@ namespace Ui
     Q_SIGNALS:
 
         void signalClose();
+        void mouseMoved();
 
     private:
 
@@ -56,6 +57,7 @@ namespace Ui
     Q_SIGNALS:
 
         void signalFullscreen(bool _checked);
+        void mouseMoved();
 
     private:
 
@@ -93,6 +95,7 @@ namespace Ui
         virtual void mouseDoubleClickEvent(QMouseEvent* _event) override;
         virtual void mousePressEvent(QMouseEvent* _event) override;
         virtual void resizeEvent(QResizeEvent * event) override;
+        virtual void mouseMoveEvent(QMouseEvent * _event) override;
 
     public:
         
@@ -123,13 +126,16 @@ namespace Ui
     private Q_SLOTS:
 
         void fullScreen(bool _checked);
+        void playerMouseMoved();
+        void playerMouseLeaved();
+        void timerHide();
 
     private:
 
         QWidget* parent_;
 
-        VideoPlayerControlPanel* controlPanel_;
-        VideoPlayerHeader* header_;
+        std::unique_ptr<VideoPlayerControlPanel> controlPanel_;
+        std::unique_ptr<VideoPlayerHeader> header_;
 
         QPropertyAnimation* animControlPanel_;
         QPropertyAnimation* animHeader_;
@@ -141,6 +147,10 @@ namespace Ui
 
         FFMpegPlayer* player_;
 
+        QTimer* timerHide_;
+
+        bool controlsShowed_;
+        
     protected:
 
         const QSize calculatePlayerSize(const QSize& _videoSize);
@@ -155,9 +165,9 @@ namespace Ui
         virtual void mouseReleaseEvent(QMouseEvent* _event) override;
         virtual void mousePressEvent(QMouseEvent* _event) override;
 
-        virtual void paintEvent(QPaintEvent* _e) override;
-
     public:
+
+        void moveToTop();
 
         VideoPlayer(QWidget* _parent);
         virtual ~VideoPlayer();

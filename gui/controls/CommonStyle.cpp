@@ -100,7 +100,8 @@ QString getGreenButtonStyle()
             "text-align: center; }"
         "QPushButton:hover { background-color: #57a813; }"
         "QPushButton:pressed { background-color: #50901b; } "
-    );
+        "QPushButton:disabled { color: %1; background-color: #c5c5c5; }"
+    ).arg(Utils::rgbaStringFromColor(getTextCommonColor()));
 }
 
 QString getGreenButtonStyleNoBorder()

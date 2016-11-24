@@ -7,6 +7,7 @@ using namespace core;
 using namespace wim;
 
 fetch_event_typing::fetch_event_typing()
+    : is_typing_(false)
 {
 }
 

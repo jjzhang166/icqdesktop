@@ -13,6 +13,7 @@
 #include "http_request.h"
 #include "async_task.h"
 #include "../common.shared/keys.h"
+#include "tools/system.h"
 
 namespace core
 {
@@ -51,13 +52,7 @@ namespace core
 
         bool report_sender::is_report_existed()
         {
-            struct stat info;
-            if (stat(tools::from_utf16(utils::get_report_path()).c_str(), &info) != 0)
-                return false;
-            else if(info.st_mode & S_IFDIR)
-                return true;
-            else
-                return false;
+            return tools::system::is_exist(utils::get_report_path());
         }
 
         void report_sender::clear_report_folder()

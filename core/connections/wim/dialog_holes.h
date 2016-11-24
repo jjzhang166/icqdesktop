@@ -1,7 +1,7 @@
 #ifndef __DIALOG_HOLES_H_
 #define __DIALOG_HOLES_H_
 
-#pragma once;
+#pragma once
 
 namespace core
 {

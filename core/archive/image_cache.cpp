@@ -1,8 +1,9 @@
 #include "stdafx.h"
 
+#include "../../common.shared/url_parser/url_parser.h"
+
 #include "../tools/file_sharing.h"
 #include "../tools/system.h"
-#include "../tools/url_parser.h"
 
 #include "archive_index.h"
 #include "contact_archive.h"
@@ -17,9 +18,9 @@ namespace
     const std::wstring tmp_to_add_extension = L".a.tmp";
     const std::wstring tmp_to_delete_extension = L".d.tmp";
 
-    const int max_block_size        = 1000;
+    const int32_t max_block_size        = 1000;
 
-    const int fetch_size            = 30;
+    const int32_t fetch_size            = 30;
 
     enum tlv_fields : uint32_t
     {
@@ -33,6 +34,7 @@ namespace
 
 core::archive::image_data::image_data()
     : msgid_(0)
+    , is_filesharing_(false)
 {
 }
 
@@ -287,7 +289,7 @@ bool core::archive::image_cache::build(const contact_archive& _archive)
 
         cancel_build_.clear();
 
-        _archive.get_messages(from, fetch_size, messages, contact_archive::get_message_policy::skip_patches_and_deleted);
+        _archive.get_messages(from, fetch_size, messages, contact_archive::get_message_policy::skip_patches_and_deleted, true /* to_older */);
         if (messages.empty())
         {
             building_in_progress_ = false;
@@ -414,7 +416,7 @@ void core::archive::image_cache::extract_images(const history_message& _message,
 
 void core::archive::image_cache::extract_images(int64_t _msgid, const std::string& _text, image_vector_t& _images) const
 {
-    auto urls = tools::parse_urls(_text);
+    auto urls = common::tools::url_parser::parse_urls(_text);
 
     for (auto& url_info : urls)
     {
@@ -477,7 +479,7 @@ void core::archive::image_cache::erase_deleted_from_tree(const archive_index& _i
     int64_t from = -1;
     while (true)
     {
-        _index.serialize_from(from, fetch_size, headers);
+        _index.serialize_from(from, fetch_size, headers, true /* to_older */);
         if (headers.empty())
             break;
 
@@ -491,7 +493,7 @@ void core::archive::image_cache::erase_deleted_from_tree(const archive_index& _i
 
     std::vector<int64_t> to_delete;
 
-    uint64_t prev = 0;
+    int64_t prev = 0;
     for (auto id : image_by_msgid_)
     {
         if (id.first == prev)

@@ -7,7 +7,6 @@ namespace Ui
 		Q_OBJECT
 
 	protected:
-
 		const int	size_;
 		
 		QString		aimid_;
@@ -25,14 +24,25 @@ namespace Ui
             QImage image;
             QRectF croppingRect;
             QPixmap croppedImage;
+            QPixmap roundedCroppedImage;
+        };
+        
+    public:
+        enum class Mode
+        {
+            Common  = 0,
+            MyProfile,
+            CreateChat,
         };
 
     Q_SIGNALS:
         void clicked();
+        void avatarDidEdit();
         void mouseEntered();
         void mouseLeft();
         void afterAvatarChanged();
-
+        void summonSelectFileForAvatar();
+        
     private Q_SLOTS:
         void avatarChanged(QString);
         void frameChanged(int _frame);
@@ -44,24 +54,31 @@ namespace Ui
         void avatarEnter();
         void avatarLeave();
         void setAvatar(qint64 _seq, int _error);
-
+        
 	public:
 
 		ContactAvatarWidget(QWidget* _parent, const QString& _aimid, const QString& _displayName, int _size, bool _autoUpdate);
         ~ContactAvatarWidget();
 
         void UpdateParams(const QString& _aimid, const QString& _displayName);
-        void SetIsInMyProfile(bool _isInMyProfile);
+        void SetImageCropHolder(QWidget *_holder);
+        void SetImageCropSize(const QSize &_size);
+        void SetMode(ContactAvatarWidget::Mode _mode);
         void SetVisibleShadow(bool _isVisibleShadow);
         void SetVisibleSpinner(bool _isVisibleSpinner);
 
+        void applyAvatar(const QPixmap &alter = QPixmap());
+        const QPixmap &croppedImage() const;
+        
     private:
         QString GetState();
         void postSetAvatarToCore(const QPixmap& _avatar);
         void ResetInfoForSetAvatar();
 
     private:
-        bool isInMyProfile_;
+        QWidget *imageCropHolder_;
+        QSize imageCropSize_;
+        Mode mode_;
         bool isVisibleShadow_;
 	    bool isVisibleSpinner_;
         bool connected_;

@@ -124,9 +124,11 @@ private:
 
     virtual void onDownloaded() override;
 
+    virtual void onDownloadedAction() override;
+
     virtual void onDownloading(const int64_t _bytesTransferred, const int64_t _bytesTotal) override;
 
-    virtual void onDownloadingFailed() override;
+    virtual void onDownloadingFailed(const int64_t requestId) override;
 
     void onGifImageVisibilityChanged(const bool isVisible);
 
@@ -207,7 +209,7 @@ private Q_SLOTS:
 
     void onImageDownloadError(qint64 seq, QString rawUri);
 
-    void onImageDownloaded(int64_t seq, QString, QPixmap image, QString localPath);
+    void onImageDownloaded(int64_t seq, QString uri, QPixmap image, QString localPath);
 
     void onImageDownloadingProgress(qint64 seq, int64_t bytesTotal, int64_t bytesTransferred, int32_t pctTransferred);
 

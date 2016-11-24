@@ -299,6 +299,7 @@
     <ClInclude Include="connections\search_contacts_params.h" />
     <ClInclude Include="connections\wim\stat\imstat.h" />
     <ClInclude Include="connections\im_login.h" />
+    <ClInclude Include="masks\masks.h" />
     <ClInclude Include="connections\wim\imstate.h" />
     <ClInclude Include="namespaces.h" />
     <ClInclude Include="network_log.h" />
@@ -477,6 +478,7 @@
     <ClCompile Include="connections\search_contacts_params.cpp" />
     <ClCompile Include="connections\wim\stat\imstat.cpp" />
     <ClCompile Include="connections\im_login.cpp" />
+    <ClCompile Include="masks\masks.cpp" />
     <ClCompile Include="connections\wim\imstate.cpp" />
     <ClCompile Include="network_log.cpp" />
     <ClCompile Include="proxy_settings.cpp" />

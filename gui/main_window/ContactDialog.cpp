@@ -173,7 +173,13 @@ namespace Ui
         layout_->setContentsMargins(0, 0, 0, 0);
         layout_->addLayout(verticalLayout);
         layout_->addWidget(sidebar_);
-        rootLayout_->addLayout(layout_);
+        layout_->addStretch();
+
+        auto wrapper = new QHBoxLayout();
+        wrapper->addLayout(layout_);
+        wrapper->addStretch();
+
+        rootLayout_->addLayout(wrapper);
 
         sidebar_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         sidebar_->setFixedWidth(0);
@@ -187,8 +193,9 @@ namespace Ui
 		connect(inputWidget_, SIGNAL(editFocusOut()), this, SLOT(onInputEditFocusOut()), Qt::QueuedConnection);
 		connect(inputWidget_, SIGNAL(sendMessage(QString)), this, SLOT(onSendMessage(QString)), Qt::QueuedConnection);
 
-        connect(historyControlWidget_, SIGNAL(quote(QList<Data::Quote>)), inputWidget_, SLOT(quote(QList<Data::Quote>)), Qt::QueuedConnection);        
-        
+        connect(historyControlWidget_, SIGNAL(quote(QList<Data::Quote>)), inputWidget_, SLOT(quote(QList<Data::Quote>)), Qt::QueuedConnection);
+
+		connect(inputWidget_, &InputWidget::ctrlFPressedInInputWidget, this, &ContactDialog::onCtrlFPressedInInputWidget, Qt::QueuedConnection);
 		connect(this, &ContactDialog::contactSelected, inputWidget_, &InputWidget::contactSelected, Qt::QueuedConnection);
 		connect(this, &ContactDialog::contactSelected, historyControlWidget_, &HistoryControl::contactSelected, Qt::QueuedConnection);
         connect(historyControlWidget_, SIGNAL(clicked()), this, SLOT(historyControlClicked()), Qt::QueuedConnection);
@@ -213,7 +220,7 @@ namespace Ui
 
     void ContactDialog::showSidebar(const QString& _aimId, int _page)
     {
-        if (!layout_->itemAt(1))
+        if (!layout_->itemAt(1) || !layout_->itemAt(1)->widget())
         {
             layout_->insertWidget(1, sidebar_);
             sidebar_->setFixedWidth(0);
@@ -323,9 +330,9 @@ namespace Ui
         }
     }
 
-	void ContactDialog::onContactSelected(QString _aimId)
+	void ContactDialog::onContactSelected(QString _aimId, qint64 _messageId)
 	{
-		emit contactSelected(_aimId);
+		emit contactSelected(_aimId, _messageId);
         if (needShowSidebar())
             showSidebar(_aimId, menu_page);
         else
@@ -453,6 +460,13 @@ namespace Ui
             return;
         }
 
+        auto role = Logic::getContactListModel()->getYourRole(Logic::getContactListModel()->selectedContact());
+        if (role == "notamember" || role == "readonly")
+        {
+            _e->setDropAction(Qt::IgnoreAction);
+            return;
+        }
+
         Utils::InterConnector::instance().getMainWindow()->closeGallery();
         Utils::InterConnector::instance().getMainWindow()->activate();
         if (!dragOverlayWindow_->isVisible())
@@ -528,7 +542,8 @@ namespace Ui
 
     void ContactDialog::setFocusOnInputWidget()
     {
-        inputWidget_->setFocusOnInput();
+        if (!Logic::getContactListModel()->selectedContact().isEmpty())
+            inputWidget_->setFocusOnInput();
     }
 
     Ui::InputWidget* ContactDialog::getInputWidget() const
@@ -542,6 +557,11 @@ namespace Ui
         {
             historyControlWidget_->notifyApplicationWindowActive(isActive);
         }
+    }
+
+    void ContactDialog::onCtrlFPressedInInputWidget()
+    {
+        emit Utils::InterConnector::instance().setSearchFocus();
     }
 }
 

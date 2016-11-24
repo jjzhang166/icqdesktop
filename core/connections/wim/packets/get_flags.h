@@ -23,13 +23,13 @@ namespace core
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
             virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
 
-            int flags_;
+            int32_t flags_;
 
         public:
 
             get_flags(const wim_packet_params& _params);
 
-            int flags() const;
+            int32_t flags() const;
 
             virtual ~get_flags();
         };

@@ -98,7 +98,7 @@ namespace Ui
             header_->setFont(Fonts::appFontScaled(14));
             header_->setPalette(p);
             vLayout->addWidget(header_);
-            info_ = new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), QColor("#000000"));
+            info_ = new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(18), QColor("#000000"));
             connect(info_, SIGNAL(rightClicked()), this, SLOT(menuRequested()), Qt::QueuedConnection);
             info_->setSelectable(true);
             vLayout->addWidget(info_);
@@ -187,6 +187,7 @@ namespace Ui
         : SidebarPage(parent)
         , info_(std::make_shared<Data::ChatInfo>())
         , connectOldVisible_(false)
+        , myInfo_(false)
     {
         init();
     }
@@ -198,7 +199,7 @@ namespace Ui
         QPainter p(this);
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
         QWidget::paintEvent(_e);
-        if (MyInfo()->aimId() == currentAimId_)
+        if (myInfo_)
             p.fillRect(rect(), Qt::white);
         else
             p.fillRect(rect(), CommonStyle::getFrameTransparency());
@@ -209,7 +210,7 @@ namespace Ui
     void ProfilePage::updateWidth()
     {
         Line_->setLineWidth(width_ - Utils::scale_value(back_button_spacing + button_size + right_margin) - rightWidget_->width());
-        if (MyInfo()->aimId() == currentAimId_ && width() >= Utils::scale_value(596))
+        if (myInfo_ && width() >= Utils::scale_value(596))
         {
             name_->adjustHeight(width_ - Utils::scale_value(button_size + back_button_spacing + right_margin + left_margin) - rightWidget_->width() - editLabel_->width());
         }
@@ -268,9 +269,9 @@ namespace Ui
         const auto fixedAimId = aimId.isEmpty() ? MyInfo()->aimId() : aimId;
         bool newContact = (currentAimId_ != fixedAimId);
         currentAimId_ = fixedAimId;
-        bool myInfo = (MyInfo()->aimId() == currentAimId_);
+        myInfo_ = (MyInfo()->aimId() == currentAimId_ && aimId.isEmpty());
         
-        backButton_->setVisible(!myInfo);
+        backButton_->setVisible(!myInfo_);
         
         Logic::GetAvatarStorage()->ForceRequest(currentAimId_, Utils::scale_value(avatar_size));
 
@@ -279,13 +280,13 @@ namespace Ui
 
         statusButton_->setStyle(QApplication::style());
         statusLabel_->setStyle(QApplication::style());
-        statusLabel_->setCursor(myInfo ? Qt::PointingHandCursor : Qt::ArrowCursor);
-        statusButton_->setVisible(myInfo);
+        statusLabel_->setCursor(myInfo_ ? Qt::PointingHandCursor : Qt::ArrowCursor);
+        statusButton_->setVisible(myInfo_);
 
         core::coll_helper helper(GetDispatcher()->create_collection(), true);
         GetDispatcher()->post_message_to_core("load_flags", helper.get());
 
-        attachOldAcc->setVisible(myInfo && connectOldVisible_);
+        attachOldAcc->setVisible(myInfo_ && connectOldVisible_);
 
         if (newContact)
         {
@@ -304,13 +305,13 @@ namespace Ui
         QTextCursor cursorName = name_->textCursor();
         Logic::Text2Doc(Logic::getContactListModel()->getDisplayName(currentAimId_), cursorName, Logic::Text2DocHtmlMode::Pass, false);
 
-        editLabel_->setVisible(myInfo);
+        editLabel_->setVisible(myInfo_);
 
         bool isChat = Logic::getContactListModel()->isChat(currentAimId_);
         saveButton_->setVisible(isChat);
         saveButtonMargin_->setVisible(isChat);
         name_->setVisible(!isChat);
-        avatar_->SetIsInMyProfile(myInfo || (isChat && !Logic::getContactListModel()->isLiveChat(currentAimId_)));
+        avatar_->SetMode(myInfo_ ? ContactAvatarWidget::Mode::MyProfile : ContactAvatarWidget::Mode::Common);
         if (isChat)
         {
             Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
@@ -323,7 +324,7 @@ namespace Ui
 
         bool isIgnored = Logic::getIgnoreModel()->getMemberItem(currentAimId_) != 0;
         ignoreWidget_->setVisible(isIgnored);
-        buttonWidget_->setVisible(!isIgnored && !isChat && !myInfo);
+        buttonWidget_->setVisible(!isIgnored && !isChat && currentAimId_ != MyInfo()->aimId());
         buttonsMargin_->setVisible(!isIgnored && !isChat);
 
         auto cont = Logic::getContactListModel()->getContactItem(currentAimId_);
@@ -334,11 +335,14 @@ namespace Ui
         callButton_->setEnabled(!isNotAuth);
         videoCall_button_->setEnabled(!isNotAuth);
 
-        ignoreListButton->setVisible(myInfo);
-        nameMargin_->setVisible(isChat);
-        renameContact_->setVisible(!isChat && !isNotAuth && !isIgnored && !myInfo);
+        callButton_->setVisible(!platform::is_linux());
+        videoCall_button_->setVisible(!platform::is_linux());
 
-        Line_->setVisible((!isChat && !isNotAuth && !isIgnored && !myInfo) || myInfo);
+        ignoreListButton->setVisible(myInfo_);
+        nameMargin_->setVisible(isChat);
+        renameContact_->setVisible(!isChat && !isNotAuth && !isIgnored && !myInfo_);
+
+        Line_->setVisible((!isChat && !isNotAuth && !isIgnored && !myInfo_) || myInfo_);
 
         uin_->setInfo(currentAimId_);
         uin_->setVisible(!isChat);
@@ -346,12 +350,12 @@ namespace Ui
         if (Logic::getContactListModel()->isChat(currentAimId_))
             return;
 
-        Logic::getContactListModel()->getContactProfile(currentAimId_, [this, myInfo](Logic::profile_ptr _profile, int32_t /*error*/)
+        Logic::getContactListModel()->getContactProfile(currentAimId_, [this](Logic::profile_ptr _profile, int32_t /*error*/)
         {
             if (!_profile)
                 return;
 
-            if (myInfo)
+            if (myInfo_)
             {
                 if (!MyInfo()->phoneNumber().isEmpty())
                     phone_->setInfo(MyInfo()->phoneNumber(), "+");
@@ -384,13 +388,13 @@ namespace Ui
                 lastName_->show();
             }
 
-            auto nn = myInfo ? MyInfo()->friendlyName() : _profile->get_friendly();
+            auto nn = myInfo_ ? MyInfo()->friendlyName() : _profile->get_friendly();
             if (!nn.isEmpty())
             {
                 nickName_->setInfo(nn);
                 nickName_->show();
 
-                if (Logic::getContactListModel()->getDisplayName(currentAimId_) == currentAimId_ || myInfo)
+                if (Logic::getContactListModel()->getDisplayName(currentAimId_) == currentAimId_ || myInfo_)
                 {
                     name_->setPlainText(QString());
                     QTextCursor cursorName = name_->textCursor();
@@ -452,7 +456,10 @@ namespace Ui
 
         updateWidth();
 
-        connect(MyInfo(), SIGNAL(received()), this, SLOT(changed()), Qt::UniqueConnection);
+        if (myInfo_)
+            connect(MyInfo(), SIGNAL(received()), this, SLOT(changed()), Qt::UniqueConnection);
+        else
+            disconnect(MyInfo(), SIGNAL(received()), this, SLOT(changed()));
     }
 
     void ProfilePage::init()
@@ -877,13 +884,19 @@ namespace Ui
         if (info->AimId_ == currentAimId_)
         {
             info_ = info;
-            if (info_->YourRole_ == "admin" || info_->Live_ == false)
+            if (info_->YourRole_ == "admin" || info_->Controlled_ == false)
             {
-                avatar_->SetIsInMyProfile(true);
-                nameEdit_->setPlaceholderText(info->Name_);
-                nameEdit_->setPlainText(info->Name_);
-                descriptionEdit_->setPlaceholderText(info->About_.isEmpty() ? QT_TRANSLATE_NOOP("sidebar", "Add your description") : info_->About_);
-                descriptionEdit_->setPlainText(info->About_);
+                avatar_->SetMode(ContactAvatarWidget::Mode::MyProfile);
+                if (QApplication::focusWidget() != nameEdit_)
+                {
+                    nameEdit_->setPlaceholderText(info->Name_);
+                    nameEdit_->setPlainText(info->Name_);
+                }
+                if (QApplication::focusWidget() != descriptionEdit_)
+                {
+                    descriptionEdit_->setPlaceholderText(info->About_.isEmpty() ? QT_TRANSLATE_NOOP("sidebar", "Add your description") : info_->About_);
+                    descriptionEdit_->setPlainText(info->About_);
+                }
                 chatEditWidget_->show();
             }
             updateWidth();
@@ -909,7 +922,7 @@ namespace Ui
 
     void ProfilePage::changed()
     {
-        initFor(currentAimId_);
+        initFor("");
     }
 
     void ProfilePage::updateStatus()
@@ -923,7 +936,7 @@ namespace Ui
         Logic::ContactItem* cont = Logic::getContactListModel()->getContactItem(currentAimId_);
         if (!cont)
         {
-            if (currentAimId_ == MyInfo()->aimId())
+            if (myInfo_)
             {
                 state = MyInfo()->state();
             }
@@ -978,7 +991,7 @@ namespace Ui
 
     void ProfilePage::chatClicked()
     {
-        Logic::getContactListModel()->setCurrent(currentAimId_, true, true);
+        Logic::getContactListModel()->setCurrent(currentAimId_, -1, true, true);
     }
 
     void ProfilePage::callClicked()
@@ -1111,7 +1124,7 @@ namespace Ui
 
     void ProfilePage::statusClicked()
     {
-        if (MyInfo()->aimId() == currentAimId_)
+        if (myInfo_)
             statusMenu_->popup(QCursor::pos());
     }
 
@@ -1154,7 +1167,7 @@ namespace Ui
     void ProfilePage::recvFlags(int flags)
     {
         connectOldVisible_ = flags & 0x1000;
-        attachOldAcc->setVisible(currentAimId_ == MyInfo()->aimId() && connectOldVisible_);
+        attachOldAcc->setVisible(myInfo_ && connectOldVisible_);
     }
 
     void ProfilePage::setState(const core::profile_state _state)

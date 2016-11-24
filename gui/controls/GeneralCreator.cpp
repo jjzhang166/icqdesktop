@@ -12,13 +12,24 @@ namespace
 {
     const QString DROPDOWN_STYLE =
         "border-width: 1dip; border-bottom-style: solid; border-color: #d7d7d7; ";
+
+    const QColor SETTINGS_LABELS_COLOR(0x282828);
 }
 
 namespace Ui
 {
     void GeneralCreator::addHeader(QWidget* _parent, QLayout* _layout, const QString& _text)
     {
-        auto title = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(50));
+        const auto headerWeight = (platform::is_apple() ? Fonts::FontWeight::Light : Fonts::FontWeight::Normal);
+
+        auto title = new TextEmojiWidget(
+            _parent,
+            Fonts::defaultAppFontFamily(),
+            headerWeight,
+            Utils::scale_value(24),
+            Ui::CommonStyle::getTextCommonColor(),
+            Utils::scale_value(50));
+
         title->setText(_text);
         _layout->addWidget(title);
         Utils::grabTouchWidget(title);
@@ -36,12 +47,13 @@ namespace Ui
 
         Utils::grabTouchWidget(mainWidget);
 
-        auto text = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+        auto text = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
         switcherWidget.text_ = text;
         Utils::grabTouchWidget(text);
         text->setFixedWidth(Utils::scale_value(312));
         text->setText(_text);
         text->setMultiline(true);
+        text->setColor(SETTINGS_LABELS_COLOR);
         mainLayout->addWidget(text);
 
         auto checkboxWidget = new QWidget(_parent);
@@ -58,6 +70,10 @@ namespace Ui
             checkbox->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
             checkbox->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
             checkbox->setChecked(_switched);
+
+            auto palette = checkbox->palette();
+            palette.setColor(QPalette::Active, QPalette::WindowText, SETTINGS_LABELS_COLOR);
+            checkbox->setPalette(palette);
 
             GetDispatcher()->set_enabled_stats_post(false);
             checkbox->setText(_slot(checkbox->isChecked()));
@@ -95,10 +111,11 @@ namespace Ui
 
         Utils::grabTouchWidget(mainWidget);
 
-        auto info = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+        auto info = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
         Utils::grabTouchWidget(info);
         info->setSizePolicy(QSizePolicy::Policy::Preferred, info->sizePolicy().verticalPolicy());
         info->setText(_info);
+        info->setColor(SETTINGS_LABELS_COLOR);
         mainLayout->addWidget(info);
 
         auto valueWidget = new QWidget(_parent);
@@ -109,7 +126,7 @@ namespace Ui
         valueLayout->setContentsMargins(Utils::scale_value(5), 0, 0, 0);
         valueLayout->setSpacing(0);
 
-        auto value = new TextEmojiWidget(valueWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), CommonStyle::getLinkColor(), Utils::scale_value(44));
+        auto value = new TextEmojiWidget(valueWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), CommonStyle::getLinkColor(), Utils::scale_value(44));
         {
             Utils::grabTouchWidget(value);
             value->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
@@ -139,16 +156,18 @@ namespace Ui
         mainLayout->setContentsMargins(0, 0, 0, 0);
         mainLayout->setSpacing(Utils::scale_value(5));
         {
-            w1 = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+            w1 = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(w1);
             w1->setSizePolicy(QSizePolicy::Policy::Preferred, w1->sizePolicy().verticalPolicy());
             w1->setText(_info);
+            w1->setColor(SETTINGS_LABELS_COLOR);
             mainLayout->addWidget(w1);
 
-            aw1 = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+            aw1 = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(aw1);
             aw1->setSizePolicy(QSizePolicy::Policy::Preferred, aw1->sizePolicy().verticalPolicy());
             aw1->setText(" ");
+            aw1->setColor(SETTINGS_LABELS_COLOR);
             mainLayout->addWidget(aw1);
         }
         _layout->addWidget(mainWidget);
@@ -175,7 +194,7 @@ namespace Ui
             dl->setContentsMargins(0, 0, 0, 0);
             dl->setSpacing(0);
             {
-                auto w2 = new TextEmojiWidget(d, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(29));
+                auto w2 = new TextEmojiWidget(d, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(29));
                 Utils::grabTouchWidget(w2);
 
                 w2->setText(Utils::getItemSafe(_values, _selected, " "));
@@ -253,16 +272,18 @@ namespace Ui
         mainLayout->setContentsMargins(0, 0, 0, 0);
         mainLayout->setSpacing(Utils::scale_value(5));
         {
-            w = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+            w = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(w);
             w->setSizePolicy(QSizePolicy::Policy::Preferred, w->sizePolicy().verticalPolicy());
             w->setText(" ");
+            w->setColor(SETTINGS_LABELS_COLOR);
             mainLayout->addWidget(w);
 
-            aw = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+            aw = new TextEmojiWidget(mainWidget, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(aw);
             aw->setSizePolicy(QSizePolicy::Policy::Preferred, aw->sizePolicy().verticalPolicy());
             aw->setText(" ");
+            aw->setColor(SETTINGS_LABELS_COLOR);
             mainLayout->addWidget(aw);
 
             _slot(w, aw, _selected);
@@ -350,7 +371,7 @@ namespace Ui
         }
 #endif // __APPLE__
     }
-    
+
     void SettingsSlider::wheelEvent(QWheelEvent* _e)
     {
         // Disable mouse wheel event for sliders

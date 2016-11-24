@@ -48,8 +48,8 @@ namespace Ui
         :	QWidget(_parent),
         aimid_(_aimid),
         ref_(new bool(false)),
-        name_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::FontStyle::LIGHT, Utils::scale_value(NAME_FONTSIZE), CommonStyle::getTextCommonColor(), Utils::scale_value(38))),
-        info_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::FontStyle::LIGHT, Utils::scale_value(INFO_FONTSIZE), CommonStyle::getTextCommonColor(), Utils::scale_value(27) - name_->descent()))
+        name_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::FontWeight::Light, Utils::scale_value(NAME_FONTSIZE), CommonStyle::getTextCommonColor(), Utils::scale_value(38))),
+        info_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::FontWeight::Light, Utils::scale_value(INFO_FONTSIZE), CommonStyle::getTextCommonColor(), Utils::scale_value(27) - name_->descent()))
     {
         setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
 

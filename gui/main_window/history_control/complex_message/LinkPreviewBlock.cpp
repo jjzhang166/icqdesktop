@@ -61,12 +61,18 @@ LinkPreviewBlock::LinkPreviewBlock(ComplexMessageItem *parent, const QString &ur
     , PreloadingTickerAnimation_(nullptr)
     , SnapMetainfoRequestId_(-1)
     , SnapId_(0)
+    , TextFontSize_(-1)
+    , TextOpacity_(1.0)
+    , MaxPreviewWidth_(0)
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     assert(!Uri_.isEmpty());
     Layout_ = makeInitialLayout(Uri_);
     setLayout(Layout_->asQLayout());
+
+    if (Uri_.endsWith(QChar::Space) || Uri_.endsWith(QChar::LineFeed))
+        Uri_.truncate(Uri_.length() - 1);
 }
 
 LinkPreviewBlock::~LinkPreviewBlock()
@@ -140,13 +146,11 @@ QSize LinkPreviewBlock::getPreviewImageSize() const
     return previewImageSize;
 }
 
-QString LinkPreviewBlock::getSelectedText() const
+QString LinkPreviewBlock::getSelectedText(bool isFullSelect) const
 {
-    assert(!Uri_.isEmpty());
-
     if (IsSelected_)
     {
-        return Uri_;
+        return getSourceText();
     }
 
     return QString();
@@ -207,7 +211,7 @@ void LinkPreviewBlock::onVisibilityChanged(const bool isVisible)
 
     if (isVisible && (RequestId_ > 0))
     {
-        GetDispatcher()->raiseDownloadPriority(RequestId_);
+        GetDispatcher()->raiseDownloadPriority(getChatAimid(), RequestId_);
     }
 
     if (isVisible)
@@ -232,10 +236,8 @@ void LinkPreviewBlock::onVisibilityChanged(const bool isVisible)
     }
 }
 
-void LinkPreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection)
+void LinkPreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType /*selection*/)
 {
-    selection;
-
     const QRect globalWidgetRect(
         mapToGlobal(rect().topLeft()),
         mapToGlobal(rect().bottomRight()));
@@ -287,6 +289,50 @@ void LinkPreviewBlock::showActionButton(const QRect &pos)
 
     ActionButton_->setVisible(true);
     ActionButton_->setGeometry(pos);
+}
+
+void LinkPreviewBlock::setMaxPreviewWidth(int width)
+{
+    MaxPreviewWidth_ = width;
+}
+
+int LinkPreviewBlock::getMaxPreviewWidth() const
+{
+    return MaxPreviewWidth_;
+}
+
+void LinkPreviewBlock::setFontSize(int size)
+{
+    TextFontSize_ = size;
+    if (Title_)
+    {
+        auto f = Title_->font();
+        f.setPixelSize(size);
+        Title_->setFont(f);
+    }
+    if (Annotation_)
+    {
+        auto f = Annotation_->font();
+        f.setPixelSize(size);
+        Annotation_->setFont(f);
+    }
+}
+
+void LinkPreviewBlock::setTextOpacity(double opacity)
+{
+    TextOpacity_ = opacity;
+    if (Title_)
+    {
+        QPalette p = Title_->palette();
+        p.setColor(QPalette::Text, MessageStyle::getTextColor(TextOpacity_));
+        Title_->setPalette(p);
+    }
+    if (Annotation_)
+    {
+        QPalette p = Annotation_->palette();
+        p.setColor(QPalette::Text, MessageStyle::getTextColor(TextOpacity_));
+        Annotation_->setPalette(p);
+    }
 }
 
 void LinkPreviewBlock::mouseMoveEvent(QMouseEvent *event)
@@ -577,7 +623,9 @@ bool LinkPreviewBlock::createDescriptionControl(const QString &description)
         return false;
     }
 
-    const auto annotationFont = Layout_->getAnnotationFont();
+    auto annotationFont = Layout_->getAnnotationFont();
+    if (TextFontSize_ != -1)
+        annotationFont.setPixelSize(TextFontSize_);
 
     assert(!Annotation_);
     Annotation_ = createTextEditControl(description, annotationFont);
@@ -652,7 +700,9 @@ bool LinkPreviewBlock::createTitleControl(const QString &title)
         return false;
     }
 
-    const auto &titleFont = Layout_->getTitleFont();
+    auto titleFont = Layout_->getTitleFont();
+    if (TextFontSize_ != -1)
+        titleFont.setPixelSize(TextFontSize_);
 
     assert(!Title_);
     Title_ = createTextEditControl(title, titleFont);
@@ -771,7 +821,7 @@ TextEditEx* LinkPreviewBlock::createTextEditControl(const QString &text, const Q
     auto textControl = new TextEditEx(
         this,
         font,
-        MessageStyle::getTextColor(),
+        MessageStyle::getTextColor(TextOpacity_),
         false,
         false);
 

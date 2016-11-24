@@ -41,16 +41,16 @@ class ComplexMessageItem final : public MessageItemBase
         Quote,
         Forward,
     };
-    
+
     Q_OBJECT
 
 Q_SIGNALS:
     void copy(QString text);
 
     void quote(QList<Data::Quote>);
-    
+
     void forward(QList<Data::Quote>);
-    
+
     void adminMenuRequest(QString);
 
 public:

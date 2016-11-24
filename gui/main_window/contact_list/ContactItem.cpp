@@ -7,7 +7,6 @@ namespace Logic
 	ContactItem::ContactItem(Data::Contact* _contact)
 		: contact_(_contact)
 		, visible_(true)
-        , isYouAdmin_(false)
 	{
 	}
 
@@ -90,14 +89,14 @@ namespace Logic
 		contact_->IsChecked_ = _isChecked;
 	}
 
-    void ContactItem::set_chat_admin(bool _value)
+    void ContactItem::set_chat_role(const QString& role)
     {
-        isYouAdmin_ = _value;
+        chat_role_ = role;
     }
 
-    bool ContactItem::is_you_admin() const
+    QString ContactItem::get_chat_role() const
     {
-        return isYouAdmin_;
+        return chat_role_;
     }
 
 	void ContactItem::set_input_text(const QString& _inputText)

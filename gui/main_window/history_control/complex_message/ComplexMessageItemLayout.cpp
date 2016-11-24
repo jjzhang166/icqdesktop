@@ -329,20 +329,17 @@ void ComplexMessageItemLayout::setGeometry(const QRect &r)
     LastGeometry_ = r;
 }
 
-void ComplexMessageItemLayout::addItem(QLayoutItem *item)
+void ComplexMessageItemLayout::addItem(QLayoutItem* /*item*/)
 {
-    item;
 }
 
-QLayoutItem* ComplexMessageItemLayout::itemAt(int index) const
+QLayoutItem* ComplexMessageItemLayout::itemAt(int /*index*/) const
 {
-    index;
     return nullptr;
 }
 
-QLayoutItem* ComplexMessageItemLayout::takeAt(int index)
+QLayoutItem* ComplexMessageItemLayout::takeAt(int /*index*/)
 {
-    index;
     return nullptr;
 }
 
@@ -634,11 +631,9 @@ void ComplexMessageItemLayout::setGeometryInternal(const int32_t widgetWidth)
 }
 
 void ComplexMessageItemLayout::setSenderGeometry(
-    const QRect &avatarRect,
-    const QRect &widgetContentLtr)
+    const QRect& /*avatarRect*/,
+    const QRect& widgetContentLtr)
 {
-    avatarRect;
-
     if (!Item_->Sender_)
     {
         return;

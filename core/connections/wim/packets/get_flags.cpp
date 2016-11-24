@@ -7,9 +7,9 @@
 using namespace core;
 using namespace wim;
 
-get_flags::get_flags(
-    const wim_packet_params& _params)
-    :	wim_packet(_params)
+get_flags::get_flags(const wim_packet_params& _params)
+    : wim_packet(_params)
+    , flags_(0)
 {
 }
 
@@ -34,8 +34,6 @@ int32_t get_flags::init_request(std::shared_ptr<core::http_request_simple> _requ
 
 int32_t get_flags::parse_response_data(const rapidjson::Value& _data)
 {
-    int32_t err = wpie_http_parse_response;
-
     try
     {
         auto iter_flags = _data.FindMember("op_flag");
@@ -43,17 +41,15 @@ int32_t get_flags::parse_response_data(const rapidjson::Value& _data)
             return wpie_http_parse_response;
 
         flags_ = iter_flags->value.GetUint();
-        err = 0;
+        return  0;
     }
     catch (const std::exception&)
     {
-
+        return wpie_http_parse_response;
     }
-
-    return err;
 }
 
-int get_flags::flags() const
+int32_t get_flags::flags() const
 {
     return flags_;
 }

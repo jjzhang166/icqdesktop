@@ -49,18 +49,52 @@ QTextStream& operator <<(QTextStream &oss, const core::file_sharing_content_type
 
     switch (arg)
     {
-    case file_sharing_content_type::gif: return (oss << "gif");
-    case file_sharing_content_type::image: return (oss << "image");
-    case file_sharing_content_type::ptt: return (oss << "ptt");
-    case file_sharing_content_type::snap_gif: return (oss << "snap_gif");
-    case file_sharing_content_type::snap_image: return (oss << "snap_image");
-    case file_sharing_content_type::snap_video: return (oss << "snap_video");
-    case file_sharing_content_type::undefined: return (oss << "undefined");
-    case file_sharing_content_type::video: return (oss << "video");
+        case file_sharing_content_type::gif: return (oss << "gif");
+        case file_sharing_content_type::image: return (oss << "image");
+        case file_sharing_content_type::ptt: return (oss << "ptt");
+        case file_sharing_content_type::snap_gif: return (oss << "snap_gif");
+        case file_sharing_content_type::snap_image: return (oss << "snap_image");
+        case file_sharing_content_type::snap_video: return (oss << "snap_video");
+        case file_sharing_content_type::undefined: return (oss << "undefined");
+        case file_sharing_content_type::video: return (oss << "video");
+        default:
+            assert(!"unexpected file sharing content type");
     }
 
-    assert(!"unexpected file sharing content type");
     return (oss << "#unknown");
+}
+
+QTextStream& operator <<(QTextStream &oss, const core::file_sharing_function arg)
+{
+    using namespace core;
+
+    assert(arg > file_sharing_function::min);
+    assert(arg < file_sharing_function::max);
+
+    switch(arg)
+    {
+        case file_sharing_function::check_local_copy_exists:
+            oss << "check_local_copy_exists";
+            break;
+
+        case file_sharing_function::download_file:
+            oss << "download_file";
+            break;
+
+        case file_sharing_function::download_file_metainfo:
+            oss << "download_file_metainfo";
+            break;
+
+        case file_sharing_function::download_preview_metainfo:
+            oss << "download_preview_metainfo";
+            break;
+
+        default:
+            assert(!"unknown core::file_sharing_function value");
+            break;
+    }
+
+    return oss;
 }
 
 namespace

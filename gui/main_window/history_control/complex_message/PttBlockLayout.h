@@ -29,20 +29,20 @@ public:
 
     int32_t getDecodedTextSeparatorY() const;
 
-    virtual QFont getFilenameFont() const;
+    virtual QFont getFilenameFont() const override;
 
-    virtual const QRect& getFilenameRect() const;
+    virtual const QRect& getFilenameRect() const override;
 
-    virtual QFont getFileSizeFont() const;
+    virtual QFont getFileSizeFont() const override;
 
-    virtual QRect getFileSizeRect() const;
+    virtual QRect getFileSizeRect() const override;
 
-    virtual QFont getShowInDirLinkFont() const;
+    virtual QFont getShowInDirLinkFont() const override;
 
-    virtual QRect getShowInDirLinkRect() const;
+    virtual QRect getShowInDirLinkRect() const override;
 
 protected:
-    virtual QSize setBlockGeometryInternal(const QRect &geometry);
+    virtual QSize setBlockGeometryInternal(const QRect &geometry) override;
 
     QRect setCtrlButtonGeometry(PttBlock &pttBlock, const QRect &bubbleGeometry);
 

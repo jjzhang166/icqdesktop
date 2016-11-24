@@ -79,7 +79,7 @@
   <PropertyGroup>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\bin\release\installer\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">release\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">icqsetup</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">installer</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gui</TargetName>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</IgnoreImportLibrary>
@@ -87,7 +87,7 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\bin\debug\installer\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">debug\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">icqsetup</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">installer</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gui</TargetName>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</IgnoreImportLibrary>
@@ -137,14 +137,14 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>preprocessor.lib;dxguid.lib;translator.lib;Ws2_32.lib;..\external\gigabase_377\release\gigabase.lib;qtharfbuzzng.lib;glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;qtmain.lib;Qt5Gui.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5PlatformSupport.lib;qwindows.lib;qico.lib;Imm32.lib;Winmm.lib;psapi.lib;Qt5Multimedia.lib;Qt5Network.lib;qtaudio_windows.lib;strmiids.lib;..\external\zlib\lib\zlib.lib;..\external\curl\lib\libcurl.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>preprocessor.lib;dxguid.lib;Ws2_32.lib;..\external\gigabase_377\release\gigabase.lib;qtharfbuzzng.lib;glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;qtmain.lib;Qt5Gui.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5PlatformSupport.lib;qwindows.lib;qico.lib;Imm32.lib;Winmm.lib;psapi.lib;Qt5Multimedia.lib;Qt5Network.lib;qtaudio_windows.lib;strmiids.lib;..\external\zlib\lib\zlib.lib;..\external\curl\lib\libcurl.lib;wldap32.lib;qtpcre.lib;qtfreetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\external\curl\lib;..\external\windows\;..\external\windows\qt\lib;..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreImportLibrary>true</IgnoreImportLibrary>
       <LinkIncremental>false</LinkIncremental>
-      <OutputFile>$(OutDir)\icqsetup.exe</OutputFile>
+      <OutputFile>$(OutDir)\installer.exe</OutputFile>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <SubSystem>Windows</SubSystem>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -268,17 +268,18 @@ call python qt_prebuild.py -config $(Configuration)</Command>
       <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>preprocessord.lib;dxguid.lib;translatord.lib;Ws2_32.lib;qtharfbuzzngd.lib;glu32.lib;gdi32.lib;user32.lib;shell32.lib;psapi.lib;qtmaind.lib;Qt5Guid.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qicod.lib;Imm32.lib;Winmm.lib;runtimeobject.lib;Qt5Multimediad.lib;Qt5Networkd.lib;qtaudio_windowsd.lib;strmiids.lib;..\external\zlib\lib\zlibd.lib;..\external\gigabase_377\debug\gigabase.lib;wldap32.lib;..\external\curl\lib\libcurld.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>preprocessor.lib;dxguid.lib;Ws2_32.lib;..\external\gigabase_377\debug\gigabase.lib;glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;qtmaind.lib;Qt5Guid.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qicod.lib;Imm32.lib;Winmm.lib;psapi.lib;Qt5Multimediad.lib;Qt5Networkd.lib;qtaudio_windowsd.lib;strmiids.lib;..\external\zlib\lib\zlib.lib;..\external\curl\lib\libcurl.lib;wldap32.lib;qtpcred.lib;qtfreetyped.lib;qtharfbuzzngd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\external\windows\;..\external\windows\qt\lib;..\lib;..\external\curl\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreImportLibrary>true</IgnoreImportLibrary>
-      <OutputFile>$(OutDir)\icqsetup.exe</OutputFile>
+      <OutputFile>$(OutDir)\installer.exe</OutputFile>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <SubSystem>Windows</SubSystem>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>

@@ -4,28 +4,28 @@
 
 namespace Logic
 {
-	class ContactListItemDelegate : public QItemDelegate
+	class ContactListItemDelegate : public AbstractItemDelegateWithRegim
 	{
 	public:
 		ContactListItemDelegate(QObject* parent, int _regim);
 
 		virtual ~ContactListItemDelegate();
 
-		void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+		void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
-		QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+		QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
 		void blockState(bool value);
 
         void setDragIndex(const QModelIndex& index);
 
-        void setItemWidth(int width);
+        virtual void setFixedWidth(int width) override;
 
         void setLeftMargin(int margin);
 
         void setRightMargin(int margin);
 
-        void setRegim(int _regim);
+        virtual void setRegim(int _regim) override;
 
         void setRenderRole(bool render);
 

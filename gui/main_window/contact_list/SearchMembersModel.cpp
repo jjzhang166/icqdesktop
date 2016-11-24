@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "SearchMembersModel.h"
-#include "SearchModel.h"
 #include "ChatMembersModel.h"
 #include "ContactItem.h"
 #include "AbstractSearchModel.h"
@@ -64,6 +63,8 @@ namespace Logic
     {
         match_.clear();
 
+        lastSearchPattern_ = _p;
+
         if (chatMembersModel_ == NULL)
             return;
 
@@ -77,15 +78,20 @@ namespace Logic
         else
         {
             _p = _p.toLower();
-            auto searchPatterns = Utils::GetPossibleStrings(_p);
+            unsigned fixed_patterns_count = 0;
+            auto searchPatterns = Utils::GetPossibleStrings(_p, fixed_patterns_count);
             for (auto item : chatMembersModel_->members_)
             {
-                for (auto iter = searchPatterns.begin(); iter != searchPatterns.end(); ++iter)
+                for (int i = 0; i < fixed_patterns_count; ++i)
                 {
-                    if (item.AimId_.contains(*iter)
-                        || item.NickName_.toLower().contains(*iter) 
-                        || item.FirstName_.toLower().contains(*iter)
-                        || item.LastName_.toLower().contains(*iter))
+                    QString pattern;
+                    for (auto iter = searchPatterns.begin(); iter != searchPatterns.end(); ++iter)
+                        pattern += iter->at(i);
+
+                    if (item.AimId_.contains(pattern)
+                        || item.NickName_.toLower().contains(pattern) 
+                        || item.FirstName_.toLower().contains(pattern)
+                        || item.LastName_.toLower().contains(pattern))
                     {
                         match_.emplace_back(item);
                         break;
@@ -116,6 +122,11 @@ namespace Logic
     void SearchMembersModel::setSelectEnabled(bool _value)
     {
         selectEnabled_ = _value;
+    }
+
+    QString SearchMembersModel::getCurrentPattern() const
+    {
+        return lastSearchPattern_;
     }
     
     void SearchMembersModel::avatarLoaded(QString _aimId)

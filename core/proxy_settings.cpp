@@ -19,7 +19,7 @@ namespace core
         max
     };
 
-    const int proxy_settings::default_proxy_port = -1;
+    const int32_t proxy_settings::default_proxy_port = -1;
     
     proxy_settings_manager::proxy_settings_manager()
         : switched_(false)

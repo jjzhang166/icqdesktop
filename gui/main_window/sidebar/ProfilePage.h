@@ -128,5 +128,6 @@ namespace Ui
         QWidget* saveButtonMargin_;
         QWidget* saveButtonSpace_;
         bool connectOldVisible_;
+        bool myInfo_;
     };
 }

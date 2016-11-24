@@ -4,11 +4,19 @@
 #include "../utils/InterConnector.h"
 #include "../main_window/contact_list/Common.h"
 
+namespace
+{
+    int instancesCounter = 0;
+    bool touchSwallowed = false;
+}
+
 namespace Ui
 {
     SemitransparentWindow::SemitransparentWindow(QWidget* _parent)
-        : QWidget(_parent)
+        : QWidget(_parent), main_(instancesCounter == 0)
     {
+        ++instancesCounter;
+
         const auto rect = _parent->rect();
         auto width = rect.width();
         auto height = rect.height();
@@ -22,21 +30,31 @@ namespace Ui
 
     SemitransparentWindow::~SemitransparentWindow()
     {
+        --instancesCounter;
+        if (instancesCounter == 0)
+            touchSwallowed = false;
     }
 
     void SemitransparentWindow::paintEvent(QPaintEvent* _e)
     {
-        QStyleOption opt;
-        opt.initFrom(this);
-        QPainter p(this);
-        style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+        if (main_)
+        {
+            QStyleOption opt;
+            opt.initFrom(this);
+            QPainter p(this);
+            style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+        }
         return QWidget::paintEvent(_e);
     }
 
     void SemitransparentWindow::mousePressEvent(QMouseEvent *e)
     {
         QWidget::mousePressEvent(e);
-        emit clicked();
+        if (!touchSwallowed)
+        {
+            touchSwallowed = true;
+            emit Utils::InterConnector::instance().closeAnySemitransparentWindow();
+        }
     }
 
 }

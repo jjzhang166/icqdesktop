@@ -9,12 +9,6 @@
 
 namespace Ui
 {
-    Utils::SignalsDisconnector* GetDisconnector()
-    {
-        static auto disconnector_ = std::make_shared<Utils::SignalsDisconnector>();
-        return disconnector_.get();
-    }
-
     namespace { bool initialized_ = false; }
 
     GeneralSettingsWidget::GeneralSettingsWidget(QWidget* _parent):
@@ -33,13 +27,21 @@ namespace Ui
         voiceAndVideo_.aCapSelected = NULL;
         voiceAndVideo_.aPlaSelected = NULL;
         voiceAndVideo_.vCapSelected = NULL;
-        
+
         voiceAndVideo_.rootWidget = new QWidget(this);
         voiceAndVideo_.rootWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initVoiceVideo(voiceAndVideo_.rootWidget, voiceAndVideo_);
+
+        // Fill device list.
+        for (int i = voip_proxy::kvoipDevTypeAudioCapture; i<= voip_proxy::kvoipDevTypeVideoCapture; i += 1)
+        {
+            voip_proxy::EvoipDevTypes type = (voip_proxy::EvoipDevTypes)i;
+            onVoipDeviceListUpdated(type, Ui::GetDispatcher()->getVoipController().deviceList(type));
+        }
+
         addWidget(voiceAndVideo_.rootWidget);
 
-        auto setActiveDevice = [] (const voip_proxy::EvoipDevTypes& type)
+        auto setActiveDevice = [this] (const voip_proxy::EvoipDevTypes& type)
         {
             QString settingsName;
             switch (type)
@@ -52,83 +54,84 @@ namespace Ui
                     assert(!"unexpected device type");
                     return;
             };
-            
+
             QString val = get_gui_settings()->get_value<QString>(settingsName, "");
             if (val != "")
             {
                 voip_proxy::device_desc description;
                 description.uid      = std::string(val.toUtf8());
                 description.dev_type = type;
-                
+
+                user_selected_device_[type] = description.uid;
                 Ui::GetDispatcher()->getVoipController().setActiveDevice(description);
             }
         };
-        
+
         setActiveDevice(voip_proxy::kvoipDevTypeAudioPlayback);
         setActiveDevice(voip_proxy::kvoipDevTypeAudioCapture);
         setActiveDevice(voip_proxy::kvoipDevTypeVideoCapture);
-        
-        QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), this, SLOT(onVoipDeviceListUpdated(const std::vector<voip_proxy::device_desc>&)), Qt::DirectConnection);
+
+        QObject::connect(&Ui::GetDispatcher()->getVoipController(), &voip_proxy::VoipController::onVoipDeviceListUpdated, this, &GeneralSettingsWidget::onVoipDeviceListUpdated, Qt::DirectConnection);
     }
 
     GeneralSettingsWidget::~GeneralSettingsWidget()
     {
-        GetDisconnector()->clean();
+        //
     }
 
     void GeneralSettingsWidget::initialize()
     {
         if (initialized_)
             return;
-        
+
         initialized_ = true;
-        
+
         setStyleSheet(Utils::LoadStyle(":/main_window/settings/general_settings.qss"));
         setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-        
+
         QHBoxLayout* mainLayout;
         mainLayout = new QHBoxLayout();
         mainLayout->setSpacing(0);
         mainLayout->setContentsMargins(0, 0, 0, 0);
-        
+
         std::map<std::string, Synchronizator> collector;
-        
+
         general_ = new GeneralSettings(this);
         general_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initGeneral(general_, collector);
         addWidget(general_);
-        
+
         notifications_ = new QWidget(this);
         notifications_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initNotifications(notifications_, collector);
         addWidget(notifications_);
-        
+
         themes_ = new QWidget(this);
         themes_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         addWidget(themes_);
-        
+
         about_ = new QWidget(this);
         about_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initAbout(about_, collector);
         addWidget(about_);
-        
+
         contactus_ = new QWidget(this);
         contactus_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initContactUs(contactus_, collector);
         addWidget(contactus_);
-        
+
         attachUin_ = new QWidget(this);
         attachUin_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initAttachUin(attachUin_, collector);
         addWidget(attachUin_);
-        
+
         attachPhone_ = new QWidget(this);
         attachPhone_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         Creator::initAttachPhone(attachPhone_, collector);
         addWidget(attachPhone_);
-        
+
         setCurrentWidget(general_);
-        
+
         for (auto cs: collector)
         {
             auto &s = cs.second;
@@ -141,11 +144,11 @@ namespace Ui
         general_->recvUserProxy();
         QObject::connect(Ui::GetDispatcher(), &core_dispatcher::getUserProxy, general_, &GeneralSettings::recvUserProxy, Qt::DirectConnection);
     }
-    
+
     void GeneralSettingsWidget::setType(int _type)
     {
         initialize();
-        
+
         Utils::CommonSettingsType type = (Utils::CommonSettingsType)_type;
 
         if (type == Utils::CommonSettingsType::CommonSettingsType_General)
@@ -188,78 +191,60 @@ namespace Ui
         }
     }
 
-    void GeneralSettingsWidget::onVoipDeviceListUpdated(const std::vector< voip_proxy::device_desc >& _devices)
+    void GeneralSettingsWidget::onVoipDeviceListUpdated(voip_proxy::EvoipDevTypes deviceType, const std::vector< voip_proxy::device_desc >& _devices)
     {
         devices_ = _devices;
 
-        bool videoCaUpd = false;
-        bool audioPlUpd = false;
-        bool audioCaUpd = false;
+        QMenu* menu = NULL;
+        std::vector<DeviceInfo>* deviceList = NULL;
+        TextEmojiWidget* currentSelected = NULL;
 
-        //const QString aCapDev = get_gui_settings()->get_value<QString>(settings_microphone, "");
-        //const QString aPlaDev = get_gui_settings()->get_value<QString>(settings_speakers, "");
-        //const QString vCapDev = get_gui_settings()->get_value<QString>(settings_webcam, "");
+        switch (deviceType)
+        {
+        case voip_proxy::kvoipDevTypeAudioCapture:
+            menu = voiceAndVideo_.audioCaptureDevices;
+            deviceList = &voiceAndVideo_.aCapDeviceList;
+            currentSelected = voiceAndVideo_.aCapSelected;
+            break;
+
+        case voip_proxy::kvoipDevTypeAudioPlayback:
+            menu = voiceAndVideo_.audioPlaybackDevices;
+            deviceList = &voiceAndVideo_.aPlaDeviceList;
+            currentSelected = voiceAndVideo_.aPlaSelected;
+            break;
+
+        case voip_proxy::kvoipDevTypeVideoCapture:
+            menu = voiceAndVideo_.videoCaptureDevices;
+            deviceList = &voiceAndVideo_.vCapDeviceList;
+            currentSelected = voiceAndVideo_.vCapSelected;
+            break;
+
+        case voip_proxy::kvoipDevTypeUndefined:
+        default:
+            assert(false);
+            return;
+        }
+
+        if (!menu || !deviceList)            
+        {
+            return;
+        }
+
+        deviceList->clear();
+        menu->clear();
+        if (currentSelected)
+        {
+            currentSelected->setText("");
+        }
 
         using namespace voip_proxy;
+
+        const device_desc* selectedDesc = nullptr;
+        const device_desc* activeDesc   = nullptr;
         for (unsigned ix = 0; ix < devices_.size(); ix++)
         {
             const device_desc& desc = devices_[ix];
-
-            QMenu* menu  = NULL;
-            bool* flagPtr = NULL;
-            std::vector<DeviceInfo>* deviceList = NULL;
-            TextEmojiWidget* currentSelected = NULL;
-            //const QString* currentUID = NULL;
-
-            switch (desc.dev_type)
-            {
-            case kvoipDevTypeAudioCapture:
-                menu = voiceAndVideo_.audioCaptureDevices;
-                flagPtr = &audioCaUpd;
-                deviceList = &voiceAndVideo_.aCapDeviceList;
-                currentSelected = voiceAndVideo_.aCapSelected;
-                //currentUID = &aCapDev;
-                break;
-
-            case kvoipDevTypeAudioPlayback:
-                menu = voiceAndVideo_.audioPlaybackDevices;
-                flagPtr = &audioPlUpd;
-                deviceList = &voiceAndVideo_.aPlaDeviceList;
-                currentSelected = voiceAndVideo_.aPlaSelected;
-                //currentUID = &aPlaDev;
-                break;
-
-            case  kvoipDevTypeVideoCapture:
-                menu = voiceAndVideo_.videoCaptureDevices;
-                flagPtr = &videoCaUpd;
-                deviceList = &voiceAndVideo_.vCapDeviceList;
-                currentSelected = voiceAndVideo_.vCapSelected;
-                //currentUID = &vCapDev;
-                break;
-
-            case kvoipDevTypeUndefined:
-            default:
-                assert(false);
-                continue;
-            }
-
-            assert(menu && flagPtr && deviceList);
-            if (!menu || !flagPtr || !deviceList)
-            {
-                continue;
-            }
-
-            if (!*flagPtr)
-            {
-                *flagPtr = true;
-                menu->clear();
-                deviceList->clear();
-                if (currentSelected)
-                {
-                    currentSelected->setText(desc.name.c_str());
-                }
-            }
-
+ 
             DeviceInfo di;
             di.name = desc.name;
             di.uid  = desc.uid;
@@ -267,9 +252,27 @@ namespace Ui
             menu->addAction(desc.name.c_str());
             deviceList->push_back(di);
 
-            if ((currentSelected && desc.isActive))
+            if (user_selected_device_.count(deviceType) > 0 && user_selected_device_[deviceType] == di.uid)
             {
-                currentSelected->setText(desc.name.c_str());
+                selectedDesc = &desc;
+            }
+            if (desc.isActive)
+            {
+                activeDesc = &desc;
+            }
+        }
+
+        if (currentSelected)
+        {
+            // User selected item has most priority, then voip active device, then first element in list.
+            const device_desc* desc = selectedDesc ? selectedDesc
+                : (activeDesc ? activeDesc
+                    : (!devices_.empty() ? &devices_[0] : nullptr));
+
+            if (desc)
+            {
+                currentSelected->setText(desc->name.c_str());
+                setActiveDevice(*desc);
             }
         }
     }
@@ -284,7 +287,7 @@ namespace Ui
         initialize();
         QStackedWidget::showEvent(_e);
     }
-    
+
     void GeneralSettingsWidget::paintEvent(QPaintEvent* _event)
     {
         QStackedWidget::paintEvent(_event);
@@ -298,6 +301,28 @@ namespace Ui
             visibleRegion().boundingRect().height() + 2
         );
     }
+
+    void GeneralSettingsWidget::setActiveDevice(const voip_proxy::device_desc& _description)
+    {
+        Ui::GetDispatcher()->getVoipController().setActiveDevice(_description);
+
+        QString settingsName;
+        switch (_description.dev_type) {
+        case voip_proxy::kvoipDevTypeAudioPlayback: { settingsName = settings_speakers;  break; }
+        case voip_proxy::kvoipDevTypeAudioCapture: { settingsName = settings_microphone; break; }
+        case voip_proxy::kvoipDevTypeVideoCapture: { settingsName = settings_webcam;     break; }
+        case voip_proxy::kvoipDevTypeUndefined:
+        default:
+            assert(!"unexpected device type");
+            return;
+        };
+
+        user_selected_device_[_description.dev_type] = _description.uid;
+
+        if (get_gui_settings()->get_value<QString>(settingsName, "") != _description.uid.c_str())
+            get_gui_settings()->set_value<QString>(settingsName, _description.uid.c_str());
+    }
+
 
     GeneralSettings::GeneralSettings(QWidget* _parent)
         : QWidget(_parent)

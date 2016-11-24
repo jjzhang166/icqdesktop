@@ -8,19 +8,17 @@ namespace Ui
     {
         Q_OBJECT
 
-Q_SIGNALS:
-
-        void clicked();
-
     public:
         SemitransparentWindow(QWidget* _parent);
         ~SemitransparentWindow();
 
     protected:
-
         virtual void paintEvent(QPaintEvent*) override;
 
     protected:
         virtual void mousePressEvent(QMouseEvent *e) override;
+        
+    private:
+        bool main_;
     };
 }

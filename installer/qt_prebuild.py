@@ -14,6 +14,7 @@ files_to_pack = [
 	"icq.exe",
 	"corelib.dll",
 	"libvoip_x86.dll",
+	"D3DCompiler_43.dll",
 	"qresource"]
 
 

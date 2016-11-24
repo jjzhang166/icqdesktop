@@ -215,7 +215,7 @@ namespace Ui
         TextWidget_->document()->setDefaultFont(
             Fonts::appFont(
                 getWidgetFontSize(),
-                Fonts::FontStyle::SEMIBOLD));
+                Fonts::FontWeight::Semibold));
     }
 
     void ChatEventItem::paintEvent(QPaintEvent*)

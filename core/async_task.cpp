@@ -24,7 +24,7 @@ async_task::~async_task()
 // async_executer
 //////////////////////////////////////////////////////////////////////////
 async_executer::async_executer(unsigned long _count)
-    :	threadpool((unsigned int)_count, []()
+    :	threadpool((uint32_t)_count, []()
 {
     g_core->on_thread_finish();
 })

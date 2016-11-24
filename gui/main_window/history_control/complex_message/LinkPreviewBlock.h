@@ -41,7 +41,7 @@ public:
 
     QSize getPreviewImageSize() const;
 
-    virtual QString getSelectedText() const override;
+    virtual QString getSelectedText(bool isFullSelect = false) const override;
 
     const QString& getSiteName() const;
 
@@ -71,7 +71,13 @@ public:
 
     void showActionButton(const QRect &pos);
 
-    virtual bool containsImage() const override { return true; }
+    virtual void setMaxPreviewWidth(int width) override;
+
+    virtual int getMaxPreviewWidth() const override;
+
+    virtual void setFontSize(int size) override;
+
+    virtual void setTextOpacity(double opacity) override;
 
 protected:
     virtual void drawBlock(QPainter &p) override;
@@ -161,6 +167,12 @@ private:
     Data::LinkMetadata Meta_;
 
     uint64_t SnapId_;
+
+    int TextFontSize_;
+
+    double TextOpacity_;
+
+    int MaxPreviewWidth_;
 
     void connectSignals(const bool isConnected);
 

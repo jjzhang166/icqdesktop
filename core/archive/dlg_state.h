@@ -4,6 +4,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "history_message.h"
 
 //////////////////////////////////////////////////////////////////////////
 // dlg_state class
@@ -25,6 +26,7 @@ namespace core
             int64_t del_up_to_;
             int64_t theirs_last_read_;
             int64_t theirs_last_delivered_;
+            int64_t hidden_msg_id_;
 
             bool visible_;
 
@@ -70,6 +72,9 @@ namespace core
 
             void set_theirs_last_delivered(int64_t _val) { theirs_last_delivered_ = _val; }
             int64_t	get_theirs_last_delivered() const { return theirs_last_delivered_; }
+
+            void set_hidden_msg_id(int64_t _val) { hidden_msg_id_ = _val; }
+            int64_t	get_hidden_msg_id() const { return hidden_msg_id_; }
 
             void set_visible(bool _val) { visible_ = _val; }
             bool get_visible() const { return visible_; }
@@ -145,6 +150,14 @@ namespace core
             const dlg_state& get_state();
             void set_state(const dlg_state& _state, Out dlg_state_changes& _changes);
             void clear_state();
+        };
+
+        struct searched_msg
+        {
+            std::string contact;
+            std::string text;
+            int64_t id;
+            std::string term;
         };
     }
 }

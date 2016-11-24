@@ -77,7 +77,7 @@ namespace core
             bool load_from_local();
 
             void serialize(headers_list& _list) const;
-            bool serialize_from(int64_t _from, int64_t _count, headers_list& _list) const;
+            bool serialize_from(int64_t _from, int64_t _count, headers_list& _list, bool _to_older) const;
             bool update(const archive::history_block& _data, /*out*/ headers_list& _headers);
 
             void delete_up_to(const int64_t _to);

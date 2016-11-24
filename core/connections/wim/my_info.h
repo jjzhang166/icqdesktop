@@ -42,8 +42,8 @@ namespace core
             std::shared_ptr<my_info> get_info() const;
             void set_info(std::shared_ptr<my_info> _info);
 
-            int save(const std::wstring& _filename);
-            int load(const std::wstring& _filename);
+            int32_t save(const std::wstring& _filename);
+            int32_t load(const std::wstring& _filename);
         };
     }
 }

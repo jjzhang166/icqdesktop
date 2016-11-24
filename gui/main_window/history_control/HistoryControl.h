@@ -17,7 +17,7 @@ namespace Ui
         void clicked();
 
 	public Q_SLOTS:
-		void contactSelected(QString _aimId);
+		void contactSelected(QString _aimId, qint64 _messageId);
 
 	public:
 		HistoryControl(QWidget* parent);

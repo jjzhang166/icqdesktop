@@ -26,7 +26,7 @@ void core_settings::init_default()
     country = std::use_facet<boost::locale::info>(loc).country();
     if (!lang.empty() && !country.empty())
         locale = lang + "-" + country;
-    
+
     set_value(core_settings_values::core_settings_locale, locale.empty() ? locale : boost::locale::to_lower(locale, loc));
 }
 

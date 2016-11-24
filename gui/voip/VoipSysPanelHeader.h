@@ -6,7 +6,7 @@
 
 namespace Ui
 {
-    class IncomingCallControls : public QWidget
+    class IncomingCallControls : public BaseBottomVideoPanel
     {
         Q_OBJECT
     public:

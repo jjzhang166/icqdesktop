@@ -22,7 +22,7 @@ QLabel#settings_topic_label
     color: #282828;
     margin-left: 16dip;
     margin-bottom: 6dip;
-    margin-top: 22dip;
+    margin-top: 13dip;
 }
 
 QPushButton

@@ -60,7 +60,10 @@ namespace core
         void on_message_typing(int64_t _seq, coll_helper& _params);
         void on_feedback(int64_t _seq, coll_helper& _params);
         void on_set_state(int64_t _seq, coll_helper& _params);
-        void on_search(int64_t _seq, coll_helper& _params);
+
+        void on_history_search(int64_t _seq, coll_helper& _params);
+        void on_history_search_ended(int64_t _seq, coll_helper& _params);
+
         void on_get_archive_images(int64_t _seq, coll_helper& _params);
         void on_repair_archive_images(int64_t _seq, coll_helper& _params);
         void on_get_archive_index(int64_t _seq, coll_helper& _params);
@@ -108,10 +111,17 @@ namespace core
         void on_favorite(int64_t _seq, coll_helper& _params);
         void on_unfavorite(int64_t _seq, coll_helper& _params);
 
+        void on_create_chat(int64_t _seq, coll_helper& _params);
+        
+        void on_mod_chat_params(int64_t _seq, coll_helper& _params);
         void on_mod_chat_name(int64_t _seq, coll_helper& _params);
         void on_mod_chat_about(int64_t _seq, coll_helper& _params);
         void on_mod_chat_public(int64_t _seq, coll_helper& _params);
         void on_mod_chat_join(int64_t _seq, coll_helper& _params);
+        void on_mod_chat_link(int64_t _seq, coll_helper& _params);
+        void on_mod_chat_ro(int64_t _seq, coll_helper& _params);
+        void on_mod_chat_age(int64_t _seq, coll_helper& _params);
+        
         void on_block_chat_member(int64_t _seq, coll_helper& _params);
         void on_set_chat_member_role(int64_t _seq, coll_helper& _params);
 
@@ -142,6 +152,12 @@ namespace core
         void fromInternalProxySettings2Voip(const core::proxy_settings& proxySettings, voip_manager::VoipProxySettings& voipProxySettings);
 
         void on_close_promo(int64_t _seq, coll_helper& _params);
+
+        // masks
+        void on_get_mask_id_list(int64_t _seq, coll_helper& _params);
+        void on_get_mask_preview(int64_t _seq, coll_helper& _params);
+        void on_get_mask_model(int64_t _seq, coll_helper& _params);
+        void on_get_mask(int64_t _seq, coll_helper& _params);
 
     public:
 

@@ -54,7 +54,7 @@ Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
             videoPanelHeaderEffect_ = new UIEffects(*videoPanelHeader_.get());
         }
 #ifndef __linux__
-        std::vector<QWidget*> panels;
+        std::vector<Ui::BaseVideoPanel*> panels;
         if (!!videoPanelHeader_)
         {
             panels.push_back(videoPanelHeader_.get());
@@ -66,13 +66,14 @@ Ui::DetachedVideoWindow::DetachedVideoWindow(QWidget* parent)
         layout()->addWidget(rootWidget_);
 #endif //__linux__
 
-        std::vector<QWidget*> topPanels;
+		std::vector<BaseVideoPanel*> videoPanels;
+
         if (!!videoPanelHeader_)
         {
-            topPanels.push_back(videoPanelHeader_.get());
+			videoPanels.push_back(videoPanelHeader_.get());
         }
-        std::vector<QWidget*> bottomPanels;
-        eventFilter_ = new ResizeEventFilter(topPanels, bottomPanels, shadow_->getShadowWidget(), this);
+
+        eventFilter_ = new ResizeEventFilter(videoPanels, shadow_->getShadowWidget(), this);
         installEventFilter(eventFilter_);
 
         setAttribute(Qt::WA_UpdatesDisabled);

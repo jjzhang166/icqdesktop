@@ -35,15 +35,15 @@ namespace core
             {
             public:
                 const std::string to_string(time_t _start_time) const;
-                stats_event(stats_event_names _name, std::chrono::system_clock::time_point _event_time, int _event_id, const event_props_type& props);
+                stats_event(stats_event_names _name, std::chrono::system_clock::time_point _event_time, int32_t _event_id, const event_props_type& props);
                 stats_event_names get_name() const;
                 event_props_type get_props() const;
                 static void reset_session_event_id();
                 std::chrono::system_clock::time_point get_time() const;
-                int get_id() const;
+                int32_t get_id() const;
             private:
                 stats_event_names name_;
-                int event_id_; // natural serial number, starting from 1
+                int32_t event_id_; // natural serial number, starting from 1
                 event_props_type props_;
                 static long long session_event_id_;
                 std::chrono::system_clock::time_point event_time_;
@@ -83,7 +83,7 @@ namespace core
             void start_save();
             void start_send();
             void insert_event(stats_event_names _event_name, const event_props_type& _props, 
-                std::chrono::system_clock::time_point _event_time, int _event_id);
+                std::chrono::system_clock::time_point _event_time, int32_t _event_id);
             void clear();
             void delayed_start_send();
         public:

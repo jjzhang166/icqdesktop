@@ -4,6 +4,7 @@
 
 #include "../../../core_dispatcher.h"
 #include "../../../gui_settings.h"
+#include "../../../utils/log/log.h"
 #include "../../../utils/utils.h"
 
 #include "../FileSizeFormatter.h"
@@ -22,7 +23,9 @@ FileSharingBlockBase::FileSharingBlockBase(
     : GenericBlock(
         _parent,
         _link,
-        (MenuFlags)(MenuFlags::MenuFlagFileCopyable | MenuFlags::MenuFlagLinkCopyable),
+        (MenuFlags)(_type == core::file_sharing_content_type::undefined || _type == core::file_sharing_content_type::ptt ?
+            (MenuFlags::MenuFlagFileCopyable | MenuFlags::MenuFlagLinkCopyable )
+            : (MenuFlags::MenuFlagFileCopyable | MenuFlags::MenuFlagLinkCopyable | MenuFlags::MenuFlagOpenInBrowser)),
         true)
     , Link_(_link)
     , Type_(_type)
@@ -35,8 +38,12 @@ FileSharingBlockBase::FileSharingBlockBase(
     , FileMetaRequestId_(-1)
     , PreviewMetaRequestId_(-1)
     , CheckLocalCopyRequestId_(-1)
+    , MaxPreviewWidth_(0)
 {
     assert(!Link_.isEmpty());
+
+    if (Link_.endsWith(QChar::Space) || Link_.endsWith(QChar::LineFeed))
+        Link_.truncate(Link_.length() - 1);
 
     assert(Type_ > core::file_sharing_content_type::min);
     assert(Type_ < core::file_sharing_content_type::max);
@@ -77,6 +84,9 @@ QString FileSharingBlockBase::formatRecentsText() const
 
         case file_sharing_content_type::ptt:
             return QT_TRANSLATE_NOOP("contact_list", "Voice message");
+
+        default:
+            ;
     }
 
     return QT_TRANSLATE_NOOP("contact_list", "File");
@@ -102,11 +112,11 @@ QString FileSharingBlockBase::getProgressText() const
     return HistoryControl::formatProgressText(FileSizeBytes_, BytesTransferred_);
 }
 
-QString FileSharingBlockBase::getSelectedText() const
+QString FileSharingBlockBase::getSelectedText(bool isFullSelect) const
 {
     if (IsSelected_)
     {
-        return getLink();
+        return getSourceText();
     }
 
     return QString();
@@ -134,15 +144,13 @@ bool FileSharingBlockBase::isSelected() const
     return IsSelected_;
 }
 
-bool FileSharingBlockBase::containsImage() const
+void FileSharingBlockBase::setMaxPreviewWidth(int width)
 {
-    return isPreviewable();
+    MaxPreviewWidth_ = width;
 }
 
-void FileSharingBlockBase::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection)
+void FileSharingBlockBase::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType /*selection*/)
 {
-    selection;
-
     const QRect globalWidgetRect(
         mapToGlobal(rect().topLeft()),
         mapToGlobal(rect().bottomRight()));
@@ -264,6 +272,11 @@ void FileSharingBlockBase::onMenuCopyLink()
     QApplication::clipboard()->setText(getLink());
 }
 
+void FileSharingBlockBase::onMenuOpenInBrowser()
+{
+    QDesktopServices::openUrl(getLink());
+}
+
 void FileSharingBlockBase::onMenuCopyFile()
 {
     CopyFile_ = true;
@@ -345,12 +358,19 @@ void FileSharingBlockBase::requestMetainfo(const bool isPreview)
     {
         assert(PreviewMetaRequestId_ == -1);
         PreviewMetaRequestId_ = requestId;
+
+        __TRACE(
+            "prefetch",
+            "initiated file sharing preview metadata downloading\n"
+            "    contact=<" << getSenderAimid() << ">\n"
+            "    fsid=<" << getFileSharingId() << ">\n"
+            "    request_id=<" << requestId << ">");
+
+        return;
     }
-    else
-    {
-        assert(FileMetaRequestId_ == -1);
-        FileMetaRequestId_ = requestId;
-    }
+
+    assert(FileMetaRequestId_ == -1);
+    FileMetaRequestId_ = requestId;
 }
 
 void FileSharingBlockBase::requestDirectUri(const QObject* _object, std::function<void(bool _res, const QString& _uri)> _callback)
@@ -549,19 +569,25 @@ void FileSharingBlockBase::onFileDownloaded(qint64 seq, QString rawUri, QString 
 
     FileLocalPath_ = localPath;
 
-    if (CopyFile_)
-    {
-        CopyFile_ = false;
-        Utils::copyFileToClipboard(localPath);
-    }
+    onDownloaded();
 
     if (!SaveAs_.isEmpty())
     {
         QFile::copy(getFileLocalPath(), SaveAs_);
         SaveAs_ = QString();
+
+        return;
     }
 
-    onDownloaded();
+    if (CopyFile_)
+    {
+        CopyFile_ = false;
+        Utils::copyFileToClipboard(localPath);
+
+        return;
+    }
+
+    onDownloadedAction();
 }
 
 void FileSharingBlockBase::onFileDownloading(qint64 seq, QString rawUri, qint64 bytesTransferred, qint64 bytesTotal)
@@ -597,12 +623,9 @@ void FileSharingBlockBase::onFileMetainfoDownloaded(qint64 seq, QString filename
     onMetainfoDownloaded();
 }
 
-void FileSharingBlockBase::onFileSharingError(qint64 seq, QString rawUri, qint32 errorCode)
+void FileSharingBlockBase::onFileSharingError(qint64 seq, QString /*rawUri*/, qint32 /*errorCode*/)
 {
     assert(seq > 0);
-
-    rawUri;
-    errorCode;
 
     const auto isDownloadRequestFailed = (DownloadRequestId_ == seq);
     if (isDownloadRequestFailed)
@@ -618,7 +641,7 @@ void FileSharingBlockBase::onFileSharingError(qint64 seq, QString rawUri, qint32
         PreviewMetaRequestId_ = -1;
     }
 
-    onDownloadingFailed();
+    onDownloadingFailed(seq);
 }
 
 void FileSharingBlockBase::onLocalCopyChecked(qint64 seq, bool success, QString localPath)

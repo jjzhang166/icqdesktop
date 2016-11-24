@@ -4,42 +4,61 @@
 #include "../gui_settings.h"
 #include "../core_dispatcher.h"
 #include "../../core/Voip/VoipManagerDefines.h"
+#include "../main_window/MainWindow.h"
 
 
-Ui::ResizeEventFilter::ResizeEventFilter(
-    std::vector<QWidget*>& _topPanels,
-    std::vector<QWidget*>& _bottomPanels,
-	ShadowWindow* shadow,
-    QObject* _parent) 
+#define DEFAULT_ANIMATION_TIME  500
+
+const QString vertSoundBg = "QWidget { background : #ffffffff; }";
+const QString horSoundBg = "QWidget { background : rgba(0,0,0,0%); }";
+
+const QString sliderGreenH =
+"QSlider:handle:horizontal { background: solid #579e1c; width: 8dip; height: 8dip; margin-top: -11dip; margin-bottom: -11dip; border-radius: 4dip; }"
+"QSlider:handle:horizontal:hover { background: solid #67bc21; border-radius: 4dip;}";
+
+const QString sliderRedH =
+"QSlider:handle:horizontal { background: solid #992117; width: 8dip; height: 8dip; margin-top: -11dip; margin-bottom: -11dip; border-radius: 4dip; }"
+"QSlider:handle:horizontal:disabled { background: solid #992117; border-radius: 4dip; }";
+
+const QString sliderGreenV =
+"QSlider:handle:vertical { background: solid #579e1c; border: 1dip solid #579e1c; width: 8dip; height: 8dip; margin-left: -11dip; margin-right: -11dip; border-radius: 4dip; }"
+"QSlider:handle:vertical:hover { background: solid #67bc21; border-radius: 4dip; }";
+
+const QString sliderRedV =
+"QSlider:handle:vertical { background: solid #992117; border: 1dip solid #579e1c; width: 8dip; height: 8dip; margin-left: -11dip; margin-right: -11dip; border-radius: 4dip; }"
+"QSlider:handle:vertical:disabled { background: solid #992117; border-radius: 4dip; }";
+
+
+Ui::ResizeEventFilter::ResizeEventFilter(std::vector<BaseVideoPanel*>& panels, 
+	ShadowWindow* shadow, 
+	QObject* _parent)
     : QObject(_parent) 
-    , topPanels_(_topPanels)
-    , bottomPanels_(_bottomPanels)
+    , panels_(panels)
 	, shadow_(shadow)
 {
-
 }
 
 bool Ui::ResizeEventFilter::eventFilter(QObject* _obj, QEvent* _e)
 {
-//    qDebug() << "EVENT TYPE RECEIVED " << e->type() << " rc:{ " << rc.left() << ", " << rc.top() << " }";
-    if (_e->type() == QEvent::Resize || 
+	QWidget* parent = qobject_cast<QWidget*>(_obj);
+
+    if (parent && 
+		(_e->type() == QEvent::Resize ||
         _e->type() == QEvent::Move || 
         _e->type() == QEvent::WindowActivate || 
         _e->type() == QEvent::NonClientAreaMouseButtonPress ||
         _e->type() == QEvent::ZOrderChange ||
         _e->type() == QEvent::ShowToParent ||
         _e->type() == QEvent::WindowStateChange ||
-        _e->type() == QEvent::UpdateRequest) {
+        _e->type() == QEvent::UpdateRequest)) {
 
-        QWidget* parent = qobject_cast<QWidget*>(_obj);
-        const QRect rc = parent ? parent->geometry() : QRect();
+        const QRect rc = parent->geometry();
 
 		bool bActive = parent->isActiveWindow();
 
-         //qDebug() << "+ HANDLED " << e->type() << " rc:{ " << rc.left() << ", " << rc.top() << " }";
-        for (unsigned ix = 0; ix < bottomPanels_.size(); ix++)
+        for (unsigned ix = 0; ix < panels_.size(); ix++)
         {
-            QWidget* panel = bottomPanels_[ix];
+			BaseVideoPanel* panel = panels_[ix];
             if (!panel)
             {
                 continue;
@@ -47,48 +66,9 @@ bool Ui::ResizeEventFilter::eventFilter(QObject* _obj, QEvent* _e)
 
 			bActive = bActive || panel->isActiveWindow();
 
-#ifdef __APPLE__
-            // We disable setWindowPosition for fullscreen,
-            // because it broke fullscreen animation under mac.
-            if (!parent->isFullScreen())
-            {
-                platform_macos::setWindowPosition(*panel, *parent, false);
-            }
-#else
-            panel->move(rc.x(), rc.y() + rc.height() - panel->rect().height());
-            panel->setFixedWidth(rc.width());
-#endif
-
-            //if (needToRaise)
-            //    panel->raise();
+			panel->updatePosition(*parent);
         }
 
-        for (unsigned ix = 0; ix < topPanels_.size(); ix++)
-        {
-            QWidget* panel = topPanels_[ix];
-            if (!panel) {
-                continue;
-            }
-
-			bActive = bActive || panel->isActiveWindow();
-
-#ifdef __APPLE__
-            // We disable setWindowPosition for fullscreen,
-            // because it broke fullscreen animation under mac.
-            if (!parent->isFullScreen())
-            {
-                platform_macos::setWindowPosition(*panel, *parent, true);
-            }
-#else
-            panel->move(rc.x(), rc.y());
-            panel->setFixedWidth(rc.width());
-#endif
-
-            //if (needToRaise)
-            //    panel->raise();
-        }
-
-		//QPoint pos = mapToGlobal(QPoint(rect().x(), rect().y()));
 		if (shadow_)
 		{
 			int shadowWidth = get_gui_settings()->get_shadow_width();
@@ -102,6 +82,7 @@ bool Ui::ResizeEventFilter::eventFilter(QObject* _obj, QEvent* _e)
 #endif
 		}
     }
+
     return QObject::eventFilter(_obj, _e);
 }
 
@@ -250,7 +231,7 @@ void Ui::AspectRatioResizebleWnd::applyFrameAspectRatio(float _wasAr)
         }
 
         QDesktopWidget dw;
-        const auto screenRect = dw.availableGeometry(dw.primaryScreen());
+        const auto screenRect = dw.availableGeometry(this);
 
         if (endRc.right() > screenRect.right())
         {
@@ -507,4 +488,550 @@ void Ui::UIEffects::fadeIn(unsigned _interval)
         fadedIn_ = true;
     }
 #endif
+}
+
+Ui::BaseVideoPanel::BaseVideoPanel(QWidget* parent, Qt::WindowFlags f) :
+	QWidget(parent, f), grabMouse(false)
+{
+	hide();
+}
+
+void Ui::BaseVideoPanel::fadeIn(unsigned int duration)
+{
+	if (!effect_)
+	{
+		effect_ = std::unique_ptr<UIEffects>(new(std::nothrow) UIEffects(*this));
+	}
+	
+	if (effect_)
+	{
+		effect_->fadeIn(duration);
+	}
+}
+
+void Ui::BaseVideoPanel::fadeOut(unsigned int duration)
+{
+	if (!effect_)
+	{
+		effect_ = std::unique_ptr<UIEffects>(new(std::nothrow) UIEffects(*this));
+	}
+	
+
+	if (effect_)
+	{
+		effect_->fadeOut(duration);
+	}
+}
+
+bool Ui::BaseVideoPanel::isGrabMouse()
+{
+    return grabMouse;
+}
+
+
+Ui::BaseTopVideoPanel::BaseTopVideoPanel(QWidget* parent, Qt::WindowFlags f) : BaseVideoPanel(parent, f) {}
+
+void Ui::BaseTopVideoPanel::updatePosition(const QWidget& parent)
+{
+    // We have code dublication here,
+    // because Mac and Qt have different coords systems.
+    // We can convert Mac coords to Qt, but we need to add
+    // special cases for multi monitor systems.
+#ifdef __APPLE__
+    QRect parentRect = platform_macos::getWidgetRect(*parentWidget());
+    platform_macos::setWindowPosition(*this,
+        QRect(parentRect.left(),
+              parentRect.top() + parentRect.height() - height(),
+              parentRect.width(),
+              height()));
+//    auto rc = platform_macos::getWindowRect(*parentWidget());
+#else
+    auto rc = parentWidget()->geometry();
+    move(rc.x(), rc.y());
+    setFixedWidth(rc.width());
+#endif
+}
+
+
+Ui::BaseBottomVideoPanel::BaseBottomVideoPanel(QWidget* parent, Qt::WindowFlags f) : BaseVideoPanel(parent, f) {}
+
+void Ui::BaseBottomVideoPanel::updatePosition(const QWidget& parent)
+{
+    // We have code dublication here,
+    // because Mac and Qt have different coords systems.
+    // We can convert Mac coords to Qt, but we need to add
+    // special cases for multi monitor systems.
+#ifdef __APPLE__
+	//auto rc = platform_macos::getWindowRect(*parentWidget());
+    QRect parentRect = platform_macos::getWidgetRect(*parentWidget());
+    platform_macos::setWindowPosition(*this,
+                    QRect(parentRect.left(),
+                          parentRect.top(),
+                          parentRect.width(),
+                          height()));
+#else
+    auto rc = parentWidget()->geometry();
+    move(rc.x(), rc.y() + rc.height() - rect().height());
+    setFixedWidth(rc.width());
+#endif
+}
+
+Ui::PanelBackground::PanelBackground(QWidget* parent) : QWidget(parent)
+{
+    setStyleSheet("background-color: rgba(100, 0, 0, 100%)");
+    auto videoPanelEffect_ = new UIEffects(*this);
+    videoPanelEffect_->fadeOut(0);
+}
+
+void Ui::PanelBackground::updateSizeFromParent()
+{
+    auto parent = parentWidget();
+    if (parent)
+    {
+        resize(parent->size());
+    }
+}
+
+
+Ui::QSliderEx::QSliderEx(
+                         Qt::Orientation _orientation,
+                         QWidget* _parent)
+: QSlider(_orientation, _parent)
+{
+    
+}
+
+Ui::QSliderEx::~QSliderEx()
+{
+    
+}
+
+void Ui::QSliderEx::mousePressEvent(QMouseEvent* _ev)
+{
+    if (_ev->button() == Qt::LeftButton)
+    {
+        if (orientation() == Qt::Vertical)
+            setValue(minimum() + ((maximum()-minimum()) * (height()-_ev->y())) / height() ) ;
+        else
+            setValue(minimum() + ((maximum()-minimum()) * _ev->x()) / width() ) ;
+        
+        _ev->accept();
+    }
+    QSlider::mousePressEvent(_ev);
+}
+
+bool Ui::onUnderMouse(QWidget& _widg)
+{
+    auto rc = _widg.rect();
+    auto pg = _widg.mapToGlobal(rc.topLeft());
+    QRect rcg(pg.x(), pg.y(), rc.width(), rc.height());
+    return rcg.contains(QCursor::pos());
+}
+
+Ui::QPushButtonEx::QPushButtonEx(QWidget* _parent)
+: QPushButton(_parent)
+{
+    
+}
+
+Ui::QPushButtonEx::~QPushButtonEx()
+{
+    
+}
+
+void Ui::QPushButtonEx::enterEvent(QEvent* _e)
+{
+    QPushButton::enterEvent(_e);
+    emit onHover();
+}
+
+Ui::VolumeControl::VolumeControl
+(
+ QWidget* _parent,
+ bool _horizontal,
+ bool _onMainWindow,
+ const QString& _backgroundStyle,
+ const std::function<void(QPushButton&, bool)>& _onChangeStyle)
+: QWidget(_parent, (_horizontal ? Qt::Widget : Qt::Window | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowStaysOnTopHint))
+, parent_(_parent)
+, horizontal_(_horizontal)
+, onChangeStyle_(_onChangeStyle)
+, rootWidget_(NULL)
+, audioPlaybackDeviceMuted_(false)
+, background_(_backgroundStyle)
+, checkMousePos_(this)
+, actualVol_(0)
+, onMainWindow_(_onMainWindow)
+{
+    //setWindowFlags(Qt::SubWindow | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
+    setAttribute(Qt::WA_NoSystemBackground, true);
+    setAttribute(Qt::WA_TranslucentBackground, true);
+    setStyleSheet(Utils::LoadStyle(":/voip/volume_control.qss"));
+    
+    setContentsMargins(0, 0, 0, 0);
+    
+    if (horizontal_)
+    {
+        setProperty("VolumeControlHor", true);
+    }
+    else
+    {
+        setProperty("VolumeControlVert", true);
+    }
+    
+    btn_ = new QPushButtonEx(this);
+    btn_->setCursor(QCursor(Qt::PointingHandCursor));
+    
+    slider_ = new QSliderEx(horizontal_ ? Qt::Horizontal : Qt::Vertical, this);
+    slider_->setCursor(QCursor(Qt::PointingHandCursor));
+    
+    rootWidget_ = new QWidget(this);
+    auto widg = rootWidget_;
+    widg->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+    widg->setContentsMargins(0, 0, 0, 0);
+    
+    QBoxLayout* layout;
+    if (horizontal_)
+    {
+        layout = new QHBoxLayout();
+        layout->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    }
+    else
+    {
+        layout = new QVBoxLayout();
+        layout->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+    }
+    
+    layout->setContentsMargins(0, 0, 0, 0);
+    
+    if (horizontal_)
+    {
+        layout->addWidget(btn_);
+        layout->addSpacing(Utils::scale_value(10));
+        layout->addWidget(slider_);
+    }
+    else
+    {
+        layout->addSpacing(Utils::scale_value(12));
+        layout->addWidget(slider_);
+        layout->addSpacing(Utils::scale_value(8));
+        layout->addWidget(btn_);
+        layout->addSpacing(Utils::scale_value(8));
+    }
+    
+    widg->setLayout(layout);
+    
+    Utils::ApplyStyle(widg, background_);
+    
+    if (onChangeStyle_ != NULL && btn_)
+    {
+        onChangeStyle_(*btn_, true);
+    }
+    
+    if (horizontal_)
+    {
+        slider_->setProperty("VolumeSliderHor", true);
+        slider_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred));
+    }
+    else
+    {
+        slider_->setProperty("VolumeSliderVert", true);
+        slider_->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
+    }
+    
+    auto horLayout = new QHBoxLayout();
+    horLayout->setContentsMargins(0, 0, 0, 0);
+    horLayout->addWidget(widg);
+    setLayout(horLayout);
+    
+    if (horizontal_)
+    {
+        slider_->hide();
+    }
+    
+    connect(slider_, SIGNAL(valueChanged(int)), this, SLOT(onVolumeChanged(int)), Qt::QueuedConnection);
+    connect(btn_, SIGNAL(clicked()), this, SLOT(onMuteOnOffClicked()), Qt::QueuedConnection);
+    connect(&checkMousePos_, SIGNAL(timeout()), this, SLOT(onCheckMousePos()), Qt::QueuedConnection);
+    checkMousePos_.setInterval(500);
+    
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipMuteChanged(const std::string&,bool)), this, SLOT(onVoipMuteChanged(const std::string&,bool)), Qt::DirectConnection);
+    QObject::connect(&Ui::GetDispatcher()->getVoipController(), SIGNAL(onVoipVolumeChanged(const std::string&,int)), this, SLOT(onVoipVolumeChanged(const std::string&,int)), Qt::DirectConnection);
+    
+    connect(btn_, &QPushButton::clicked, this, &VolumeControl::clicked);
+}
+
+Ui::VolumeControl::~VolumeControl()
+{
+    
+}
+
+void Ui::VolumeControl::onCheckMousePos()
+{
+    if (!onUnderMouse(*this) || (parentWidget() && !parentWidget()->isVisible()))
+    {
+        hideSlider();
+    }
+}
+
+QPoint Ui::VolumeControl::getAnchorPoint() const
+{
+    const auto rcb = btn_->rect();
+    const auto rcc = rect();
+    
+    if (horizontal_)
+    {
+        return QPoint(0, (rcc.height() - rcb.height()) / 2);
+    }
+    else
+    {
+        return QPoint((rcc.width() - rcb.width()) / 2, rcc.height() - rcb.height() - Utils::scale_value(8));
+    }
+}
+
+void Ui::VolumeControl::updateSlider()
+{
+    if (horizontal_)
+    {
+        if (audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f)
+        {
+            Utils::ApplyStyle(slider_, sliderRedH);
+        }
+        else
+        {
+            Utils::ApplyStyle(slider_, sliderGreenH);
+        }
+    }
+    else
+    {
+        if (audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f)
+        {
+            Utils::ApplyStyle(slider_, sliderRedV);
+        }
+        else
+        {
+            Utils::ApplyStyle(slider_, sliderGreenV);
+        }
+    }
+}
+
+void Ui::VolumeControl::onVoipMuteChanged(const std::string& _deviceType, bool _muted)
+{
+    if (_deviceType == "audio_playback")
+    {
+        slider_->setEnabled(!_muted);
+        //slider_->setVisible(!_muted);
+        
+        audioPlaybackDeviceMuted_ = _muted;
+        updateSlider();
+        
+        if (onChangeStyle_ != NULL && btn_)
+        {
+            onChangeStyle_(*btn_, _muted || actualVol_ <= 0.0001f);
+        }
+        emit onMuteChanged(_muted || actualVol_ <= 0.0001f);
+    }
+}
+
+void Ui::VolumeControl::onVolumeChanged(int _vol)
+{
+    const int newVol = std::max(std::min(100, _vol), 0);
+    if (actualVol_ != newVol)
+    {
+        Ui::GetDispatcher()->getVoipController().setVolumeAPlayback(newVol);
+    }
+}
+
+void Ui::VolumeControl::onMuteOnOffClicked()
+{
+    Ui::GetDispatcher()->getVoipController().setSwitchAPlaybackMute();
+}
+
+void Ui::VolumeControl::onVoipVolumeChanged(const std::string& _deviceType, int _vol)
+{
+    if (_deviceType == "audio_playback")
+    {
+        actualVol_ = std::max(std::min(100, _vol), 0);
+        
+        if (onChangeStyle_ != NULL && btn_)
+        {
+            onChangeStyle_(*btn_, audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f);
+        }
+        emit onMuteChanged(audioPlaybackDeviceMuted_ || actualVol_ <= 0.0001f);
+        
+        slider_->blockSignals(true);
+        slider_->setValue(actualVol_);
+        slider_->blockSignals(false);
+        
+        updateSlider();
+    }
+}
+
+void Ui::VolumeControl::showEvent(QShowEvent* _e)
+{
+    QWidget::showEvent(_e);
+    emit controlActivated(true);
+    checkMousePos_.start();
+}
+
+void Ui::VolumeControl::hideEvent(QHideEvent* _e)
+{
+    checkMousePos_.stop();
+    QWidget::hideEvent(_e);
+    emit controlActivated(false);
+}
+
+void Ui::VolumeControl::leaveEvent(QEvent* _e)
+{
+    QWidget::leaveEvent(_e);
+    hideSlider();
+}
+
+void Ui::VolumeControl::changeEvent(QEvent* _e)
+{
+    QWidget::changeEvent(_e);
+    if (_e->type() == QEvent::WindowDeactivate)
+    {
+        hideSlider();
+    }
+}
+
+void Ui::VolumeControl::hideSlider()
+{
+    hide();
+}
+
+
+Ui::VolumeControlHorizontal::VolumeControlHorizontal (QWidget* _parent, bool _onMainWindow,
+                                                      const QString& _backgroundStyle,
+                                                      const std::function<void(QPushButton&, bool)>& _onChangeStyle)
+: VolumeControl(_parent, true, _onMainWindow, _backgroundStyle, _onChangeStyle)
+{
+    connect(btn_, &QPushButtonEx::onHover, this, &VolumeControlHorizontal::onHoverButton);
+}
+
+void Ui::VolumeControlHorizontal::showSlider()
+{
+    if (!slider_->isVisible())
+    {
+        slider_->show();
+        emit controlActivated(true);
+    }
+}
+
+QPoint Ui::VolumeControlHorizontal::soundButtonGlobalPosition()
+{
+    return btn_->mapToGlobal(btn_->rect().topLeft());;
+}
+
+void Ui::VolumeControlHorizontal::hideSlider()
+{
+    if (slider_->isVisible())
+    {
+        slider_->hide();
+        emit controlActivated(false);
+    }
+}
+
+
+Ui::VolumeGroup::VolumeGroup (QWidget* parent, bool onMainPage, const std::function<void(QPushButton&, bool)>& _onChangeStyle, int verticalSize) : QWidget(parent), verticalSize(verticalSize)
+{
+    // We create volume control on parent because they shuold not affect to layout.
+    // VolumeGroup is used only for right positioning on panel.
+    hVolumeControl = new VolumeControlHorizontal(parent, onMainPage, horSoundBg, _onChangeStyle);
+    vVolumeControl = new VolumeControl(parent, false, onMainPage, vertSoundBg, _onChangeStyle);
+
+    setLayout(new QHBoxLayout());
+    layout()->setSpacing(0);
+    layout()->setContentsMargins(0, 0, 0, 0);
+    layout()->setAlignment(Qt::AlignVCenter);
+    
+    auto fakeWidget = new QWidget(this);
+    
+    // It is hack, because we have very complicated layout.
+    // Todo fix this layout.
+    fakeWidget->setFixedSize(Utils::scale_value(QSize(38, 38)));
+    layout()->addWidget(fakeWidget);
+
+    hVolumeControl->show();
+    hVolumeControl->hideSlider();
+    
+    connect(hVolumeControl, &VolumeControlHorizontal::onHoverButton,    this, &VolumeGroup::showSlider);
+    connect(hVolumeControl, &VolumeControl::controlActivated, this, &VolumeGroup::controlActivated);
+    connect(vVolumeControl, &VolumeControl::controlActivated, this, &VolumeGroup::controlActivated);
+    connect(hVolumeControl, &VolumeControl::clicked, this, &VolumeGroup::clicked);
+    
+#ifdef __APPLE__
+    connect(hVolumeControl, &VolumeControl::clicked, [this]()
+            {
+                forceShowSlider();
+            });
+#endif
+}
+
+void Ui::VolumeGroup::showSlider()
+{
+    bool isActive = true;
+    isVideoWindowActive(isActive);
+    
+    if (isActive)
+    {
+        forceShowSlider();
+    }
+}
+
+void Ui::VolumeGroup::forceShowSlider()
+{
+    const auto rc = parentWidget()->rect();
+    
+    if (rc.width() >= verticalSize)
+    {
+        hVolumeControl->showSlider();
+    }
+    else
+    {
+        updateSliderPosition();
+        vVolumeControl->show();
+        vVolumeControl->activateWindow();
+#ifdef __APPLE__
+        vVolumeControl->raise();
+#endif
+        vVolumeControl->setFocus(Qt::OtherFocusReason);
+    }
+}
+
+void Ui::VolumeGroup::moveEvent(QMoveEvent * event)
+{
+    hVolumeControl->move(x(), y() - hVolumeControl->getAnchorPoint().y());
+}
+
+QWidget* Ui::VolumeGroup::verticalVolumeWidget()
+{
+    return vVolumeControl;
+}
+
+void Ui::VolumeGroup::hideSlider()
+{
+    hVolumeControl->hideSlider();
+    vVolumeControl->hideSlider();
+}
+
+void Ui::VolumeGroup::updateSliderPosition()
+{
+    const auto rc = parentWidget()->rect();
+    
+    if (rc.width() < verticalSize)
+    {
+        int xOffset = 0;
+#ifdef __APPLE__
+        xOffset = Utils::scale_value(1);
+#endif
+        
+        auto p  = vVolumeControl->getAnchorPoint();
+        auto p2 = hVolumeControl->soundButtonGlobalPosition();
+        
+        p2.setX(p2.x() - p.x() + xOffset);
+        p2.setY(p2.y() - p.y());
+        
+        vVolumeControl->move(p2);
+    }
 }

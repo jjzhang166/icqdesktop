@@ -28,7 +28,7 @@ app_config::app_config()
 
 app_config::app_config(
     const bool _is_server_history_enabled,
-    const int _forced_dpi,
+    const int32_t _forced_dpi,
     const bool _is_crash_enabled,
     const bool _full_log,
     const bool _unlock_context_menu_features)
@@ -86,7 +86,7 @@ void load_app_config(const boost::filesystem::wpath &_path)
 
     const auto disable_server_history = options.get<bool>("disable_server_history", false);
 
-    auto forced_dpi = options.get<int>("gui.force_dpi", 0);
+    auto forced_dpi = options.get<int32_t>("gui.force_dpi", 0);
     if (valid_dpi_values().count(forced_dpi) == 0)
     {
         forced_dpi = 0;

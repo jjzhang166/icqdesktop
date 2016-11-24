@@ -47,6 +47,7 @@ namespace core
                 void(
                     int32_t _error,
                     std::shared_ptr<core::tools::binary_stream> _image_data,
+                    const std::string &_image_uri,
                     const std::string &_local_path)
             > image_callback_t;
 

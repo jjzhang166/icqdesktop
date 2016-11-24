@@ -28,7 +28,7 @@ ImagePreviewBlock::ImagePreviewBlock(ComplexMessageItem *parent, const QString& 
     : GenericBlock(
           parent,
           imageUri,
-          (MenuFlags)(MenuFlagFileCopyable | MenuFlagLinkCopyable),
+          (MenuFlags)(MenuFlagFileCopyable | MenuFlagLinkCopyable | MenuFlagOpenInBrowser),
           true)
     , AimId_(aimId)
     , ImageUri_(imageUri)
@@ -45,9 +45,13 @@ ImagePreviewBlock::ImagePreviewBlock(ComplexMessageItem *parent, const QString& 
     , SnapId_(0)
     , SnapMetainfoRequestId_(-1)
     , IsPausedByUser_(false)
+    , MaxPreviewWidth_(0)
 {
     assert(!ImageUri_.isEmpty());
     assert(!ImageType_.isEmpty());
+
+    if (ImageUri_.endsWith(QChar::Space) || ImageUri_.endsWith(QChar::LineFeed))
+        ImageUri_.truncate(ImageUri_.length() - 1);
 
     Layout_ = new ImagePreviewBlockLayout();
     setLayout(Layout_);
@@ -100,13 +104,13 @@ QSize ImagePreviewBlock::getPreviewSize() const
     return Preview_.size();
 }
 
-QString ImagePreviewBlock::getSelectedText() const
+QString ImagePreviewBlock::getSelectedText(bool isFullSelect) const
 {
     assert(!ImageUri_.isEmpty());
 
     if (IsSelected_)
     {
-        return ImageUri_;
+        return getSourceText();
     }
 
     return QString();
@@ -145,7 +149,7 @@ void ImagePreviewBlock::onVisibilityChanged(const bool isVisible)
 
     if (isVisible && (PreviewDownloadSeq_ > 0))
     {
-        GetDispatcher()->raiseDownloadPriority(PreviewDownloadSeq_);
+        GetDispatcher()->raiseDownloadPriority(getChatAimid(), PreviewDownloadSeq_);
     }
 
     if (isGifPreview())
@@ -154,10 +158,8 @@ void ImagePreviewBlock::onVisibilityChanged(const bool isVisible)
     }
 }
 
-void ImagePreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection)
+void ImagePreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType /*selection*/)
 {
-    selection;
-
     const QRect globalWidgetRect(
         mapToGlobal(rect().topLeft()),
         mapToGlobal(rect().bottomRight()));
@@ -183,6 +185,16 @@ void ImagePreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const 
 
         update();
     }
+}
+
+void ImagePreviewBlock::setMaxPreviewWidth(int width)
+{
+    MaxPreviewWidth_ = width;
+}
+
+int ImagePreviewBlock::getMaxPreviewWidth() const
+{
+    return MaxPreviewWidth_;
 }
 
 void ImagePreviewBlock::showActionButton(const QRect &pos)
@@ -404,6 +416,11 @@ void ImagePreviewBlock::onMenuSaveFileAs()
     }
 
     downloadFullImage(dir);
+}
+
+void ImagePreviewBlock::onMenuOpenInBrowser()
+{
+    QDesktopServices::openUrl(ImageUri_);
 }
 
 void ImagePreviewBlock::onRestoreResources()
@@ -966,10 +983,8 @@ void ImagePreviewBlock::pauseGif()
     GifImage_->setPaused(true);
 }
 
-void ImagePreviewBlock::onGifFrameUpdated(int frameNumber)
+void ImagePreviewBlock::onGifFrameUpdated(int /*frameNumber*/)
 {
-    frameNumber;
-
     assert(GifImage_);
 
     const auto frame = GifImage_->currentPixmap();

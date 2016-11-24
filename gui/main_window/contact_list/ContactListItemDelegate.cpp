@@ -4,10 +4,11 @@
 #include "ContactListItemRenderer.h"
 #include "../../cache/avatars/AvatarStorage.h"
 
-#include "SearchModel.h"
 #include "SearchMembersModel.h"
+#include "SearchModelDLG.h"
 #include "../../types/contact.h"
 #include "../../utils/utils.h"
+#include "../../my_info.h"
 #include "ContactListModel.h"
 #include "ChatMembersModel.h"
 #include "ContactList.h"
@@ -15,7 +16,7 @@
 namespace Logic
 {
     ContactListItemDelegate::ContactListItemDelegate(QObject* parent, int _regim)
-        : QItemDelegate(parent)
+        : AbstractItemDelegateWithRegim(parent)
         , StateBlocked_(false)
         , renderRole_(false)
     {
@@ -30,6 +31,7 @@ namespace Logic
     {
         const auto searchMemberModel = qobject_cast<const Logic::SearchMembersModel*>(index.model());
         const auto membersModel = qobject_cast<const Logic::ChatMembersModel*>(index.model());
+        const auto searchModel = qobject_cast<const Logic::SearchModelDLG*>(index.model());
 
         bool isGroup = false;
         QString displayName, status, state;
@@ -55,6 +57,18 @@ namespace Logic
                 role = cont->Role_;
 
             aimId = cont->AimId_;
+            if (aimId != Ui::MyInfo()->aimId())
+            {
+                auto contact_item = Logic::getContactListModel()->getContactItem(aimId);
+                contact_in_cl = contact_item == NULL ? NULL : contact_item->Get();
+            }
+        }
+        else if (searchModel)
+        {
+            auto cont = index.data(Qt::DisplayRole).value<Data::DlgState>();
+            displayName = Logic::getContactListModel()->getDisplayName(cont.AimId_);
+
+            aimId = cont.AimId_;
             auto contact_item = Logic::getContactListModel()->getContactItem(aimId);
             contact_in_cl = contact_item == NULL ? NULL : contact_item->Get();
         }
@@ -103,7 +117,7 @@ namespace Logic
             const auto &avatar = Logic::GetAvatarStorage()->GetRounded(aimId, displayName, Utils::scale_bitmap(ContactList::GetContactListParams().avatarH().px())
                 , isMultichat ? QString() : state, isFilled, isDefault, false /* _regenerate */ , ContactList::GetContactListParams().isCL());
             const ContactList::VisualDataBase visData(aimId, *avatar, state, status, isHovered, isSelected, displayName, haveLastSeen, lastSeen
-                , isChecked, isChatMember, isOfficial, false /* draw last read */, QPixmap() /* last seen avatar*/, role, 0 /* unread count */);
+                , isChecked, isChatMember, isOfficial, false /* draw last read */, QPixmap() /* last seen avatar*/, role, 0 /* unread count */, "" /* search_term */);
 
             ContactList::ViewParams viewParams(viewParams_.regim_, membersModel && membersModel->isShortView_, viewParams_.fixedWidth_, viewParams_.leftMargin_, viewParams_.rightMargin_);
             ContactList::RenderContactItem(*painter, visData, viewParams);
@@ -148,7 +162,7 @@ namespace Logic
         DragIndex_ = index;
     }
 
-    void ContactListItemDelegate::setItemWidth(int width)
+    void ContactListItemDelegate::setFixedWidth(int width)
     {
         viewParams_.fixedWidth_ = width;
     }

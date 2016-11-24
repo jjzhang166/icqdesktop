@@ -4,10 +4,11 @@
 namespace core
 {
     search_params::search_params(void)
-        :	gender_(profile::gender::unknown),
-        age_(-1, -1),
-        skip_count_(0),
-        count_(0)
+        : gender_(profile::gender::unknown)
+        , age_(-1, -1)
+        , count_(0)
+        , skip_count_(0)
+        , online_only_(false)
     {
     }
 

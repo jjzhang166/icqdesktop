@@ -31,20 +31,17 @@ namespace Ui
         item->manualUpdateGeometry(LastSize_.width());
     }
 
-    void MessageItemLayout::addItem(QLayoutItem *item)
+    void MessageItemLayout::addItem(QLayoutItem* /*item*/)
     {
-        item;
     }
 
-    QLayoutItem* MessageItemLayout::itemAt(int index) const
+    QLayoutItem* MessageItemLayout::itemAt(int /*index*/) const
     {
-        index;
         return nullptr;
     }
 
-    QLayoutItem* MessageItemLayout::takeAt(int index)
+    QLayoutItem* MessageItemLayout::takeAt(int /*index*/)
     {
-        index;
         return nullptr;
     }
 

@@ -2,6 +2,8 @@
 
 #include "../utils/utils.h"
 
+#include "Bicubic.h"
+
 #include "ImageViewerWidget.h"
 
 namespace Previewer
@@ -33,13 +35,15 @@ namespace Previewer
 
             bool needToDownscale = (widgetSize.width() < size.width() || widgetSize.height() < size.height());
             if (!needToDownscale)
-                return size;
+            {
+                return Utils::scale_bitmap(size);
+            }
 
             const auto kx = size.width() / static_cast<double>(widgetSize.width());
             const auto ky = size.height() / static_cast<double>(widgetSize.height());
             const auto k = std::max(kx, ky);
             const auto scaledSize = QSize(size.width() / k, size.height() / k);
-            return scaledSize;
+            return Utils::scale_bitmap(scaledSize);
         }
 
     private:
@@ -91,8 +95,10 @@ namespace Previewer
 
             if (prefferedSize != imageSize)
             {
-                auto scaledImage = originalImage_.scaled(prefferedSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                label_->setPixmap(scaledImage);
+                auto scaledImage = scaleBicubic(originalImage_.toImage(), prefferedSize);
+                auto scaledPixmap = QPixmap::fromImage(scaledImage);
+                Utils::check_pixel_ratio(scaledPixmap);
+                label_->setPixmap(scaledPixmap);
                 imageRect_ = scaledImage.rect();
             }
             else
@@ -149,7 +155,11 @@ void Previewer::ImageViewerWidget::showImage(const QPixmap& _preview, const QStr
     else if (type == "jpeg" || type == "png" || type == "bmp")
     {
         if (_preview.isNull())
-            viewer_.reset(new JpegPngViewer(QPixmap::fromImageReader(reader.get()), this));
+        {
+            QPixmap pixmap;
+            Utils::loadPixmap(_fileName, pixmap);
+            viewer_.reset(new JpegPngViewer(pixmap, this));
+        }
         else
             viewer_.reset(new JpegPngViewer(_preview, this));
     }

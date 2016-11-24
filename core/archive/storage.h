@@ -51,6 +51,7 @@ namespace core
 
             bool write_data_block(core::tools::binary_stream& _data, int64_t& _offset);
             bool read_data_block(int64_t _offset, core::tools::binary_stream& _data);
+            static bool fast_read_data_block(core::tools::binary_stream& buffer, int64_t& current_pos, int64_t& _begin, int64_t _end_position);
 
             archive::error get_last_error() { return last_error_; }
 

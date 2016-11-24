@@ -15,12 +15,17 @@ namespace common
         {
         }
 
-        core_gui_settings(int _recents_avatars_size)
+        core_gui_settings(int32_t _recents_avatars_size)
             : recents_avatars_size_(_recents_avatars_size)
         {}
 
-        int recents_avatars_size_;
+        int32_t recents_avatars_size_;
     };
+}
+
+namespace common
+{
+    uint32_t get_limit_search_results();
 }
 
 #endif // __COMMON_DEFS_H_

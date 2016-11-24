@@ -22,7 +22,6 @@ namespace Logic
 
     UnknownsModel::UnknownsModel(QObject* _parent)
         : CustomAbstractListModel(_parent)
-        , disconnector_(new Utils::SignalsDisconnector)
         , timer_(new QTimer(this))
         , isDeleteAllVisible_(true)
     {
@@ -42,19 +41,20 @@ namespace Logic
             });
             if (iter != dialogs_.end())
             {
-                Logic::getContactListModel()->setContactVisible(_aimId, true);
+//                Logic::getContactListModel()->setContactVisible(_aimId, true);
                 if (_passToRecents)
                 {
+                    //Logic::getContactListModel()->setContactVisible(_aimId, true);
                     const bool setAsCurrent = (Logic::getContactListModel()->selectedContact() == _aimId);
                     Logic::getRecentsModel()->unknownToRecents(*iter);
                     if (setAsCurrent)
                     {
-                        Logic::getContactListModel()->setCurrent(_aimId, true);
+                        Logic::getContactListModel()->setCurrent(_aimId, -1, true);
                     }
                 }
                 else
                 {
-                    Logic::getContactListModel()->setCurrent("", true);
+                    Logic::getContactListModel()->setCurrent("", -1, true);
                 }
 
                 dialogs_.erase(iter);
@@ -67,23 +67,25 @@ namespace Logic
             }
         };
         
-        disconnector_->add("contact_added", connect(Logic::getContactListModel(), &Logic::ContactListModel::contact_added, [=](QString _aimId, bool /*succeeded*/)
+        connect(Logic::getContactListModel(), &Logic::ContactListModel::contact_added, this, [=](QString _aimId, bool /*succeeded*/)
         {
             remover(_aimId, true);
-        }));
-
-        disconnector_->add("contact_removed", connect(Logic::getContactListModel(), &Logic::ContactListModel::contact_removed, [=](QString _aimId)
+        });
+        connect(Logic::getContactListModel(), &Logic::ContactListModel::contact_removed, this, [=](QString _aimId)
         {
             remover(_aimId, false);
-        }));
-
-        disconnector_->add("interConnector/contact_removed", connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownRemove, [=](QString _aimId)
+        });
+        connect(Logic::getContactListModel(), &Logic::ContactListModel::ignore_contact, this, [=](QString _aimId)
         {
             remover(_aimId, false);
-        }));
+        });
 
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUnknownRemove, this, [=](QString _aimId)
+        {
+            remover(_aimId, false);
+        });
         
-        disconnector_->add("contactChanged", connect(Logic::getContactListModel(), &ContactListModel::contactChanged, [=](QString _aimId)
+        connect(Logic::getContactListModel(), &ContactListModel::contactChanged, this, [=](QString _aimId)
         {
             auto contact = Logic::getContactListModel()->getContactItem(_aimId);
             if (contact && !contact->is_not_auth())
@@ -91,9 +93,9 @@ namespace Logic
                 remover(_aimId, true);
             }
             contactChanged(_aimId);
-        }));
+        });
         
-        disconnector_->add("unknownsDeleteThemAll", connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsDeleteThemAll, [=]()
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsDeleteThemAll, this, [=]()
         {
             for (auto it: dialogs_)
             {
@@ -105,7 +107,7 @@ namespace Logic
             dialogs_.clear();
             emit updated();
             emit Utils::InterConnector::instance().unknownsGoBack();
-        }));
+        });
     }
 
     UnknownsModel::~UnknownsModel()
@@ -177,7 +179,7 @@ namespace Logic
             contactChanged(hideContact);
             indexes_[iter->AimId_] = -1;
             dialogs_.erase(iter);
-            Logic::getContactListModel()->setCurrent("", true);
+            Logic::getContactListModel()->setCurrent("", -1, true);
             emit updated();
         }
         if (wasNotEmpty && dialogs_.empty())

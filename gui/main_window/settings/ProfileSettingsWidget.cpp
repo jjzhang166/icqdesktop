@@ -243,7 +243,7 @@ namespace Ui
             headLayout_->setObjectName(QStringLiteral("headLayout_"));
             headLayout_->setContentsMargins(Utils::scale_value(16), 0, 0, Utils::scale_value(10));
 
-            fullName_ = new TextEmojiWidget(headWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+            fullName_ = new TextEmojiWidget(headWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(44));
             Utils::grabTouchWidget(fullName_);
             fullName_->setEllipsis(true);
             fullName_->setSelectable(true);
@@ -309,12 +309,12 @@ namespace Ui
 
             auto fieldRoutine1 = [](QWidget* _parent, QLayout* _parentLayout, TextEmojiWidget*& _fieldHead, TextEmojiWidget*& _field, int _dy)
             {
-                _fieldHead = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(36 + _dy));
+                _fieldHead = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(36 + _dy));
                 _fieldHead->setEllipsis(true);
                 Utils::grabTouchWidget(_fieldHead);
                 _parentLayout->addWidget(_fieldHead);
 
-                _field = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), CommonStyle::getTextCommonColor(), Utils::scale_value(20));
+                _field = new TextEmojiWidget(_parent, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(18), CommonStyle::getTextCommonColor(), Utils::scale_value(20));
                 _field->setEllipsis(true);
                 _field->setSelectable(true);
                 Utils::grabTouchWidget(_field);
@@ -324,7 +324,7 @@ namespace Ui
             fieldRoutine1(infoValuesWidget_, infoValuesLayout_, uinHead_, uin_, -10);
             fieldRoutine1(infoValuesWidget_, infoValuesLayout_, phoneHead_, phone_, 0);
 
-            attach_phone_label = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(20));
+            attach_phone_label = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(20));
 
             Utils::grabTouchWidget(attach_phone_label);
             attach_phone_label->setCursor(Qt::PointingHandCursor);
@@ -333,7 +333,7 @@ namespace Ui
             attach_phone_label->setEllipsis(true);
             infoValuesLayout_->addWidget(attach_phone_label);
 
-            phoneBottom_ = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(18));
+            phoneBottom_ = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(14), QColor("#7f282828"), Utils::scale_value(18));
             phoneBottom_->setEllipsis(true);
             Utils::grabTouchWidget(phoneBottom_);
             infoValuesLayout_->addWidget(phoneBottom_);
@@ -349,7 +349,7 @@ namespace Ui
             about_->setEllipsis(false);
             about_->setMultiline(true);
 
-            ignoreListLabel_ = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(),
+            ignoreListLabel_ = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(),
                 Utils::scale_value(18), QColor("#e30f04"), Utils::scale_value(44 - 18 + 10));
             Utils::grabTouchWidget(ignoreListLabel_);
             infoValuesLayout_->addWidget(ignoreListLabel_);
@@ -358,7 +358,7 @@ namespace Ui
             ignoreListLabel_->setObjectName(QStringLiteral("ignoreListLabel_"));
             ignoreListLabel_->setEllipsis(true);
 
-            attach_uin_label = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(),
+            attach_uin_label = new TextEmojiWidget(infoValuesWidget_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(),
             Utils::scale_value(18), QColor("#579e1c"), Utils::scale_value(44 - 18 + 10));
             Utils::grabTouchWidget(attach_uin_label);
             infoValuesLayout_->addWidget(attach_uin_label);
@@ -419,8 +419,7 @@ namespace Ui
         avatar_(nullptr),
         actionButtonState_(EDIT_PROFILE),
         uin_(""),
-        needRequestAgain_(false),
-        disconnector_(new Utils::SignalsDisconnector)
+        needRequestAgain_(false)
     {
         Ui_->init(this);
 
@@ -450,7 +449,7 @@ namespace Ui
             Logic::getSearchMemberModel()->setChatMembersModel(Logic::getIgnoreModel());
 
             SelectContactsWidget select_members_dialog_(Logic::getIgnoreModel(), Logic::MembersWidgetRegim::IGNORE_LIST,
-                QString(), QT_TRANSLATE_NOOP("groupchat_pages", "Done"), QString(), this);
+                QString(), QT_TRANSLATE_NOOP("groupchats", "Done"), QString(), this);
             auto connectId = connect(GetDispatcher(), SIGNAL(recvPermitDeny(bool)), &select_members_dialog_, SLOT(UpdateViewForIgnoreList(bool)), Qt::QueuedConnection);
 
             Logic::ContactListModel::getIgnoreList();
@@ -470,11 +469,11 @@ namespace Ui
             emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_AttachUin);
         });
 
-        disconnector_->add("loginComplete", QWidget::connect(GetDispatcher(), &core_dispatcher::loginComplete, [this]
+        connect(GetDispatcher(), &core_dispatcher::loginComplete, this, [this]
         {
             if (needRequestAgain_ && isVisible())
                 updateInterface(uin_);
-        }));
+        });
 
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::profileSettingsUpdateInterface, this, &ProfileSettingsWidget::updateProfile, Qt::QueuedConnection);
 
@@ -769,7 +768,7 @@ namespace Ui
                     {
                         if (result)
                         {
-                            Logic::getContactListModel()->setCurrent(uin, true);
+                            Logic::getContactListModel()->setCurrent(uin, -1, true);
                             emit Utils::InterConnector::instance().profileSettingsBack();
                         }
                     });
@@ -782,13 +781,13 @@ namespace Ui
                 Ui_->messageButton_->disconnect();
                 connect(Ui_->messageButton_, &QPushButton::clicked, [uin]()
                 {
-                    Logic::getContactListModel()->setCurrent(uin, true);
+                    Logic::getContactListModel()->setCurrent(uin, -1, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
                 });
                 Ui_->voiceButton_->disconnect();
                 connect(Ui_->voiceButton_, &QPushButton::clicked, [uin]()
                 {
-                    Logic::getContactListModel()->setCurrent(uin, true);
+                    Logic::getContactListModel()->setCurrent(uin, -1, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
 
                     QTimer::singleShot(500, [uin]() { Ui::GetDispatcher()->getVoipController().setStartA(uin.toUtf8(), false); });
@@ -796,7 +795,7 @@ namespace Ui
                 Ui_->videoButton_->disconnect();
                 connect(Ui_->videoButton_, &QPushButton::clicked, [uin]()
                 {
-                    Logic::getContactListModel()->setCurrent(uin, true);
+                    Logic::getContactListModel()->setCurrent(uin, -1, true);
                     emit Utils::InterConnector::instance().profileSettingsBack();
 
                     QTimer::singleShot(500, [uin]() { Ui::GetDispatcher()->getVoipController().setStartV(uin.toUtf8(), false); });
@@ -809,7 +808,7 @@ namespace Ui
         if (!avatar_)
         {
             avatar_ = new ContactAvatarWidget(Ui_->avatar_, uin, dname, Utils::scale_value(180), true);
-            avatar_->SetIsInMyProfile(actionButtonState_ == EDIT_PROFILE);
+            avatar_->SetMode(actionButtonState_ == EDIT_PROFILE ? ContactAvatarWidget::Mode::MyProfile : ContactAvatarWidget::Mode::Common);
             Ui_->avatarLayout_->addWidget(avatar_);
         }
         else

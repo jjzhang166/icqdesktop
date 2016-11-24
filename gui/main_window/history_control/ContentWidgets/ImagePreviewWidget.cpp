@@ -451,7 +451,7 @@ namespace HistoryControl
         const auto hasPreviewSeq = (PreviewImageDownloadSeq_ > 0);
         if (hasPreviewSeq)
         {
-            Ui::GetDispatcher()->raiseDownloadPriority(PreviewImageDownloadSeq_);
+            //Ui::GetDispatcher()->raiseDownloadPriority(PreviewImageDownloadSeq_);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace core
             std::string		phone_;
             std::string		trans_id_;
             std::string     locale_;
-            int             code_length_;
+            int32_t         code_length_;
             bool			existing_;
 
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
@@ -38,7 +38,7 @@ namespace core
 
             virtual ~validate_phone();
 
-            const int get_code_length() const {return code_length_;}
+            const int32_t get_code_length() const {return code_length_;}
             const std::string get_phone() const {return phone_;}
             const bool get_existing() const {return existing_;}
             const std::string get_trans_id() const {return trans_id_;}

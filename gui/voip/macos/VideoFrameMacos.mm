@@ -255,34 +255,77 @@ void platform_macos::setPanelAttachedAsChild(bool attach, QWidget& parent, QWidg
     }
 }
 
-void platform_macos::setWindowPosition(QWidget& widget, const QWidget& parent, const bool top) {
-    NSRect rect;
-    {// get parent window rect
-        NSView* view = (NSView*)parent.winId();
-        assert(view);
-        if (!view) { return; }
-        
-        NSWindow* window = [view window];
-        assert(window);
-        if (!window) { return; }
-        
-        rect = [window frame];
-    }
-    
+void platform_macos::setWindowPosition(QWidget& widget, const QRect& widgetRect) {
     NSView* view = (NSView*)widget.winId();
     assert(view);
     
     NSWindow* window = [view window];
     assert(window);
     
+    /*
     const int widgetH = widget.height();
     if (top) {
         rect.origin.y = rect.origin.y + rect.size.height - widgetH;
     }
-
     rect.size.height = widgetH;
+    */
+    
+    NSRect rect;
+    rect.size.width  = widgetRect.width();
+    rect.size.height = widgetRect.height();
+    rect.origin.x    = widgetRect.left();
+    rect.origin.y    = widgetRect.top();
+    
     [window setFrame:rect display:YES];
 }
+
+QRect platform_macos::getWidgetRect(const QWidget& widget)
+{
+    NSRect rect;
+    {
+        // get parent window rect
+        NSView* view = (NSView*)widget.winId();
+        assert(view);
+        if (!view) { return QRect(); }
+        
+        NSWindow* window = [view window];
+        assert(window);
+        if (!window) { return QRect(); }
+        
+        rect = [window frame];
+    }
+    return QRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
+}
+
+/*
+QRect platform_macos::getWindowRect(const QWidget& parent)
+{
+    NSRect rect;
+    
+    NSView* view = (NSView*)parent.winId();
+    assert(view);
+    if (!view) { return parent.geometry(); }
+        
+    NSWindow* window = [view window];
+    assert(window);
+    if (!window) { return parent.geometry(); }
+        
+    rect = [window frame];
+    
+    // TODO: implement for multi screens.
+    NSScreen *screen = [window screen];
+    
+    if (screen)
+    {
+        NSRect screenRect = [screen frame];
+        return QRect(rect.origin.x, screenRect.size.height - (rect.origin.y + rect.size.height), rect.size.width, rect.size.height);
+    }
+    else
+    {
+        return QRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
+    }
+}
+*/
 
 void platform_macos::setAspectRatioForWindow(QWidget& wnd, float aspectRatio) {
     NSView* view = (NSView*)wnd.winId();
@@ -393,6 +436,13 @@ void platform_macos::moveAboveParentWindow(QWidget& parent, QWidget& child)
 }
 
 
+int platform_macos::doubleClickInterval()
+{
+    return [NSEvent doubleClickInterval] * 1000;
+}
+
+
+
 NSWindow* getNSWindow(QWidget& parentWindow)
 {
     NSWindow* res = nil;
@@ -436,7 +486,7 @@ platform_macos::FullScreenNotificaton::~FullScreenNotificaton ()
 namespace platform_macos {
     
 class GraphicsPanelMacosImpl : public platform_specific::GraphicsPanel {
-    std::vector<QWidget*> _panels;
+    std::vector<Ui::BaseVideoPanel*> _panels;
     WebrtcRenderView* _renderView;
     
     virtual void moveEvent(QMoveEvent*) override;
@@ -447,20 +497,20 @@ class GraphicsPanelMacosImpl : public platform_specific::GraphicsPanel {
     void _setPanelsAttached(bool attach);
 
 public:
-    GraphicsPanelMacosImpl(QWidget* parent, std::vector<QWidget*>& panels);
+    GraphicsPanelMacosImpl(QWidget* parent, std::vector<Ui::BaseVideoPanel*>& panels);
     virtual ~GraphicsPanelMacosImpl();
     
     virtual WId frameId() const override;
 
-    void addPanels(std::vector<QWidget*>& panels) override;
-    void clearPanels() override;
+    void addPanels(std::vector<Ui::BaseVideoPanel*>& panels) override;
     void fullscreenModeChanged(bool fullscreen) override;
+    void clearPanels() override;
     
     void fullscreenAnimationStart() override;
     void fullscreenAnimationFinish() override;
 };
 
-GraphicsPanelMacosImpl::GraphicsPanelMacosImpl(QWidget* parent, std::vector<QWidget*>& panels)
+GraphicsPanelMacosImpl::GraphicsPanelMacosImpl(QWidget* parent, std::vector<Ui::BaseVideoPanel*>& panels)
 : platform_specific::GraphicsPanel(parent)
 , _panels(panels) {
     NSRect frame;
@@ -555,7 +605,7 @@ void GraphicsPanelMacosImpl::_setPanelsAttached(bool attach) {
     for (unsigned ix = 0; ix < _panels.size(); ix++) {
         assert(_panels[ix]);
         if (!_panels[ix]) { continue; }
-        setPanelAttachedAsChild(attach, *(QWidget*)parent(), *_panels[ix]);
+        setPanelAttachedAsChild(attach, *(QWidget*)parent(), *(QWidget*)_panels[ix]);
     }
 }
 
@@ -571,14 +621,10 @@ void GraphicsPanelMacosImpl::hideEvent(QHideEvent* e) {
     _setPanelsAttached(false);
 }
     
-void GraphicsPanelMacosImpl::addPanels(std::vector<QWidget*>& panels) {
+void GraphicsPanelMacosImpl::addPanels(std::vector<Ui::BaseVideoPanel*>& panels)
+{
     _panels = panels;
     _setPanelsAttached(true);
-}
-    
-void GraphicsPanelMacosImpl::clearPanels() {
-    _setPanelsAttached(false);
-    _panels.clear();
 }
 
 void GraphicsPanelMacosImpl::fullscreenAnimationStart()
@@ -600,9 +646,15 @@ void GraphicsPanelMacosImpl::fullscreenAnimationFinish()
     }
 }
     
+void GraphicsPanelMacosImpl::clearPanels()
+{
+    _setPanelsAttached(false);
+    _panels.clear();
+}
+    
 }
 
-platform_specific::GraphicsPanel* platform_macos::GraphicsPanelMacos::create(QWidget* parent, std::vector<QWidget*>& panels) {
+platform_specific::GraphicsPanel* platform_macos::GraphicsPanelMacos::create(QWidget* parent, std::vector<Ui::BaseVideoPanel*>& panels) {
     return new platform_macos::GraphicsPanelMacosImpl(parent, panels);
 }
 

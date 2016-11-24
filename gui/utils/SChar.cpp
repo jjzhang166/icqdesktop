@@ -56,6 +56,11 @@ namespace Utils
 		return (!HasExt() && (Main_ == '\r'));
 	}
 
+    bool SChar::IsQuot() const
+    {
+        return (!HasExt() && (Main_ == '\"'));
+    }
+
 	bool SChar::IsComplex() const
 	{
 		return (LengthQChars() > 1);
@@ -78,6 +83,11 @@ namespace Utils
 
 	bool SChar::IsEmoji() const
 	{
+        if (IsNull())
+        {
+            return false;
+        }
+
 		return (IsTwoCharacterEmoji() || IsSingleCharacterEmoji());
 	}
 
@@ -234,6 +244,19 @@ namespace Utils
 		static QString invalidChars(" \r\n\t;,'");
 		return !invalidChars.contains(ToQChar());
 	}
+
+    bool SChar::IsDelimeter() const
+    {
+        if (HasExt())
+        {
+            return false;
+        }
+
+        return (
+            (Main_ == '>') ||
+            (Main_ == '<')
+            );
+    }
 
 	SChar ReadNextSuperChar(QTextStream &s)
 	{

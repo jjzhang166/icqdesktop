@@ -6,11 +6,12 @@
 #include "ContactListModel.h"
 #include "ContactListItemDelegate.h"
 #include "ContactListItemRenderer.h"
+#include "RecentsItemRenderer.h"
 #include "RecentsModel.h"
 #include "RecentItemDelegate.h"
 #include "UnknownsModel.h"
 #include "UnknownItemDelegate.h"
-#include "SearchModel.h"
+#include "SearchModelDLG.h"
 #include "SettingsTab.h"
 #include "../MainWindow.h"
 #include "../contact_list/ChatMembersModel.h"
@@ -30,11 +31,9 @@
 namespace
 {
     const int balloon_size = 20;
-    const int button_size = 24;
     const int unreads_padding = 6;
     const int unreads_minimum_extent_ = 20;
-    const int search_livechats_width = 58;
-    const auto unreadsFont = ContactList::dif(Fonts::defaultAppFontFamily(), Fonts::FontStyle::SEMIBOLD, 13);
+    const auto unreadsFont = ContactList::dif(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Semibold, 13);
     const int LIVECHATS_TITLE_HEIGHT = 64;
     const int autoscroll_offset_recents = 68;
     const int autoscroll_offset_cl = 44;
@@ -111,6 +110,106 @@ namespace Ui
         emit clicked();
         return QWidget::mouseReleaseEvent(_e);
     }
+
+
+    SearchInAllChatsButton::SearchInAllChatsButton(QWidget* _parent)
+    : QWidget(_parent)
+        , painter_(0)
+        , hover_(false)
+        , select_(false)
+    {
+    }
+
+    void SearchInAllChatsButton::paintEvent(QPaintEvent*)
+    {
+        if (!painter_)
+        {
+            painter_ = new QPainter(this);
+            painter_->setRenderHint(QPainter::Antialiasing);
+        }
+
+        auto vMainLayout_ = new QVBoxLayout(this);
+        vMainLayout_->setContentsMargins(0, 0, 0, 0);
+        vMainLayout_->setSpacing(0);
+
+        auto horLineWidget_ = new QWidget(this);
+        horLineWidget_->setFixedHeight(Utils::scale_value(1));
+        horLineWidget_->setStyleSheet(QString("background-color: #dadada;"));
+        horLineWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        vMainLayout_->addSpacing(0);
+
+        auto horLine_ = new QWidget(this);
+        auto horLineLayout_ = new QHBoxLayout(horLine_);
+        auto findInAllChatsHeight = ::ContactList::SearchInAllChatsHeight();
+
+        horLineLayout_->setContentsMargins(Utils::scale_value(24), 0, Utils::scale_value(24), findInAllChatsHeight);
+        horLineLayout_->addWidget(horLineWidget_);
+        vMainLayout_->addWidget(horLine_);
+
+        painter_->begin(this);
+        ::ContactList::ViewParams viewParams;
+        ::ContactList::RenderServiceContact(*painter_, hover_, select_, QT_TRANSLATE_NOOP("contact_list","Search in all chats"), Data::ContactType::SEARCH_IN_ALL_CHATS, 0, viewParams);
+        painter_->end();
+    }
+
+    void SearchInAllChatsButton::enterEvent(QEvent* _e)
+    {
+        hover_ = true;
+        update();
+        return QWidget::enterEvent(_e);
+    }
+
+    void SearchInAllChatsButton::leaveEvent(QEvent* _e)
+    {
+        hover_ = false;
+        update();
+        return QWidget::leaveEvent(_e);
+    }
+
+    void SearchInAllChatsButton::mousePressEvent(QMouseEvent* _e)
+    {
+        select_ = true;
+        update();
+        return QWidget::mousePressEvent(_e);
+    }
+
+    void SearchInAllChatsButton::mouseReleaseEvent(QMouseEvent* _e)
+    {
+        select_ = false;
+        update();
+        emit clicked();
+        return QWidget::mouseReleaseEvent(_e);
+    }
+
+
+    SearchInChatLabel::SearchInChatLabel(QWidget* _parent)
+        : QWidget(_parent)
+        , painter_(0)
+    {
+    }
+
+    void SearchInChatLabel::paintEvent(QPaintEvent*)
+    {
+        if (!painter_)
+        {
+            painter_ = new QPainter(this);
+            painter_->setRenderHint(QPainter::Antialiasing);
+        }
+
+        auto vMainLayout_ = new QVBoxLayout(this);
+        vMainLayout_->setContentsMargins(0, 0, 0, 0);
+        vMainLayout_->setSpacing(0);
+
+        painter_->begin(this);
+        ::ContactList::ViewParams viewParams;
+
+        auto searchModel =  qobject_cast<Logic::SearchModelDLG*>(Logic::getCurrentSearchModel(Logic::MembersWidgetRegim::CONTACT_LIST));
+        auto chatAimid = searchModel->getDialogAimid();
+        auto text = QString::fromWCharArray(L"SEARCH IN \u00AB") + Logic::getContactListModel()->getDisplayName(chatAimid).toUpper() + QString::fromWCharArray(L"\u00BB");
+        ::ContactList::RenderServiceItem(*painter_, text, false /* renderState */, false /* drawLine */, viewParams);
+        painter_->end();
+    }
+
 
     EmptyIgnoreListLabel::EmptyIgnoreListLabel(QWidget* _parent)
     : QWidget(_parent)
@@ -272,7 +371,6 @@ namespace Ui
 
     ContactList::ContactList(QWidget* _parent, Logic::MembersWidgetRegim _regim, Logic::ChatMembersModel* _chatMembersModel)
     : QWidget(_parent)
-    , disconnector_(new Utils::SignalsDisconnector)
     , currentTab_(RECENTS)
     , unknownsDelegate_(new Logic::UnknownItemDelegate(this))
     , recentsDelegate_(new Logic::RecentItemDelegate(this))
@@ -283,8 +381,12 @@ namespace Ui
     , chatMembersModel_(_chatMembersModel)
     , noContactsYet_(nullptr)
     , noRecentsYet_(nullptr)
+    , noSearchResults_(nullptr)
+    , searchSpinner_(nullptr)
     , noContactsYetShown_(false)
     , noRecentsYetShown_(false)
+    , noSearchResultsShown_(false)
+    , searchSpinnerShown_(false)
     , tapAndHold_(false)
     , listEventFilter_(new RCLEventFilter(this))
     , liveChatsDelegate_(new Logic::LiveChatItemDelegate(this))
@@ -292,6 +394,7 @@ namespace Ui
     , pictureOnlyView_(false)
     , scrolledView_(0)
     , scrollMultipler_(1)
+    , isSearchInDialog_(false)
     {
         setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         setStyleSheet(Utils::LoadStyle(":/main_window/contact_list/contact_list.qss"));
@@ -405,11 +508,23 @@ namespace Ui
         }
 
         {
-            auto searchPage = new QWidget();
-            auto searchLayout = new QVBoxLayout(searchPage);
-            searchLayout->setSpacing(0);
-            searchLayout->setContentsMargins(0, 0, 0, 0);
-            searchView_ = CreateFocusableViewAndSetTrScrollBar(searchPage);
+            searchPage_ = new QWidget();
+            auto searchWithButtonLayout_ = new QVBoxLayout(searchPage_);
+            searchWithButtonLayout_->setSpacing(0);
+            searchWithButtonLayout_->setContentsMargins(0, 0, 0, 0);
+
+            searchInChatLabel_ = new SearchInChatLabel();
+            searchInChatLabel_->setContentsMargins(0, 0, 0, 0);
+            searchInChatLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+            searchInChatLabel_->setFixedHeight(::ContactList::GetRecentsParams(Logic::MembersWidgetRegim::CONTACT_LIST).serviceItemHeight().px());
+            searchWithButtonLayout_->addWidget(searchInChatLabel_);
+            searchInChatLabel_->setVisible(false);
+
+            auto searchHost_ = new QWidget();
+            searchLayout_ = new QVBoxLayout(searchHost_);
+            searchLayout_->setSpacing(0);
+            searchLayout_->setContentsMargins(0, 0, 0, 0);
+            searchView_ = CreateFocusableViewAndSetTrScrollBar(searchPage_);
             searchView_->setFrameShape(QFrame::NoFrame);
             searchView_->setLineWidth(0);
             searchView_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -419,9 +534,20 @@ namespace Ui
             searchView_->setAcceptDrops(true);
             searchView_->setAttribute(Qt::WA_MacShowFocusRect, false);
             searchView_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-            searchLayout->addWidget(searchView_);
-            stackedWidget_->addWidget(searchPage);
+            searchLayout_->addWidget(searchView_);
+            searchWithButtonLayout_->addWidget(searchHost_);
+
+            stackedWidget_->addWidget(searchPage_);
             mainLayout->addWidget(stackedWidget_);
+
+            searchInAllButton_ = new SearchInAllChatsButton();
+            Testing::setAccessibleName(searchInAllButton_, "SearchInAllChatsButton");
+            searchInAllButton_->setContentsMargins(0, 0, 0, 0);
+            searchInAllButton_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+            searchInAllButton_->setFixedHeight(::ContactList::SearchInAllChatsHeight());
+            connect(searchInAllButton_, &SearchInAllChatsButton::clicked, this, &ContactList::onDisableSearchInDialogButton, Qt::QueuedConnection);
+            searchWithButtonLayout_->addWidget(searchInAllButton_);
+            searchInAllButton_->setVisible(false);
         }
 
         buttonsFrame_ = new QFrame(this);
@@ -483,9 +609,21 @@ namespace Ui
         contactListView_->setAttribute(Qt::WA_MacShowFocusRect, false);
 
         connect(&Utils::InterConnector::instance(), SIGNAL(showNoContactsYet()), this, SLOT(showNoContactsYet()));
-        connect(&Utils::InterConnector::instance(), SIGNAL(showNoRecentsYet()), this, SLOT(showNoRecentsYet()));
         connect(&Utils::InterConnector::instance(), SIGNAL(hideNoContactsYet()), this, SLOT(hideNoContactsYet()));
+
+        connect(&Utils::InterConnector::instance(), SIGNAL(showNoRecentsYet()), this, SLOT(showNoRecentsYet()));
         connect(&Utils::InterConnector::instance(), SIGNAL(hideNoRecentsYet()), this, SLOT(hideNoRecentsYet()));
+
+        if (_regim == Logic::MembersWidgetRegim::CONTACT_LIST)
+        {
+            connect(&Utils::InterConnector::instance(), SIGNAL(showNoSearchResults()), this, SLOT(showNoSearchResults()));
+            connect(&Utils::InterConnector::instance(), SIGNAL(hideNoSearchResults()), this, SLOT(hideNoSearchResults()));
+
+            connect(&Utils::InterConnector::instance(), SIGNAL(showSearchSpinner()), this, SLOT(showSearchSpinner()));
+            connect(&Utils::InterConnector::instance(), SIGNAL(hideSearchSpinner()), this, SLOT(hideSearchSpinner()));
+
+            connect(&Utils::InterConnector::instance(), SIGNAL(dialogClosed(QString)), this, SLOT(dialogClosed(QString)));
+        }
 
 		if (regim_ != Logic::MembersWidgetRegim::CONTACT_LIST)
 		{
@@ -519,7 +657,7 @@ namespace Ui
             && regim_ != Logic::MembersWidgetRegim::SHARE_TEXT)
             contactListView_->setModel(Logic::getContactListModel());
 
-        connect(Logic::getContactListModel(), SIGNAL(select(QString)), this, SLOT(select(QString)), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(select(QString, qint64)), this, SLOT(select(QString, qint64)), Qt::QueuedConnection);
 
         contactListView_->setItemDelegate(clDelegate_);
         connect(contactListView_, SIGNAL(clicked(const QModelIndex&)), this, SLOT(itemClicked(const QModelIndex&)), Qt::QueuedConnection);
@@ -560,25 +698,34 @@ namespace Ui
         connect(Logic::getContactListModel(), SIGNAL(contactChanged(QString)), livechatsButton_, SLOT(update()), Qt::QueuedConnection);
         connect(Logic::getContactListModel(), SIGNAL(switchTab(QString)), this, SLOT(switchTab(QString)), Qt::QueuedConnection);
 
-        disconnector_->add("unknowns/updated", connect(Logic::getUnknownsModel(), &Logic::UnknownsModel::updated, [=]()
+        connect(Logic::getUnknownsModel(), &Logic::UnknownsModel::updated, this, [=]()
         {
             if (recentsView_ && recentsView_->model() == Logic::getRecentsModel())
                 emit Logic::getRecentsModel()->refresh();
-        }));
-        disconnector_->add("recents/updated", connect(Logic::getRecentsModel(), &Logic::RecentsModel::updated, [=]()
+        });
+        connect(Logic::getRecentsModel(), &Logic::RecentsModel::updated, this, [=]()
         {
             if (recentsView_ && recentsView_->model() == Logic::getUnknownsModel())
                 emit Logic::getUnknownsModel()->refresh();
-        }));
+        });
 
         searchView_->setModel(Logic::getCurrentSearchModel(regim_));
 
-        searchView_->setItemDelegate(clDelegate_);
+        if (regim_ == Logic::MembersWidgetRegim::CONTACT_LIST)
+            searchItemDelegate_ = new Logic::RecentItemDelegate(this);
+        else
+            searchItemDelegate_ = new Logic::ContactListItemDelegate(this, _regim);
+
+        if (_regim == Logic::MembersWidgetRegim::CONTACT_LIST)
+            searchItemDelegate_->setRegim(Logic::MembersWidgetRegim::HISTORY_SEARCH);
+        searchView_->setItemDelegate(searchItemDelegate_);
+
         connect(searchView_, SIGNAL(pressed(const QModelIndex&)), this, SLOT(itemPressed(const QModelIndex&)), Qt::QueuedConnection);
         connect(searchView_, SIGNAL(clicked(const QModelIndex&)), this, SLOT(itemClicked(const QModelIndex&)), Qt::QueuedConnection);
         connect(searchView_, SIGNAL(clicked(const QModelIndex&)), this, SLOT(statsSearchItemPressed(const QModelIndex&)), Qt::QueuedConnection);
         connect(searchView_, SIGNAL(activated(const QModelIndex&)), this, SLOT(searchClicked(const QModelIndex&)), Qt::QueuedConnection);
         connect(Logic::getCurrentSearchModel(regim_), SIGNAL(results()), this, SLOT(searchResultsFromModel()), Qt::QueuedConnection);
+        connect(this, SIGNAL(searchEnd()), Logic::getCurrentSearchModel(regim_), SLOT(searchEnded()), Qt::QueuedConnection);
 
         // Prepare settings
         {
@@ -618,7 +765,7 @@ namespace Ui
 
         connect(GetDispatcher(), SIGNAL(messagesReceived(QString, QVector<QString>)), this, SLOT(messagesReceived(QString, QVector<QString>)));
 
-        disconnector_->add("unknownsGoSeeThem", connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoSeeThem, [this]()
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoSeeThem, this, [this]()
         {
             if (recentsView_->model() != Logic::getUnknownsModel())
             {
@@ -628,8 +775,8 @@ namespace Ui
                 if (platform::is_apple())
                     emit Utils::InterConnector::instance().forceRefreshList(recentsView_->model(), true);
             }
-        }));
-        disconnector_->add("unknownsGoBack", connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoBack, [this]()
+        });
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoBack, this, [this]()
         {
             if (recentsView_->model() != Logic::getRecentsModel())
             {
@@ -640,7 +787,7 @@ namespace Ui
                 if (platform::is_apple())
                     emit Utils::InterConnector::instance().forceRefreshList(recentsView_->model(), true);
             }
-        }));
+        });
     }
 
     ContactList::~ContactList()
@@ -700,7 +847,7 @@ namespace Ui
         else if (qobject_cast<const Logic::RecentsModel*>(_current.model()))
         {
             Data::DlgState dlg = _current.data().value<Data::DlgState>();
-            aimid = dlg.AimId_;
+            aimid = Logic::getRecentsModel()->isServiceAimId(dlg.AimId_) ? QString() : dlg.AimId_;
         }
         else if (qobject_cast<const Logic::ContactListModel*>(_current.model()))
         {
@@ -709,12 +856,10 @@ namespace Ui
                 return "";
             aimid = cont->AimId_;
         }
-        else if (qobject_cast<const Logic::SearchModel*>(_current.model()))
+        else if (qobject_cast<const Logic::SearchModelDLG*>(_current.model()))
         {
-            Data::Contact* cont = _current.data().value<Data::Contact*>();
-            if (!cont)
-                return "";
-            aimid = cont->AimId_;
+            auto dlg = _current.data().value<Data::DlgState>();
+            aimid = dlg.AimId_;
         }
         else
         {
@@ -726,12 +871,26 @@ namespace Ui
     void ContactList::selectionChanged(const QModelIndex & _current)
     {
         QString aimid = getAimid(_current);
-        emit itemClicked(aimid);
-        searchView_->selectionModel()->clearCurrentIndex();
+
+        if (aimid.isEmpty())
+            return;
 
         // TODO : check group contact & aimid
         if (!aimid.isEmpty())
-            select(aimid);
+        {
+            qint64 mess_id = -1;
+            const Logic::SearchModelDLG* searchModel;
+            if ((searchModel = qobject_cast<const Logic::SearchModelDLG*>(_current.model())))
+            {
+                auto dlg = _current.data().value<Data::DlgState>();
+                if (!dlg.IsContact_)
+                    mess_id = dlg.SearchedMsgId_;
+            }
+            select(aimid, mess_id);
+        }
+
+        emit itemClicked(aimid);
+        searchView_->selectionModel()->clearCurrentIndex();
     }
 
     void ContactList::searchResults(const QModelIndex & _current, const QModelIndex &)
@@ -740,6 +899,13 @@ namespace Ui
             return;
         if (!_current.isValid())
         {
+            emit searchEnd();
+            return;
+        }
+
+        if (qobject_cast<const Logic::SearchModelDLG*>(_current.model()))
+        {
+            selectionChanged(_current);
             emit searchEnd();
             return;
         }
@@ -845,10 +1011,28 @@ namespace Ui
         {
             triggerTapAndHold(false);
 
-            if (qobject_cast<const Logic::RecentsModel *>(_current.model()) || qobject_cast<const Logic::UnknownsModel *>(_current.model()))
+            if (qobject_cast<const Logic::RecentsModel *>(_current.model())
+                || qobject_cast<const Logic::UnknownsModel *>(_current.model()))
+            {
                 showRecentsPopup_menu(_current);
+            }
+            else if (qobject_cast<const Logic::SearchModelDLG *>(_current.model()))
+            {
+                auto dlg = _current.data().value<Data::DlgState>();
+                if (dlg.IsContact_)
+                {
+                    Data::DlgState dlg = _current.data(Qt::DisplayRole).value<Data::DlgState>();
+                    QString aimId = dlg.AimId_;
+                    auto cont = Logic::getContactListModel()->getContactItem(aimId);
+                    showContactsPopupMenu(cont->get_aimid(), cont->is_chat());
+                }
+            }
             else
-                showContactsPopupMenu(_current);
+            {
+                auto cont = _current.data(Qt::DisplayRole).value<Data::Contact*>();
+                if (cont)
+                    showContactsPopupMenu(cont->AimId_, cont->Is_chat_);
+            }
         }
     }
 
@@ -874,14 +1058,30 @@ namespace Ui
             GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::open_chat_cl);
     }
 
-    void ContactList::statsSearchItemPressed(const QModelIndex& /*_current*/)
+    void ContactList::statsSearchItemPressed(const QModelIndex& _current)
     {
         if (regim_ == Logic::MembersWidgetRegim::CONTACT_LIST)
         {
             if (currentTab_ == ALL)
+            {
                 GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::open_chat_search_cl);
+            }
             else
+            {
+                if (qobject_cast<Logic::SearchModelDLG*>(Logic::getCurrentSearchModel(regim_)))
+                {
+                    auto dlg = _current.data().value<Data::DlgState>();
+                    if (!dlg.IsContact_)
+                    {
+                        if (isSearchInDialog_)
+                            GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::cl_search_dialog_open);
+                        else
+                            GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::cl_search_openchatmessage);
+                        return;
+                    }
+                }
                 GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::open_chat_search_recents);
+            }
         }
     }
 
@@ -944,15 +1144,31 @@ namespace Ui
     void ContactList::dragPositionUpdate(const QPoint& _pos, bool fromScroll)
     {
         int autoscroll_offset = Utils::scale_value(autoscroll_offset_cl);
+        auto valid = true;
         if (isSearchMode())
         {
             QModelIndex index = QModelIndex();
             if (!_pos.isNull())
                 index = searchView_->indexAt(_pos);
 
-            clDelegate_->setDragIndex(index);
             if (index.isValid())
-                emit Logic::getSearchModel()->dataChanged(index, index);
+            {
+                auto dlg = Logic::getSearchModelDLG()->data(index, Qt::DisplayRole).value<Data::DlgState>();
+                auto role = Logic::getContactListModel()->getYourRole(dlg.AimId_);
+                if (role == "notamember" || role == "readonly")
+                    valid = false;
+            }
+
+            if (valid)
+            {
+                clDelegate_->setDragIndex(index);
+                if (index.isValid())
+                    emit Logic::getSearchModelDLG()->dataChanged(index, index);
+            }
+            else
+            {
+                clDelegate_->setDragIndex(QModelIndex());
+            }
 
             scrolledView_ = searchView_;
         }
@@ -962,16 +1178,36 @@ namespace Ui
             if (!_pos.isNull())
                 index = recentsView_->indexAt(_pos);
 
-            if (recentsView_->itemDelegate() == recentsDelegate_)
-                recentsDelegate_->setDragIndex(index);
-            else
-                unknownsDelegate_->setDragIndex(index);
             if (index.isValid())
             {
+                Data::DlgState dlg;
                 if (recentsView_->model() == Logic::getRecentsModel())
-                    emit Logic::getRecentsModel()->dataChanged(index, index);
+                    dlg = Logic::getRecentsModel()->data(index, Qt::DisplayRole).value<Data::DlgState>();
                 else
-                    emit Logic::getUnknownsModel()->dataChanged(index, index);
+                    dlg = Logic::getUnknownsModel()->data(index, Qt::DisplayRole).value<Data::DlgState>();
+
+                auto role = Logic::getContactListModel()->getYourRole(dlg.AimId_);
+                if (role == "notamember" || role == "readonly")
+                    valid = false;
+            }
+
+            if (valid)
+            {
+                if (recentsView_->itemDelegate() == recentsDelegate_)
+                    recentsDelegate_->setDragIndex(index);
+                else
+                    unknownsDelegate_->setDragIndex(index);
+                if (index.isValid())
+                {
+                    if (recentsView_->model() == Logic::getRecentsModel())
+                        emit Logic::getRecentsModel()->dataChanged(index, index);
+                    else
+                        emit Logic::getUnknownsModel()->dataChanged(index, index);
+                }
+            }
+            else
+            {
+                recentsDelegate_->setDragIndex(QModelIndex());
             }
 
             scrolledView_ = recentsView_;
@@ -983,9 +1219,24 @@ namespace Ui
             if (!_pos.isNull())
                 index = contactListView_->indexAt(_pos);
 
-            clDelegate_->setDragIndex(index);
             if (index.isValid())
-                emit Logic::getContactListModel()->dataChanged(index, index);
+            {
+                auto cont = Logic::getContactListModel()->data(index, Qt::DisplayRole).value<Data::Contact*>();
+                auto role = Logic::getContactListModel()->getYourRole(cont->AimId_);
+                if (role == "notamember" || role == "readonly")
+                    valid = false;
+            }
+
+            if (valid)
+            {
+                clDelegate_->setDragIndex(index);
+                if (index.isValid())
+                    emit Logic::getContactListModel()->dataChanged(index, index);
+            }
+            else
+            {
+                clDelegate_->setDragIndex(QModelIndex());
+            }
 
             scrolledView_ = contactListView_;
         }
@@ -1048,15 +1299,19 @@ namespace Ui
             if (!_pos.isNull())
             {
                 index = searchView_->indexAt(_pos);
-                Data::Contact* data  = qvariant_cast<Data::Contact*>(Logic::getSearchModel()->data(index, Qt::DisplayRole));
+                Data::Contact* data  = qvariant_cast<Data::Contact*>(Logic::getSearchModelDLG()->data(index, Qt::DisplayRole));
                 if (data)
                 {
-                    if (data->AimId_ != Logic::getContactListModel()->selectedContact())
-                        Logic::getContactListModel()->select(data->AimId_);
+                    auto role = Logic::getContactListModel()->getYourRole(data->AimId_);
+                    if (role != "notamember" && role != "readonly")
+                    {
+                        if (data->AimId_ != Logic::getContactListModel()->selectedContact())
+                            Logic::getContactListModel()->select(data->AimId_, -1);
 
-                    send(_files, data->AimId_);
+                        send(_files, data->AimId_);
+                    }
                 }
-                emit Logic::getSearchModel()->dataChanged(index, index);
+                emit Logic::getSearchModelDLG()->dataChanged(index, index);
             }
             clDelegate_->setDragIndex(QModelIndex());
         }
@@ -1079,14 +1334,18 @@ namespace Ui
                 }
                 if (!data.AimId_.isEmpty())
                 {
-                    if (data.AimId_ != Logic::getContactListModel()->selectedContact())
-                        Logic::getContactListModel()->select(data.AimId_);
+                    auto role = Logic::getContactListModel()->getYourRole(data.AimId_);
+                    if (role != "notamember" && role != "readonly")
+                    {
+                        if (data.AimId_ != Logic::getContactListModel()->selectedContact())
+                            Logic::getContactListModel()->select(data.AimId_, -1);
 
-                    send(_files, data.AimId_);
-                    if (isRecents)
-                        emit Logic::getRecentsModel()->dataChanged(index, index);
-                    else
-                        emit Logic::getUnknownsModel()->dataChanged(index, index);
+                        send(_files, data.AimId_);
+                        if (isRecents)
+                            emit Logic::getRecentsModel()->dataChanged(index, index);
+                        else
+                            emit Logic::getUnknownsModel()->dataChanged(index, index);
+                    }
                 }
             }
             recentsDelegate_->setDragIndex(QModelIndex());
@@ -1101,10 +1360,14 @@ namespace Ui
                 Data::Contact* data  = qvariant_cast<Data::Contact*>(Logic::getContactListModel()->data(index, Qt::DisplayRole));
                 if (data)
                 {
-                    if (data->AimId_ != Logic::getContactListModel()->selectedContact())
-                        Logic::getContactListModel()->select(data->AimId_);
+                    auto role = Logic::getContactListModel()->getYourRole(data->AimId_);
+                    if (role != "notamember" && role != "readonly")
+                    {
+                        if (data->AimId_ != Logic::getContactListModel()->selectedContact())
+                            Logic::getContactListModel()->select(data->AimId_, -1);
 
-                    send(_files, data->AimId_);
+                        send(_files, data->AimId_);
+                    }
                 }
                 emit Logic::getContactListModel()->dataChanged(index, index);
             }
@@ -1309,17 +1572,17 @@ namespace Ui
             current_view->selectionModel()->blockSignals(false);
     }
 
-    void ContactList::select(QString _aimId)
+    void ContactList::select(QString _aimId, qint64 _message_id)
     {
         const auto isSameContact = Logic::getContactListModel()->selectedContact() == _aimId;
 
         if (regim_ == Logic::CONTACT_LIST)
-            Logic::getContactListModel()->setCurrent(_aimId);
+            Logic::getContactListModel()->setCurrent(_aimId, _message_id);
 
         changeSelected(_aimId, true);
         changeSelected(_aimId, false);
 
-        emit itemSelected(_aimId);
+        emit itemSelected(_aimId, _message_id);
 
         if (isSearchMode() && regim_ == Logic::CONTACT_LIST)
         {
@@ -1335,7 +1598,19 @@ namespace Ui
 
     void ContactList::searchResultsFromModel()
     {
-        QModelIndex i = Logic::getCurrentSearchModel(regim_)->index(0);
+        auto pat = Logic::getCurrentSearchModel(regim_)->getCurrentPattern();
+        if (pat == lastSearchPattern_)
+            return;
+
+        lastSearchPattern_ = pat;
+        auto init_ind = 0;
+        auto model = qobject_cast<Logic::SearchModelDLG*>(Logic::getCurrentSearchModel(regim_));
+        if (model)
+        {
+            init_ind = model->get_abs_index(init_ind);
+        }
+
+        QModelIndex i = Logic::getCurrentSearchModel(regim_)->index(init_ind);
         if (!i.isValid())
             return;
 
@@ -1346,7 +1621,7 @@ namespace Ui
         searchView_->scrollTo(i);
     }
 
-    void ContactList::showContactsPopupMenu(const QModelIndex& _current)
+    void ContactList::showContactsPopupMenu(QString aimId, bool _is_chat)
     {
         if (!popupMenu_)
         {
@@ -1361,10 +1636,7 @@ namespace Ui
         if (Logic::is_delete_members_regim(regim_))
             return;
 
-        auto cont = _current.data(Qt::DisplayRole).value<Data::Contact*>();
-
-        auto aimId = cont->AimId_;
-        if (!cont->Is_chat_)
+        if (!_is_chat)
         {
 #ifndef STRIP_VOIP
             popupMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_callmenu_100.png")), QT_TRANSLATE_NOOP("context_menu","Call"), makeData("contacts/call", aimId));
@@ -1372,7 +1644,7 @@ namespace Ui
         }
         popupMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_profile_100.png")), QT_TRANSLATE_NOOP("context_menu", "Profile"), makeData("contacts/Profile", aimId));
         popupMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_ignore_100.png")), QT_TRANSLATE_NOOP("context_menu", "Ignore"), makeData("contacts/ignore", aimId));
-        if (!cont->Is_chat_)
+        if (!_is_chat)
         {
             popupMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_spam_100.png")), QT_TRANSLATE_NOOP("context_menu", "Report spam"), makeData("contacts/spam", aimId));
             popupMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_delete_100.png")), QT_TRANSLATE_NOOP("context_menu", "Delete"), makeData("contacts/remove", aimId));
@@ -1669,6 +1941,123 @@ namespace Ui
         }
     }
 
+    void ContactList::showNoSearchResults(QWidget *_parent, QWidget *_list, QLayout *_layout)
+    {
+        _list->setHidden(true);
+
+        if (noSearchResultsShown_)
+            return;
+
+        noSearchResultsShown_ = true;
+        if (!noSearchResults_)
+        {
+            _list->setHidden(true);
+            noSearchResults_ = new QWidget(_parent);
+            noSearchResults_->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding);
+            _layout->addWidget(noSearchResults_);
+            {
+                auto mainLayout = new QVBoxLayout(noSearchResults_);
+                mainLayout->setAlignment(Qt::AlignCenter);
+                mainLayout->setContentsMargins(Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0));
+                mainLayout->setSpacing(Utils::scale_value(0));
+                {
+                    auto noSearchResultsWidget = new QWidget(noSearchResults_);
+                    auto noSearchLayout = new QVBoxLayout(noSearchResultsWidget);
+                    noSearchResultsWidget->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding);
+                    noSearchLayout->setAlignment(Qt::AlignCenter);
+                    noSearchLayout->setContentsMargins(Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0));
+                    noSearchLayout->setSpacing(Utils::scale_value(20));
+                    {
+                        auto noSearchResultsPlaceholder = new QWidget(noSearchResultsWidget);
+                        noSearchResultsPlaceholder->setObjectName("noSearchResults");
+                        noSearchResultsPlaceholder->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Fixed);
+                        noSearchResultsPlaceholder->setFixedHeight(Utils::scale_value(160));
+                        noSearchLayout->addWidget(noSearchResultsPlaceholder);
+                    }
+                    {
+                        auto noSearchResultsLabel = new QLabel(noSearchResultsWidget);
+                        noSearchResultsLabel->setObjectName("noSearchResultsLabel");
+                        noSearchResultsLabel->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Fixed);
+                        noSearchResultsLabel->setAlignment(Qt::AlignCenter);
+                        noSearchResultsLabel->setText(QT_TRANSLATE_NOOP("placeholders", "No messages found"));
+                        noSearchLayout->addWidget(noSearchResultsLabel);
+                    }
+
+                    mainLayout->addWidget(noSearchResultsWidget);
+                }
+            }
+        }
+        else
+        {
+            _list->setHidden(true);
+            noSearchResults_->setHidden(false);
+        }
+    }
+
+    void ContactList::hideNoSearchResults(QWidget *_list, QLayout *_layout)
+    {
+        if (noSearchResultsShown_)
+        {
+            noSearchResults_->setHidden(true);
+            _list->setHidden(false);
+            noSearchResultsShown_ = false;
+        }
+    }
+
+    void ContactList::showSearchSpinner(QWidget *_parent, QWidget *_list, QLayout *_layout)
+    {
+        _list->setHidden(true);
+
+        if (searchSpinnerShown_)
+            return;
+
+        if (!searchSpinner_)
+        {
+            searchSpinnerShown_ = true;
+            _list->setHidden(true);
+            searchSpinner_ = new QWidget(_parent);
+            searchSpinner_->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding);
+            _layout->addWidget(searchSpinner_);
+            {
+                auto mainLayout = new QVBoxLayout(searchSpinner_);
+                mainLayout->setAlignment(Qt::AlignCenter);
+                mainLayout->setContentsMargins(Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0));
+                mainLayout->setSpacing(Utils::scale_value(0));
+                {
+                    auto searchSpinnerWidget = new QWidget(searchSpinner_);
+                    auto searchSpinnerLayout = new QVBoxLayout(searchSpinnerWidget);
+                    searchSpinnerWidget->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding);
+                    searchSpinnerLayout->setAlignment(Qt::AlignCenter);
+                    searchSpinnerLayout->setContentsMargins(Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0));
+                    searchSpinnerLayout->setSpacing(Utils::scale_value(20));
+                    {
+                        auto spinner = new QMovie(":/resources/gifs/r_spiner200.gif");
+                        spinner->setScaledSize(QSize(Utils::scale_value(40), Utils::scale_value(40)));
+
+                        auto w = new QLabel(searchSpinnerWidget);
+                        w->setMovie(spinner);
+                        searchSpinnerLayout->addWidget(w);
+                        spinner->start();
+                    }
+
+                    mainLayout->addWidget(searchSpinnerWidget);
+                }
+            }
+        }
+    }
+
+    void ContactList::hideSearchSpinner(QWidget *_list, QLayout *_layout)
+    {
+        if (searchSpinnerShown_)
+        {
+            searchSpinner_->setHidden(true);
+            _layout->removeWidget(searchSpinner_);
+            searchSpinner_ = nullptr;
+            _list->setHidden(false);
+            searchSpinnerShown_ = false;
+        }
+    }
+
     void ContactList::hideNoContactsYet()
     {
         hideNoContactsYet(contactListView_, contactListLayout_);
@@ -1677,6 +2066,27 @@ namespace Ui
     void ContactList::hideNoRecentsYet()
     {
         hideNoRecentsYet(recentsView_, recentsLayout_);
+    }
+
+    void ContactList::hideSearchSpinner()
+    {
+        hideSearchSpinner(searchView_, searchLayout_);
+    }
+
+    void ContactList::showSearchSpinner()
+    {
+        showSearchSpinner(searchPage_, searchView_, searchLayout_);
+    }
+
+    void ContactList::hideNoSearchResults()
+    {
+        hideNoSearchResults(searchView_, searchLayout_);
+    }
+
+    void ContactList::showNoSearchResults()
+    {
+        if (Logic::getSearchModelDLG()->count() == 0)
+            showNoSearchResults(searchPage_, searchView_, searchLayout_);
     }
 
     void ContactList::showNoContactsYet()
@@ -1798,8 +2208,9 @@ namespace Ui
     {
         fixedItemWidth_ = _newWidth;
         recentsDelegate_->setFixedWidth(_newWidth);
+        searchItemDelegate_->setFixedWidth(_newWidth);
         unknownsDelegate_->setFixedWidth(_newWidth);
-        clDelegate_->setItemWidth(_newWidth);
+        clDelegate_->setFixedWidth(_newWidth);
     }
 
     QString ContactList::getSelectedAimid() const
@@ -1811,11 +2222,46 @@ namespace Ui
             indexes = contactListView_->selectionModel()->selectedIndexes();
 
         QModelIndex index;
-        foreach(index, indexes)
+        for (const auto &index : indexes)
         {
             return getAimid(index);
         }
-        return "";
+
+        return QString();
+    }
+
+    void ContactList::onDisableSearchInDialogButton()
+    {
+        emit Utils::InterConnector::instance().disableSearchInDialog();
+        emit Utils::InterConnector::instance().repeatSearch();
+
+        setSearchInDialog(false);
+    }
+
+    void ContactList::setSearchInDialog(bool _isSearchInDialog)
+    {
+        if (isSearchInDialog_ == _isSearchInDialog)
+            return;
+
+        isSearchInDialog_ = _isSearchInDialog;
+        searchInAllButton_->setVisible(_isSearchInDialog);
+        searchInChatLabel_->setVisible(_isSearchInDialog);
+    }
+
+    bool ContactList::getSearchInDialog() const
+    {
+        return isSearchInDialog_;
+    }
+
+    void ContactList::dialogClosed(QString _aimid)
+    {
+        auto searchModel =  qobject_cast<Logic::SearchModelDLG*>(Logic::getCurrentSearchModel(Logic::MembersWidgetRegim::CONTACT_LIST));
+        auto chatAimid = searchModel->getDialogAimid();
+
+        if (chatAimid == _aimid)
+        {
+            emit searchEnd();
+        }
     }
 }
 

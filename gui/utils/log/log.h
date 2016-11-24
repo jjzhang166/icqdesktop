@@ -45,6 +45,7 @@ namespace Log
 namespace core
 {
     enum class file_sharing_content_type;
+    enum class file_sharing_function;
 }
 
 inline QTextStream& operator <<(QTextStream &lhs, const QUrl &uri)
@@ -79,3 +80,5 @@ inline QTextStream& operator <<(QTextStream &lhs, const std::pair<T, T> &pair)
 }
 
 QTextStream& operator <<(QTextStream &oss, const core::file_sharing_content_type arg);
+
+QTextStream& operator <<(QTextStream &oss, const core::file_sharing_function arg);

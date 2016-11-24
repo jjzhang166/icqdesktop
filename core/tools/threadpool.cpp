@@ -45,7 +45,7 @@ bool threadpool::run_task_impl()
         std::unique_lock<std::mutex> lock(queue_mutex_);
         condition_.wait(lock, [this]
         {
-            return stop_ || !tasks_.empty();
+            return (stop_ || !tasks_.empty());
         });
 
         if (stop_ && tasks_.empty())

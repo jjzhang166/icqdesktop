@@ -34,7 +34,7 @@ namespace Logic
 		connect(Ui::GetDispatcher(), SIGNAL(dlgState(Data::DlgState)), this, SLOT(dlgState(Data::DlgState)), Qt::QueuedConnection);
 		connect(Logic::getContactListModel(), SIGNAL(contactChanged(QString)), this, SLOT(contactChanged(QString)), Qt::QueuedConnection);
         connect(Ui::GetDispatcher(), SIGNAL(favorites(QStringList)), this, SLOT(favorites(QStringList)), Qt::QueuedConnection);
-        connect(Ui::GetDispatcher(), SIGNAL(contactRemoved(QString)), this, SLOT(contactRemoved(QString)), Qt::QueuedConnection);
+        connect(Logic::getContactListModel(), SIGNAL(contact_removed(QString)), this, SLOT(contactRemoved(QString)), Qt::QueuedConnection);
 		Timer_->setSingleShot(true);
 		connect(Timer_, SIGNAL(timeout()), this, SLOT(sortDialogs()), Qt::QueuedConnection);
 	}
@@ -121,7 +121,7 @@ namespace Logic
             Indexes_[iter->AimId_] = -1;
             Dialogs_.erase(iter);
             if (Logic::getContactListModel()->selectedContact() == aimId)
-                Logic::getContactListModel()->setCurrent("", true);
+                Logic::getContactListModel()->setCurrent("", -1, true);
             if (Dialogs_.empty() && !Logic::getUnknownsModel()->itemsCount())
                 emit Utils::InterConnector::instance().showNoRecentsYet();
 
@@ -271,6 +271,7 @@ namespace Logic
             return first.FavoriteTime_ < second.FavoriteTime_;
 
         });
+
 		Indexes_.clear();
 		int i = 0;
 		for (auto iter : Dialogs_)
@@ -278,6 +279,7 @@ namespace Logic
 			Indexes_[iter.AimId_] = i;
 			++i;
 		}
+
 		emit dataChanged(index(0), index(rowCount()));
 		emit orderChanged();
 	}
@@ -551,6 +553,11 @@ namespace Logic
     void RecentsModel::setFavoritesHeadVisible(bool _isVisible)
     {
         FavoritesHeadVisible_ = _isVisible;
+    }
+
+    bool RecentsModel::isServiceAimId(const QString& _aimId)
+    {
+        return _aimId == "unknowns" || _aimId == "favorites" || _aimId == "recents";
     }
 
     std::vector<QString> RecentsModel::getSortedRecentsContacts() const

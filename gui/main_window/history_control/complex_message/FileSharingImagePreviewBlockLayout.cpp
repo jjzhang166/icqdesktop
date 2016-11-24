@@ -208,7 +208,9 @@ QRect FileSharingImagePreviewBlockLayout::evaluatePreviewRect(const FileSharingB
             block.getFailedSnapSizeMax() :
             block.getOriginalPreviewSize());
 
-    const auto maxSizeWidth = std::min(blockWidth, Style::getImageWidthMax());
+    auto maxSizeWidth = std::min(blockWidth, Style::getImageWidthMax());
+    if (block.getMaxPreviewWidth())
+        maxSizeWidth = std::min(maxSizeWidth, block.getMaxPreviewWidth());
     const QSize maxSize(maxSizeWidth, Style::getImageHeightMax());
     previewSize = limitSize(previewSize, maxSize);
 

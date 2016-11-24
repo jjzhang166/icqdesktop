@@ -19,7 +19,8 @@ namespace Ui
         input_(_input),
         isFitToText_(_isFitToText),
         isCatchEnter_(false),
-        add_(0)
+        add_(0),
+        limit_(-1)
     {
         init(_fontSize);
         setPalette(_palette);
@@ -35,7 +36,8 @@ namespace Ui
         input_(_input),
         isFitToText_(_isFitToText),
         isCatchEnter_(false),
-        add_(0)
+        add_(0),
+        limit_(-1)
     {
         init(_fontSize);
 
@@ -55,13 +57,19 @@ namespace Ui
         , isFitToText_(_isFitToText)
         , isCatchEnter_(false)
         , add_(0)
+        , limit_(-1)
     {
         init(font_.pixelSize());
 
-        QPalette palette;
-        palette.setColor(QPalette::Text, color_);
-        setPalette(palette);
+        QPalette p = palette();
+        p.setColor(QPalette::Text, color_);
+        setPalette(p);
         initFlashTimer();
+    }
+    
+    void TextEditEx::limitCharacters(int count)
+    {
+        limit_ = count;
     }
 
     void TextEditEx::init(int /*_fontSize*/)
@@ -243,7 +251,31 @@ namespace Ui
         }
         if (_source->hasText())
         {
-            Logic::Text4Edit(_source->text(), *this, Logic::Text2DocHtmlMode::Pass, false);
+            if (limit_ != -1 && document()->characterCount() >= limit_)
+                return;
+            
+            QString text = _source->text();
+            if (limit_ != -1 && text.length() + document()->characterCount() > limit_)
+                text.resize(limit_ - document()->characterCount());
+            
+            if (input_)
+            {
+                if (platform::is_apple())
+                {
+                    auto cursor = textCursor();
+                    cursor.beginEditBlock();
+                    cursor.insertText(text);
+                    cursor.endEditBlock();
+                }
+                else
+                {
+                    Logic::Text4EditEmoji(text, *this);
+                }
+            }
+            else
+            {
+                Logic::Text4Edit(text, *this, Logic::Text2DocHtmlMode::Pass, false);
+            }
         }
     }
 
@@ -335,10 +367,17 @@ namespace Ui
                 return;
             }
         }
+        
+        const auto lenght = document()->characterCount();
+        bool deny = limit_ != -1 && lenght >= limit_ && !_event->text().isEmpty();
 
         auto oldPos = textCursor().position();
         QTextBrowser::keyPressEvent(_event);
         auto newPos = textCursor().position();
+        
+        if (deny && document()->characterCount() > lenght)
+            textCursor().deletePreviousChar();
+        
         if (_event->modifiers() & Qt::ShiftModifier && _event->key() == Qt::Key_Up && oldPos == newPos)
         {
             auto cur = textCursor();
@@ -545,6 +584,9 @@ namespace Ui
     void TextEditEx::contextMenuEvent(QContextMenuEvent *e)
     {
         auto menu = createStandardContextMenu();
+        if (!menu)
+            return;
+        
         ContextMenu::applyStyle(menu, false, Utils::scale_value(14), Utils::scale_value(24));
         menu->exec(e->globalPos());
         menu->deleteLater();

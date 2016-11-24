@@ -6,6 +6,7 @@
 #include "../../async_task.h"
 #include "../../../common.shared/common.h"
 #include "../../proxy_settings.h"
+#include "../../configuration/hosts_config.h"
 
 namespace core
 {
@@ -89,6 +90,8 @@ namespace core
 
             wpie_error_too_large_file = 35,
 
+            wpie_error_request_canceled_wait_timeout = 36,
+
             wpie_client_http_error = 400,
 
             wpie_error_need_relogin= 1000,
@@ -155,6 +158,7 @@ namespace core
             std::string aimid_;
             proxy_settings proxy_;
             bool full_log_;
+            hosts_map hosts_;
 
             wim_packet_params(
                 std::function<bool()> _stop_handler,
@@ -166,7 +170,9 @@ namespace core
                 const std::string& _aimid,
                 const time_t _time_offset,
                 const proxy_settings& _proxy,
-                const bool _full_log)
+                const bool _full_log,
+                const core::hosts_map& _hosts
+                )
                 :
             stop_handler_(_stop_handler),
                 a_token_(_a_token),
@@ -177,7 +183,8 @@ namespace core
                 uniq_device_id_(_uniq_device_id),
                 aimid_(_aimid),
                 proxy_(_proxy),
-                full_log_(_full_log)
+                full_log_(_full_log),
+                hosts_(_hosts)
             {
             }
 
@@ -193,6 +200,8 @@ namespace core
             std::string response_str_;
             std::string header_str_;
 
+            bool hosts_scheme_changed_;
+
         protected:
 
             void load_response_str(const char* buf, unsigned size);
@@ -204,6 +213,7 @@ namespace core
             std::string status_text_;
             uint32_t http_code_;
             uint32_t repeat_count_;
+            bool can_change_hosts_scheme_;
 
             wim_packet_params params_;
 
@@ -238,7 +248,14 @@ namespace core
             std::string get_status_text() const { return status_text_; }
             uint32_t get_http_code() const { return http_code_; }
             uint32_t get_repeat_count() const;
+            void set_repeat_count(const uint32_t _count);
             bool is_stopped() const;
+            
+            bool can_change_hosts_scheme() const;
+            void set_can_change_hosts_scheme(const bool _can);
+            void change_hosts_scheme();
+            bool is_hosts_scheme_changed() const;
+            const hosts_map& get_hosts_scheme() const;
 
             wim_packet(const wim_packet_params& _params);
             virtual ~wim_packet();

@@ -27,7 +27,9 @@ namespace ContactList
         const bool _drawLastRead,
         const QPixmap& _lastReadAvatar,
         const QString& _role,
-        int _unreadsCounter)
+        int _unreadsCounter,
+        const QString _term)
+
 		: AimId_(_aimId)
 		, Avatar_(_avatar)
 		, State_(_state)
@@ -44,6 +46,7 @@ namespace ContactList
         , lastReadAvatar_(_lastReadAvatar)
         , role_(_role)
         , unreadsCounter_(_unreadsCounter)
+        , searchTerm_(_term)
 	{
 		assert(!AimId_.isEmpty());
 		assert(!ContactName_.isEmpty());
@@ -69,17 +72,17 @@ namespace ContactList
 		return Utils::scale_value(Px_);
 	}
 
-    DipFont::DipFont(const Fonts::FontFamily _family, const Fonts::FontStyle _style, const DipPixels _size)
+    DipFont::DipFont(const Fonts::FontFamily _family, const Fonts::FontWeight _weight, const DipPixels _size)
 		: Family_(_family)
 		, Size_(_size)
-        , Style_(_style)
+        , Weight_(_weight)
 	{
 //		assert(!Family_.isEmpty());
 	}
 
 	QFont DipFont::font() const
 	{
-        return Fonts::appFont(Size_.px(), Family_, Style_);
+        return Fonts::appFont(Size_.px(), Family_, Weight_);
 	}
 
 	QString FormatTime(const QDateTime& _time)
@@ -186,6 +189,11 @@ namespace ContactList
         return Utils::scale_value(44);
     }
 
+    int SearchInAllChatsHeight()
+    {
+        return Utils::scale_value(49);
+    }
+
     int GroupItemHeight()
     {
         return Utils::scale_value(28);
@@ -220,8 +228,8 @@ namespace ContactList
     {
         const auto fontWeight = Fonts::appFontWeightQss(
             isUnread ?
-                QFont::Weight::DemiBold :
-                QFont::Weight::Normal);
+                Fonts::FontWeight::Semibold:
+                Fonts::FontWeight::Normal);
 
         return fontWeight;
     };
@@ -234,7 +242,7 @@ namespace ContactList
 
     ContactListParams& GetRecentsParams(int _regim)
     {
-        if (_regim == Logic::MembersWidgetRegim::FROM_ALERT)
+        if (_regim == Logic::MembersWidgetRegim::FROM_ALERT || _regim == Logic::MembersWidgetRegim::HISTORY_SEARCH)
         {
             static ContactListParams params(false);
             return params;
@@ -284,6 +292,49 @@ namespace ContactList
         painter.restore();
     }
 
+    int RenderDate(QPainter &painter, const QDateTime &ts, const VisualDataBase &item, ContactListParams& _contactListPx, const ViewParams& _viewParams)
+    {
+        const auto regim = _viewParams.regim_;
+        const auto isWithCheckBox = regim == Logic::MembersWidgetRegim::SELECT_MEMBERS;
+        auto timeXRight = CorrectItemWidth(ItemWidth(_viewParams).px() - _contactListPx.itemPadding().px(), _viewParams.fixedWidth_)
+            - _viewParams.rightMargin_ - _contactListPx.itemPadding().px();
+
+        if (_viewParams.regim_ == ::Logic::MembersWidgetRegim::HISTORY_SEARCH)
+        {
+            timeXRight = CorrectItemWidth(ItemWidth(_viewParams).px(), _viewParams.fixedWidth_) - _viewParams.rightMargin_ - _contactListPx.itemPadding().px();
+        }
+
+        if (!ts.isValid())
+        {
+            return timeXRight;
+        }
+
+        const auto timeStr = FormatTime(ts);
+        if (timeStr.isEmpty())
+        {
+            return timeXRight;
+        }
+
+        static QFontMetrics m(_contactListPx.timeFont().font());
+        const auto leftBearing = m.leftBearing(timeStr[0]);
+        const auto rightBearing = m.rightBearing(timeStr[timeStr.length() - 1]);
+        const auto timeWidth = (m.tightBoundingRect(timeStr).width() + leftBearing + rightBearing);
+        const auto timeX = timeXRight - timeWidth;
+
+        if ((!isWithCheckBox && !Logic::is_delete_members_regim(regim) && !Logic::is_admin_members_regim(regim))
+            || (Logic::is_delete_members_regim(regim) && !item.IsHovered_)
+            || (!Logic::is_admin_members_regim(regim) && !item.IsHovered_))
+        {
+            painter.save();
+            painter.setFont(_contactListPx.timeFont().font());
+            painter.setPen(_contactListPx.timeFontColor());
+            painter.drawText(timeX, _contactListPx.timeY().px(), timeStr);
+            painter.restore();
+        }
+
+        return timeX;
+    }
+
     void RenderContactName(QPainter &painter, const ContactList::VisualDataBase &visData, const int y, const int rightBorderPx, ContactList::ViewParams _viewParams, ContactList::ContactListParams& _contactListPx)
     {
         assert(y > 0);
@@ -293,7 +344,7 @@ namespace ContactList
         _contactListPx.setLeftMargin(_viewParams.leftMargin_);
 
         QString color;
-        auto style = Fonts::FontStyle::NORMAL;
+        auto weight = Fonts::FontWeight::Normal;
         QString name;
         int height = 0;
         if (_contactListPx.isCL())
@@ -306,18 +357,20 @@ namespace ContactList
         else
         {
             const auto hasUnreads = (_viewParams.regim_ != ::Logic::MembersWidgetRegim::FROM_ALERT && (visData.unreadsCounter_ > 0));
-            style = (hasUnreads ? Fonts::FontStyle::SEMIBOLD : Fonts::FontStyle::NORMAL);
+            weight = (hasUnreads ? Fonts::FontWeight::Medium : Fonts::FontWeight::Normal);
             color = _contactListPx.getNameFontColor(hasUnreads);
             name = hasUnreads ? "nameUnread" : "name";
             height = _contactListPx.contactNameHeight().px() + (platform::is_apple() ? 1 : 0);
         }
 
+        const auto styleSheetQss = _contactListPx.getContactNameStylesheet(color, weight);
+
         static auto textControl = CreateTextBrowser(
             name,
-            _contactListPx.getContactNameStylesheet(color, style),
+            styleSheetQss,
             height);
 
-        textControl.get()->setStyleSheet(_contactListPx.getContactNameStylesheet(color, style));
+        textControl.get()->setStyleSheet(styleSheetQss);
 
         QPixmap official_mark;
         if (visData.isOfficial_)
@@ -366,5 +419,35 @@ namespace ContactList
         int pX = _contactListPx.GetContactNameX().px() + m.width(elidedString) + _contactListPx.official_hor_padding().px();
         int pY = y + _contactListPx.official_ver_padding().px();
         painter.drawPixmap(pX, pY, official_mark);
+    }
+
+    int RenderRemove(QPainter &painter, ContactListParams& _contactListPx, const ViewParams& _viewParams)
+    {
+        const auto _shortView = _viewParams.shortView_;
+        const auto width = _viewParams.fixedWidth_;
+        const auto remove_img = Utils::parse_image_name(":/resources/contr_clear_100.png");
+        const auto isWithCheckBox = false;
+        painter.save();
+
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
+        painter.drawPixmap(GetXOfRemoveImg(isWithCheckBox, _shortView, width)
+            , _contactListPx.itemHeight().px() / 2 - _contactListPx.remove_size().px() / 2
+            , _contactListPx.remove_size().px()
+            , _contactListPx.remove_size().px()
+            , remove_img);
+
+        painter.restore();
+
+        const auto xPos = CorrectItemWidth(ItemWidth(_viewParams).px(), width) - _contactListPx.itemPadding().px() - _contactListPx.remove_size().px() - _contactListPx.onlineSignLeftPadding().px();
+        assert(xPos > _contactListPx.itemLeftBorder().px());
+        return xPos;
+    }
+
+    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView, int width)
+    {
+        auto contactListPx = GetContactListParams();
+        return CorrectItemWidth(ItemWidth(false, _isWithCheckBox, _shortView).px(), width) - contactListPx.itemPadding().px() - DipPixels(contactListPx.onlineSignSize() + contactListPx.remove_size()).px();
     }
 }

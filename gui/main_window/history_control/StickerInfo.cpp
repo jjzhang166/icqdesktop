@@ -20,6 +20,16 @@ namespace HistoryControl
 		);
 	}
 
+    StickerInfoSptr StickerInfo::Make(const quint32 _setId, const quint32 _stickerId)
+    {
+        assert(_setId > 0);
+        assert(_stickerId > 0);
+
+        return StickerInfoSptr(
+            new StickerInfo(_setId, _stickerId)
+            );
+    }
+
 	StickerInfo::StickerInfo(const quint32 _setId, const quint32 _stickerId)
 		: SetId_(_setId)
 		, StickerId_(_stickerId)

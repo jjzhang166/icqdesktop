@@ -219,7 +219,7 @@ namespace Ui
 		return h;
 	}
 
-	bool compileText(const QString& _text, CompiledText& _result, bool _multiline)
+	bool CompiledText::compileText(const QString& _text, CompiledText& _result, bool _multiline)
 	{
 		QTextStream inputStream(const_cast<QString*>(&_text), QIODevice::ReadOnly);
 
@@ -300,7 +300,7 @@ namespace Ui
 
 			if (convertEmoji())
 				continue;
-            
+
 			convertPlainCharacter();
 		}
 
@@ -313,7 +313,7 @@ namespace Ui
 		return e;
 	}
 
-    TextEmojiWidget::TextEmojiWidget(QWidget* _parent, Fonts::FontFamily _fontFamily, Fonts::FontStyle _fontStyle, int _fontSize, const QColor& _color, int _sizeToBaseline)
+    TextEmojiWidget::TextEmojiWidget(QWidget* _parent, Fonts::FontFamily _fontFamily, Fonts::FontWeight _fontWeight, int _fontSize, const QColor& _color, int _sizeToBaseline)
 		:	QWidget(_parent),
 		align_(TextEmojiAlign::allign_left),
 		color_(_color),
@@ -322,7 +322,9 @@ namespace Ui
 		multiline_(false),
 		selectable_(false)
 	{
-        font_ = Fonts::appFont(_fontSize, _fontFamily, _fontStyle);
+        font_ = Fonts::appFont(_fontSize, _fontFamily, _fontWeight);
+
+        setFont(font_);
 
 		QFontMetrics metrics = QFontMetrics(font_);
 
@@ -371,7 +373,7 @@ namespace Ui
         }
         setFixedHeight(height);
     }
-    
+
     TextEmojiWidget::~TextEmojiWidget(void)
 	{
 	}
@@ -381,7 +383,7 @@ namespace Ui
 		align_ = _align;
 		text_ = _text;
 		compiledText_.reset(new CompiledText());
-		if (!compileText(text_, *compiledText_, multiline_))
+		if (!CompiledText::compileText(text_, *compiledText_, multiline_))
 			assert(!"TextEmojiWidget: couldn't compile text.");
         QWidget::update();
 	}
@@ -422,20 +424,21 @@ namespace Ui
 	{
 		if (selectable_ != _v)
 		{
+            static QMetaObject::Connection con;
 			if (_v)
 			{
-				disconnector_.add("selected", connect(&events(), &TextEmojiWidgetEvents::selected, [this](TextEmojiWidget* _obj)
+				con = connect(&events(), &TextEmojiWidgetEvents::selected, this, [this](TextEmojiWidget* _obj)
 				{
 					if ((TextEmojiWidget*)this != _obj)
 					{
 						selection_ = QPoint();
                         QWidget::update();
 					}
-				}));
+				});
 			}
-			else
+			else if (con)
 			{
-                disconnector_.remove("selected");
+                disconnect(con);
 			}
 			selectable_ = _v;
 			selection_ = QPoint();
@@ -590,7 +593,7 @@ namespace Ui
 
 	////
 
-	TextEmojiLabel::TextEmojiLabel(QWidget* _parent) 
+	TextEmojiLabel::TextEmojiLabel(QWidget* _parent)
         : LabelEx(_parent)
         , kerning_(0)
 	{
@@ -632,7 +635,7 @@ namespace Ui
 		QLabel::setText(_text);
         compiledText_.reset(new CompiledText());
         compiledText_->setKerning(kerning_);
-		if (!compileText(QLabel::text(), *compiledText_, false))
+		if (!CompiledText::compileText(QLabel::text(), *compiledText_, false))
 			assert(false && "TextEmojiLabel::setText: couldn't compile text.");
 	}
 
@@ -673,7 +676,7 @@ namespace Ui
         compiledText_->draw(_painter, offsetX, offsetY, -1);
 	}
 
-    void TextEmojiLabel::setKerning(int _kerning) 
+    void TextEmojiLabel::setKerning(int _kerning)
     {
         kerning_ = _kerning;
         if (!!compiledText_)

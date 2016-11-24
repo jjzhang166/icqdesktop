@@ -81,13 +81,9 @@ int32_t robusto_packet::parse_response(std::shared_ptr<core::tools::binary_strea
             return on_response_error_code();
         }
     }
-    catch (const std::exception&)
-    {
-
-    }
     catch (...)
     {
-
+        return 0;
     }
 
     return 0;

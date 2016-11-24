@@ -1,11 +1,11 @@
 #include "stdafx.h"
 #include "SelectionContactsForGroupChat.h"
 
+#include "AbstractSearchModel.h"
 #include "ChatMembersModel.h"
 #include "ContactList.h"
 #include "ContactListItemRenderer.h"
 #include "ContactListModel.h"
-#include "SearchModel.h"
 #include "SearchWidget.h"
 #include "../GroupChatOperations.h"
 #include "../MainWindow.h"
@@ -20,7 +20,6 @@ namespace Ui
 
     bool SelectContactsWidget::forwardConfirmed(QString aimId)
     {
-        puts(aimId.toStdString().c_str());
         QString text = QT_TRANSLATE_NOOP("popup_window", "Are you sure you want to forward messages to <USER>?");
         if (auto contactItemWrapper = Logic::getContactListModel()->getContactItem(aimId))
         {
@@ -51,7 +50,7 @@ namespace Ui
             bool confirmed = true;
             if (!selectedContact_.isEmpty())
             {
-                mainDialog_->close();
+                mainDialog_->hide();
                 confirmed = forwardConfirmed(selectedContact_);
             }
             if (confirmed)
@@ -81,7 +80,7 @@ namespace Ui
             bool confirmed = true;
             if (!selectedContact_.isEmpty())
             {
-                mainDialog_->close();
+                mainDialog_->hide();
                 confirmed = forwardConfirmed(selectedContact_);
             }
             if (confirmed)
@@ -175,7 +174,9 @@ namespace Ui
         globalLayout->setContentsMargins(0, 0, 0, 0);
         globalLayout->setMargin(0);
         globalLayout->setSpacing(0);
-        mainWidget_->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
+        //mainWidget_->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
+        mainWidget_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        mainWidget_->setFixedWidth(Utils::scale_value(380));
 
         searchWidget_ = new SearchWidget(true, 0, Utils::scale_value(8));
         Testing::setAccessibleName(searchWidget_, "CreateGroupChat");
@@ -216,18 +217,17 @@ namespace Ui
         connect(contactList_, &ContactList::itemSelected, this, &SelectContactsWidget::itemClicked, Qt::QueuedConnection);
 
         connect(searchWidget_, &SearchWidget::searchBegin, this,  &SelectContactsWidget::searchBegin, Qt::QueuedConnection);
-        connect(searchWidget_, &SearchWidget::searchEnd, this,  &SelectContactsWidget::searchEnd, Qt::QueuedConnection);
         connect(searchWidget_, &SearchWidget::enterPressed, this, &SelectContactsWidget::enterPressed, Qt::QueuedConnection);
+        connect(searchWidget_, &SearchWidget::escapePressed, this, &SelectContactsWidget::escapePressed, Qt::QueuedConnection);
         connect(searchWidget_, &SearchWidget::upPressed, contactList_, &ContactList::searchUpPressed, Qt::QueuedConnection);
         connect(searchWidget_, &SearchWidget::downPressed, contactList_, &ContactList::searchDownPressed, Qt::QueuedConnection);
         connect(searchWidget_, SIGNAL(search(QString)), Logic::getCurrentSearchModel(regim_), SLOT(searchPatternChanged(QString)), Qt::QueuedConnection);
-        connect(searchWidget_, &SearchWidget::searchEnd, this, &SelectContactsWidget::searchEnd, Qt::QueuedConnection);
 
         if (Logic::is_delete_members_regim(regim_))
             connect(contactList_, SIGNAL(addContactClicked()), this, SLOT(onViewAllMembers()), Qt::QueuedConnection);
 
         contactList_->changeTab(Ui::CurrentTab::SEARCH);
-        // Logic::getCurrentSearchModel(regim_)->searchPatternChanged("");
+        Logic::getCurrentSearchModel(regim_)->searchPatternChanged("");
         searchWidget_->setShowButton(false);
     }
 
@@ -267,8 +267,13 @@ namespace Ui
 
     void SelectContactsWidget::searchEnd()
     {
-        Logic::getCurrentSearchModel(regim_)->searchPatternChanged("");
-        //contactList_->setSearchMode(false);
+        emit contactList_->searchEnd();
+        // contactList_->setSearchMode(false);
+    }
+
+    void SelectContactsWidget::escapePressed()
+    {
+        mainDialog_->close();
     }
 
     void SelectContactsWidget::searchBegin()
@@ -321,10 +326,6 @@ namespace Ui
     {
         x_ = _x;
         y_ = _y;
-
-#ifdef __APPLE__
-        Utils::setWidgetPopup(mainDialog_.get(), true);
-#endif //__APPLE__
 
         Logic::getContactListModel()->setIsWithCheckedBox(!isShareLinkMode() && !isShareTextMode());
 

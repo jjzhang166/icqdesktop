@@ -59,8 +59,8 @@ namespace core
         // class sticker
         //////////////////////////////////////////////////////////////////////////
         sticker::sticker()
+            : id_(0)
         {
-
         }
 
 
@@ -354,7 +354,7 @@ namespace core
 
             if (iter_status->value.IsInt())
             {
-                int status_code_ = iter_status->value.GetInt();
+                auto status_code_ = iter_status->value.GetInt();
                 if (status_code_ != 200)
                 {
                     assert(false);

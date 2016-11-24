@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../namespaces.h"
+#include "../../../http_request.h"
 
 CORE_NS_BEGIN
 
@@ -113,7 +114,8 @@ public:
         const std::string& _file_url,
         const std::wstring& _file_name,
         const bool _keep_alive,
-        const wim_packet_params& _params);
+        const wim_packet_params& _params,
+        http_request_simple::progress_function _progress_func = nullptr);
 
     std::shared_ptr<download_image_handler> download_image_preview(
         const int64_t _seq,

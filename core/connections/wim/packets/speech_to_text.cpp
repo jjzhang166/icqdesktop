@@ -29,7 +29,7 @@ int32_t speech_to_text::init_request(std::shared_ptr<core::http_request_simple> 
 {
     std::stringstream ss_url;
 
-    int pos = Url_.rfind('/');
+    auto pos = Url_.rfind('/');
     std::string fileid;
     if (pos != std::string::npos)
         fileid = Url_.substr(pos + 1, Url_.length() - pos - 1);
@@ -139,7 +139,7 @@ std::string speech_to_text::get_text() const
     return Text_;
 }
 
-int speech_to_text::get_comeback() const
+int32_t speech_to_text::get_comeback() const
 {
     return Comeback_;
 }

@@ -1,9 +1,12 @@
 #include "stdafx.h"
 #include "RecentItemDelegate.h"
 #include "../../cache/avatars/AvatarStorage.h"
+
 #include "ContactListModel.h"
 #include "RecentsModel.h"
 #include "UnknownsModel.h"
+#include "SearchModelDLG.h"
+
 #include "ContactList.h"
 #include "../history_control/MessagesModel.h"
 
@@ -16,7 +19,7 @@
 namespace Logic
 {
 	RecentItemDelegate::RecentItemDelegate(QObject* parent)
-		: QItemDelegate(parent)
+		: AbstractItemDelegateWithRegim(parent)
 		, StateBlocked_(false)
 	{
 	}
@@ -106,6 +109,21 @@ namespace Logic
             painter->restore();
             return;
         }
+        else if (dlg.AimId_ == "contacts" || dlg.AimId_ == "all messages")
+        {
+            painter->save();
+            painter->setRenderHint(QPainter::Antialiasing);
+            painter->setRenderHint(QPainter::TextAntialiasing);
+            painter->setRenderHint(QPainter::SmoothPixmapTransform);
+            painter->translate(option.rect.topLeft());
+
+            auto text = dlg.GetText();
+            ContactList::RenderServiceItem(*painter, text, dlg.AimId_ == "favorites" /* renderState */, dlg.AimId_ == "recents" /* drawLine */, viewParams_);
+
+            painter->restore();
+            return;
+        }
+
 		const auto isMultichat = Logic::getContactListModel()->isChat(dlg.AimId_);
 		const auto state = isMultichat ? QString() : Logic::getContactListModel()->getState(dlg.AimId_);
         const auto slastSeen = isMultichat ? QString() : getLastSeenText(dlg.AimId_);
@@ -123,7 +141,9 @@ namespace Logic
 		const auto displayName = Logic::getContactListModel()->getDisplayName(dlg.AimId_);
         const auto deliveryState = getDeliveryState(dlg, isMultichat);
 
-        const auto showLastMessage = viewParams_.regim_ == ::Logic::MembersWidgetRegim::FROM_ALERT || Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true);
+        const auto showLastMessage = viewParams_.regim_ == ::Logic::MembersWidgetRegim::FROM_ALERT
+            || viewParams_.regim_ == ::Logic::MembersWidgetRegim::HISTORY_SEARCH
+            || Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true);
 
         auto status = (
             showLastMessage ?
@@ -133,24 +153,25 @@ namespace Logic
 
         bool isTyping = false;
 
-        for (auto iter_typing = typings_.rbegin(); iter_typing != typings_.rend(); ++iter_typing)
-        {
-            if (iter_typing->aimId_ == dlg.AimId_)
+        if (viewParams_.regim_ != ::Logic::MembersWidgetRegim::HISTORY_SEARCH)
+            for (auto iter_typing = typings_.rbegin(); iter_typing != typings_.rend(); ++iter_typing)
             {
-                isTyping = true;
-
-                status.clear();
-
-                if (isMultichat)
+                if (iter_typing->aimId_ == dlg.AimId_)
                 {
-                    status += iter_typing->getChatterName() + " ";
+                    isTyping = true;
+
+                    status.clear();
+
+                    if (isMultichat)
+                    {
+                        status += iter_typing->getChatterName() + " ";
+                    }
+
+                    status += QT_TRANSLATE_NOOP("contact_list", "typing...");
+
+                    break;
                 }
-
-                status += QT_TRANSLATE_NOOP("contact_list", "typing...");
-
-                break;
             }
-        }
 
         const auto isOfficial = dlg.Official_ || Logic::getContactListModel()->isOfficial(dlg.AimId_);
         auto isDrawLastRead = false;
@@ -184,7 +205,10 @@ namespace Logic
             isDrawLastRead,
             lastReadAvatar,
             isTyping,
-			deliveryState);
+			deliveryState,
+            dlg.SearchTerm_,
+            dlg.HasLastMsgId(),
+            dlg.SearchedMsgId_);
 
 		painter->save();
 		painter->setRenderHint(QPainter::Antialiasing);
@@ -209,12 +233,23 @@ namespace Logic
 	QSize RecentItemDelegate::sizeHint(const QStyleOptionViewItem&, const QModelIndex& i) const
 	{
         auto width = ContactList::GetRecentsParams(viewParams_.regim_).itemWidth().px();
-        if (Logic::getRecentsModel()->isServiceItem(i))
+
+        if (viewParams_.regim_ == ::Logic::MembersWidgetRegim::HISTORY_SEARCH)
         {
-            if (Logic::getRecentsModel()->isUnknownsButton(i))
-                return QSize(width, ContactList::GetRecentsParams(viewParams_.regim_).unknownsItemHeight().px());
-            else
+            if (Logic::getSearchModelDLG()->isServiceItem(i.row()))
+            {
                 return QSize(width, ContactList::GetRecentsParams(viewParams_.regim_).serviceItemHeight().px());
+            }
+        }
+        else
+        {
+            if (Logic::getRecentsModel()->isServiceItem(i))
+            {
+                if (Logic::getRecentsModel()->isUnknownsButton(i))
+                    return QSize(width, ContactList::GetRecentsParams(viewParams_.regim_).unknownsItemHeight().px());
+                else
+                    return QSize(width, ContactList::GetRecentsParams(viewParams_.regim_).serviceItemHeight().px());
+            }
         }
 		return QSize(width, ContactList::GetRecentsParams(viewParams_.regim_).itemHeight().px());
 	}

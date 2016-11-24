@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#include "../../../tools/url_parser.h"
-
 #include "../wim_packet.h"
 
 #include "preview_proxy.h"
@@ -152,7 +150,6 @@ Str2StrMap format_get_preview_params(
     const bool _crop,
     const favicon_size _favicon_size)
 {
-    //assert(tools::has_valid_url_header(_uri_to_preview));
     assert(!_width || (*_width >= 0));
     assert(!_height || (*_height >= 0));
     assert(_favicon_size > favicon_size::min);
@@ -193,8 +190,6 @@ Str2StrMap format_get_preview_params(
 
 Str2StrMap format_get_url_content_params(const std::string &_uri)
 {
-    assert(tools::has_valid_url_header(_uri));
-
     Str2StrMap result;
 
     result.emplace("url", wim_packet::escape_symbols(_uri));
@@ -304,10 +299,10 @@ namespace
         {
             case favicon_size::small: return 16;
             case favicon_size::med: return 32;
+            default:
+                assert(!"unknown favicon size");
+                return -1;
         }
-
-        assert(!"unknown favicon size");
-        return -1;
     }
 
     std::string parse_annotation(const rapidjson::Value &_doc_node)

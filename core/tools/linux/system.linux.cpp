@@ -117,11 +117,18 @@ std::wstring core::tools::system::get_user_downloads_dir()
     return wide;
 }
 
-std::string core::tools::system::to_upper(std::string str)
+std::string core::tools::system::to_upper(const std::string& str)
 {
-    std::string upper = str;
-    boost::to_upper(upper);
-    return upper;
+    std::wstring upper = from_utf8(str);
+    std::transform(upper.begin(), upper.end(), upper.begin(), ::towupper);
+    return from_utf16(upper);
+}
+
+std::string core::tools::system::to_lower(const std::string& str)
+{
+    std::wstring lower = from_utf8(str);
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::towlower);
+    return from_utf16(lower);
 }
 
 std::string core::tools::system::get_os_version_string()

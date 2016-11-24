@@ -17,7 +17,7 @@ QWidget#VideoView
 
 Ui--VideoPlayerControlPanel
 {
-	background: rgba(0,0,0,35%);
+	background: black;
 	border: none;
 }
 

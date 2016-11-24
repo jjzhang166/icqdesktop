@@ -3,14 +3,16 @@
 
 #include "stdafx.h"
 
-#ifdef __linux__
-#include "corelib.h"
+#ifdef ICQ_CORELIB_STATIC_LINKING
+    #include "corelib.h"
 #else
-#include "core_instance.h"
-#endif //__linux
+    #include "core_instance.h"
+#endif
 
 #ifdef __APPLE__
-extern "C"
+    #ifndef ICQ_CORELIB_STATIC_LINKING
+        extern "C"
+    #endif
 #endif
 bool get_core_instance(core::icore_interface** _core)
 {

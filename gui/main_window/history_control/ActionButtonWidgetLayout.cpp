@@ -17,16 +17,13 @@ ActionButtonWidgetLayout::ActionButtonWidgetLayout(ActionButtonWidget *parent)
     assert(Item_);
 }
 
-void ActionButtonWidgetLayout::setGeometry(const QRect &r)
+void ActionButtonWidgetLayout::setGeometry(const QRect&)
 {
-    r;
-
     setGeometryInternal();
 }
 
-void ActionButtonWidgetLayout::addItem(QLayoutItem *item)
+void ActionButtonWidgetLayout::addItem(QLayoutItem* /*item*/)
 {
-    item;
 }
 
 const QRect& ActionButtonWidgetLayout::getIconRect() const
@@ -44,15 +41,13 @@ const QRect& ActionButtonWidgetLayout::getProgressTextRect() const
     return ProgressTextRect_;
 }
 
-QLayoutItem* ActionButtonWidgetLayout::itemAt(int index) const
+QLayoutItem* ActionButtonWidgetLayout::itemAt(int /*index*/) const
 {
-    index;
     return nullptr;
 }
 
-QLayoutItem* ActionButtonWidgetLayout::takeAt(int index)
+QLayoutItem* ActionButtonWidgetLayout::takeAt(int /*index*/)
 {
-    index;
     return nullptr;
 }
 

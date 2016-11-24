@@ -34,6 +34,8 @@
 		95CDDFA51C27E64200240739 /* namespaces.h in Headers */ = {isa = PBXBuildFile; fileRef = 95CDDFA11C27E64100240739 /* namespaces.h */; };
 		95CDDFA61C27E64200240739 /* remote_proc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 95CDDFA21C27E64100240739 /* remote_proc.cpp */; };
 		95CDDFA71C27E64200240739 /* remote_proc.h in Headers */ = {isa = PBXBuildFile; fileRef = 95CDDFA31C27E64200240739 /* remote_proc.h */; };
+		B2ADEBE61DC23525001E2CF9 /* url_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2ADEBE41DC23525001E2CF9 /* url_parser.cpp */; };
+		B2ADEBE71DC23525001E2CF9 /* url_parser.h in Headers */ = {isa = PBXBuildFile; fileRef = B2ADEBE51DC23525001E2CF9 /* url_parser.h */; };
 		D5E14CEB1BC6840A007F8671 /* collection_helper.h in Headers */ = {isa = PBXBuildFile; fileRef = D5E14CDC1BC6840A007F8671 /* collection_helper.h */; };
 		D5E14CEC1BC6840A007F8671 /* collection.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E14CDD1BC6840A007F8671 /* collection.cpp */; };
 		D5E14CED1BC6840A007F8671 /* collection.h in Headers */ = {isa = PBXBuildFile; fileRef = D5E14CDE1BC6840A007F8671 /* collection.h */; };
@@ -92,6 +94,8 @@
 		95CDDFA11C27E64100240739 /* namespaces.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = namespaces.h; path = ../namespaces.h; sourceTree = "<group>"; };
 		95CDDFA21C27E64100240739 /* remote_proc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = remote_proc.cpp; path = ../remote_proc.cpp; sourceTree = "<group>"; };
 		95CDDFA31C27E64200240739 /* remote_proc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = remote_proc.h; path = ../remote_proc.h; sourceTree = "<group>"; };
+		B2ADEBE41DC23525001E2CF9 /* url_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = url_parser.cpp; path = ../../common.shared/url_parser/url_parser.cpp; sourceTree = "<group>"; };
+		B2ADEBE51DC23525001E2CF9 /* url_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = url_parser.h; path = ../../common.shared/url_parser/url_parser.h; sourceTree = "<group>"; };
 		D55389AB1BC7E05B0088FBA6 /* core.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = core.xcodeproj; path = ../../core/core.xcodeproj; sourceTree = "<group>"; };
 		D5E14CD51BC683F9007F8671 /* libcorelib.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libcorelib.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5E14CDC1BC6840A007F8671 /* collection_helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = collection_helper.h; path = ../collection_helper.h; sourceTree = "<group>"; };
@@ -148,6 +152,8 @@
 		D5E14CCC1BC683F9007F8671 = {
 			isa = PBXGroup;
 			children = (
+				B2ADEBE41DC23525001E2CF9 /* url_parser.cpp */,
+				B2ADEBE51DC23525001E2CF9 /* url_parser.h */,
 				71F6D8561CF87C5000224AF7 /* common_defs.cpp */,
 				71F6D8571CF87C5000224AF7 /* common_defs.h */,
 				329DD0FE1CCE20760077E736 /* libiconv.a */,
@@ -216,6 +222,7 @@
 				D5E14CF01BC6840A007F8671 /* core_instance.h in Headers */,
 				D5E14CEB1BC6840A007F8671 /* collection_helper.h in Headers */,
 				95CDDFA41C27E64200240739 /* ivalue.h in Headers */,
+				B2ADEBE71DC23525001E2CF9 /* url_parser.h in Headers */,
 				860A30A61BDF7CE7000F0DF2 /* common.h in Headers */,
 				D5E14CF51BC6840A007F8671 /* targetver.h in Headers */,
 			);
@@ -300,6 +307,7 @@
 				D5E14CF11BC6840A007F8671 /* corelib.cpp in Sources */,
 				D5E14CEC1BC6840A007F8671 /* collection.cpp in Sources */,
 				D5E14CEF1BC6840A007F8671 /* core_instance.cpp in Sources */,
+				B2ADEBE61DC23525001E2CF9 /* url_parser.cpp in Sources */,
 				D5E14CF31BC6840A007F8671 /* stdafx.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

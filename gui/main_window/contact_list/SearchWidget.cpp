@@ -4,6 +4,7 @@
 #include "../../controls/CommonStyle.h"
 #include "../../controls/CustomButton.h"
 #include "../../utils/utils.h"
+#include "../../utils/InterConnector.h"
 
 namespace Ui
 {
@@ -76,7 +77,7 @@ namespace Ui
         QMetaObject::connectSlotsByName(this);
         connect(searchEdit_, SIGNAL(textEdited(QString)), this, SLOT(searchChanged(QString)), Qt::QueuedConnection);
         connect(searchEdit_, SIGNAL(clicked()), this, SLOT(searchStarted()), Qt::QueuedConnection);
-        connect(searchEdit_, SIGNAL(escapePressed()), this, SLOT(searchCompleted()), Qt::QueuedConnection);
+        connect(searchEdit_, SIGNAL(escapePressed()), this, SLOT(onEscapePress()), Qt::QueuedConnection);
         connect(searchEdit_, SIGNAL(enter()), this, SLOT(editEnterPressed()), Qt::QueuedConnection);
         connect(searchEdit_, SIGNAL(upArrow()), this, SLOT(editUpPressed()), Qt::QueuedConnection);
         connect(searchEdit_, SIGNAL(downArrow()), this, SLOT(editDownPressed()), Qt::QueuedConnection);
@@ -112,19 +113,28 @@ namespace Ui
         setActive(true);
     }
 
+    void SearchWidget::clearFocus()
+    {
+        searchEdit_->clearFocus();
+        setActive(false);
+    }
+
     SearchWidget::~SearchWidget()
     {
     }
 
     void SearchWidget::setActive(bool _active)
     {
+        if (active_ == _active)
+            return;
+
         if (_active && searchEditIcon_->menu())
         {
             menu_ = searchEditIcon_->menu();
             searchEditIcon_->setMenu(0);
         }
         
-        if (!_active)
+        if (!_active && menu_)
             searchEditIcon_->setMenu(menu_);
         
         active_ = _active;
@@ -171,14 +181,21 @@ namespace Ui
     void SearchWidget::clearInput()
     {
         searchEdit_->clear();
-        searchEdit_->clearFocus();
     }
 
     void SearchWidget::searchCompleted()
     {
         clearInput();
         setActive(false);
+        searchEdit_->clearFocus();
         emit searchEnd();
+        Utils::InterConnector::instance().setFocusOnInput();
+    }
+
+    void SearchWidget::onEscapePress()
+    {
+        searchCompleted();
+        emit escapePressed();
     }
 
     void SearchWidget::searchChanged(QString _text)
@@ -191,7 +208,7 @@ namespace Ui
         }
         else
         {
-            searchEnd();
+            emit inputEmpty();
         }
 
         emit search(_text);

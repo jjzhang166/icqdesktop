@@ -8,7 +8,7 @@ namespace core
 
     struct proxy_settings
     {
-        static const int default_proxy_port;
+        static const int32_t default_proxy_port;
 
         bool			use_proxy_;
         std::wstring	proxy_server_;

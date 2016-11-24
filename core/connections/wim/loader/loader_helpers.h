@@ -28,7 +28,6 @@ enum class path_type
     link_meta,
     file,
     snap_meta,
-    download_failed_sign,
 
     max
 };

@@ -64,6 +64,7 @@
     <file>voip/incoming_call.qss</file>
     <file>voip/video_panel.qss</file>
     <file>voip/volume_control.qss</file>
+    <file>voip/mask_panel.qss</file>
     <file>resources/main_window/appicon.ico</file>
     <file>resources/main_window/appicon_overlay.png</file>
     <file>resources/main_window/appicon_unread.ico</file>
@@ -387,6 +388,12 @@
     <file>resources/placeholders/content_placeholder_recents_125.png</file>
     <file>resources/placeholders/content_placeholder_recents_150.png</file>
     <file>resources/placeholders/content_placeholder_recents_200.png</file>
+
+    <file>resources/placeholders/content_placeholder_emptysearch_100.png</file>
+    <file>resources/placeholders/content_placeholder_emptysearch_125.png</file>
+    <file>resources/placeholders/content_placeholder_emptysearch_150.png</file>
+    <file>resources/placeholders/content_placeholder_emptysearch_200.png</file>
+
     <file>resources/placeholders/content_placeholder_cl_100.png</file>
     <file>resources/placeholders/content_placeholder_cl_125.png</file>
     <file>resources/placeholders/content_placeholder_cl_150.png</file>
@@ -576,6 +583,11 @@
     <file>resources/contr_call_bigdisable_150.png</file>
     <file>resources/contr_call_bigdisable_200.png</file>
 
+    <file>resources/contr_attach_100.png</file>
+    <file>resources/contr_attach_125.png</file>
+    <file>resources/contr_attach_150.png</file>
+    <file>resources/contr_attach_200.png</file>
+
     <file>resources/contr_writemsg_bigdisable_100.png</file>
     <file>resources/contr_writemsg_bigdisable_125.png</file>
     <file>resources/contr_writemsg_bigdisable_150.png</file>
@@ -615,10 +627,18 @@
     <file>resources/widgets/content_switch_on_125.png</file>
     <file>resources/widgets/content_switch_on_150.png</file>
     <file>resources/widgets/content_switch_on_200.png</file>
+    <file>resources/widgets/content_switch_on_dis_100.png</file>
+    <file>resources/widgets/content_switch_on_dis_125.png</file>
+    <file>resources/widgets/content_switch_on_dis_150.png</file>
+    <file>resources/widgets/content_switch_on_dis_200.png</file>
     <file>resources/widgets/content_switch_off_100.png</file>
     <file>resources/widgets/content_switch_off_125.png</file>
     <file>resources/widgets/content_switch_off_150.png</file>
     <file>resources/widgets/content_switch_off_200.png</file>
+    <file>resources/widgets/content_switch_dis_100.png</file>
+    <file>resources/widgets/content_switch_dis_125.png</file>
+    <file>resources/widgets/content_switch_dis_150.png</file>
+    <file>resources/widgets/content_switch_dis_200.png</file>
 
     <file>resources/widgets/content_selectbar_100.png</file>
     <file>resources/widgets/content_selectbar_100_hover.png</file>
@@ -1025,6 +1045,71 @@
     <file>resources/video_panel/videoctrl_economy_off_100_active.png</file>
     <file>resources/video_panel/videoctrl_economy_off_100.png</file>
 
+    <file>resources/video_panel/videoctrl_mask_right_200_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_200_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_200_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_200.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_150_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_150_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_150_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_150.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_125_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_125_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_125_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_125.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_100_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_100_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_100_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_right_100.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_100_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_100_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_100_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_100.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_125.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_125_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_125_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_125_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_150.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_150_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_150_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_150_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_200.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_200_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_200_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_left_200_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_200_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_200_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_200_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_200.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_150_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_150_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_150_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_150.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_125_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_125_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_125_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_125.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_100_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_100_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_100_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_down_100.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_100.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_100_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_100_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_100_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_125.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_125_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_125_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_125_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_150.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_150_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_150_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_150_hover.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_200.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_200_active.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_200_disable.png</file>
+    <file>resources/video_panel/videoctrl_mask_up_200_hover.png</file>
+
     <file>resources/contr_call_200.png</file>
     <file>resources/contr_call_200_active.png</file>
     <file>resources/contr_call_200_hover.png</file>
@@ -1039,6 +1124,16 @@
 	  <file>resources/dialog_markread_125.png</file>
 	  <file>resources/dialog_markread_150.png</file>
 	  <file>resources/dialog_markread_200.png</file>
+
+      <file>resources/dialog_onlyread_off_100.png</file>
+      <file>resources/dialog_onlyread_off_125.png</file>
+      <file>resources/dialog_onlyread_off_150.png</file>
+      <file>resources/dialog_onlyread_off_200.png</file>
+
+      <file>resources/dialog_onlyread_100.png</file>
+      <file>resources/dialog_onlyread_125.png</file>
+      <file>resources/dialog_onlyread_150.png</file>
+      <file>resources/dialog_onlyread_200.png</file>
 
 	  <file>resources/dialog_markread_all_100.png</file>
 	  <file>resources/dialog_markread_all_125.png</file>
@@ -1145,6 +1240,11 @@
     <file>resources/dialog_unfavorite_150.png</file>
     <file>resources/dialog_unfavorite_200.png</file>
 
+    <file>resources/dialog_openbrowser_100.png</file>
+    <file>resources/dialog_openbrowser_125.png</file>
+    <file>resources/dialog_openbrowser_150.png</file>
+    <file>resources/dialog_openbrowser_200.png</file>
+
 	<file>resources/user_king_100.png</file>
 	<file>resources/user_king_125.png</file>
 	<file>resources/user_king_150.png</file>
@@ -1154,6 +1254,11 @@
 	<file>resources/user_ultraadmin_125.png</file>
 	<file>resources/user_ultraadmin_150.png</file>
 	<file>resources/user_ultraadmin_200.png</file>
+
+    <file>resources/user_onlyread_100.png</file>
+    <file>resources/user_onlyread_125.png</file>
+    <file>resources/user_onlyread_150.png</file>
+    <file>resources/user_onlyread_200.png</file>
 
     <file>resources/sidebar_addmember_100.png</file>
     <file>resources/sidebar_addmember_125.png</file>
@@ -1203,10 +1308,28 @@
     <file>resources/sidebar_public_125.png</file>
     <file>resources/sidebar_public_150.png</file>
     <file>resources/sidebar_public_200.png</file>
+
+    <file>resources/sidebar_search_100.png</file>
+    <file>resources/sidebar_search_125.png</file>
+    <file>resources/sidebar_search_150.png</file>
+    <file>resources/sidebar_search_200.png</file>
+
     <file>resources/dialog_block_100.png</file>
     <file>resources/dialog_block_125.png</file>
     <file>resources/dialog_block_150.png</file>
     <file>resources/dialog_block_200.png</file>
+    <file>resources/sidebar_readonly_100.png</file>
+    <file>resources/sidebar_readonly_125.png</file>
+    <file>resources/sidebar_readonly_150.png</file>
+    <file>resources/sidebar_readonly_200.png</file>
+    <file>resources/sidebar_agegate_100.png</file>
+    <file>resources/sidebar_agegate_125.png</file>
+    <file>resources/sidebar_agegate_150.png</file>
+    <file>resources/sidebar_agegate_200.png</file>
+    <file>resources/sidebar_joinbylink_100.png</file>
+    <file>resources/sidebar_joinbylink_125.png</file>
+    <file>resources/sidebar_joinbylink_150.png</file>
+    <file>resources/sidebar_joinbylink_200.png</file>
 
 	<file>resources/contr_options_100.png</file>
 	<file>resources/contr_options_125.png</file>
@@ -1479,6 +1602,11 @@
     <file>resources/videoplayer/videoctrl_volume_off_200_active.png</file>
     <file>resources/videoplayer/videoctrl_volume_off_200_hover.png</file>
 
+    <file>resources/text_back_100.png</file>
+    <file>resources/text_back_125.png</file>
+    <file>resources/text_back_150.png</file>
+    <file>resources/text_back_200.png</file>
+    
   </qresource>
 
   <qresource prefix="/sounds">

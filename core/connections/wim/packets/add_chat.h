@@ -33,7 +33,7 @@ namespace core
                 const std::string& _m_chat_name,
                 const std::vector<std::string>& _m_chat_members);
 
-            int get_members_count() const;
+            int32_t get_members_count() const;
 
             virtual ~add_chat();
         };

@@ -15,8 +15,8 @@ namespace Ui
         CustomButton *themeButton = new CustomButton(this, pixmap_);
         
         borderWidget_ = new QWidget(this);
-        int w = _pixmap.width() / Utils::scale_bitmap(1);
-        int h = _pixmap.height() / Utils::scale_bitmap(1);
+        int w = _pixmap.width() / (platform::is_apple() ? 2 : 1);// / Utils::scale_bitmap(1);
+        int h = _pixmap.height() / (platform::is_apple() ? 2 : 1);// / Utils::scale_bitmap(1);
         setFixedWidth(w);
         setFixedHeight(h);
         themeButton->setFixedWidth(w);

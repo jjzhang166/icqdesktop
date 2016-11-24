@@ -223,6 +223,12 @@ namespace Data
             , Official_(false)
             , senderNick_(QString())
             , FavoriteTime_(-1)
+            , IsFromSearch_(false)
+            , RequestId_(-1)
+            , IsContact_(false)
+            , SearchTerm_("")
+            , SearchedMsgId_(-1)
+            , SearchPriority_(-1)
 		{
 		}
 
@@ -251,9 +257,15 @@ namespace Data
 		bool Chat_;
 		bool Visible_;
         bool Official_;
+        bool IsContact_;
 		QString LastMessageFriendly_;
         QString senderNick_;
         QString Friendly_;
+        bool IsFromSearch_;
+        qint64 RequestId_;
+        QString SearchTerm_;
+        qint64 SearchedMsgId_;
+        int SearchPriority_;
 
 	private:
 		QString Text_;
@@ -268,6 +280,8 @@ namespace Data
         QString senderFriendly_;
         qint32 time_;
         qint64 msgId_;
+        int32_t setId_;
+        int32_t stickerId_;
         bool isForward_;
         
         int id_;
@@ -280,13 +294,16 @@ namespace Data
             : time_(-1)
             , id_(-1)
             , msgId_(-1)
+            , setId_(-1)
+            , stickerId_(-1)
             , isFirstQuote_(false)
             , isLastQuote_(false)
             , isForward_(false)
         {
         }
         
-        bool isEmpty() const { return text_.isEmpty(); }
+        bool isEmpty() const { return text_.isEmpty() && !isSticker(); }
+        bool isSticker() const { return setId_ != -1 && stickerId_ != -1; }
 
         void serialize(core::icollection* _collection) const;
         void unserialize(core::icollection* _collection);
@@ -302,10 +319,11 @@ namespace Data
         Out QString &aimId,
         Out bool &havePending,
         Out MessageBuddies& messages,
-        Out MessageBuddies& modifications);
+        Out MessageBuddies& modifications,
+        Out int64_t& last_msgid);
 
 	void SerializeDlgState(core::coll_helper* helper, const DlgState& state);
-	void UnserializeDlgState(core::coll_helper* helper, const QString &myAimId, Out DlgState& state);
+	void UnserializeDlgState(core::coll_helper* helper, const QString &myAimId, bool _from_search, Out DlgState& state);
 }
 
 Q_DECLARE_METATYPE(Data::MessageBuddy);

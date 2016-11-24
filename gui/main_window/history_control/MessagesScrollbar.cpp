@@ -4,11 +4,6 @@
 
 #include "MessagesScrollbar.h"
 
-namespace
-{
-    int32_t getPreloadingDistance();
-}
-
 namespace Ui
 {
     MessagesScrollbar::MessagesScrollbar(QWidget *page)
@@ -55,11 +50,8 @@ namespace Ui
     {
         CanScrollDown_ = true;
     }
-}
 
-namespace
-{
-    int32_t getPreloadingDistance()
+    int32_t MessagesScrollbar::getPreloadingDistance()
     {
         return Utils::scale_value(2000);
     }

@@ -9,7 +9,9 @@ enum class tasks_runner_slot
     min,
 
     generic,
-    images,
+    images_a,
+    images_b,
+    images_c,
     metainfo_a,
     metainfo_b,
     snap_metainfo_a,

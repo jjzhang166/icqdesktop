@@ -10,11 +10,11 @@ namespace Ui
         static const auto MIN_SIZE = 600;
     }
 
-    ImageCropper::ImageCropper(QWidget* parent)
+    ImageCropper::ImageCropper(QWidget* parent, const QSize &minimumSize)
         : QWidget(parent)
         , pimpl(new ImageCropperPrivate)
     {
-        WIDGET_MINIMUM_SIZE = QSize(Utils::scale_value(600), Utils::scale_value(420));
+        WIDGET_MINIMUM_SIZE = (minimumSize.isEmpty() ? QSize(Utils::scale_value(600), Utils::scale_value(420)) : minimumSize);
         width_ = WIDGET_MINIMUM_SIZE.width();
         height_ = WIDGET_MINIMUM_SIZE.height();
 
@@ -40,6 +40,7 @@ namespace Ui
             width_ = pimpl->scaledImage.width();
         }
         this->setMinimumSize(width_, height_);
+        this->setFixedSize(width_, height_);
 
         // NOTE : not need scale min_size here, before it will be scaled with image
         minScaledSize_ = 1.0 * MIN_SIZE / pimpl->imageForCropping.width() * pimpl->scaledImage.width();

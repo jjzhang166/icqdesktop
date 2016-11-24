@@ -26,7 +26,7 @@ namespace core
             std::string Url_;
             std::string Locale_;
             std::string Text_;
-            int Comeback_;
+            int32_t Comeback_;
 
         public:
 
@@ -40,7 +40,7 @@ namespace core
             virtual ~speech_to_text();
 
             std::string get_text() const;
-            int get_comeback() const;
+            int32_t get_comeback() const;
         };
     }
 }

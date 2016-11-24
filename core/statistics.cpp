@@ -87,7 +87,6 @@ void statistics::delayed_start_send()
 
         ptr_this->start_send();
         g_core->stop_timer(ptr_this->start_send_timer_);
-        ptr_this->start_send_timer_ = -1;
 
     }, delay_send_on_start_ms);
 }
@@ -143,7 +142,7 @@ void statistics::serialize(tools::binary_stream& _bs) const
         value_tlv.push_child(tools::tlv(statistics_info_types::event_id, (int64_t)stat_event->get_id()));
 
         tools::tlvpack props_pack;
-        int prop_counter = 0;
+        int32_t prop_counter = 0;
         auto props = stat_event->get_props();
 
         for (auto prop : props)
@@ -208,7 +207,7 @@ bool statistics::unserialize(tools::binary_stream& _bs)
     if (!pack.unserialize(_bs))
         return false;
 
-    int counter = 0;
+    int32_t counter = 0;
     for (auto tlv_val = pack.get_first(); tlv_val; tlv_val = pack.get_next())
     {
         tools::binary_stream val_data = tlv_val->get_value<tools::binary_stream>();
@@ -297,7 +296,8 @@ void statistics::clear()
     while (last_service_event_ptr != events_.begin())
     {
         --last_service_event_ptr;
-        if (last_service_event_ptr->get_name() == stats_event_names::service_session_start)
+        if (last_service_event_ptr->get_name() == stats_event_names::service_session_start
+            || last_service_event_ptr->get_name() == stats_event_names::absolete_service_session_start)
             break;
     }
 
@@ -344,7 +344,7 @@ void statistics::send_async()
 std::string statistics::events_to_json(events_ci begin, events_ci end, time_t _start_time) const
 {
     std::stringstream data_stream;
-    std::map<stats_event_names, int> events_and_count;
+    std::map<stats_event_names, int32_t> events_and_count;
 
     for (auto stat_event  = begin; stat_event != end; ++stat_event)
     {
@@ -374,10 +374,13 @@ std::vector<std::string> statistics::get_post_data() const
     while (begin != events_.end())
     {
         events_ci end = std::next(begin);
-        while (end != events_.end() && end->get_name() != stats_event_names::service_session_start)
+        while (end != events_.end() 
+            && end->get_name() != stats_event_names::service_session_start
+            && end->get_name() != stats_event_names::absolete_service_session_start)
             ++end;
 
-        assert(begin->get_name() == stats_event_names::service_session_start);
+        assert(begin->get_name() == stats_event_names::service_session_start 
+            || begin->get_name() == stats_event_names::absolete_service_session_start);
 
         const long long time_now = std::chrono::system_clock::to_time_t(begin->get_time()) * 1000; // milliseconds
 
@@ -400,10 +403,8 @@ std::vector<std::string> statistics::get_post_data() const
 
         auto time = time_now;
         auto time1 = time + 4;
-        auto time2 = time + 6;
         auto time3 = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) * 1000;
         auto delta = time3 - time;
-        auto bq = 11;
 
         auto version = core::utils::get_user_agent();
         std::stringstream data_stream;
@@ -476,7 +477,7 @@ bool statistics::send(const proxy_settings& _user_proxy, const std::string& post
 }
 
 void statistics::insert_event(stats_event_names _event_name, const event_props_type& _props,
-                              std::chrono::system_clock::time_point _event_time, int _event_id)
+                              std::chrono::system_clock::time_point _event_time, int32_t _event_id)
 {
     events_.emplace_back(_event_name, _event_time, _event_id, _props);
     changed_ = true;
@@ -484,7 +485,7 @@ void statistics::insert_event(stats_event_names _event_name, const event_props_t
 
 void statistics::insert_event(stats_event_names _event_name, const event_props_type& _props)
 {
-    if (_event_name == stats_event_names::start_session)
+    if (_event_name == stats_event_names::start_session || _event_name == stats_event_names::absolete_start_session)
     {
         stats_event::reset_session_event_id();
         insert_event(core::stats::stats_event_names::service_session_start, _props);
@@ -499,7 +500,7 @@ void statistics::insert_event(stats_event_names _event_name)
 }
 
 statistics::stats_event::stats_event(stats_event_names _name,
-                                     std::chrono::system_clock::time_point _event_time, int _event_id, const event_props_type& _props)
+                                     std::chrono::system_clock::time_point _event_time, int32_t _event_id, const event_props_type& _props)
     : name_(_name)
     , event_time_(_event_time)
     , props_(_props)
@@ -553,7 +554,7 @@ std::chrono::system_clock::time_point statistics::stats_event::get_time() const
     return event_time_;
 }
 
-int statistics::stats_event::get_id() const
+int32_t statistics::stats_event::get_id() const
 {
     return event_id_;
 }

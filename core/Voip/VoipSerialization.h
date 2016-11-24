@@ -128,11 +128,12 @@ inline void operator>>(const voip_manager::device_description& device, core::col
     device.type >> coll;
 }
 
-inline void operator>>(const std::vector<voip_manager::device_description>& devices, core::coll_helper& coll) {
-    coll.set_value_as_int("count", (int)devices.size());
+inline void operator>>(const voip_manager::device_list& deviceList, core::coll_helper& coll) {
+    coll.set_value_as_int("count", (int)deviceList.devices.size());
+    coll.set_value_as_int("type",  (int)deviceList.type);
 
-    for (unsigned ix = 0; ix < devices.size(); ix++) {
-        const voip_manager::device_description& desc = devices[ix];
+    for (unsigned ix = 0; ix < deviceList.devices.size(); ix++) {
+        const voip_manager::device_description& desc = deviceList.devices[ix];
         core::coll_helper device_coll(coll->create_collection(), false);
         desc >> device_coll;
 
@@ -249,9 +250,15 @@ inline void operator<<(std::vector<voip_manager::Contact>& contacts, core::coll_
     }
 }
 
-inline void operator>>(const voip_manager::MinimalBandwidth& mdw, core::coll_helper& coll) {
+inline void operator>>(const voip_manager::EnableParams& mdw, core::coll_helper& coll) {
     coll.set_value_as_bool("enable", mdw.enable);
 }
+
+inline void operator >> (const voip_manager::NamedResult& value, core::coll_helper& coll) {
+	coll.set_value_as_bool("result", value.result);
+	coll.set_value_as_string("name", value.name);
+}
+
 
 inline void operator>>(const voip_manager::eNotificationTypes& type, core::coll_helper& coll) {
     const char* name = "sig_type";
@@ -301,6 +308,8 @@ inline void operator>>(const voip_manager::eNotificationTypes& type, core::coll_
     case kNotificationType_CipherStateChanged:  coll.set_value_as_string(name, "voip_cipher_state_changed"); return;
 
 	case kNotificationType_MinimalBandwidthChanged: coll.set_value_as_string(name, "voip_minimal_bandwidth_state_changed"); return;
+	case kNotificationType_MaskEngineEnable: coll.set_value_as_string(name, "voip_mask_engine_enable"); return;
+	case kNotificationType_LoadMask: coll.set_value_as_string(name, "voip_load_mask"); return;
 
     default: assert(false); return;
     }

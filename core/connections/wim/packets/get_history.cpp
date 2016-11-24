@@ -111,7 +111,10 @@ int32_t get_history::parse_results(const rapidjson::Value& _node_results)
 
     auto iter_older_msgid = _node_results.FindMember("olderMsgId");
     if (iter_older_msgid != _node_results.MemberEnd() && iter_older_msgid->value.IsInt64())
+    {
         older_msgid_ = iter_older_msgid->value.GetInt64();
+        
+    }
 
     auto iter_last_msgid = _node_results.FindMember("lastMsgId");
     if (iter_last_msgid != _node_results.MemberEnd() && iter_last_msgid->value.IsInt64())

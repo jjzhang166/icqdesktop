@@ -13,9 +13,11 @@ namespace Ui
         void search(QString);
         void searchBegin();
         void searchEnd();
+        void inputEmpty();
         void enterPressed();
         void upPressed();
         void downPressed();
+        void escapePressed();
         void nonActiveButtonPressed();
         void searchIconClicked();
         void activeChanged(bool _isActive);
@@ -31,6 +33,7 @@ namespace Ui
         void editUpPressed();
         void editDownPressed();
         void focusedOut();
+        void onEscapePress();
 
     public:
         SearchWidget(bool _isWithButton, QWidget* _parent = 0, int _offset = 0);
@@ -42,6 +45,7 @@ namespace Ui
         void setShowButton(bool _isShow);
         void setTransparent(bool _isTransparent);
         void setFocus();
+        void clearFocus();
 
         inline CustomButton *searchIcon() { return searchIcon_; }
         inline CustomButton *searchEditIcon() { return searchEditIcon_; }

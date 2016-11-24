@@ -7,7 +7,7 @@
 using namespace core;
 using namespace wim;
 
-const std::string spam_report_url = "https://mlink.mail.ru:443/complaint/icq";
+const std::string spam_report_url = "https://mlink.mail.ru/complaint/icq";
 //const std::string spam_report_url = "http://mras-test1.mail.ru/complaint/icq";
 
 spam_report::spam_report(
@@ -37,7 +37,7 @@ std::string encrypt_report(const std::string& _key, const std::string& _report_x
     std::string key_normalized = _key;
 
     BF_KEY bf_key;
-    BF_set_key(&bf_key, (int)key_normalized.length(), (const unsigned char*) key_normalized.c_str());
+    BF_set_key(&bf_key, (int32_t)key_normalized.length(), (const unsigned char*) key_normalized.c_str());
 
     uint32_t in_size = (uint32_t)_report_xml.length();
     const unsigned char* in = (const unsigned char*) _report_xml.c_str();
@@ -57,7 +57,7 @@ std::string encrypt_report(const std::string& _key, const std::string& _report_x
     {
         unsigned char buf8[BF_BLOCK];
         memcpy(buf8, in, in_size);
-        for (int i = in_size; i < BF_BLOCK; ++i)
+        for (auto i = in_size; i < BF_BLOCK; ++i)
         {
             buf8[i] = ' ';
         }
@@ -100,7 +100,7 @@ std::string spam_report::get_report()
 {
     time_t current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - params_.time_offset_;
 
-    std::string salt = std::to_string(static_cast<int>(current_time / 86400));
+    std::string salt = std::to_string(static_cast<int32_t>(current_time / 86400));
     std::string key = std::string("{49712A6B-E30F-4EF9-82BF-AC4133DEDF8C}") + salt;
 
     return encrypt_report(key, get_report_xml(current_time));

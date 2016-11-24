@@ -60,6 +60,8 @@ namespace Logic
         bool isUnknownsButton(const QModelIndex& i) const;
         void setFavoritesHeadVisible(bool _isVisible);
 
+        bool isServiceAimId(const QString& _aimId);
+
 		QModelIndex contactIndex(const QString& aimId);
 
 		int totalUnreads() const;

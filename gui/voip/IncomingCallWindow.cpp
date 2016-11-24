@@ -10,6 +10,7 @@
 #include "../main_window/contact_list/ContactListModel.h"
 #include "../utils/utils.h"
 #include "../../core/Voip/VoipManagerDefines.h"
+#include "VoipSysPanelHeader.h"
 
 namespace
 {
@@ -65,7 +66,7 @@ Ui::IncomingCallWindow::IncomingCallWindow(const std::string& _account, const st
     header_->setWindowFlags(header_->windowFlags() | Qt::WindowStaysOnTopHint);
     controls_->setWindowFlags(controls_->windowFlags() | Qt::WindowStaysOnTopHint);
 
-    std::vector<QWidget*> panels;
+    std::vector<Ui::BaseVideoPanel*> panels;
     panels.push_back(header_.get());
     panels.push_back(controls_.get());
 #ifndef STRIP_VOIP
@@ -76,13 +77,11 @@ Ui::IncomingCallWindow::IncomingCallWindow(const std::string& _account, const st
     layout()->addWidget(rootWidget_);
 #endif //__linux__
 
-    std::vector<QWidget*> topPanels;
-    topPanels.push_back(header_.get());
+    std::vector<BaseVideoPanel*> videoPanels;
+	videoPanels.push_back(header_.get());
+	videoPanels.push_back(controls_.get());
 
-    std::vector<QWidget*> bottomPanels;
-    bottomPanels.push_back(controls_.get());
-
-    eventFilter_ = new ResizeEventFilter(topPanels, bottomPanels, shadow_.getShadowWidget(), this);
+    eventFilter_ = new ResizeEventFilter(videoPanels, shadow_.getShadowWidget(), this);
     installEventFilter(eventFilter_);
 
     connect(controls_.get(), SIGNAL(onDecline()), this, SLOT(onDeclineButtonClicked()), Qt::QueuedConnection);
@@ -304,3 +303,31 @@ QPoint Ui::IncomingCallWindow::findBestPosition(const QPoint& _windowPosition, c
 
     return res;
 }
+
+#ifndef _WIN32
+
+// Resend messages to header to fix drag&drop for transporents panels.
+void Ui::IncomingCallWindow::mouseMoveEvent(QMouseEvent* event)
+{
+    resendMouseEventToPanel(event);
+}
+
+void Ui::IncomingCallWindow::mouseReleaseEvent(QMouseEvent * event)
+{
+    resendMouseEventToPanel(event);
+}
+
+void Ui::IncomingCallWindow::mousePressEvent(QMouseEvent * event)
+{
+    resendMouseEventToPanel(event);
+}
+
+template <typename E> void Ui::IncomingCallWindow::resendMouseEventToPanel(E* event_)
+{
+    if (header_->isVisible() && (header_->rect().contains(event_->pos()) || header_->isGrabMouse()))
+    {
+        QApplication::sendEvent(header_.get(), event_);
+    }
+}
+
+#endif

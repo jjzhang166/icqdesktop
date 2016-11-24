@@ -151,7 +151,7 @@ bool my_info_cache::is_changed() const
     return changed_;
 }
 
-int my_info_cache::save(const std::wstring& _filename)
+int32_t my_info_cache::save(const std::wstring& _filename)
 {
     core::archive::storage storage(_filename);
 
@@ -174,7 +174,7 @@ int my_info_cache::save(const std::wstring& _filename)
     return 1;
 }
 
-int my_info_cache::load(const std::wstring& _filename)
+int32_t my_info_cache::load(const std::wstring& _filename)
 {
     core::archive::storage storage(_filename);
 

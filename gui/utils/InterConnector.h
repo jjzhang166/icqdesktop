@@ -76,8 +76,20 @@ Q_SIGNALS:
         void showPlaceholder(PlaceholdersType);
         void showNoContactsYet();
         void hideNoContactsYet();
+
         void showNoRecentsYet();
         void hideNoRecentsYet();
+
+        void showNoSearchResults();
+        void hideNoSearchResults();
+
+        void showSearchSpinner();
+        void hideSearchSpinner();
+        void disableSearchInDialog();
+        void repeatSearch();
+        void dialogClosed(QString _aimid);
+
+        void resetSearchResults();
 
         void onThemes();
         void cancelTheme(QString);
@@ -86,13 +98,16 @@ Q_SIGNALS:
 
         void closeAnyPopupWindow();
         void closeAnyPopupMenu();
+        void closeAnySemitransparentWindow();
 
         void forceRefreshList(QAbstractItemModel *, bool);
         void updateFocus();
         void liveChatsShow();
         
         void schemeUrlClicked(QString);
+
         void setAvatar(qint64 _seq, int error);
+        void setAvatarId(QString);
 
         void historyControlPageFocusIn(QString);
         
@@ -104,7 +119,17 @@ Q_SIGNALS:
 
         void activateNextUnread();
 
-        void historyControlReady(QString);
+        void historyControlReady(QString, qint64 _message_id);
+
+        void imageCropDialogIsShown(QWidget *);
+        void imageCropDialogIsHidden(QWidget *);
+        void imageCropDialogMoved(QWidget *);
+        void imageCropDialogResized(QWidget *);
+
+        void startSearchInDialog(QString);
+        void setSearchFocus();
+
+        void searchEnd();
 
     public:
         static InterConnector& instance();
@@ -128,6 +153,9 @@ Q_SIGNALS:
 
         void setUrlHandler();
         void unsetUrlHandler();
+
+        void setFocusOnInput();
+        void onSendMessage(const QString&);
 
     public Q_SLOTS:
         void open_url(const QUrl& url);

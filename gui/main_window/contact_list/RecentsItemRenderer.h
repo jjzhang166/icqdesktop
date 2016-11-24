@@ -36,7 +36,10 @@ namespace ContactList
             const bool _drawLastRead,
             const QPixmap& _lastReadAvatar,
             const bool isTyping,
-            const DeliveryState deliveryState);
+            const DeliveryState deliveryState,
+            const QString term = "",
+            const bool haveLastMsg = true,
+            const qint64 _msg_id = -1);
 
 		const DeliveryState DeliveryState_;
 
@@ -45,21 +48,25 @@ namespace ContactList
         const bool IsTyping_;
 
         QString senderNick_;
+
+        bool HaveLastMsg_;
+
+        qint64 msg_id_;
 	};
 
-	void RenderRecentsItem(QPainter &painter, const RecentItemVisualData &item, const ViewParams& viewParams_);
+	void RenderRecentsItem(QPainter &painter, const RecentItemVisualData &item, const ViewParams& viewParams);
 
-    void RenderRecentsDragOverlay(QPainter &painter, const ViewParams& viewParams_);
+    void RenderRecentsDragOverlay(QPainter &painter, const ViewParams& viewParams);
 
-    void RenderUnknownsHeader(QPainter &painter, const QString& title, const int count, const ViewParams& viewParams_);
+    void RenderUnknownsHeader(QPainter &painter, const QString& title, const int count, const ViewParams& viewParams);
 
-    void RenderServiceItem(QPainter &painter, const QString& text, bool renderState, bool drawLine, const ViewParams& viewParams_);
+    void RenderServiceItem(QPainter &painter, const QString& text, bool renderState, bool drawLine, const ViewParams& viewParams);
 
-    void RenderDeleteAllItem(QPainter &painter, const QString& title, bool isMouseOver, const ViewParams& viewParams_);
+    void RenderDeleteAllItem(QPainter &painter, const QString& title, bool isMouseOver, const ViewParams& viewParams);
 
-	int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx, const ViewParams& viewParams_, ContactListParams& _recentParams);
+	int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx, const ViewParams& viewParams, ContactListParams& _recentParams);
 
-	int RenderNotifications(QPainter &painter, const int unreads, bool muted, const ViewParams& viewParams_, ContactListParams& _recentParams, bool _isUnknownHeader);
+	int RenderNotifications(QPainter &painter, const int unreads, bool muted, const ViewParams& viewParams, ContactListParams& _recentParams, bool _isUnknownHeader);
 
     void RenderLastReadAvatar(QPainter &painter, const QPixmap& _avatar, const int _xOffset, ContactListParams& _recentParams);
 

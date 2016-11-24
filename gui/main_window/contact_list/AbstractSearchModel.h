@@ -18,6 +18,8 @@ namespace Logic
         void setSort(bool _isClSorting);
         bool isClSorting() const;
 
+        virtual QString getCurrentPattern() const = 0;
+
     private:
         bool isClSorting_;
     };

@@ -36,6 +36,7 @@ namespace core
             std::string location_;
             std::string stamp_;
             std::string creator_;
+            std::string default_role_;
 
             uint32_t create_time_;
             uint32_t members_count_;
@@ -50,6 +51,7 @@ namespace core
             bool live_;
             bool controlled_;
             bool joinModeration_;
+            bool age_restriction_;
 
             std::list<chat_member_info> members_;
 

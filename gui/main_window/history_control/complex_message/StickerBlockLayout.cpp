@@ -22,6 +22,15 @@ StickerBlockLayout::~StickerBlockLayout()
 
 }
 
+QSize StickerBlockLayout::blockSizeForMaxWidth(const int32_t maxWidth)
+{
+    assert(maxWidth > 0);
+
+    auto &block = *blockWidget<StickerBlock>();
+
+    return block.LastSize_;
+}
+
 const IItemBlockLayout::IBoxModel& StickerBlockLayout::getBlockBoxModel() const
 {
     static const QMargins bubbleMargins(

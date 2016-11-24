@@ -34,11 +34,11 @@ namespace core
             std::string get_image_normal_name() const { return image_name_; }
             std::string get_thumb_normal_name() const { return thumb_name_; }
             std::wstring get_theme_folder() const;
-            static std::wstring get_theme_folder(int _theme_id);
+            static std::wstring get_theme_folder(int32_t _theme_id);
             std::string get_tint_color() const { return tint_color_; }
             int32_t get_theme_id() const { return theme_id_; }
             int32_t get_position() { return position_; }
-            void set_position(int _position) { position_ = _position; }
+            void set_position(int32_t _position) { position_ = _position; }
             bool unserialize(const rapidjson::Value& _node, const ThemesScale _themes_scale);
             std::wstring get_image_path() const;
             std::wstring get_thumb_path() const;
@@ -110,8 +110,13 @@ namespace core
             } new_messages_bubble_;
             
             struct typing {
+                typing()
+                    : light_gif_(0)
+                {
+                }
+
                 std::string text_color_;
-                int light_gif_;
+                int32_t light_gif_;
                 void unserialize(const rapidjson::Value& _node);
             } typing_;
         };
@@ -167,14 +172,14 @@ namespace core
             std::string get_theme_thumb_url(const theme& _theme) const;
             std::wstring get_theme_image_path(const theme& _theme) const;
             std::string get_theme_image_url(const theme& _theme) const;
-            std::wstring get_theme_image_path(const int _theme_id) const;
-            std::wstring get_theme_thumb_path(const int _theme_id) const;
+            std::wstring get_theme_image_path(const int32_t _theme_id) const;
+            std::wstring get_theme_thumb_path(const int32_t _theme_id) const;
             bool meta_loaded(const download_task& _task);
             bool get_next_theme_task(download_task& _task);
             bool theme_loaded(const download_task& _task, std::list<int64_t>& _requests);
             void serialize_meta_sync(coll_helper _coll);
             void get_theme_image(int64_t _seq, int32_t _theme_id, tools::binary_stream& _data);
-            theme* get_theme(int _theme_id);
+            theme* get_theme(int32_t _theme_id);
             void clear_all();
             inline ThemesScale get_themes_scale() { return themes_scale_; }
             void set_themes_scale(ThemesScale _themes_scale) { themes_scale_ = _themes_scale; }
@@ -235,7 +240,7 @@ namespace core
             std::shared_ptr<result_handler<tools::binary_stream&>> get_theme_image(int64_t _seq, int32_t _theme_id);
             std::shared_ptr<result_handler<bool, const download_task&>> get_next_theme_task();
             std::shared_ptr<result_handler<coll_helper>> serialize_meta(coll_helper _coll);
-            theme* get_theme(int _theme_id);
+            theme* get_theme(int32_t _theme_id);
             void clear_all();
             ThemesScale get_themes_scale();
             void set_themes_scale(ThemesScale _themes_scale);

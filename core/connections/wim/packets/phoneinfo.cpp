@@ -11,6 +11,7 @@ using namespace wim;
 phoneinfo::phoneinfo(const wim_packet_params &params, const std::string &phone, const std::string &gui_locale):
     wim_packet(params), phone_(phone), gui_locale_(gui_locale)
 {
+    set_can_change_hosts_scheme(true);
 }
 
 phoneinfo::~phoneinfo()
@@ -20,7 +21,7 @@ phoneinfo::~phoneinfo()
 int32_t phoneinfo::init_request(std::shared_ptr<core::http_request_simple> request)
 {
     std::stringstream get_request;
-    get_request << "https://clientapi.mail.ru/fcgi-bin/smsphoneinfo" <<
+    get_request << "https://clientapi.icq.net/fcgi-bin/smsphoneinfo" <<
         "?service=icq_registration" <<
         "&info=typing_check,score,iso_country_code" <<
         "&lang=" << (gui_locale_.length() == 2 ? gui_locale_ : "en") <<
@@ -29,6 +30,7 @@ int32_t phoneinfo::init_request(std::shared_ptr<core::http_request_simple> reque
 
     request->set_url(get_request.str());
     request->set_keep_alive();
+    
 
     return 0;
 }
@@ -147,11 +149,9 @@ int32_t phoneinfo::parse_response(std::shared_ptr<core::tools::binary_stream> re
             }
         }
     }
-    catch (const std::exception&)
-    {
-    }
     catch (...)
     {
+        return 0;
     }
     
     return 0;

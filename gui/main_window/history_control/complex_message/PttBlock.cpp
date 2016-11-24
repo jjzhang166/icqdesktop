@@ -116,7 +116,7 @@ QSize PttBlock::getCtrlButtonSize() const
     return ctrlButton_->sizeHint();
 }
 
-QString PttBlock::getSelectedText() const
+QString PttBlock::getSelectedText(bool isFullSelect) const
 {
     QString result;
     result.reserve(512);
@@ -329,6 +329,17 @@ void PttBlock::onDownloaded()
     }
 }
 
+void PttBlock::onDownloadedAction()
+{
+    if (isPlaybackScheduled_)
+    {
+        isPlaybackScheduled_ = false;
+
+        startPlayback();
+    }
+}
+
+
 void PttBlock::onDownloading(const int64_t _bytesTransferred, const int64_t _bytesTotal)
 {
     assert(ctrlButton_);
@@ -341,8 +352,16 @@ void PttBlock::onDownloading(const int64_t _bytesTransferred, const int64_t _byt
     notifyBlockContentsChanged();
 }
 
-void PttBlock::onDownloadingFailed()
+void PttBlock::onDownloadingFailed(const int64_t _seq)
 {
+    assert(textRequestId_ >= -1);
+    assert(_seq >= -1);
+
+    if (textRequestId_ != _seq)
+    {
+        return;
+    }
+
     getParentComplexMessage()->replaceBlockWithSourceText(this);
 }
 
@@ -816,7 +835,7 @@ void PttBlock::onCtrlButtonClicked()
     startDownloading(true);
 }
 
-void PttBlock::onPttFinished(int _id)
+void PttBlock::onPttFinished(int _id, bool _byPlay)
 {
     assert(_id > 0);
 
@@ -839,7 +858,8 @@ void PttBlock::onPttFinished(int _id)
 
     updateButtonsResourceSets();
 
-    emit Logic::GetMessagesModel()->pttPlayed(id_);
+    if (_byPlay)
+        emit Logic::GetMessagesModel()->pttPlayed(id_);
 
     update();
 }

@@ -3,7 +3,6 @@
 #include "../../../http_request.h"
 #include "../../../log/log.h"
 #include "../../../tools/system.h"
-#include "../../../tools/url_parser.h"
 #include "../../../utils.h"
 
 #include "../../../disk_cache/disk_cache.h"
@@ -34,8 +33,6 @@ link_metainfo_download_task::link_metainfo_download_task(
     , sign_uri_(_sign_uri)
     , result_handler_(_result_handler)
 {
-    //assert(tools::has_valid_url_header(uri_));
-
     meta_local_path_ = get_path_in_cache(cache_dir_, uri_, path_type::link_meta);
     assert(!meta_local_path_.empty());
 }
@@ -96,22 +93,6 @@ loader_errors link_metainfo_download_task::run()
         return loader_errors::success;
     }
 
-    const auto error_sign_path = get_path_in_cache(cache_dir_, uri_, path_type::download_failed_sign);
-    const auto is_prev_download_failed = tools::system::is_exist(error_sign_path);
-    if (is_prev_download_failed)
-    {
-        __INFO(
-            "snippets",
-            "task failed\n"
-            "    type=<link_metainfo>\n"
-            "    id=<%1%>\n"
-            "    uri=<%2%>\n"
-            "    reason=<marked as erroneous>",
-            get_id() % uri_);
-
-        //return loader_errors::http_error;
-    }
-
     link_metainfo_ = load_link_meta_from_file(meta_local_path_ , uri_);
     if (link_metainfo_)
     {
@@ -151,8 +132,6 @@ loader_errors link_metainfo_download_task::run()
 
     if (request.get_response_code() != 200)
     {
-        tools::system::create_empty_file(error_sign_path);
-
         return loader_errors::http_error;
     }
 
@@ -175,8 +154,6 @@ loader_errors link_metainfo_download_task::run()
     link_metainfo_ = preview_proxy::parse_json(json.data(), uri_);
     if (!link_metainfo_)
     {
-        tools::system::create_empty_file(error_sign_path);
-
         return loader_errors::invalid_json;
     }
 

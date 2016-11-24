@@ -152,14 +152,16 @@ void contactlist::update_cl(const contactlist& _cl)
 
     contacts_index_ = _cl.contacts_index_;
 
-    changed_ = true;
+    set_changed(true);
+    set_need_update_cache(true);
 }
 
 void contactlist::update_ignorelist(const ignorelist_cache& _ignorelist)
 {
     ignorelist_ = _ignorelist;
 
-    changed_ = true;
+    set_changed(true);
+    set_need_update_cache(true);
 }
 
 
@@ -287,29 +289,22 @@ void core::wim::contactlist::serialize(icollection* _coll, const std::string& ty
     cl.set_value_as_array("groups", groups_array.get());
 }
 
-bool core::wim::contactlist::search(std::vector<std::string> search_patterns)
+std::vector<std::string> core::wim::contactlist::search(const std::vector<std::vector<std::string>>& search_patterns, int32_t fixed_patterns_count)
 {
-    for (std::vector<std::string>::iterator iter = search_patterns.begin(); iter != search_patterns.end(); ++iter)
+    std::vector<std::string> result;
+
+    std::string base_word;
+    for (auto symbol_iter = search_patterns.begin(); symbol_iter != search_patterns.end(); ++symbol_iter)
     {
-        *iter = tools::system::to_upper(*iter);
+        base_word.append((*symbol_iter)[0]);
     }
 
-    std::map< std::string, std::shared_ptr<cl_buddy> > casche;
-    if (last_search_patterns_.empty() || search_patterns[0].find(last_search_patterns_[0].c_str()) == std::string::npos)
-    {
-        casche = contacts_index_;
-    }
-    else
-    {
-        casche = search_cache_;
-    }
+    std::map< std::string, std::shared_ptr<cl_buddy> > result_cache;
+    std::map< std::string, std::shared_ptr<cl_buddy> >::const_iterator iter = tmp_cache_.begin();
 
-    std::map< std::string, std::shared_ptr<cl_buddy> > result;
-    std::map< std::string, std::shared_ptr<cl_buddy> >::const_iterator iter = casche.begin();
-
-    while (g_core->is_valid_search() && iter != casche.end())
+    while (g_core->is_valid_search() && iter != tmp_cache_.end())
     {
-        if (is_ignored(iter->first))
+        if (is_ignored(iter->first) || iter->second->presence_->usertype_ == "sms")
         {
             ++iter;
             continue;
@@ -326,25 +321,128 @@ bool core::wim::contactlist::search(std::vector<std::string> search_patterns)
         const auto& friendly = iter->second->presence_->search_cache_.friendly_;
         const auto& ab = iter->second->presence_->search_cache_.ab_;
 
-        for (auto pattern : search_patterns)
-        {
-            if (iter->second->presence_->usertype_ != "sms" && (Contains(aimId, pattern) || Contains(friendly, pattern) || Contains(ab, pattern)))
+        auto check = [this, &result_cache, &result](std::map< std::string, std::shared_ptr<cl_buddy> >::const_iterator iter, 
+                                                       const std::vector<std::vector<std::string>>& search_patterns,
+                                                       const std::string& word, 
+                                                       int32_t fixed_patterns_count) 
+        { 
+            if (word.empty())
+                return;
+
+            int32_t priority = -1;
+            if (tools::contains(search_patterns, word, fixed_patterns_count, priority))
             {
-                result.insert(std::make_pair(iter->first, iter->second));
-                break;
+                result_cache.insert(std::make_pair(iter->first, iter->second));
+                if (search_priority_.find(iter->first) != search_priority_.end())
+                {
+                    search_priority_[iter->first] = std::min(search_priority_[iter->first], priority);
+                }
+                else
+                {
+                    search_priority_.insert(std::make_pair(iter->first, priority));
+                    result.push_back(iter->first);
+                }
             }
-        }
+        };
+
+        check(iter, search_patterns, friendly, fixed_patterns_count);
+        check(iter, search_patterns, ab, fixed_patterns_count);
+        check(iter, search_patterns, aimId, fixed_patterns_count);
+
         ++iter;
     }
 
-    if (g_core->end_search() == 0)
+    for (auto iter : result_cache)
     {
-        last_search_patterns_ = search_patterns;
-        search_cache_ = std::move(result);
-        return true;
+        search_cache_.insert(iter);
+    }
+    
+    if (g_core->end_search() == 0)
+        last_search_patterns_ = base_word;
+
+    return result;
+}
+
+std::vector<std::string> core::wim::contactlist::search(const std::string& search_pattern, bool first, int32_t search_priority, int32_t fixed_patterns_count)
+{
+    std::vector<std::string> result;
+    if (first)
+        search_priority_.clear();
+
+    std::string base_word = search_pattern;
+
+    if (first)
+    {
+        if (last_search_patterns_.empty() || base_word.find(last_search_patterns_.c_str()) == std::string::npos || need_update_search_cache_)
+        {
+            tmp_cache_ = contacts_index_;
+            set_need_update_cache(false);
+            search_cache_.clear();
+        }
+        else
+        {
+            tmp_cache_ = search_cache_;
+        }
     }
 
-    return false;
+    std::map< std::string, std::shared_ptr<cl_buddy> > result_cache;
+    std::map< std::string, std::shared_ptr<cl_buddy> >::const_iterator iter = tmp_cache_.begin();
+
+    while (g_core->is_valid_search() && iter != tmp_cache_.end() && !search_pattern.empty())
+    {
+        if (is_ignored(iter->first) || iter->second->presence_->usertype_ == "sms")
+        {
+            ++iter;
+            continue;
+        }
+
+        if (iter->second->presence_->search_cache_.is_empty())
+        {
+            iter->second->presence_->search_cache_.aimid_ = tools::system::to_upper(iter->second->aimid_);
+            iter->second->presence_->search_cache_.friendly_ = tools::system::to_upper(iter->second->presence_->friendly_);
+            iter->second->presence_->search_cache_.ab_ = tools::system::to_upper(iter->second->presence_->ab_contact_name_);
+        }
+
+        const auto& aimId = iter->second->presence_->search_cache_.aimid_;
+        const auto& friendly = iter->second->presence_->search_cache_.friendly_;
+        const auto& ab = iter->second->presence_->search_cache_.ab_;
+
+        auto check = [this, &result_cache, &result, search_priority](std::map< std::string, std::shared_ptr<cl_buddy> >::const_iterator iter, 
+            const std::string& search_pattern,
+            const std::string& word, 
+            int32_t fixed_patterns_count) 
+        {
+            if (word.find(search_pattern) != std::string::npos)
+            {
+                int32_t priority = word.length() == search_pattern.length() ? search_priority : search_priority + fixed_patterns_count + 1;
+                result_cache.insert(std::make_pair(iter->first, iter->second));
+                if (search_priority_.find(iter->first) != search_priority_.end())
+                {
+                    search_priority_[iter->first] = std::min(search_priority_[iter->first], priority);
+                }
+                else
+                {
+                    search_priority_.insert(std::make_pair(iter->first, priority));
+                    result.push_back(iter->first);
+                }
+            }
+        };
+
+        check(iter, search_pattern, friendly, fixed_patterns_count);
+        check(iter, search_pattern, ab, fixed_patterns_count);
+        check(iter, search_pattern, aimId, fixed_patterns_count);
+
+        ++iter;
+    }
+
+    if (first)
+        search_cache_.clear();
+    for (auto iter : result_cache)
+    {
+        search_cache_.insert(iter);
+    }
+
+    return result;
 }
 
 void core::wim::contactlist::serialize_search(icollection* _coll)
@@ -633,22 +731,49 @@ void contactlist::merge_from_diff(const std::string& _type, std::shared_ptr<cont
     }
     else if (_type == "deleted")
     {
+        std::map<std::string, int> contacts;
+
         for (auto diff_group_iter = _diff->groups_.begin(); diff_group_iter != _diff->groups_.end(); ++diff_group_iter)
         {
             for (auto group_iter = groups_.begin(); group_iter != groups_.end();)
             {
                 if ((*group_iter)->id_ != (*diff_group_iter)->id_)
                 {
+                    for (auto diff_buddy_iter = (*diff_group_iter)->buddies_.begin(); diff_buddy_iter != (*diff_group_iter)->buddies_.end(); ++diff_buddy_iter)
+                    {
+                        auto aimId = (*diff_buddy_iter)->aimid_;
+
+                        auto contact = std::find_if((*group_iter)->buddies_.begin(), (*group_iter)->buddies_.end(), [aimId](std::shared_ptr<cl_buddy> value) { return value->aimid_ == aimId; });
+                        if (contact != (*group_iter)->buddies_.end())
+                        {
+                            if (contacts.find(aimId) == contacts.end())
+                                contacts[aimId] = 1;
+                            else
+                                contacts[aimId]++;
+                        }
+                    }
+
                     ++group_iter;
                     continue;
                 }
 
                 for (auto diff_buddy_iter = (*diff_group_iter)->buddies_.begin(); diff_buddy_iter != (*diff_group_iter)->buddies_.end(); ++diff_buddy_iter)
                 {
-                    std::string aimId = (*diff_buddy_iter)->aimid_;
-                    (*group_iter)->buddies_.erase(std::remove_if((*group_iter)->buddies_.begin(), (*group_iter)->buddies_.end(), [aimId](std::shared_ptr<cl_buddy> value){ return value->aimid_ == aimId; }), (*group_iter)->buddies_.end());
-                    contacts_index_.erase(aimId);
-                    removedContacts->push_back(aimId);
+                    auto aimId = (*diff_buddy_iter)->aimid_;
+                    (*group_iter)->buddies_.erase(std::remove_if((*group_iter)->buddies_.begin(), (*group_iter)->buddies_.end(), 
+                        [aimId, &contacts](std::shared_ptr<cl_buddy> value)
+                        {
+                            if (value->aimid_ == aimId)
+                            {
+                                if (contacts.find(aimId) == contacts.end())
+                                    contacts[aimId] = 1;
+                                else
+                                    contacts[aimId]++;
+                                return true;
+                            }
+                            return false;
+                        }
+                    ), (*group_iter)->buddies_.end());
                 }
 
                 if ((*diff_group_iter)->removed_)
@@ -657,12 +782,22 @@ void contactlist::merge_from_diff(const std::string& _type, std::shared_ptr<cont
                     ++group_iter;
             }
         }
+
+        for (auto c : contacts)
+        {
+            if (c.second == 1)
+            {
+                contacts_index_.erase(c.first);
+                removedContacts->push_back(c.first);
+            }
+        }
     }
     else
     {
         return;
     }
-    changed_ = true;
+    set_changed(true);
+    set_need_update_cache(true);
 }
 
 int32_t contactlist::get_contacts_count() const
@@ -711,4 +846,9 @@ std::shared_ptr<cl_group> contactlist::get_first_group() const
 bool contactlist::is_ignored(const std::string& _aimid)
 {
     return (ignorelist_.find(_aimid) != ignorelist_.end());
+}
+
+void contactlist::set_need_update_cache(bool _need_update_search_cache) 
+{
+    need_update_search_cache_ = _need_update_search_cache;
 }

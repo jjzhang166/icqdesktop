@@ -97,7 +97,7 @@ namespace Ui
         rootLayout->setSpacing(0);
         rootLayout->setContentsMargins(0, 0, 0, 0);
 
-        auto themesCaption = new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(48));
+        auto themesCaption = new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(24), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(48));
         themesCaption->setText(QT_TRANSLATE_NOOP("settings_pages", "Wallpaper"));
         themesCaption->setFixedHeight(Utils::scale_value(80));
 

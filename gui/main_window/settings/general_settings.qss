@@ -8,6 +8,7 @@ QPushButton
 {
     font-size: 16dip;
 }
+
 QPushButton::menu-indicator
 {
     image: url(:/resources/widgets/content_dropdown_black_open_100.png);
@@ -34,6 +35,7 @@ QSlider
     height: 24dip;
     background-color: transparent;
 }
+
 QSlider::groove:horizontal
 {
     border: none;
@@ -41,6 +43,7 @@ QSlider::groove:horizontal
     height: 2dip;
     margin: 0;
 }
+
 QSlider::handle:horizontal
 {
     background: transparent;

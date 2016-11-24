@@ -22,6 +22,8 @@ namespace Utils
 
 		bool IsCarriageReturn() const;
 
+        bool IsQuot() const;
+
 		bool IsComplex() const;
 
 		bool IsEmailCharacter() const;
@@ -45,6 +47,8 @@ namespace Utils
 		bool IsValidInUrl() const;
 
 		bool IsValidOnUrlEnd() const;
+
+        bool IsDelimeter() const;
 
 		QString::size_type LengthQChars() const;
 

@@ -71,7 +71,7 @@ namespace Ui
     {
         if (Logic::getContactListModel()->getContactItem(info_.AimId_) && info_.YouMember_)
         {
-            Logic::getContactListModel()->setCurrent(info_.AimId_, true, true);
+            Logic::getContactListModel()->setCurrent(info_.AimId_, -1, true, true);
         }
         else
         {

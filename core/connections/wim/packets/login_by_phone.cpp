@@ -8,13 +8,14 @@
 using namespace core;
 using namespace wim;
 
-phone_login::phone_login(
-    const wim_packet_params& params,
-    const phone_info& _info)
-    :	
-wim_packet(params),
-    info_(new phone_info(_info))
+phone_login::phone_login(const wim_packet_params& params, const phone_info& _info)
+    : wim_packet(params)
+    , info_(new phone_info(_info))
+    , expired_in_(0)
+    , host_time_(0)
+    , time_offset_(0)
 {
+    set_can_change_hosts_scheme(true);
 }
 
 
@@ -27,7 +28,7 @@ phone_login::~phone_login()
 int32_t phone_login::init_request(std::shared_ptr<core::http_request_simple> _request)
 {
     std::stringstream ss_url;
-    ss_url << "https://www.icq.com:443/smsreg/loginWithPhoneNumber.php?" << 
+    ss_url << "https://www.icq.com/smsreg/loginWithPhoneNumber.php?" << 
         "&msisdn=" << info_->get_phone() <<
         "&trans_id=" << info_->get_trans_id() <<
         "&k=" << params_.dev_id_ <<
@@ -49,8 +50,6 @@ int32_t core::wim::phone_login::on_response_error_code()
 
 int32_t core::wim::phone_login::parse_response_data(const rapidjson::Value& _data)
 {
-    int32_t err = wpie_http_parse_response;
-
     try
     {
         auto iter_phone_verified = _data.FindMember("phone_verified");
@@ -87,15 +86,12 @@ int32_t core::wim::phone_login::parse_response_data(const rapidjson::Value& _dat
 
         time_offset_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - host_time_;
 
-        err = 0;
+        return 0;
     }
     catch (const std::exception&)
     {
-
+        return wpie_http_parse_response;
     }
-
-
-    return err;
 }
 
 int32_t core::wim::phone_login::on_http_client_error()

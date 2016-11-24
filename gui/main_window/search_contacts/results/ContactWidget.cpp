@@ -30,8 +30,9 @@ namespace Ui
 
         if (_profile->get_birthdate() != 0)
         {
-            QDateTime birthdate = QDateTime::fromMSecsSinceEpoch((qint64) _profile->get_birthdate() * 1000, Qt::LocalTime);
-
+//            QDateTime birthdate = QDateTime::fromMSecsSinceEpoch((qint64) _profile->get_birthdate() * 1000, Qt::LocalTime);
+            QDateTime birthdate = QDateTime::fromMSecsSinceEpoch((qint64)_profile->get_birthdate(), Qt::LocalTime);
+            
             int age = Utils::calcAge(birthdate);
 
             if (age > 0)
@@ -88,8 +89,8 @@ namespace Ui
 	ContactWidget::ContactWidget(QWidget* _parent, std::shared_ptr<Logic::contact_profile> _profile, const std::map<QString, QString>& _countries)
 		:	QWidget(_parent),
 			profile_(_profile),
-            name_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), CommonStyle::getTextCommonColor())),
-			info_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(14), QColor(0x69, 0x69, 0x69))),
+            name_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(18), CommonStyle::getTextCommonColor())),
+			info_(new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(14), QColor(0x69, 0x69, 0x69))),
 			addButton_(new QPushButton(this)),
 			msgButton_(new QPushButton(this)),
 			callButton_(new QPushButton(this))

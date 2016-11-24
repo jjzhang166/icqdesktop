@@ -1,4 +1,6 @@
 #include "stdafx.h"
+
+#include "exif.h"
 #include "utils.h"
 
 #include "gui_coll_helper.h"
@@ -335,40 +337,6 @@ namespace Utils
 		_gradient.setColorAt(1, Qt::transparent);
 	}
 
-
-    SignalsDisconnector::SignalsDisconnector()
-    {
-    }
-
-    SignalsDisconnector::~SignalsDisconnector()
-    {
-        clean();
-    }
-
-    void SignalsDisconnector::add(const char* _key, QMetaObject::Connection&& _connection)
-    {
-        if (connections_.find(_key) != connections_.end())
-            connections_.erase(_key);
-        connections_.emplace(std::make_pair(_key, _connection));
-    }
-
-    void SignalsDisconnector::remove(const char* _key)
-    {
-        if (connections_.find(_key) != connections_.end())
-        {
-            QObject::disconnect(connections_[_key]);
-            connections_.erase(_key);
-        }
-    }
-
-    void SignalsDisconnector::clean()
-    {
-        for (auto c: connections_)
-            QObject::disconnect(c.second);
-        connections_.clear();
-    }
-
-
     QString getCountryNameByCode(const QString& _isoCode)
     {
         const auto &countries = Ui::countries::get();
@@ -477,7 +445,7 @@ namespace Utils
 
 	QString LoadStyle(const QString& _qssFile)
 	{
-		QFile file(_qssFile);
+        QFile file(_qssFile);
 
 		if (!file.open(QIODevice::ReadOnly))
 		{
@@ -491,32 +459,27 @@ namespace Utils
 			return "";
 		}
 
-		QString outString;
-		QTextStream result(&outString);
-
-        result << ScaleStyle(SetFont(qss), Utils::getScaleCoefficient());
-
-		return outString;
+		return ScaleStyle(SetFont(qss), Utils::getScaleCoefficient());
 	}
 
     QString SetFont(const QString& _qss)
     {
         QString result(_qss);
 
-        const auto fontFamily = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::NORMAL);
-        const auto fontFamilyBold = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::BOLD);
-        const auto fontFamilySemibold = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::SEMIBOLD);
-        const auto fontFamilyLight = Fonts::appFontFullNameQss(Fonts::defaultAppFontFamily(), Fonts::FontStyle::LIGHT);
+        const auto fontFamily = Fonts::appFontFamilyNameQss(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Normal);
+        const auto fontFamilyBold = Fonts::appFontFamilyNameQss(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Bold);
+        const auto fontFamilySemibold = Fonts::appFontFamilyNameQss(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Semibold);
+        const auto fontFamilyLight = Fonts::appFontFamilyNameQss(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Light);
 
         result.replace("%FONT_FAMILY%", fontFamily);
 		result.replace("%FONT_FAMILY_BOLD%", fontFamilyBold);
 		result.replace("%FONT_FAMILY_SEMIBOLD%", fontFamilySemibold);
 		result.replace("%FONT_FAMILY_LIGHT%", fontFamilyLight);
 
-        const auto fontWeightQss = Fonts::appFontWeightQss(QFont::Weight::Normal);
-        const auto fontWeightBold = Fonts::appFontWeightQss(QFont::Weight::Bold);
-        const auto fontgWeightSemibold = Fonts::appFontWeightQss(QFont::Weight::DemiBold);
-        const auto fontWeightLight = Fonts::appFontWeightQss(QFont::Weight::Light);
+        const auto fontWeightQss = Fonts::appFontWeightQss(Fonts::FontWeight::Normal);
+        const auto fontWeightBold = Fonts::appFontWeightQss(Fonts::FontWeight::Bold);
+        const auto fontgWeightSemibold = Fonts::appFontWeightQss(Fonts::FontWeight::Semibold);
+        const auto fontWeightLight = Fonts::appFontWeightQss(Fonts::FontWeight::Light);
 
         result.replace("%FONT_WEIGHT%", fontWeightQss);
         result.replace("%FONT_WEIGHT_BOLD%", fontWeightBold);
@@ -540,6 +503,9 @@ namespace Utils
         const auto crc32 = crc32FromString(str);
         const auto colorIndex = (crc32 % ColorTableSize);
         QColor color = ColorTable[colorIndex];
+
+        if (_uin.isEmpty() && _displayName.isEmpty())
+            color = QColor("#efefef");
 
 		QPainter painter(&bigResult);
 
@@ -580,9 +546,15 @@ namespace Utils
 		const auto trimmedDisplayName = _displayName.trimmed();
         if (trimmedDisplayName.isEmpty())
         {
+            QPainter scaled(&scaledBigResult);
+            scaled.setRenderHint(QPainter::Antialiasing);
+            scaled.setRenderHint(QPainter::TextAntialiasing);
+            scaled.setRenderHint(QPainter::SmoothPixmapTransform);
+            const auto img = QImage(":/resources/contr_attach_200.png");
+            const auto off = (float)scaledBigResult.width() * 0.25;
+            scaled.drawImage(QRectF(off, off, scaledBigResult.width() - off * 2., scaledBigResult.height() - off * 2.), img, img.rect());
             return QPixmap::fromImage(scaledBigResult);
         }
-
 
 		const auto firstChar = Utils::PeekNextSuperChar(trimmedDisplayName);
 		if (firstChar.IsSimple())
@@ -647,9 +619,10 @@ namespace Utils
 		return QPixmap::fromImage(scaledBigResult);
 	}
 
-	QStringList GetPossibleStrings(const QString& _text)
+    std::vector<QStringList> GetPossibleStrings(const QString& _text, unsigned& _count)
 	{
-		QStringList result;
+        _count = 0;
+		std::vector<QStringList> result;
 
         if (_text.isEmpty())
             return result;
@@ -659,28 +632,52 @@ namespace Utils
 		int nCount = ::GetKeyboardLayoutList(8, aLayouts);
 		HKL hCurrent = ::GetKeyboardLayout(0);
 
-		for (int j = 0; j < nCount; ++j)
+		for (int i = 0; i < _text.length(); ++i)
 		{
-			result.append(VKeyToChar(::VkKeyScanEx(_text.at(0).unicode(), hCurrent), aLayouts[j]));
+            result.push_back(QStringList());
+            result[i].push_back(_text.at(i));
 		}
 
-		for (int i = 1; i < _text.length(); i++)
+        _count = nCount;
+
+		for (int i = 0; i < _text.length(); i++)
 		{
-			for (int j = 0; j < nCount; ++j)
-			{
-				result[j].append(VKeyToChar(::VkKeyScanEx(_text.at(i).unicode(), hCurrent), aLayouts[j]));
-			}
+            auto scanEx = ::VkKeyScanEx(_text.at(i).unicode(), hCurrent);
+
+            for (int j = 0; j < nCount; ++j)
+            {
+                if (hCurrent == aLayouts[j])
+                    continue;
+
+                result[i].push_back(scanEx == -1 ? QString() : VKeyToChar(scanEx, aLayouts[j]));
+            }
 		}
 
-        result.push_front(_text);
 #elif defined __APPLE__
-        MacSupport::getPossibleStrings(_text, result);
+        MacSupport::getPossibleStrings(_text, result, _count);
 #endif //_WIN32
 
 #ifdef __linux__
-        result.push_front(_text);
+
+        for (int i = 0; i < _text.length(); ++i)
+		{
+            result.push_back(QStringList());
+            result[i].push_back(_text.at(i));
+        }
+
+        _count = 1;
 #endif //__Linux__
-        result += Translit::getPossibleStrings(_text);
+        auto translit = Translit::getPossibleStrings(_text);
+
+        if (translit.size() > 0)
+        {
+            for (int i = 0; i < std::min(Translit::getMaxSearchTextLength(), _text.length()); ++i)
+		    {
+                for (auto pattern : translit[i])
+                    result[i].push_back(pattern);
+            }
+        }
+
 		return result;
 	}
 
@@ -1009,39 +1006,6 @@ namespace Utils
 			_target->removeEventFilter(eventFilter);
 	}
 
-    void setWidgetPopup(QWidget* _target, bool _isPopUp)
-    {
-        return;
-
-#ifdef _WIN32
-        if (_isPopUp)
-            _target->setWindowFlags(Qt::Popup | Qt::NoDropShadowWindowHint | Qt::FramelessWindowHint);
-        else
-        {
-            auto flags = _target->windowFlags();
-            /*int framelessFlag = Qt::FramelessWindowHint;*/
-            /*int popupFlag = Qt::Popup;*/
-
-            /*int isFrameless = framelessFlag & flags;*/
-            /*int isPopup = popupFlag & flags;*/
-
-
-         //   flags &= ~Qt::FramelessWindowHint;
-            flags &= ~Qt::Popup;
-            _target->setWindowFlags(flags);
-        }
-#else
-        if (_isPopUp)
-            _target->setWindowFlags(Qt::Popup);
-        else
-        {
-            auto flags = _target->windowFlags();
-            flags &= ~Qt::Popup;
-            _target->setWindowFlags(flags);
-        }
-#endif
-    }
-
 	void grabTouchWidget(QWidget* _target, bool _topWidget)
 	{
 #ifdef _WIN32
@@ -1323,7 +1287,7 @@ namespace Utils
         QApplication::clipboard()->setMimeData(mimeData);
     }
 
-    bool saveAs(const QString& _inputFilename, QString& _filename, QString& _directory)
+    bool saveAs(const QString& _inputFilename, QString& _filename, QString& _directory, bool asSheet/* = true*/)
     {
         static auto lastDirectory = QDir::toNativeSeparators(Ui::get_gui_settings()->get_value(settings_download_directory, Utils::DefaultDownloadsPath()));
 
@@ -1334,7 +1298,14 @@ namespace Utils
         QString ext = dot != -1 ? _inputFilename.mid(dot, _inputFilename.length()) : QString();
         QString name = (_inputFilename.contains(QRegExp("\\/:*?\"<>\\|\"")) || _inputFilename.length() >= 128) ? QT_TRANSLATE_NOOP("chat_page", "File") : _inputFilename;
         QString fullName = QDir::toNativeSeparators(QDir(lastDirectory).filePath(name));
+#ifdef __APPLE__
+        QString destination = asSheet ?
+            MacSupport::saveFileName(QT_TRANSLATE_NOOP("context_menu", "Save as..."), fullName, "*" + ext)
+            :
+            QFileDialog::getSaveFileName(0, QT_TRANSLATE_NOOP("context_menu", "Save as..."), fullName, "*" + ext);
+#else
         QString destination = QFileDialog::getSaveFileName(0, QT_TRANSLATE_NOOP("context_menu", "Save as..."), fullName, "*" + ext);
+#endif
         if (!destination.isEmpty())
         {
             QFileInfo info(destination);
@@ -1342,8 +1313,9 @@ namespace Utils
             _directory = info.dir().absolutePath();
             _filename = info.fileName();
             if (info.suffix().isEmpty() && !ext.isEmpty())
+            {
                 _filename += ext;
-
+            }
             return true;
         }
         return false;
@@ -1472,7 +1444,7 @@ namespace Utils
         return _selected < _values.size() ? _values[_selected] : _default;
     }
 
-    bool NameEditor(
+    Ui::GeneralDialog *NameEditorDialog(
         QWidget* _parent,
         const QString& _chatName,
         const QString& _buttonText,
@@ -1506,25 +1478,39 @@ namespace Utils
         horizontalLineWidget->setStyleSheet("background-color: #579e1c;");
         layout->addWidget(horizontalLineWidget);
 
-        std::unique_ptr<Ui::GeneralDialog> generalDialog(new Ui::GeneralDialog(mainWidget, Utils::InterConnector::instance().getMainWindow()));
+        auto generalDialog = new Ui::GeneralDialog(mainWidget, Utils::InterConnector::instance().getMainWindow());
         generalDialog->addHead();
         generalDialog->addLabel(_headerText);
         generalDialog->addAcceptButton(_buttonText, Utils::scale_value(24), true);
 
         if (acceptEnter)
-            QObject::connect(textEdit, SIGNAL(enter()), generalDialog.get(), SLOT(accept()));
+            QObject::connect(textEdit, SIGNAL(enter()), generalDialog, SLOT(accept()));
 
         QTextCursor cursor = textEdit->textCursor();
         cursor.select(QTextCursor::Document);
         textEdit->setTextCursor(cursor);
         textEdit->setFrameStyle(QFrame::NoFrame);
 
-        Utils::setWidgetPopup(generalDialog.get(), true);//platform::is_apple() ? false : true);
         textEdit->setFocus();
 
-        auto result = generalDialog->showInPosition(-1, -1);
-        _resultChatName = textEdit->getPlainText();
+        return generalDialog;
+    }
 
+    bool NameEditor(
+        QWidget* _parent,
+        const QString& _chatName,
+        const QString& _buttonText,
+        const QString& _headerText,
+        Out QString& _resultChatName,
+        bool acceptEnter)
+    {
+        auto dialog = std::unique_ptr<Ui::GeneralDialog>(NameEditorDialog(_parent, _chatName, _buttonText, _headerText, _resultChatName, acceptEnter));
+        auto result = dialog->showInPosition(-1, -1);
+        auto textEdit = dialog->findChild<Ui::TextEditEx *>("input_edit_control");
+        if (textEdit)
+        {
+            _resultChatName = textEdit->getPlainText();
+        }
         return result;
     }
 
@@ -1548,7 +1534,6 @@ namespace Utils
         generalDialog->addLabel(_labelText);
         generalDialog->addText(_messageText, Utils::scale_value(12));
         generalDialog->addButtonsPair(_buttonLeftText, _buttonRightText, Utils::scale_value(24), Utils::scale_value(12));
-        Utils::setWidgetPopup(generalDialog, true);//platform::is_apple() ? false : true);
 
         auto result = generalDialog->showInPosition(-1, -1);
         delete generalDialog;
@@ -1563,24 +1548,12 @@ namespace Utils
         const QString& _errorText,
         QWidget* _parent)
     {
-        auto mainWidget = new QWidget(_parent);
-
-        auto layout = new QVBoxLayout(mainWidget);
-        layout->setSpacing(0);
-        layout->setMargin(0);
-        layout->setContentsMargins(0, 0, 0, 0);
-        mainWidget->setLayout(layout);
-
-        auto generalDialog = new Ui::GeneralDialog(mainWidget, Utils::InterConnector::instance().getMainWindow());
+        std::unique_ptr<Ui::GeneralDialog> generalDialog(new Ui::GeneralDialog(nullptr, Utils::InterConnector::instance().getMainWindow()));
         generalDialog->addHead();
         generalDialog->addLabel(_labelText);
         generalDialog->addError(_errorText);
         generalDialog->addButtonsPair(_buttonLeftText, _buttonRightText, Utils::scale_value(24), Utils::scale_value(12));
-        Utils::setWidgetPopup(generalDialog, true);//platform::is_apple() ? false : true);
-
-        auto result = generalDialog->showInPosition(-1, -1);
-        delete generalDialog;
-        return result;
+        return generalDialog->showInPosition(-1, -1);
     }
 
     ProxySettings::ProxySettings(core::proxy_types _type, QString _username, QString _password,
@@ -1632,19 +1605,11 @@ namespace Utils
             return false;
         }
 
-        static const char *availableFormats[] = { nullptr, "PNG", "JPG" };
+        QFile file(_path);
+        if (!file.open(QIODevice::ReadOnly))
+            return false;
 
-        for (auto fmt : availableFormats)
-        {
-            _pixmap.load(_path, fmt);
-
-            if (!_pixmap.isNull())
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return loadPixmap(file.readAll(), _pixmap);
     }
 
     bool loadPixmap(const QByteArray& _data, Out QPixmap& _pixmap)
@@ -1659,6 +1624,8 @@ namespace Utils
 
             if (!_pixmap.isNull())
             {
+                const auto orientation = Exif::getExifOrientation(_data.data(), _data.size());
+                Exif::applyExifOrientation(orientation, InOut _pixmap);
                 return true;
             }
         }

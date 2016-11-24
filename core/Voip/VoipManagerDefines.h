@@ -51,7 +51,9 @@ namespace voip_manager
         kNotificationType_VoipWindowAddComplete,
         kNotificationType_CipherStateChanged,
 
-		kNotificationType_MinimalBandwidthChanged,
+        kNotificationType_MinimalBandwidthChanged,
+        kNotificationType_MaskEngineEnable,
+        kNotificationType_LoadMask,
     };
 
     struct VoipProxySettings
@@ -162,10 +164,10 @@ namespace voip_manager
         {
         }
 
-		bool operator==(const Contact& otherContact) const
-		{
-			return otherContact.account == account && otherContact.contact == contact;
-		}
+        bool operator==(const Contact& otherContact) const
+        {
+            return otherContact.account == account && otherContact.contact == contact;
+        }
     };
 
     struct ContactEx
@@ -186,6 +188,12 @@ namespace voip_manager
         std::string name;
         voip2::DeviceType type;
         bool isActive;
+    };
+
+    struct device_list
+    {
+        voip2::DeviceType type;
+        std::vector<voip_manager::device_description> devices;
     };
 
     enum { kAvatarRequestId          = 0xb00b1e               };
@@ -239,11 +247,16 @@ namespace voip_manager
         float scale;
     };
 
-    struct MinimalBandwidth
+    struct EnableParams
     {
         bool  enable;
     };
 
+	struct NamedResult
+	{
+		std::string name;
+		bool		result;
+	};
 
     class ICallManager
     {
@@ -268,6 +281,7 @@ namespace voip_manager
         virtual void        mute_incoming_call_sounds(bool mute)                    = 0;
 
 		virtual void        minimal_bandwidth_switch()								= 0;
+        virtual bool        has_created_call()                                     = 0;
     };
 
     class IDeviceManager
@@ -306,6 +320,8 @@ namespace voip_manager
 
         virtual void window_set_offsets  (void* hwnd, unsigned l, unsigned t, unsigned r, unsigned b) = 0;
         virtual void window_add_button   (voip2::ButtonType type, voip2::ButtonPosition position) = 0;
+
+		virtual void window_set_primary(void* hwnd, const std::string& contact) = 0;
     };
 
     class IConnectionManager
@@ -334,6 +350,21 @@ namespace voip_manager
         virtual bool remote_audio_enabled()                  = 0;
         virtual bool remote_audio_enabled(const std::string& account, const std::string& contact) = 0;
     };
+
+	class IMaskManager
+	{
+	public:
+		virtual ~IMaskManager() { }
+	public:
+		virtual void load_mask(const std::string& path) = 0;
+
+		virtual unsigned version() = 0;
+
+        virtual void set_model_path(const std::string& path) = 0;
+
+        virtual void init_mask_engine() = 0;
+	};
+
 
     class IVoipManager
     {

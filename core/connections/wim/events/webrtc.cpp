@@ -21,7 +21,7 @@ int32_t webrtc_event::parse(const std::string& raw) {
 
 void webrtc_event::on_im(std::shared_ptr<core::wim::im> _im, std::shared_ptr<auto_callback> _on_complete) {
     if (!!_im) {
-        _im->on_voip_proto_msg(false, _raw.c_str(), (int)_raw.length(), _on_complete);
+        _im->on_voip_proto_msg(false, _raw.c_str(), (int32_t)_raw.length(), _on_complete);
     } else {
         assert(false);
     }

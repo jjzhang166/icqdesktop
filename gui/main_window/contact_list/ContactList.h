@@ -2,6 +2,7 @@
 
 #include "../../types/typing.h"
 #include "../../controls/TransparentScrollBar.h"
+#include "Common.h"
 
 namespace Logic
 {
@@ -23,7 +24,8 @@ namespace Logic
         SHARE_TEXT,
         PENDING_MEMBERS,
         UNKNOWN,
-        FROM_ALERT
+        FROM_ALERT,
+        HISTORY_SEARCH,
     };
 
     bool is_delete_members_regim(int _regim);
@@ -65,6 +67,41 @@ namespace Ui
         QPainter* painter_;
         bool hover_;
         bool select_;
+    };
+
+    class SearchInAllChatsButton: public QWidget
+    {
+        Q_OBJECT
+    Q_SIGNALS:
+        void clicked();
+    public:
+        SearchInAllChatsButton(QWidget* _parent = nullptr);
+
+    protected:
+        virtual void paintEvent(QPaintEvent*);
+        virtual void enterEvent(QEvent *);
+        virtual void leaveEvent(QEvent *);
+        virtual void mousePressEvent(QMouseEvent *);
+        virtual void mouseReleaseEvent(QMouseEvent *);
+
+    private:
+        QPainter* painter_;
+        bool hover_;
+        bool select_;
+    };
+
+    class SearchInChatLabel: public QWidget
+    {
+        Q_OBJECT
+
+    public:
+        SearchInChatLabel(QWidget* _parent = nullptr);
+
+    protected:
+        virtual void paintEvent(QPaintEvent*);
+
+    private:
+        QPainter* painter_;
     };
 
     class EmptyIgnoreListLabel : public QWidget
@@ -119,7 +156,7 @@ namespace Ui
 		Q_OBJECT
 
 	Q_SIGNALS:
-		void itemSelected(QString);
+		void itemSelected(QString, qint64 _message_id);
         void itemClicked(QString);
 		void groupClicked(int);
 		void searchEnd();
@@ -131,7 +168,7 @@ namespace Ui
 		void searchUpPressed();
 		void searchDownPressed();
         void onSendMessage(QString);
-        void select(QString);
+        void select(QString, qint64 _message_id = -1);
 
         void changeSelected(QString _aimId, bool _isRecent);
 		void recentsClicked();
@@ -139,10 +176,14 @@ namespace Ui
 		void allClicked();
 		void settingsClicked();
         void switchToRecents();
+        void onDisableSearchInDialogButton();
+
+        void setSearchInDialog(bool _isSearchInDialog);
+        bool getSearchInDialog() const;
 
 	private Q_SLOTS:
 		void searchResults(const QModelIndex &, const QModelIndex &);
-		void searchResultsFromModel();
+        void searchResultsFromModel();
 		void itemClicked(const QModelIndex&);
 		void itemPressed(const QModelIndex&);
         void liveChatsItemPressed(const QModelIndex&);
@@ -157,10 +198,18 @@ namespace Ui
 		void touchScrollStateChangedCl(QScroller::State);
         void touchScrollStateChangedSearch(QScroller::State);
         void touchScrollStateChangedLC(QScroller::State);
+
         void showNoContactsYet();
-        void showNoRecentsYet();
         void hideNoContactsYet();
+
+        void showNoRecentsYet();
         void hideNoRecentsYet();
+
+        void showNoSearchResults();
+        void hideNoSearchResults();
+
+        void showSearchSpinner();
+        void hideSearchSpinner();
 
         void typingStatus(Logic::TypingFires _typing, bool _isTyping);
 
@@ -168,6 +217,9 @@ namespace Ui
 		void showPopupMenu(QAction* _action);
         void switchTab(QString);
         void autoScroll();
+
+        void dialogClosed(QString _aimid);
+
 
 	public:
 
@@ -207,19 +259,25 @@ namespace Ui
         void updateCheckedButtons();
         void updateSettingsState();
 		void showRecentsPopup_menu(const QModelIndex& _current);
-		void showContactsPopupMenu(const QModelIndex& _current);
+		void showContactsPopupMenu(QString _aimid, bool _is_chat);
 		void selectionChanged(const QModelIndex &);
 
         QString getAimid(const QModelIndex &_current) const;
         void searchUpOrDownPressed(bool _isUp);
 
         void showNoRecentsYet(QWidget *_parent, QWidget *_list, QLayout *_layout, std::function<void()> _action);
-        void showNoContactsYet(QWidget *_parent, QWidget *_list, QLayout *_layout);
-        void hideNoContactsYet(QWidget *_list, QLayout *_layout);
         void hideNoRecentsYet(QWidget *_list, QLayout *_layout);
 
+        void showNoContactsYet(QWidget *_parent, QWidget *_list, QLayout *_layout);
+        void hideNoContactsYet(QWidget *_list, QLayout *_layout);
+
+        void showNoSearchResults(QWidget *_parent, QWidget *_list, QLayout *_layout);
+        void hideNoSearchResults(QWidget *_list, QLayout *_layout);
+
+        void showSearchSpinner(QWidget *_parent, QWidget *_list, QLayout *_layout);
+        void hideSearchSpinner(QWidget *_list, QLayout *_layout);
+
     private:
-        std::unique_ptr<Utils::SignalsDisconnector>     disconnector_;
         Logic::ChatMembersModel*						chatMembersModel_;
 		Logic::ContactListItemDelegate*					clDelegate_;
         Logic::LiveChatItemDelegate*                    liveChatsDelegate_;
@@ -234,16 +292,26 @@ namespace Ui
 		FocusableListView*								liveChatsView_;
 		QWidget*										noContactsYet_;
 		QWidget*										noRecentsYet_;
+		QWidget*										noSearchResults_;
+		QWidget*										searchSpinner_;
 		Ui::ContextMenu*								popupMenu_;
 		Logic::MembersWidgetRegim						regim_;
 		RecentsButton*									recentsButton_;
 		Logic::RecentItemDelegate*						recentsDelegate_;
         Logic::UnknownItemDelegate                      *unknownsDelegate_;
+        Logic::AbstractItemDelegateWithRegim*           searchItemDelegate_;
+
 		QVBoxLayout*									recentsLayout_;
 		QWidget*										recentsPage_;
 		FocusableListView*								recentsView_;
+
+        QVBoxLayout*									searchLayout_;
+		QWidget*										searchPage_;
         FocusableListView*								searchView_;
-		SettingsTab*									settingsTab_;
+
+        QString                                         lastSearchPattern_;
+		
+        SettingsTab*									settingsTab_;
 		QPushButton*									settingsTabButton_;
 		QStackedWidget*									stackedWidget_;
         QFrame*                                         buttonsFrame_;
@@ -251,12 +319,17 @@ namespace Ui
         FocusableListView*                              scrolledView_;
         int                                             scrollMultipler_;
         QPoint                                          lastDragPos_;
+        SearchInAllChatsButton*                         searchInAllButton_;
+        SearchInChatLabel*                              searchInChatLabel_;
 
         unsigned										currentTab_;
         bool											noContactsYetShown_;
         bool											noRecentsYetShown_;
+        bool											noSearchResultsShown_;
+        bool											searchSpinnerShown_;
         bool											tapAndHold_;
         bool                                            pictureOnlyView_;
         int                                             fixedItemWidth_;
+        bool                                            isSearchInDialog_;
 	};
 }

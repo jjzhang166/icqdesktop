@@ -72,7 +72,7 @@ namespace core
 {
 	typedef std::map<std::string, std::string> Str2StrMap;
 
-	typedef std::set<int> IntSet;
+	typedef std::set<int32_t> IntSet;
 
 	typedef std::set<std::string> StrSet;
 
@@ -110,6 +110,22 @@ namespace build
 		#else
 			return false;
 		#endif
+	}
+
+	inline bool is_final_build()
+	{
+		#if defined(ICQ_FINAL_BUILD)
+		return true;
+		#endif
+		return false;
+	}
+
+	inline bool is_development_build()
+	{
+		#if defined(ICQ_DEVELOPMENT_BUILD)
+		return true;
+		#endif
+		return false;
 	}
 }
 
@@ -159,7 +175,7 @@ namespace core
     namespace stats
     {
         typedef std::vector<std::pair<std::string, std:: string> > event_props_type;
-        const int msg_pending_delay_s = 5;
+        const int32_t msg_pending_delay_s = 5;
     }
 }
 
@@ -167,7 +183,7 @@ namespace ffmpeg
 {
     inline bool is_enable_streaming()
     {
-        return platform::is_windows();
+        return false;//platform::is_windows();
     }
 }
 

@@ -1,7 +1,6 @@
 #ifndef __INCOMING_CALL_WINDOW_H__
 #define __INCOMING_CALL_WINDOW_H__
 
-#include "VoipSysPanelHeader.h"
 #include "VideoFrame.h"
 #include "VideoWindow.h"
 
@@ -9,6 +8,8 @@ namespace Ui
 {
     class ShadowWindow;
     class ResizeEventFilter;
+    class VoipSysPanelHeader;
+    class IncomingCallControls;
 
     class IncomingCallWindow : public QWidget
     {
@@ -37,6 +38,17 @@ namespace Ui
         void showFrame();
         void hideFrame();
 
+    protected:
+        
+#ifndef _WIN32
+        void mouseMoveEvent(QMouseEvent* _e) override;
+        void mouseReleaseEvent(QMouseEvent * event) override;
+        void mousePressEvent(QMouseEvent * event) override;
+        
+        // @return true if we resend message to any transporent panel.
+        template <typename E> void resendMouseEventToPanel(E* event_);
+#endif
+        
     private:
         std::unique_ptr<VoipSysPanelHeader>  header_;
         std::unique_ptr<IncomingCallControls> controls_;

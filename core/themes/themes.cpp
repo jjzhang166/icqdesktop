@@ -210,7 +210,7 @@ namespace core
             return handler;
         }
         
-        theme* face::get_theme(int _theme_id)
+        theme* face::get_theme(int32_t _theme_id)
         {
             return cache_->get_theme(_theme_id);
         }
@@ -231,8 +231,14 @@ namespace core
         }
         
         /* theme */
-        theme::theme(std::wstring folder_path) : theme_id_(0), folder_path_(folder_path), tile_(false), position_(0) {}
-        
+        theme::theme(std::wstring folder_path) 
+            : tile_(false)
+            , position_(0)
+            , folder_path_(folder_path)
+            , theme_id_(0)
+        {
+        }
+
         void theme::contact_list_item::unserialize(const rapidjson::Value &_node)
         {
             auto iter_bg_color = _node.FindMember("BackgroundColor");
@@ -547,7 +553,7 @@ namespace core
             return core::tools::from_utf8(folder);
         }
         
-        std::wstring theme::get_theme_folder(int _theme_id)
+        std::wstring theme::get_theme_folder(int32_t _theme_id)
         {
             std::string folder = std::to_string(_theme_id);
             return core::tools::from_utf8(folder);
@@ -564,16 +570,12 @@ namespace core
         }
         
         /* download_task */
-        download_task::download_task(
-                                     const std::string& _source_url,
-                                     const std::wstring& _dest_file,
-                                     int32_t _theme_id = -1)
-        :
-        source_url_(_source_url),
-        dest_file_(_dest_file),
-        theme_id_(_theme_id)
+        download_task::download_task(const std::string& _source_url, const std::wstring& _dest_file, int32_t _theme_id = -1)
+            : source_url_(_source_url)
+            , dest_file_(_dest_file)
+            , set_id_(0)
+            , theme_id_(_theme_id)
         {
-            
         }
         
         const std::string& download_task::get_source_url() const
@@ -619,9 +621,7 @@ namespace core
             if (iter_themes == doc.MemberEnd() || !iter_themes->value.IsArray())
                 return false;
 
-            themes_list_.clear();
-            
-            int theme_position = 0;
+            int32_t theme_position = 0;
             for (auto iter_set = iter_themes->value.Begin(); iter_set != iter_themes->value.End(); iter_set++)
             {
                 auto new_theme = std::make_shared<themes::theme>(themes_path_);
@@ -643,7 +643,7 @@ namespace core
             return true;
         }
         
-        std::wstring cache::get_theme_thumb_path(const int _theme_id) const
+        std::wstring cache::get_theme_thumb_path(const int32_t _theme_id) const
         {
             return themes_path_ + L"/" + theme::get_theme_folder(_theme_id) + L"/thumb.jpg";
         }
@@ -653,7 +653,7 @@ namespace core
             return base_url_ + _theme.get_thumb_normal_name();
         }
         
-        std::wstring cache::get_theme_image_path(const int _theme_id) const
+        std::wstring cache::get_theme_image_path(const int32_t _theme_id) const
         {
             return themes_path_ + L"/" + theme::get_theme_folder(_theme_id) + L"/image.jpg";
         }
@@ -695,7 +695,7 @@ namespace core
         
         void cache::make_download_task(theme& _theme)
         {
-            int theme_id = _theme.get_theme_id();
+            auto theme_id = _theme.get_theme_id();
             std::string base_url = base_url_;
             std::string thumb_url = get_theme_thumb_url(_theme);
             std::wstring thumb_file_name = _theme.get_thumb_path();
@@ -878,7 +878,7 @@ namespace core
             }
         }
         
-        theme* cache::get_theme(int _theme_id)
+        theme* cache::get_theme(int32_t _theme_id)
         {
             for (auto theme : themes_list_)
             {

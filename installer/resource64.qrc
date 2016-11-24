@@ -1,5 +1,5 @@
 <RCC>
   <qresource prefix="/">
-    <file>../bin/release64/gui/icq</file>
+    <file>../bin/Release64/icq</file>
   </qresource>
 </RCC>

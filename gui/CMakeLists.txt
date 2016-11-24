@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.2)
+cmake_minimum_required(VERSION 3.4)
 
 if(APPLE)
     project(ICQ)
@@ -50,19 +50,19 @@ elseif(APPLE)
     find_library(MAC_SPARKLE Sparkle PATHS ${ICQ_EXTERNAL_PLATFORM})
 
     mark_as_advanced(
-        MAC_OPENGL OpenGL
-        MAC_APP_KIT AppKit
-        MAC_FOUNDATION Foundation
-        MAC_IOKIT IOKit
-        MAC_SYSTEM_CONFIGURATION SystemConfiguration
-        MAC_SECURITY Security
-        MAC_CORE_MEDIA CoreMedia
-        MAC_CORE_AUDIO CoreAudio
-        MAC_AUDIO_TOOLBOX AudioToolbox
-        MAC_AUDIO_UNIT AudioUnit
-        MAC_CARBON Carbon
-        MAC_QUARTZ Quartz
-        MAC_HOCKEY_SDK HockeySDK
+        MAC_OPENGL
+        MAC_APP_KIT
+        MAC_FOUNDATION
+        MAC_IOKIT
+        MAC_SYSTEM_CONFIGURATION
+        MAC_SECURITY
+        MAC_CORE_MEDIA
+        MAC_CORE_AUDIO
+        MAC_AUDIO_TOOLBOX
+        MAC_AUDIO_UNIT
+        MAC_CARBON
+        MAC_QUARTZ
+        MAC_HOCKEY_SDK
         MAC_SCRIPTING_BRIDGE
         MAC_VIDEO_TOOLBOX
         MAC_VIDEO_DECODE_ACCELERATION
@@ -85,15 +85,27 @@ elseif(APPLE)
         ${MAC_SCRIPTING_BRIDGE}
         ${MAC_VIDEO_TOOLBOX}
         ${MAC_VIDEO_DECODE_ACCELERATION}
-        ${MAC_SPARKLE}
-        z
         ${ICQ_EXTERNAL_PLATFORM}/libqcocoa.a
         ${VOIP_LIBRARIES}
-        libcups.2.dylib)
+        libcups.2.dylib
+        ${ICQ_EXTERNAL_PLATFORM}/libqcocoa.a
+        iconv
+        ldap
+        z)
+
+    if(ICQ_UPDATE)
+        message(STATUS "updates: on")
+        set(SYSTEM_LIBRARIES ${SYSTEM_LIBRARIES} ${MAC_SPARKLE})
+    else()
+        message(STATUS "updates: off")
+    endif()
+
+    set(MACOSX_BUNDLE_ICON_FILE ${ICQ_MAC_ROOT}/icons-bundle-icq.icns)
+    set_source_files_properties(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 elseif(LINUX)
     add_definitions(-include "stdafx.h")
     add_definitions(-DSTRIP_VOIP)
-    set(SYSTEM_LIBRARIES
+    set(SYSTEM_LIBRARIES corelib core
         ${ICQ_EXTERNAL_PLATFORM}/libcurl_static.a
         ${ICQ_EXTERNAL_PLATFORM}/libssl_static.a
         ${ICQ_EXTERNAL_PLATFORM}/libcrypto_static.a
@@ -244,7 +256,7 @@ elseif(LINUX)
         ${SUBPROJECT_SOURCES} ${COMMON_SOURCES} ${GUI_SHARED_SOURCES} ${ICQ_MOC_FILES})
 endif()
 
-add_executable(${PROJECT_NAME}
+add_executable(${PROJECT_NAME} MACOSX_BUNDLE WIN32
     ${SUBPROJECT_SOURCES} ${SUBPROJECT_MM_SOURCES} ${SUBPROJECT_HEADERS}
     ${COMMON_SOURCES} ${COMMON_HEADERS}
     ${GUI_SHARED_SOURCES} ${GUI_SHARED_HEADERS}
@@ -256,17 +268,27 @@ add_executable(${PROJECT_NAME}
     ${ICQ_RESOURCES_OUTPUT}
     ${ADDITIONAL_FILES}
     ${PCH_BIN}
-    ${ICQ_RESOURCE_FILES})
+    ${ICQ_RESOURCE_FILES}
+    ${MACOSX_BUNDLE_ICON_FILE})
 set_property(DIRECTORY ${SUBPROJECT_ROOT} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_range_for)
 
-target_link_libraries(${PROJECT_NAME}
-    ${OPEN_AL_LIBRARIES}
-    ${FFMPEG_LIBRARIES}
-    ${SYSTEM_LIBRARIES}
-    ${PREPROCESSOR_LIBRARIES}
-    ${QT_LIBRARIES}
-    corelib)
+if(LINUX)
+    target_link_libraries(${PROJECT_NAME}
+        ${OPEN_AL_LIBRARIES}
+        ${FFMPEG_LIBRARIES}
+        ${PREPROCESSOR_LIBRARIES}
+        ${QT_LIBRARIES}
+        ${SYSTEM_LIBRARIES})
+else()
+    target_link_libraries(${PROJECT_NAME}
+        ${OPEN_AL_LIBRARIES}
+        ${FFMPEG_LIBRARIES}
+        ${PREPROCESSOR_LIBRARIES}
+        ${QT_LIBRARIES}
+        ${SYSTEM_LIBRARIES}
+        corelib)
+endif()
 
 if(MSVC)
     if(ICQ_DEBUG)
@@ -280,18 +302,11 @@ endif()
 if(APPLE)
     set(ICQ_BUNDLE "${ICQ_BIN_DIR}/${PROJECT_NAME}.app")
 
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E remove_directory ${ICQ_BUNDLE})
-
     set(ICQ_BUNDLE_DIR "${ICQ_BUNDLE}/Contents")
-
-    set(ICQ_MACOS_BUNDLE_DIR "${ICQ_BUNDLE_DIR}/MacOS")
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${ICQ_MACOS_BUNDLE_DIR}
-        COMMAND ${CMAKE_COMMAND} -E rename "${ICQ_BIN_DIR}/${PROJECT_NAME}" "${ICQ_MACOS_BUNDLE_DIR}/${PROJECT_NAME}")
 
     set(ICQ_PLIST "${ICQ_BUNDLE_DIR}/Info.plist")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy "${ICQ_MAC_ROOT}/imosx-icq-Info.plist" ${ICQ_PLIST})
+        COMMAND cp -f "${ICQ_MAC_ROOT}/imosx-icq-Info.plist" ${ICQ_PLIST})
     set(PLIST_BUDDY "/usr/libexec/PlistBuddy")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${PLIST_BUDDY} -c "Set :CFBundleExecutable ${PROJECT_NAME}" ${ICQ_PLIST} VERBATIM)
@@ -300,29 +315,23 @@ if(APPLE)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${PLIST_BUDDY} -c "Set :LSMinimumSystemVersion 10.7" ${ICQ_PLIST} VERBATIM)
 
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "${ICQ_MAC_ROOT}/PkgInfo" ${ICQ_BUNDLE_DIR})
+
     set(ICQ_FRAMEWORKS_BUNDLE_DIR "${ICQ_BUNDLE_DIR}/Frameworks")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${ICQ_FRAMEWORKS_BUNDLE_DIR})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy "${ICQ_LIB_DIR}/libcorelib.dylib" ${ICQ_FRAMEWORKS_BUNDLE_DIR})
-    set(HOCKEY_FRAMEWORK "HockeySDK.framework")
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${ICQ_FRAMEWORKS_BUNDLE_DIR}/${HOCKEY_FRAMEWORK}"
-        COMMAND cp -R "${ICQ_EXTERNAL_PLATFORM}/${HOCKEY_FRAMEWORK}" "${ICQ_FRAMEWORKS_BUNDLE_DIR}")
-    set(SPARKLE_FRAMEWORK "Sparkle.framework")
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${ICQ_FRAMEWORKS_BUNDLE_DIR}/${SPARKLE_FRAMEWORK}"
-        COMMAND cp -R "${ICQ_EXTERNAL_PLATFORM}/${SPARKLE_FRAMEWORK}" "${ICQ_FRAMEWORKS_BUNDLE_DIR}")
+        COMMAND rsync -K -a --exclude=Headers --exclude=Versions/A/Headers "${ICQ_EXTERNAL_PLATFORM}/HockeySDK.framework" "${ICQ_FRAMEWORKS_BUNDLE_DIR}")
+
+    if(ICQ_UPDATE)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND rsync -K -a --exclude=Headers --exclude=Versions/A/Headers "${ICQ_EXTERNAL_PLATFORM}/Sparkle.framework" "${ICQ_FRAMEWORKS_BUNDLE_DIR}")
+    endif()
 
     set(ICQ_RESOURCES_BUNDLE_DIR "${ICQ_BUNDLE_DIR}/Resources")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${ICQ_RESOURCES_BUNDLE_DIR})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy "${ICQ_MAC_ROOT}/dsa_pub.pem" ${ICQ_RESOURCES_BUNDLE_DIR})
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy "${ICQ_MAC_ROOT}/icons-bundle-icq.icns" ${ICQ_RESOURCES_BUNDLE_DIR})
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy "${ICQ_MAC_ROOT}/ICQ.entitlements" ${ICQ_RESOURCES_BUNDLE_DIR})
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy "${SUBPROJECT_ROOT}/main_window/livechats/LiveChats.qss" ${ICQ_RESOURCES_BUNDLE_DIR})
 endif()

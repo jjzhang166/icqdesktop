@@ -8,7 +8,7 @@
 #include "../../../tools/system.h"
 
 
-#define WIM_API_LOGIN_HOST		"https://api.login.icq.net:443/auth/clientLogin"
+#define WIM_API_LOGIN_HOST		"https://api.login.icq.net/auth/clientLogin"
 #define WIM_APP_TOKENTYPE		"longterm"
 
 using namespace core;
@@ -26,6 +26,7 @@ wim_packet(params),
     host_time_(0),
     time_offset_(0)
 {
+    set_can_change_hosts_scheme(true);
 }
 
 

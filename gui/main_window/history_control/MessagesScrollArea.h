@@ -20,7 +20,7 @@ namespace Ui
         Q_OBJECT
 
     Q_SIGNALS:
-        void fetchRequestedEvent();
+        void fetchRequestedEvent(bool _isMoveToBottomIfNeed = true);
 
         void needCleanup(QList<Logic::MessageKey> keysToUnload);
 
@@ -65,7 +65,7 @@ namespace Ui
 
         void insertWidget(const Logic::MessageKey &key, QWidget *widget);
 
-        void insertWidgets(const WidgetsList& _widgets);
+        void insertWidgets(const WidgetsList& _widgets, bool _isMoveToButtonIfNeed, int64_t _mess_id);
 
         bool isScrolling() const;
 
@@ -98,6 +98,11 @@ namespace Ui
         void resumeVisibleItems();
 
         void suspendVisibleItems();
+
+        void setIsSearch(bool _isSearch);
+        bool getIsSearch() const;
+
+        void updateItems();
 
     public slots:
         void notifySelectionChanges();
@@ -184,6 +189,10 @@ namespace Ui
         void resetUserActivityTimer();
 
         std::set<QString> contacts_;
+
+        bool IsSearching_;
+
+        int scrollValue_;
     };
 
 }

@@ -1,0 +1,109 @@
+QWidget#MaskPanel
+{
+	min-width: 100dip;
+	max-width: 100dip;
+}
+
+QWidget[MaskPanel="true"]
+{
+	min-width: 100dip;
+	max-width: 100dip;
+
+	background: rgba(0, 0, 0, 0%);
+}
+
+
+QWidget#MaskList
+{
+	background-color: rgba(0, 0, 0, 0%);
+	border: none;
+	overflow: hidden;
+	margin: 0;
+	padding: 0;
+}
+
+QWidget[orintation="vertical"]
+{
+	min-width: 116dip;
+	max-width: 116dip;
+	min-height: 0;
+	max-height: 10000dip;
+}
+
+QWidget[orintation="horizontal"]
+{
+	min-width: 0;
+	max-width: 10000dip;
+	min-height: 116dip;
+	max-height: 116dip;
+}
+
+
+QPushButton[MaskArrow="left"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_left_100.png);
+}
+QPushButton[MaskArrow="left"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_left_100_hover.png);
+}
+QPushButton[MaskArrow="left"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_left_100_active.png);
+}
+QPushButton[MaskArrow="left"]:disabled
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_left_100_disable.png);
+}
+
+QPushButton[MaskArrow="right"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_right_100.png);
+}
+QPushButton[MaskArrow="right"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_right_100_hover.png);
+}
+QPushButton[MaskArrow="right"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_right_100_active.png);
+}
+QPushButton[MaskArrow="right"]:disabled
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_right_100_disable.png);
+}
+
+
+QPushButton[MaskArrow="down"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_down_100.png);
+}
+QPushButton[MaskArrow="down"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_down_100_hover.png);
+}
+QPushButton[MaskArrow="down"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_down_100_active.png);
+}
+QPushButton[MaskArrow="down"]:disabled
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_down_100_disable.png);
+}
+
+QPushButton[MaskArrow="up"]
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_up_100.png);
+}
+QPushButton[MaskArrow="up"]:hover
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_up_100_hover.png);
+}
+QPushButton[MaskArrow="up"]:hover:pressed
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_up_100_active.png);
+}
+QPushButton[MaskArrow="up"]:disabled
+{
+	border-image: url(:/resources/video_panel/videoctrl_mask_up_100_disable.png);
+}

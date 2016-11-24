@@ -580,6 +580,10 @@ namespace Ui
                     newSize.height()
                 );
 
+                image = image.scaled(newSize.width() * 2, newSize.height() * 2, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+                Utils::check_pixel_ratio(image);
+
                 targetRect.moveCenter(stickerRect.center());
 
                 p.drawImage(targetRect, image, image.rect());

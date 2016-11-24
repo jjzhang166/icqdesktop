@@ -209,7 +209,7 @@ int32_t fetch::parse_response_data(const rapidjson::Value& _data)
     }
     catch (const std::exception&)
     {
-
+        return session_ended_ ? wpie_error_need_relogin : 0;
     }
 
     return session_ended_ ? wpie_error_need_relogin : 0;

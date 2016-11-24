@@ -67,14 +67,12 @@ namespace Ui
         return Selected_;
     }
 
-    void HistoryControlPageItem::onActivityChanged(const bool isActive)
+    void HistoryControlPageItem::onActivityChanged(const bool /*isActive*/)
     {
-        isActive;
     }
 
-    void HistoryControlPageItem::onVisibilityChanged(const bool isVisible)
+    void HistoryControlPageItem::onVisibilityChanged(const bool /*isVisible*/)
     {
-        isVisible;
     }
 
     void HistoryControlPageItem::setHasAvatar(const bool value)

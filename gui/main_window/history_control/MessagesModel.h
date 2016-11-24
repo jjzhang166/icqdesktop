@@ -42,6 +42,18 @@ namespace Logic
         max
     };
 
+    enum class model_regim
+    {
+        min,
+
+        jump_to_msg,
+        jump_to_bottom,
+        first_load,
+        normal_load,
+
+        max = 0
+    };
+
     class MessageKey
     {
     public:
@@ -69,6 +81,13 @@ namespace Logic
         bool isEmpty() const
         {
             return id_ == -1 && prev_ == -1 && internalId_.isEmpty();
+        }
+
+        void setEmpty()
+        {
+            id_ = -1;
+            prev_ = -1;
+            internalId_.clear();
         }
 
         bool isPending() const
@@ -277,11 +296,14 @@ namespace Logic
         std::unique_ptr<qint64> lastRequestedMessage_;
 
         MessageKey lastKey_;
-
+        MessageKey firstKey_;
+        bool recvLastMessage_;
 
     public:
 
-        ContactDialog() {}
+        ContactDialog() 
+            : recvLastMessage_(false)
+        {}
 
         void setLastRequestedMessage(const qint64 _message);
         qint64 getLastRequestedMessage() const;
@@ -290,8 +312,13 @@ namespace Logic
         MessagesMap& getMessages();
         MessagesMap& getPendingMessages();
         DatesMap& getDatesMap();
+
+        const MessageKey& getFirstKey() const;
         const MessageKey& getLastKey() const;
         void setLastKey(const MessageKey& _key);
+        void deleteLastKey();
+        void setFirstKey(const MessageKey& _key);
+
         bool hasItemsInBetween(const MessageKey& _l, const MessageKey& _r) const;
 
         std::shared_ptr<Data::MessageBuddy> addDateItem(const QString& _aimId, const MessageKey& _key, const QDate& _date);
@@ -306,6 +333,9 @@ namespace Logic
         void setNewKey(const MessageKey& _key);
         void resetNewKey();
         const MessageKey* getNewKey() const;
+
+        void setRecvLastMessage(bool _value);
+        bool getRecvLastMessage() const;
     };
 
     class MessagesModel : public QObject
@@ -326,7 +356,7 @@ namespace Logic
 
     Q_SIGNALS:
 
-        void ready(QString);
+        void ready(QString, bool, int64_t _mess_id);
         void updated(QList<Logic::MessageKey>, QString, unsigned);
         void deleted(QList<Logic::MessageKey>, QString);
         void readByClient(QString _aimid, qint64 _id);
@@ -340,16 +370,17 @@ namespace Logic
 
     private Q_SLOTS:
 
-        void messageBuddies(std::shared_ptr<Data::MessageBuddies> _buddies, QString _aimId, Ui::MessagesBuddiesOpt _option, bool _havePending, qint64 _seq);
+        void messageBuddies(std::shared_ptr<Data::MessageBuddies> _buddies, QString _aimId, Ui::MessagesBuddiesOpt _option, bool _havePending, qint64 _seq, int64_t _last_msgid);
 
-        void messagesDeletedUpTo(QString, int64_t);
         void messagesModified(QString, std::shared_ptr<Data::MessageBuddies>);
         void dlgState(Data::DlgState);
         void fileSharingUploadingResult(QString seq, bool success, QString localPath, QString uri, int contentType, bool isFileTooBig);
 
     public Q_SLOTS:
+        void messagesDeletedUpTo(QString, int64_t);
+        void setRecvLastMsg(QString _aimId, bool _value);
+        void contactChanged(QString, qint64 _messageId);
 
-        void contactChanged(QString);
         void messagesDeleted(QString, QList<int64_t>);
 
     public:
@@ -359,8 +390,8 @@ namespace Logic
         int getUnreadCount() const;
         void setItemWidth(int _width);
 
-        QMap<MessageKey, Ui::HistoryControlPageItem*> tail(const QString& _aimId, QWidget* _parent);
-        QMap<MessageKey, Ui::HistoryControlPageItem*> more(const QString& _aimId, QWidget* _parent);
+        QMap<MessageKey, Ui::HistoryControlPageItem*> tail(const QString& _aimId, QWidget* _parent, bool _is_search, int64_t _mess_id, bool _is_jump_to_bottom = false);
+        QMap<MessageKey, Ui::HistoryControlPageItem*> more(const QString& _aimId, QWidget* _parent, bool _isMoveToBottomIfNeed);
 
         Ui::HistoryControlPageItem* getById(const QString& _aimId, const MessageKey& _key, QWidget* _parent);
 
@@ -387,7 +418,7 @@ namespace Logic
     private:
 
         Data::MessageBuddy item(const Message& _index);
-        void requestMessages(const QString& _aimId);
+        void requestMessages(const QString& _aimId, qint64 _messageId, bool _toOlder, bool _needPrefetch, bool _is_jump_to_bottom);
         int generatedDomUid();
 
         Ui::HistoryControlPageItem* makePageItem(const Data::MessageBuddy& _msg, QWidget* _parent) const;
@@ -426,7 +457,10 @@ namespace Logic
             const qint64 _modelFirst,
             const Ui::MessagesBuddiesOpt _option,
             const qint64 _seq,
-            const bool hole);
+            const bool hole,
+            int64_t _mess_id,
+            int64_t _last_mess_id,
+            model_regim _regim);
 
         void updateLastSeen(const QString& _aimid);
 
@@ -439,7 +473,8 @@ namespace Logic
         QStringList subscribed_;
         QList<qint64> sequences_;
 
-
+        QHash<qint64, int64_t> seqAndToOlder_;
+        QHash<qint64, int64_t> seqAndJumpBottom_;
         int32_t itemWidth_;
     };
 

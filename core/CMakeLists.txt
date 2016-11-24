@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.2)
+cmake_minimum_required(VERSION 3.4)
 
 project(core)
 
@@ -48,8 +48,6 @@ if(APPLE)
 
     list(REMOVE_ITEM MINIZIP_SOURCES "${MINIZIP_ROOT}/iowin32.c")
     list(REMOVE_ITEM MINIZIP_HEADERS "${MINIZIP_ROOT}/iowin32.h")
-    list(REMOVE_ITEM MINIZIP_SOURCES "${MINIZIP_ROOT}/unzip.c")
-    list(REMOVE_ITEM MINIZIP_HEADERS "${MINIZIP_ROOT}/unzip.h")
     list(REMOVE_ITEM MINIZIP_SOURCES "${MINIZIP_ROOT}/miniunz.c")
     list(REMOVE_ITEM MINIZIP_SOURCES "${MINIZIP_ROOT}/minizip.c")
 
@@ -75,8 +73,9 @@ add_library(${PROJECT_NAME} STATIC
     ${PCH_BIN})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_range_for)
 
+
 # --------------------------  copy voip  -------------------------
 if(MSVC)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${VOIP_LIBRARY_1} ${VOIP_LIBRARY_2} ${ICQ_BIN_DIR})
+        COMMAND ${CMAKE_COMMAND} -E copy ${VOIP_LIBRARY_1} ${VOIP_LIBRARY_2} ${VOIP_DX_COMPILER_LIBRARY} ${ICQ_BIN_DIR})
 endif()

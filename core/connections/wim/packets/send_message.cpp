@@ -70,7 +70,11 @@ int32_t send_message::init_request(std::shared_ptr<core::http_request_simple> _r
         {
             rapidjson::Value quote_params(rapidjson::Type::kObjectType);
             quote_params.AddMember("mediaType", quote.get_type(), a);
-            quote_params.AddMember("text", quote.get_text(), a);
+            auto sticker = quote.get_sticker();
+            if (!sticker.empty())
+                quote_params.AddMember("stickerId", sticker, a);
+            else
+                quote_params.AddMember("text", quote.get_text(), a);
             quote_params.AddMember("sn", quote.get_sender(), a);
             quote_params.AddMember("msgId", quote.get_msg_id(), a);
             quote_params.AddMember("time", quote.get_time(), a);

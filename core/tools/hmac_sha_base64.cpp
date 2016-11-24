@@ -48,9 +48,10 @@ int32_t fchr(uint8_t c)
 
 int32_t base64::base64_decode(uint8_t *source,int32_t length, uint8_t *dst)
 {
-    uint32_t cursor =0xFF00FF00, temp =0;
-    int32_t i=0,size =0;
-    cursor = 0;
+    int32_t temp =0;
+    int32_t i=0;
+    int32_t size =0;
+    int32_t cursor = 0;
 
     for (;i<length/4;)
     {

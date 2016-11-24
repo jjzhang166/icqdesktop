@@ -190,9 +190,10 @@ namespace HistoryControl
 
                 return Themes::GetPixmap(Themes::PixmapResourceId::VoipEventOutgoingCallIcon);
 
+            default:
+                assert(!"unexpected event type");
         }
 
-        assert(!"unexpected event type");
         return nullptr;
     }
 

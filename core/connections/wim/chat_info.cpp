@@ -11,11 +11,13 @@ chat_info::chat_info()
     , blocked_count_(0)
     , pending_count_(0)
     , you_blocked_(false)
+    , you_pending_(false)
     , you_member_(false)
     , public_(false)
     , live_(false)
     , controlled_(false)
-    , you_pending_(false)
+    , joinModeration_(false)
+    , age_restriction_(false)
 {
 }
 
@@ -56,8 +58,10 @@ int32_t chat_info::unserialize(const rapidjson::Value& _node)
     auto iter_join_moderation = _node.FindMember("joinModeration");
     if (iter_join_moderation != _node.MemberEnd() && iter_join_moderation->value.IsBool())
         joinModeration_ = iter_join_moderation->value.GetBool();
-    else
-        joinModeration_ = false;
+
+    auto iter_age_restriction = _node.FindMember("ageRestriction");
+    if (iter_age_restriction != _node.MemberEnd() && iter_age_restriction->value.IsBool())
+        age_restriction_ = iter_age_restriction->value.GetBool();
 
     auto iter_yours = _node.FindMember("you");
     if (iter_yours != _node.MemberEnd())
@@ -113,6 +117,10 @@ int32_t chat_info::unserialize(const rapidjson::Value& _node)
     auto iter_info_creator = _node.FindMember("creator");
     if (iter_info_creator != _node.MemberEnd() && iter_info_creator->value.IsString())
         creator_ =  iter_info_creator->value.GetString();
+
+    auto iter_info_default_role = _node.FindMember("defaultRole");
+    if (iter_info_default_role != _node.MemberEnd() && iter_info_default_role->value.IsString())
+        default_role_ =  iter_info_default_role->value.GetString();
 
     auto iter_members = _node.FindMember("members");
     if (iter_members != _node.MemberEnd() && iter_members->value.IsArray())
@@ -191,13 +199,15 @@ void chat_info::serialize(core::coll_helper _coll) const
     _coll.set_value_as_bool("controlled", controlled_);
     _coll.set_value_as_string("stamp", stamp_);
     _coll.set_value_as_bool("joinModeration", joinModeration_);
+    _coll.set_value_as_bool("age_restriction", age_restriction_);
     _coll.set_value_as_string("creator", creator_);
+    _coll.set_value_as_string("default_role", default_role_);
 
     ifptr<iarray> members_array(_coll->create_array());
 
     if (!members_.empty())
     {
-        members_array->reserve((int)members_.size());
+        members_array->reserve((int32_t)members_.size());
         for (const auto member : members_)
         {
             coll_helper _coll_message(_coll->create_collection(), true);

@@ -64,8 +64,6 @@ int32_t del_history::parse_response_data(const rapidjson::Value& _data)
 
 int32_t del_history::on_response_error_code()
 {
-    status_code_;
-
     __INFO(
         "delete_history",
         "    status_code=<%1%>",

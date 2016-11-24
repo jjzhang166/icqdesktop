@@ -31,17 +31,16 @@ void GeneralSettingsWidget::Creator::initVoiceVideo(QWidget* _parent, VoiceAndVi
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(scrollArea);
 
-    auto __deviceChanged = [&_voiceAndVideo](const int ix, const voip_proxy::EvoipDevTypes dev_type)
+    auto __deviceChanged = [&_voiceAndVideo, _parent](const int ix, const voip_proxy::EvoipDevTypes dev_type)
     {
         assert(ix >= 0);
         if (ix < 0) { return; }
 
         std::vector<DeviceInfo>* devList = NULL;
-        QString settingsName;
         switch (dev_type) {
-        case voip_proxy::kvoipDevTypeAudioPlayback: { settingsName = settings_speakers; devList = &_voiceAndVideo.aPlaDeviceList; break; }
-        case voip_proxy::kvoipDevTypeAudioCapture: { settingsName = settings_microphone; devList = &_voiceAndVideo.aCapDeviceList; break; }
-        case voip_proxy::kvoipDevTypeVideoCapture: { settingsName = settings_webcam; devList = &_voiceAndVideo.vCapDeviceList; break; }
+        case voip_proxy::kvoipDevTypeAudioPlayback: { devList = &_voiceAndVideo.aPlaDeviceList; break; }
+        case voip_proxy::kvoipDevTypeAudioCapture: {  devList = &_voiceAndVideo.aCapDeviceList; break; }
+        case voip_proxy::kvoipDevTypeVideoCapture: {  devList = &_voiceAndVideo.vCapDeviceList; break; }
         case voip_proxy::kvoipDevTypeUndefined:
         default:
             assert(!"unexpected device type");
@@ -54,15 +53,17 @@ void GeneralSettingsWidget::Creator::initVoiceVideo(QWidget* _parent, VoiceAndVi
         assert(ix < (int)devList->size());
         const DeviceInfo& info = (*devList)[ix];
 
-        voip_proxy::device_desc description;
-        description.name = info.name;
-        description.uid = info.uid;
-        description.dev_type = dev_type;
+        GeneralSettingsWidget* settingsWidget = qobject_cast<GeneralSettingsWidget*>(_parent->parent());
 
-        Ui::GetDispatcher()->getVoipController().setActiveDevice(description);
+        if (settingsWidget)
+        {
+            voip_proxy::device_desc description;
+            description.name = info.name;
+            description.uid = info.uid;
+            description.dev_type = dev_type;
 
-        if (get_gui_settings()->get_value<QString>(settingsName, "") != description.uid.c_str())
-            get_gui_settings()->set_value<QString>(settingsName, description.uid.c_str());
+            settingsWidget->setActiveDevice(description);
+        }
     };
 
     GeneralCreator::addHeader(scrollArea, mainLayout, QT_TRANSLATE_NOOP("settings_pages", "Voice and video"));

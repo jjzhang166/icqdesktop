@@ -56,7 +56,7 @@ public:
     
     static void log(QString logString);
     
-    static void getPossibleStrings(const QString& text, QStringList & result);
+    static void getPossibleStrings(const QString& text, std::vector<QStringList> & result, unsigned& _count);
     
     static bool nativeEventFilter(const QByteArray &data, void *message, long *result);
     
@@ -72,6 +72,8 @@ public:
     static void showEmojiPanel();
     
     static QPoint viewPosition(WId wid);
+    
+    static QString saveFileName(const QString &caption, const QString &dir, const QString &filter);
     
 private:
     void setupDockClickHandler();

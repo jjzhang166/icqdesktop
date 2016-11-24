@@ -7,7 +7,6 @@
 #include "MessageStyle.h"
 #include "ServiceMessageItem.h"
 #include "ContentWidgets/FileSharingWidget.h"
-#include "ContentWidgets/PttAudioWidget.h"
 
 #include "../contact_list/ContactListModel.h"
 #include "../contact_list/RecentsModel.h"
@@ -604,9 +603,24 @@ namespace Logic
         return lastKey_;
     }
 
+    const MessageKey& ContactDialog::getFirstKey() const
+    {
+        return firstKey_;
+    }
+
     void ContactDialog::setLastKey(const MessageKey& _key)
     {
         lastKey_ = _key;
+    }
+
+    void ContactDialog::deleteLastKey()
+    {
+        lastKey_.setEmpty();
+    }
+
+    void ContactDialog::setFirstKey(const MessageKey& _key)
+    {
+        firstKey_ = _key;
     }
 
     bool ContactDialog::hasItemsInBetween(const MessageKey& _l, const MessageKey& _r) const
@@ -745,7 +759,15 @@ namespace Logic
         newKey_.reset();
     }
 
+    void ContactDialog::setRecvLastMessage(bool _value)
+    {
+        recvLastMessage_ = _value;
+    }
 
+    bool ContactDialog::getRecvLastMessage() const
+    {
+        return recvLastMessage_;
+    }
 
     //////////////////////////////////////////////////////////////////////////
     // MessagesModel
@@ -902,10 +924,20 @@ namespace Logic
         const qint64 _modelFirst,
         const Ui::MessagesBuddiesOpt _option,
         const qint64 _seq,
-        const bool _hole)
+        const bool _hole,
+        int64_t _mess_id,
+        int64_t _last_mess_id,
+        model_regim _regim)
+
     {
         auto& dialog = getContactDialog(_aimId);
         auto& dialogMessages = dialog.getMessages();
+
+        if (_regim == model_regim::jump_to_bottom)
+        {
+            messagesDeletedUpTo(_aimId, -1);
+            dialog.setLastRequestedMessage(-1);
+        }
 
         const auto isMultichat = Logic::getContactListModel()->isChat(_aimId);
 
@@ -1010,10 +1042,13 @@ namespace Logic
 
         updateMessagesMarginsAndAvatars(_aimId);
 
-        if (_modelFirst == -2 && sequences_.contains(_seq))
-            emit ready(_aimId);
+        if (_regim == model_regim::first_load && sequences_.contains(_seq))
+            emit ready(_aimId, false /* search */, -1 /* _mess_id */);
 
-        if (_option != Ui::MessagesBuddiesOpt::Requested)
+        if (_regim == model_regim::jump_to_msg && sequences_.contains(_seq))
+            emit ready(_aimId, true /* search */, _mess_id);
+
+        if (_option != Ui::MessagesBuddiesOpt::Requested || _regim == model_regim::jump_to_bottom)
         {
             emitUpdated(updatedValues, _aimId, _hole ? HOLE : BASE);
         }
@@ -1027,7 +1062,7 @@ namespace Logic
         }
     }
 
-    void MessagesModel::messageBuddies(std::shared_ptr<Data::MessageBuddies> _buddies, QString _aimId, Ui::MessagesBuddiesOpt _option, bool _havePending, qint64 _seq)
+    void MessagesModel::messageBuddies(std::shared_ptr<Data::MessageBuddies> _buddies, QString _aimId, Ui::MessagesBuddiesOpt _option, bool _havePending, qint64 _seq, int64_t _last_msgid)
     {
         assert(_option > Ui::MessagesBuddiesOpt::Min);
         assert(_option < Ui::MessagesBuddiesOpt::Max);
@@ -1049,11 +1084,55 @@ namespace Logic
             sendDeliveryNotifications(*_buddies);
         }
 
-        qint64 modelFirst = (dialogMessages.empty()) ? -2 : dialogMessages.begin()->first.getPrev();
+        auto regim = model_regim::normal_load;
+        qint64 modelFirst = -1;
+        if (dialogMessages.empty())
+        {
+            regim = model_regim::first_load;
+        }
+        else
+        {
+            modelFirst = dialogMessages.begin()->first.getPrev();
+        }
+        int64_t mess_id = -1;
+
+        if (dialogMessages.empty() 
+            && seqAndToOlder_.contains(_seq) 
+            && seqAndToOlder_[_seq] != -1)
+        {
+            regim = model_regim::jump_to_msg;
+            mess_id = seqAndToOlder_[_seq];
+        }
+
+        if (seqAndJumpBottom_.contains(_seq))
+        {
+            regim = model_regim::jump_to_bottom;
+        }
+
+        bool is_bottom_upload = false;
+        if (seqAndToOlder_.contains(_seq) && seqAndToOlder_[_seq] != -1)
+        {
+            is_bottom_upload = true;
+        }
+
+        if (seqAndToOlder_.contains(_seq))
+        {
+            seqAndToOlder_.remove(_seq);
+        }
+
+        if (seqAndJumpBottom_.contains(_seq))
+        {
+            seqAndJumpBottom_.remove(_seq);
+        }
 
         if (_havePending || isDlgState || isPending)
         {
             processPendingMessage(*_buddies, _aimId, _option);
+        }
+
+        if (!_buddies->isEmpty() && _buddies->last()->Id_ == _last_msgid)
+        {
+            getContactDialog(_aimId).setRecvLastMessage(true);
         }
 
         if (_buddies->isEmpty())
@@ -1076,13 +1155,14 @@ namespace Logic
         }
 
         bool hole = false;
+        hole |= is_bottom_upload;
 
         if (_option == Ui::MessagesBuddiesOpt::FromServer)
         {
             messageBuddiesUnloadUnusedMessages(_buddies, _aimId, hole);
         }
 
-        messageBuddiesInsertMessages(_buddies, _aimId, modelFirst, _option, _seq, hole);
+        messageBuddiesInsertMessages(_buddies, _aimId, modelFirst, _option, _seq, hole, mess_id, _last_msgid, regim);
 
         const auto isFromServer = (_option == Ui::MessagesBuddiesOpt::FromServer);
         const auto isRequested = (_option == Ui::MessagesBuddiesOpt::Requested);
@@ -1099,7 +1179,7 @@ namespace Logic
             }
         }
 
-        if (isInit)
+        if (isInit || regim == model_regim::jump_to_msg)
         {
             updateLastSeen(_aimId);
         }
@@ -1159,9 +1239,9 @@ namespace Logic
     void MessagesModel::messagesDeletedUpTo(QString _aimId, int64_t _id)
     {
         assert(!_aimId.isEmpty());
-        assert(_id > -1);
 
-        auto &dialogMessages = getContactDialog(_aimId).getMessages();
+        auto &dialog = getContactDialog(_aimId);
+        auto &dialogMessages = dialog.getMessages();
 
         QList<Logic::MessageKey> messageKeys;
 
@@ -1169,7 +1249,7 @@ namespace Logic
         for (; iter != dialogMessages.cend(); ++iter)
         {
             const auto currentId = iter->first.getId();
-            if (currentId > _id)
+            if (currentId > _id && _id != -1)
             {
                 break;
             }
@@ -1184,6 +1264,20 @@ namespace Logic
         dialogMessages.erase(dialogMessages.begin(), iter);
 
         updateDateItems(_aimId);
+
+        if (dialogMessages.empty())
+        {
+            dialog.deleteLastKey();
+        }
+        else
+        {
+            dialog.setLastKey(dialogMessages.begin()->first);
+        }
+    }
+
+    void MessagesModel::setRecvLastMsg(QString _aimId, bool _value)
+    {
+        getContactDialog(_aimId).setRecvLastMessage(_value);
     }
 
     void MessagesModel::messagesModified(QString _aimId, std::shared_ptr<Data::MessageBuddies> _modifications)
@@ -1216,6 +1310,8 @@ namespace Logic
                 "sending update request to the history page\n"
                 "    message-id=<" << key.getId() << ">");
         }
+
+        updateMessagesMarginsAndAvatars(_aimId);
 
         emitUpdated(messageKeys, _aimId, MODIFIED);
     }
@@ -1488,34 +1584,27 @@ namespace Logic
         auto parent = &_messageItem;
 
         std::unique_ptr<HistoryControl::MessageContentWidget> item;
-        if (_messageBuddy.ContainsPttAudio())
-        {
-            item.reset(new HistoryControl::PttAudioWidget(parent, _messageBuddy.AimId_, _messageBuddy.IsOutgoing(), _messageBuddy.GetText(), _messageBuddy.GetPttDuration(), _messageBuddy.Id_, _messageBuddy.Prev_));
-        }
-        else
-        {
-            const auto previewsEnabled = Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true);
+        const auto previewsEnabled = Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true);
 
-            item.reset(
-                new HistoryControl::FileSharingWidget(
-                    parent,
-                    _messageBuddy.IsOutgoing(),
-                    _messageBuddy.AimId_,
-                    _messageBuddy.GetFileSharing(),
-                    previewsEnabled));
+        item.reset(
+            new HistoryControl::FileSharingWidget(
+                parent,
+                _messageBuddy.IsOutgoing(),
+                _messageBuddy.AimId_,
+                _messageBuddy.GetFileSharing(),
+                previewsEnabled));
 
-            item->setFixedWidth(itemWidth_);
+        item->setFixedWidth(itemWidth_);
 
-            connect(
-                item.get(),
-                &HistoryControl::MessageContentWidget::removeMe,
-                [_messageBuddy]
-                {
-                    QList<MessageKey> keys;
-                    keys << _messageBuddy.ToKey();
-                    emit GetMessagesModel()->deleted(keys, _messageBuddy.AimId_);
-                });
-        }
+        connect(
+            item.get(),
+            &HistoryControl::MessageContentWidget::removeMe,
+            [_messageBuddy]
+            {
+                QList<MessageKey> keys;
+                keys << _messageBuddy.ToKey();
+                emit GetMessagesModel()->deleted(keys, _messageBuddy.AimId_);
+            });
 
         _messageItem.setContentWidget(item.release());
     }
@@ -1728,7 +1817,7 @@ namespace Logic
         return dialog->findFirstKeyAfter(_key);
     }
 
-    void MessagesModel::requestMessages(const QString& _aimId)
+    void MessagesModel::requestMessages(const QString& _aimId, qint64 _messageId, bool _toOlder, bool _needPrefetch, bool _is_jump_to_bottom)
     {
         assert(!_aimId.isEmpty());
 
@@ -1741,17 +1830,43 @@ namespace Logic
         qint64 lastId = dialogMessages.empty() ? -1 : dialogMessages.begin()->second.getBuddy()->Id_;
         qint64 lastPrev = dialogMessages.empty() ? -1 : dialogMessages.begin()->second.getBuddy()->Prev_;
 
-        if (!dialog.isLastRequestedMessageEmpty() && dialog.getLastRequestedMessage() == lastId)
-            return;
+        if (_is_jump_to_bottom)
+        {
+            lastId = -1;
+            _toOlder = true;
+        }
+        else
+        {
+            if (!_toOlder)
+            {
+                lastId = dialogMessages.empty() ? -1 : dialogMessages.rbegin()->second.getBuddy()->Id_;
+            } 
+            else if (!dialog.isLastRequestedMessageEmpty() && dialog.getLastRequestedMessage() == lastId)
+            {
+                return;
+            }
+        }
 
-        if (lastId != -1 && lastPrev == -1)
+        if (lastId != -1 && lastPrev == -1 && _toOlder)
             return;
 
         Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
         collection.set_value_as_qstring("contact", _aimId);
-        collection.set_value_as_int64("from", lastId);
+        collection.set_value_as_int64("from", _messageId == -1 ? lastId : _messageId);
         collection.set_value_as_int64("count", Data::PRELOAD_MESSAGES_COUNT);
-        sequences_ << Ui::GetDispatcher()->post_message_to_core("archive/messages/get", collection.get());
+        collection.set_value_as_bool("to_older", _toOlder);
+        collection.set_value_as_bool("need_prefetch", _needPrefetch);
+        auto seq = Ui::GetDispatcher()->post_message_to_core("archive/messages/get", collection.get());
+        sequences_ << seq;
+
+        if (_is_jump_to_bottom)
+        {
+            seqAndJumpBottom_.insert(seq, _messageId);
+        }
+        else
+        {
+            seqAndToOlder_.insert(seq, _messageId);
+        }
 
         dialog.setLastRequestedMessage(lastId);
     }
@@ -1814,7 +1929,7 @@ namespace Logic
         const auto isSitePreview = (
             previewsEnabled &&
             (_msg.GetPreviewableLinkType() == preview_type::site));
-        if (isSitePreview || !_msg.Quotes_.isEmpty() || _msg.IsSticker())
+        if (isSitePreview || !_msg.Quotes_.isEmpty() || _msg.IsSticker() || _msg.ContainsPttAudio())
         {
             QString senderFriendly;
 
@@ -2007,7 +2122,7 @@ namespace Logic
         return iter;
     }
 
-    void MessagesModel::contactChanged(QString contact)
+    void MessagesModel::contactChanged(QString contact, qint64 _messageId)
     {
         if (contact.isEmpty())
         {
@@ -2018,12 +2133,14 @@ namespace Logic
 
         const ContactDialog* dialog = getContactDialogConst(contact);
 
-        if (dialog && !dialog->isLastRequestedMessageEmpty())
+        if (dialog && !dialog->isLastRequestedMessageEmpty() && _messageId == -1)
         {
             return;
         }
 
-        requestMessages(contact);
+        requestMessages(contact, _messageId, true /* to_older */, _messageId == -1, false /* _is_jump_to_bottom */);
+        if (_messageId != -1)
+            requestMessages(contact, _messageId, false /* to_older */, _messageId == -1, false /* _is_jump_to_bottom */);
     }
 
     void MessagesModel::setItemWidth(int width)
@@ -2031,7 +2148,7 @@ namespace Logic
         itemWidth_ = width;
     }
 
-    QMap<MessageKey, Ui::HistoryControlPageItem*> MessagesModel::tail(const QString& aimId, QWidget* parent)
+    QMap<MessageKey, Ui::HistoryControlPageItem*> MessagesModel::tail(const QString& aimId, QWidget* parent, bool _is_search, int64_t _mess_id, bool _is_jump_to_bottom)
     {
         QMap<MessageKey, Ui::HistoryControlPageItem*> result;
 
@@ -2039,13 +2156,29 @@ namespace Logic
         auto& dialogMessages = dialog.getMessages();
         auto& pendingMessages = dialog.getPendingMessages();
 
-        if (dialogMessages.empty() && pendingMessages.empty())
+        if (!_is_jump_to_bottom && dialogMessages.empty() && pendingMessages.empty())
             return result;
 
         int i = 0;
         MessageKey key;
 
         MessagesMap::reverse_iterator iterPending = pendingMessages.rbegin();
+        
+        auto margin = 0;
+        if (_mess_id != -1)
+        {
+            auto index_of_msg = 0;
+            auto iter_of_msg = dialogMessages.begin();
+            while (iter_of_msg != dialogMessages.end() && iter_of_msg->first.getId() != _mess_id)
+            {
+                ++index_of_msg;
+                ++iter_of_msg;
+            }
+
+            assert(iter_of_msg != dialogMessages.end());
+
+            margin = std::min<int>(std::max<int>(dialogMessages.size() - index_of_msg - 3, 0), moreCount() / 2);
+        }
 
         while (iterPending != pendingMessages.rend())
         {
@@ -2069,7 +2202,10 @@ namespace Logic
         {
             bool haveImcoming = false;
             auto iterIndex = dialogMessages.rbegin();
-            while (iterIndex != dialogMessages.rend())
+            
+            auto endIter = dialogMessages.rend();
+            std::advance(iterIndex, _is_search ? margin : 0);
+            while (iterIndex != endIter)
             {
                 haveImcoming |= !iterIndex->first.isOutgoing();
                 key = iterIndex->first;
@@ -2088,10 +2224,14 @@ namespace Logic
         }
 
         dialog.setLastKey(key);
+        dialog.setFirstKey(key);
 
-        if (dialog.getLastKey().isEmpty() || dialog.getLastKey().isPending()
-            || (dialog.getLastKey().getPrev() != -1 && dialogMessages.begin()->first.getId() == dialog.getLastKey().getId()))
-            requestMessages(aimId);
+        if (dialog.getLastKey().isEmpty() 
+            || dialog.getLastKey().isPending()
+            || ( dialog.getLastKey().getPrev() != -1 && dialogMessages.begin()->first.getId() == dialog.getLastKey().getId() )
+            || _is_jump_to_bottom
+           )
+            requestMessages(aimId, -1 /* _messageId */, true /* to_older */, true /* _needPrefetch */, _is_jump_to_bottom);
 
         if (result.isEmpty())
             subscribed_ << aimId;
@@ -2099,14 +2239,14 @@ namespace Logic
         return result;
     }
 
-    QMap<MessageKey, Ui::HistoryControlPageItem*> MessagesModel::more(const QString& aimId, QWidget* parent)
+    QMap<MessageKey, Ui::HistoryControlPageItem*> MessagesModel::more(const QString& aimId, QWidget* parent, bool _isMoveToBottomIfNeed)
     {
         auto& dialog = getContactDialog(aimId);
         auto& dialogMessages = dialog.getMessages();
         auto& pendingMessages = dialog.getPendingMessages();
 
         if (dialog.getLastKey().isEmpty())
-            return tail(aimId, parent);
+            return tail(aimId, parent, false /* _is_search */, -1 /* _mess_id */);
 
         QMap<MessageKey, Ui::HistoryControlPageItem*> result;
         if (dialogMessages.empty())
@@ -2114,6 +2254,7 @@ namespace Logic
 
         auto i = 0;
         MessageKey key = dialog.getLastKey();
+        MessageKey firstKey = dialog.getFirstKey();
 
         MessagesMap::const_reverse_iterator iterPending = pendingMessages.rbegin();
 
@@ -2142,30 +2283,68 @@ namespace Logic
 
         if (i < moreCount())
         {
-            auto iterIndex = dialogMessages.rbegin();
-            while (iterIndex != dialogMessages.rend())
+            if (_isMoveToBottomIfNeed)
             {
-                if (!(iterIndex->first < key))
+                auto iterIndex = dialogMessages.rbegin();
+                auto iterEnd = dialogMessages.rend();
+            
+                while (iterIndex != iterEnd)
                 {
+                    if (!(iterIndex->first < key))
+                    {
+                        ++iterIndex;
+                        continue;
+                    }
+
+                    Data::MessageBuddy buddy = item(iterIndex->second);
+                    result.insert(iterIndex->first, makePageItem(buddy, parent));
+
+                    if (iterIndex->first < key)
+                    {
+                        key = iterIndex->first;
+                    }
+
+                    if (++i == moreCount())
+                    {
+                        break;
+                    }
+
                     ++iterIndex;
-                    continue;
                 }
-
-                key = iterIndex->first;
-
-                Data::MessageBuddy buddy = item(iterIndex->second);
-                result.insert(key, makePageItem(buddy, parent));
-
-                if (++i == moreCount())
+            }
+            else
+            {
+                auto iterIndex = dialogMessages.begin();
+                auto iterEnd = dialogMessages.end();
+            
+                while (iterIndex != iterEnd)
                 {
-                    break;
-                }
+                    if (!(firstKey < iterIndex->first))
+                    {
+                        ++iterIndex;
+                        continue;
+                    }
 
-                ++iterIndex;
+                    Data::MessageBuddy buddy = item(iterIndex->second);
+                    result.insert(iterIndex->first, makePageItem(buddy, parent));
+
+                    if (!(iterIndex->first < firstKey))
+                    {
+                        firstKey = iterIndex->first;
+                    }
+
+                    if (++i == moreCount())
+                    {
+                        break;
+                    }
+
+                    ++iterIndex;
+                }
             }
         }
 
         dialog.setLastKey(key);
+        dialog.setFirstKey(firstKey);
 
         if (
             dialog.getLastKey().isEmpty() ||
@@ -2176,7 +2355,14 @@ namespace Logic
             )
         )
         {
-            requestMessages(aimId);
+            if (_isMoveToBottomIfNeed)
+                requestMessages(aimId, -1 /* _messageId */, true /* _toOlder */, true /* _needPrefetch */, false /* _is_jump_to_bottom */);
+        }
+
+        if (!dialog.getRecvLastMessage())
+        {
+            if (!_isMoveToBottomIfNeed)
+                requestMessages(aimId, -1 /* _messageId */, false /* _toOlder */, true /* _needPrefetch */, false /* _is_jump_to_bottom */);
         }
 
         if (!result.isEmpty())

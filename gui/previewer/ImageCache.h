@@ -22,7 +22,7 @@ namespace Previewer
         void onGetImagesResult(Data::ImageListPtr _result);
 
     private:
-        void loadImages(uint64_t _from);
+        void loadImages(int64_t _from);
 
     private:
         friend class ImageIterator;

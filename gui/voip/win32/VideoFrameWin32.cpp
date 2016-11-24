@@ -1,10 +1,11 @@
 #include "stdafx.h"
 #include "VideoFrameWin32.h"
 #include <windows.h>
+#include "../CommonUI.h"
 
 platform_win32::GraphicsPanelWin32::GraphicsPanelWin32(
     QWidget* _parent,
-    std::vector<QWidget*>&/* panels*/) 
+    std::vector<Ui::BaseVideoPanel*>&/* panels*/)
     : platform_specific::GraphicsPanel(_parent)
 {
 

@@ -28,6 +28,11 @@ namespace
         Out trimmedText.resize(0);
         Out trimmedText += text;
 
+        if (trimmedText.length() > 1 && trimmedText.startsWith(QChar::LineFeed))
+        {
+            trimmedText = trimmedText.mid(1, trimmedText.length() - 1);
+        }
+
         QString trailingSpaces;
 
         if (text.isEmpty())
@@ -62,6 +67,8 @@ TextBlock::TextBlock(ComplexMessageItem *parent, const QString &text)
     , Layout_(nullptr)
     , TextCtrl_(nullptr)
     , Selection_(BlockSelectionType::None)
+    , TextFontSize_(-1)
+    , TextOpacity_(1.0)
 {
     assert(!Text_.isEmpty());
 
@@ -92,7 +99,7 @@ IItemBlockLayout* TextBlock::getBlockLayout() const
     return Layout_;
 }
 
-QString TextBlock::getSelectedText() const
+QString TextBlock::getSelectedText(bool isFullSelect) const
 {
     if (!TextCtrl_)
     {
@@ -136,8 +143,6 @@ bool TextBlock::isSharingEnabled() const
 
 void TextBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection)
 {
-    from;
-
     assert(selection > BlockSelectionType::Min);
     assert(selection < BlockSelectionType::Max);
     assert(Selection_ > BlockSelectionType::Min);
@@ -174,9 +179,29 @@ void TextBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSel
     TextCtrl_->selectByPos(from, to);
 }
 
-void TextBlock::drawBlock(QPainter &p)
+void TextBlock::setFontSize(int size)
 {
-    p;
+    TextFontSize_ = size;
+
+    if (TextCtrl_)
+    {
+        TextCtrl_->setFont(MessageStyle::getTextFont(TextFontSize_));
+    }
+}
+
+void TextBlock::setTextOpacity(double opacity)
+{
+    TextOpacity_ = opacity;
+    if (TextCtrl_)
+    {
+        QPalette p = TextCtrl_->palette();
+        p.setColor(QPalette::Text, MessageStyle::getTextColor(TextOpacity_));
+        TextCtrl_->setPalette(p);
+    }
+}
+
+void TextBlock::drawBlock(QPainter &)
+{
 }
 
 void TextBlock::initialize()
@@ -204,8 +229,8 @@ TextEditEx* TextBlock::createTextEditControl(const QString &text)
 
     auto textControl = new Ui::TextEditEx(
         this,
-        MessageStyle::getTextFont(),
-        MessageStyle::getTextColor(),
+        MessageStyle::getTextFont(TextFontSize_),
+        MessageStyle::getTextColor(TextOpacity_),
         false,
         false);
 
@@ -244,7 +269,7 @@ void TextBlock::setTextEditTheme(TextEditEx *textControl)
     assert(textControl);
 
     Utils::ApplyStyle(textControl, SELECTION_STYLE);
-    auto textColor = MessageStyle::getTextColor();
+    auto textColor = MessageStyle::getTextColor(TextOpacity_);
 
     const auto theme = getTheme();
     if (theme)
@@ -253,9 +278,11 @@ void TextBlock::setTextEditTheme(TextEditEx *textControl)
             isOutgoing() ?
                 theme->outgoing_bubble_.text_color_ :
                 theme->incoming_bubble_.text_color_);
+
+        textColor.setAlpha(TextOpacity_ * 255);
     }
 
-    QPalette palette;
+    QPalette palette = textControl->palette();
     palette.setColor(QPalette::Text, textColor);
     textControl->setPalette(palette);
 }
@@ -270,6 +297,8 @@ void TextBlock::onAnchorClicked(const QUrl &_url)
         emit Utils::InterConnector::instance().profileSettingsShow(uin);
         return;
     }
+
+    clickHandled();
 
     QDesktopServices::openUrl(_url);
 }

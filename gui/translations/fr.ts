@@ -175,6 +175,10 @@ photo</source>
         <translation>Modifier
 photo</translation>
     </message>
+    <message>
+        <source>Edit photo</source>
+        <translation>Modifier photo</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -547,10 +551,6 @@ photo</translation>
         <translation>Nouveau chat</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Créer un chat de groupe</translation>
-    </message>
-    <message>
         <source>Video</source>
         <translation>Vidéo</translation>
     </message>
@@ -569,6 +569,26 @@ photo</translation>
     <message>
         <source>Search</source>
         <translation>Chercher</translation>
+    </message>
+    <message>
+        <source>CONTACTS</source>
+        <translation>CONTACTS</translation>
+    </message>
+    <message>
+        <source>ALL MESSAGES</source>
+        <translation>TOUS LES MESSAGES</translation>
+    </message>
+    <message>
+        <source>MESSAGES</source>
+        <translation>MESSAGES</translation>
+    </message>
+    <message>
+        <source>Search in all chats</source>
+        <translation>Rechercher dans tous les chats</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Créer un chat de groupe</translation>
     </message>
 </context>
 <context>
@@ -723,6 +743,10 @@ photo</translation>
     <message>
         <source>Forward</source>
         <translation>Avancer</translation>
+    </message>
+    <message>
+        <source>Open in browser</source>
+        <translation>Ouvrir dans le navigateur</translation>
     </message>
 </context>
 <context>
@@ -1657,10 +1681,34 @@ photo</translation>
     </message>
 </context>
 <context>
-    <name>groupchat_pages</name>
+    <name>groupchats</name>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Créer un chat de groupe</translation>
+        <source>Public chat</source>
+        <translation>Obrolan publik</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>Chat sera visible pour tous</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Rejoindre avec autorisation</translation>
+    </message>
+    <message>
+        <source>New members are waiting for admin approval</source>
+        <translation>De nouveaux membres attendent l&apos;autorisation de l&apos;admin</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>En lecture seule</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Les nouveaux membres peuvent lire les messages, les membres autorisés par l&apos;admin peuvent en envoyer</translation>
+    </message>
+    <message>
+        <source>Select members</source>
+        <translation>Sélectionner les membres</translation>
     </message>
     <message>
         <source>Next</source>
@@ -1671,12 +1719,16 @@ photo</translation>
         <translation>Terminé</translation>
     </message>
     <message>
-        <source>You are not a member of this groupchat</source>
+        <source>Add to chat</source>
+        <translation>Ajouter au chat</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat</source>
         <translation>Vous n&apos;êtes pas un membre de ce chat</translation>
     </message>
     <message>
-        <source>Add to chat</source>
-        <translation>Ajouter au chat</translation>
+        <source>Chat name</source>
+        <translation>Nom du chat</translation>
     </message>
 </context>
 <context>
@@ -1744,6 +1796,18 @@ photo</translation>
     <message>
         <source>Send %1 %2 %3 %4</source>
         <translation>Envoyer %1 %2 %3 %4</translation>
+    </message>
+    <message>
+        <source>This chat is read-only</source>
+        <translation>Ce chat est en lecture seule</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Quitter et supprimer</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2046,6 +2110,10 @@ votre numéro de téléphone</translation>
         <source>by phone number or UIN</source>
         <translation>par numéro de téléphone ou UIN</translation>
     </message>
+    <message>
+        <source>No messages found</source>
+        <translation>Aucun message</translation>
+    </message>
 </context>
 <context>
     <name>popup_window</name>
@@ -2159,10 +2227,22 @@ votre numéro de téléphone</translation>
     </message>
     <message>
         <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Êtes-vous certain(e) de vouloir transférer le message à &lt;USER&gt; ?</translation>
     </message>
     <message>
         <source>Confirmation</source>
+        <translation>Confirmation</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Paramètres du chat</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to ban user to write in this chat?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to allow user to write in this chat?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2470,7 +2550,7 @@ votre numéro de téléphone</translation>
     </message>
     <message>
         <source>Chat list compact mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste de chat en mode compact</translation>
     </message>
 </context>
 <context>
@@ -2764,6 +2844,50 @@ Modifiez le numéro et réessayez.</translation>
     <message>
         <source>Birthday</source>
         <translation>anniversaire</translation>
+    </message>
+    <message>
+        <source>Search for messages</source>
+        <translation>Rechercher des messages</translation>
+    </message>
+    <message>
+        <source>Link to chat</source>
+        <translation>Lien vers chat</translation>
+    </message>
+    <message>
+        <source>Ability to join chat by link</source>
+        <translation>Possibilité de rejoindre le chat via un lien</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>En lecture seule</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Les nouveaux membres peuvent lire les messages, les membres autorisés par l&apos;admin peuvent en envoyer</translation>
+    </message>
+    <message>
+        <source>Age restriction</source>
+        <translation>Restriction d&apos;âge</translation>
+    </message>
+    <message>
+        <source>Members must be of legal age to join</source>
+        <translation>Les membres doivent être majeurs pour rejoindre le chat</translation>
+    </message>
+    <message>
+        <source>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</source>
+        <translation>Malheureusement, vous avez été supprimé et vous ne pouvez ni voir les membres de ce chat ni leur envoyer de message.</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Créer un chat de groupe</translation>
+    </message>
+    <message>
+        <source>Ban to write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow to write</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -147,6 +147,7 @@ namespace {
         ws.oldverBackround_bgra[1] = 0;
         ws.oldverBackround_bgra[2] = 0;
         ws.oldverBackround_bgra[3] = 120;
+        ws.animationTimeMs = 350;
     }
 
     void getSecWindowSettings(voip2::WindowSettings& ws, const float scale) {
@@ -160,6 +161,7 @@ namespace {
         ws.disable_mouse_events_handler = true;
 
         ws.desired_aspect_ration_in_videoconf = 4.f/3;
+        ws.animationTimeMs = 350;
     }
 
     void getSysWindowSettings(voip2::WindowSettings& ws, const float scale) {
@@ -173,6 +175,7 @@ namespace {
         ws.previewSolo = true;
 		ws.previewSelfieMode = true;
         ws.desired_aspect_ration_in_videoconf = 4.f/3;
+        ws.animationTimeMs = 350;
     }
 }
 
@@ -484,6 +487,7 @@ namespace voip_manager {
         , public IWindowManager
         , public IVoipManager
         , public IMediaManager
+		, public IMaskManager
         , public voip2::VoipObserver
         , public voip2::VoipConnection
         , public IConnectionManager {
@@ -594,6 +598,14 @@ namespace voip_manager {
 		bool _voipMuteFix;
             
         std::shared_ptr<core::async_executer> _async_tasks;
+
+		bool _masksEngineInited;
+
+        std::string _maskModelPath;
+        
+        // Does user try to use mask early?
+        bool _needToRunMask;
+
     private:
         std::shared_ptr<voip2::Voip2> _get_engine(bool skipCreation = false);
 
@@ -641,6 +653,9 @@ namespace voip_manager {
 		void start_video();
 
 		void setupAvatarForeground(); // Setup fade for video.
+
+		void initMaskEngine(const std::string& modelDir); // Init mask engine.
+		void loadMask(const std::string& maskPath);		  // Load mask.
             
         void update_media_video_en(bool enable); // Update local camera state.
             
@@ -663,6 +678,7 @@ namespace voip_manager {
 
         void mute_incoming_call_sounds    (bool mute) override;
 		void minimal_bandwidth_switch() override;
+        bool has_created_call() override;        
 
         //=========================== IWindowManager API ===========================
         void window_add           (voip_manager::WindowParams& windowParams) override;
@@ -673,6 +689,7 @@ namespace voip_manager {
         void window_switch_aspect (const std::string& contact, void* hwnd) override;
         void window_set_offsets   (void* hwnd, unsigned l, unsigned t, unsigned r, unsigned b) override;
         void window_add_button    (voip2::ButtonType type, voip2::ButtonPosition position) override;
+		void window_set_primary   (void* hwnd, const std::string& contact) override;
 
         //=========================== IMediaManager API ===========================
         void media_video_en       (bool enable) override;
@@ -684,6 +701,12 @@ namespace voip_manager {
         bool remote_audio_enabled () override;
         bool remote_audio_enabled (const std::string& account, const std::string& contact) override;
 
+		//=========================== IMaskManager API ===========================
+		void load_mask(const std::string& path) override;
+		unsigned int version() override;
+        void set_model_path(const std::string& path) override;
+        void init_mask_engine() override;
+
         //=========================== IVoipManager API ===========================
         void reset() override;
 
@@ -693,6 +716,7 @@ namespace voip_manager {
         void AudioDeviceVolumeChanged (voip2::DeviceType deviceType, float volume) override;
         void AudioDeviceMuteChanged   (voip2::DeviceType deviceType, bool mute) override;
         void AudioDeviceSpeakerphoneChanged(bool speakerphoneOn) override;
+		void VideoDeviceCapabilityChanged(const char* camera_uid, voip2::VideoDeviceCapability caps) override { ; }
         //void AudioDeviceInterrupt     (voip2::DeviceType deviceType, bool is_in_interrupt) override;
         void RenderMouseTap           (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, voip2::MouseTap mouseTap, voip2::ViewArea viewArea) override;
         void ButtonPressed            (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, voip::ButtonType type) override;
@@ -702,7 +726,9 @@ namespace voip_manager {
         void FrameSizeChanged         (voip::hwnd_t hwnd, float aspectRatio) override;
         void InterruptByGsmCall       (bool gsmCallStarted) override;
         void VideoStreamChanged       (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, bool havePicture) override;
-        void MinimalBandwidthMode_StateChanged(bool mbmEnabled);
+        void MinimalBandwidthMode_StateChanged(bool mbmEnabled) override;
+		void MaskEngineInitStatus(bool res) override;
+
 
         //=========================== VoipConnection ===========================
         void SendVoipMsg(const char* from, voip2::VoipOutgoingMsg voipOutgoingMsg, const char *data, unsigned len, unsigned msg_idx) override;
@@ -754,6 +780,8 @@ namespace voip_manager {
         , _dispatcher(dispatcher)
 		, _voipMuteFix(false)
         , _async_tasks(new core::async_executer())
+		, _masksEngineInited(false)
+        , _needToRunMask(false)
 	{
 
         srand(time(NULL));
@@ -826,6 +854,7 @@ namespace voip_manager {
         auto engine = _get_engine();
         VOIP_ASSERT_RETURN(!!engine);
 
+#ifndef STRIP_VOIP
         ConferenceParticipants cp;
         engine->ShowIncomingConferenceParticipants(user_uid.c_str(), cp);
 
@@ -849,6 +878,7 @@ namespace voip_manager {
         }
         VOIP_ASSERT_RETURN(!contacts.empty());
         SIGNAL_NOTIFICATOION(kNotificationType_CallPeerListChanged, &contacts);
+#endif //STRIP_VOIP
     }
 
     bool VoipManagerImpl::_getVoipSettingsPath(std::wstring& path) const {
@@ -1004,11 +1034,13 @@ namespace voip_manager {
             app_name += "icq.desktop ";
             app_name += core::tools::version_info().get_version();
 
+#ifndef STRIP_VOIP
             _engine.reset(Voip2::CreateVoip2(*this, *this, app_name.c_str(), stat_file_path.c_str()), [] (voip2::Voip2* obj) {
                 if (obj) {
                     voip2::Voip2::DestroyVoip2(obj);
                 }
             });
+#endif //STRIP_VOIP
             VOIP_ASSERT_RETURN_VAL(!!_engine, NULL);
             VOIP_ASSERT_RETURN_VAL(!!_engine->Init(), NULL);
 
@@ -1076,7 +1108,7 @@ namespace voip_manager {
         VOIP_ASSERT_RETURN_VAL(!_call_exists(key), false);
 
         desc.reset(new(std::nothrow) CallDesc());
-        VOIP_ASSERT_RETURN_VAL(!!desc, false);;
+        VOIP_ASSERT_RETURN_VAL(!!desc, false);
 
         desc->account_id    = account_id;
         desc->user_id       = user_id;
@@ -1090,6 +1122,7 @@ namespace voip_manager {
         desc->close_reason  = voip2::SE_OPEN_FIRST;
 
         _calls.push_back(desc);
+
         return true;
     }
 
@@ -1114,6 +1147,8 @@ namespace voip_manager {
 				{
 					std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
 					_voip_desc.local_cam_en = false;
+                    _needToRunMask = false;
+					loadMask(""); // reset mask
 				}
 
                 return true;
@@ -1225,7 +1260,7 @@ namespace voip_manager {
 			_voip_desc.minimalBandwidth = mbmEnabled;
         }
 
-		MinimalBandwidth minimalBandwidth;
+		EnableParams minimalBandwidth;
 		minimalBandwidth.enable = mbmEnabled;
         SIGNAL_NOTIFICATOION(kNotificationType_MinimalBandwidthChanged, &minimalBandwidth);
     }
@@ -1739,7 +1774,7 @@ namespace voip_manager {
         auto engine = _get_engine(true);
         VOIP_ASSERT_RETURN(!!engine);
 
-        engine->WindowSetControlsStatus(hwnd, true, l, t, r, b, 500, true);
+        engine->WindowSetControlsStatus(hwnd, true, l, t, r, b, true, true);
     }
 
     void VoipManagerImpl::window_add_button(voip2::ButtonType type, voip2::ButtonPosition position) {
@@ -1748,6 +1783,14 @@ namespace voip_manager {
 
         engine->WindowAddButton(type, position);
     }
+
+	void VoipManagerImpl::window_set_primary(void* hwnd, const std::string& contact)
+	{
+		auto engine = _get_engine(true);
+		VOIP_ASSERT_RETURN(!!engine);
+
+		engine->WindowSetPrimary(hwnd, contact.c_str());
+	}
 
     bool VoipManagerImpl::get_device_list(voip2::DeviceType device_type, std::vector<device_description>& dev_list) {
         dev_list.clear();
@@ -1788,8 +1831,9 @@ namespace voip_manager {
     }
 
     void VoipManagerImpl::_update_device_list(voip2::DeviceType dev_type) {
-        std::vector<device_description> dev_list;
-        VOIP_ASSERT_RETURN(get_device_list(dev_type, dev_list));
+        device_list dev_list;
+        dev_list.type = dev_type;
+        VOIP_ASSERT_RETURN(get_device_list(dev_type, dev_list.devices));
 
         SIGNAL_NOTIFICATOION(kNotificationType_DeviceListChanged, &dev_list);
     }
@@ -1832,11 +1876,12 @@ namespace voip_manager {
             }
         }
 
-        std::vector<device_description> dev_list;
-        VOIP_ASSERT_RETURN(get_device_list(deviceType, dev_list));
+        device_list dev_list;
+        dev_list.type = deviceType;
+        VOIP_ASSERT_RETURN(get_device_list(deviceType, dev_list.devices));
 
-        for (int ix = dev_list.size() - 1; ix >= 0; --ix) {
-            device_description& dd = dev_list[ix];
+        for (int ix = dev_list.devices.size() - 1; ix >= 0; --ix) {
+            device_description& dd = dev_list.devices[ix];
             if (ix == 0 && !dd.isActive) {
                 set_device(deviceType, dd.uid);
                 dd.isActive = true;
@@ -1844,7 +1889,7 @@ namespace voip_manager {
                 break;
             }
         }
-
+        
         SIGNAL_NOTIFICATOION(kNotificationType_DeviceListChanged, &dev_list);
     }
 
@@ -2277,6 +2322,22 @@ namespace voip_manager {
         }
 	}
 
+    bool VoipManagerImpl::has_created_call()
+    {
+        std::lock_guard<std::recursive_mutex> __lock(_callsMx);
+        for (CallDescArray::const_iterator it = _calls.begin(); it != _calls.end(); ++it) {
+            auto call = *it;
+            VOIP_ASSERT_ACTION(!!call, continue);
+
+            if (!_is_phone_call(call->user_id)) {
+                if (call->call_state >= kCallState_Created) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     void VoipManagerImpl::_protocolSendAlloc(const char* data, unsigned size) {
         core::core_dispatcher& dispatcher = _dispatcher;
         std::string dataBuf(data, size);
@@ -2565,18 +2626,27 @@ namespace voip_manager {
 
     void VoipManagerImpl::reset() {
         _voipDestroyed = true;
-        // Use this temp shared ptr to wait, while other threads finish to use engine.
-        // It fixed crash, when we try to destry voip from voip signal thread.
-        std::shared_ptr<voip2::Voip2> tempVoipPtr = _engine;
-        _engine.reset();
         
-        // Wait until other threads release engine.
-        while (tempVoipPtr && !tempVoipPtr.unique())
+        // Made reset voip async to fix quit problem during call.
+        _async_tasks->run_async_function([=] 
         {
-            std::this_thread::yield();
+            // Use this temp shared ptr to wait, while other threads finish to use engine.
+            // It fixed crash, when we try to destry voip from voip signal thread.
+            std::shared_ptr<voip2::Voip2> tempVoipPtr = _engine;
+            _engine.reset();
+
+            // Wait until other threads release engine.
+            while (tempVoipPtr && !tempVoipPtr.unique())
+            {
+                std::this_thread::yield();
+            }
+
+            return 0;
         }
-        
-        SIGNAL_NOTIFICATOION(kNotificationType_VoipResetComplete, &_voipDestroyed);
+        )->on_result_ = [=](int32_t error) 
+        {
+            SIGNAL_NOTIFICATOION(kNotificationType_VoipResetComplete, &_voipDestroyed);
+        };
     }
 
 	void VoipManagerImpl::check_mute_compatibility()
@@ -2587,7 +2657,6 @@ namespace voip_manager {
 		// This code make mute comportable with prev versions.
 		if (!_voipMuteFix)
 		{
-			core::core_dispatcher& dispatcher = _dispatcher;
 			auto engine = _get_engine();
 			VOIP_ASSERT_RETURN(!!engine);
 
@@ -2614,6 +2683,33 @@ namespace voip_manager {
 #endif
 	}
 
+	void VoipManagerImpl::load_mask(const std::string& path)
+	{
+		loadMask(path);
+	}
+
+	unsigned int VoipManagerImpl::version()
+	{
+		auto engine = _get_engine();
+		VOIP_ASSERT_RETURN_VAL(!!engine, 0);
+        unsigned int res = 0;
+#ifndef STRIP_VOIP
+        engine->GetMaskEngineVersion(res);
+#endif //STRIP_VOIP
+		return res;
+	}
+
+    void VoipManagerImpl::set_model_path(const std::string& path)
+    {
+        // In case, when we already have model, but we need to reload old and load new.
+        _masksEngineInited = false;
+        _maskModelPath = path;
+        if (_needToRunMask)
+        {
+            initMaskEngine(_maskModelPath);
+        }
+    }
+
 	void VoipManagerImpl::setupAvatarForeground()
 	{
 		unsigned char foreground[] = { 0, 0, 0, 255 / 3 };
@@ -2627,6 +2723,57 @@ namespace voip_manager {
 
 		window_set_bitmap(bmp);
 	}
+
+	void VoipManagerImpl::initMaskEngine(const std::string& modelDir)
+	{
+		auto engine = _get_engine();
+		VOIP_ASSERT_RETURN(!!engine);
+
+		if (!_masksEngineInited)
+		{
+			_async_tasks->run_async_function([engine, modelDir] {
+				engine->InitMaskEngine(modelDir.c_str());
+				return 0;
+			}
+			)->on_result_ = [](int32_t error) {};
+		}
+	}
+
+	void VoipManagerImpl::MaskEngineInitStatus(bool res)
+	{
+		_masksEngineInited = res;
+		
+		EnableParams maskEnable;
+		maskEnable.enable = _masksEngineInited;
+
+		SIGNAL_NOTIFICATOION(kNotificationType_MaskEngineEnable, &maskEnable);
+	}
+
+	void VoipManagerImpl::loadMask(const std::string& maskPath)
+	{
+		auto engine = _get_engine();
+		VOIP_ASSERT_RETURN(!!engine);
+
+		NamedResult loadMaskRes;
+		loadMaskRes.name = maskPath;
+		loadMaskRes.result = false;
+
+		if (_masksEngineInited)
+		{
+			engine->LoadMask(maskPath.c_str());
+		}
+
+		SIGNAL_NOTIFICATOION(kNotificationType_LoadMask, &loadMaskRes);
+	}
+
+    void VoipManagerImpl::init_mask_engine()
+    {
+        _needToRunMask = true;
+        if (!_maskModelPath.empty())
+        {
+            initMaskEngine(_maskModelPath);
+        }
+    }
 
     VoipManager::VoipManager(core::core_dispatcher& dispatcher) {
         _impl.reset(new(std::nothrow) VoipManagerImpl(dispatcher));
@@ -2655,4 +2802,9 @@ namespace voip_manager {
     std::shared_ptr<IVoipManager> VoipManager::get_voip_manager() {
         return _impl;
     }
+
+	std::shared_ptr<IMaskManager> VoipManager::get_mask_manager()
+	{
+		return _impl;
+	}
 }

@@ -25,6 +25,7 @@ namespace Ui
         void searchEnd();
         void onViewAllMembers();
         void finished();
+        void escapePressed();
 
     public Q_SLOTS:
         void UpdateMembers();

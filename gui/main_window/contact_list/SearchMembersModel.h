@@ -33,10 +33,13 @@ namespace Logic
         const QStringList& getPattern() const;
         void emitChanged(int _first, int _last) override;
         void setChatMembersModel(ChatMembersModel* _membersModel);
+
+        virtual QString getCurrentPattern() const;
         
     private:
         mutable std::vector<Data::ChatMemberInfo> match_;
         QStringList searchPatterns_;
+        QString lastSearchPattern_;
         bool searchRequested_;
         bool selectEnabled_;
         ChatMembersModel* chatMembersModel_;

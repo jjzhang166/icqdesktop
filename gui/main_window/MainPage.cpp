@@ -12,7 +12,7 @@
 #include "contact_list/ContactListModel.h"
 #include "contact_list/RecentsModel.h"
 #include "contact_list/SearchWidget.h"
-#include "contact_list/SearchModel.h"
+#include "contact_list/SearchModelDLG.h"
 #include "contact_list/UnknownsModel.h"
 #include "history_control/MessagesModel.h"
 #include "search_contacts/SearchContactsWidget.h"
@@ -33,6 +33,7 @@
 #include "../utils/log/log.h"
 #include "../voip/IncomingCallWindow.h"
 #include "../voip/VideoWindow.h"
+#include "MainWindow.h"
 
 #ifdef __APPLE__
 #   include "../utils/macos/mac_support.h"
@@ -43,7 +44,7 @@ namespace
     const int balloon_size = 20;
     const int unreads_padding = 6;
     const int unreads_minimum_extent = balloon_size;
-    const auto unreadsFont = ContactList::dif(Fonts::defaultAppFontFamily(), Fonts::FontStyle::SEMIBOLD, 13);
+    const auto unreadsFont = ContactList::dif(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Semibold, 13);
 }
 
 namespace Ui
@@ -148,7 +149,6 @@ namespace Ui
 
     MainPage::MainPage(QWidget* _parent)
         : QWidget(_parent)
-        , disconnector_(new Utils::SignalsDisconnector)
         , unknownsHeader_(nullptr)
         , searchWidget_(new SearchWidget(false, this))
         , contactDialog_(new ContactDialog(this))
@@ -170,6 +170,7 @@ namespace Ui
         , clSpacer_(new QWidget())
         , clHostLayout_(new QHBoxLayout())
         , leftPanelState_(LeftPanelState::spreaded)
+        , NeedShowUnknownsHeader_(false)
     {
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::showPlaceholder, this, &MainPage::showPlaceholder);
         connect(&Utils::InterConnector::instance(), &Utils::InterConnector::liveChatSelected, this, &MainPage::liveChatSelected, Qt::QueuedConnection);
@@ -203,7 +204,7 @@ namespace Ui
             backButtonLayout->addWidget(backButton_);
             backButtonLayout->addSpacerItem(new QSpacerItem(Utils::scale_value(16 - 6 /* backbutton spacer */), 0, QSizePolicy::Fixed));
 
-            auto searchLabel = new TextEmojiWidget(backButtonHost_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(24));
+            auto searchLabel = new TextEmojiWidget(backButtonHost_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(24), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(24));
             searchLabel->setContentsMargins(0, 0, 0, 0);
             searchLabel->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
             searchLabel->setAutoFillBackground(false);
@@ -238,7 +239,7 @@ namespace Ui
 
                 layout->addSpacerItem(new QSpacerItem(Utils::scale_value(16 - 6 /* backbutton spacer */), 0, QSizePolicy::Fixed));
 
-                unknownBackButtonLabel_ = new TextEmojiWidget(backButtonHost_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(18));
+                unknownBackButtonLabel_ = new TextEmojiWidget(backButtonHost_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(18), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(18));
                 unknownBackButtonLabel_->setContentsMargins(0, 0, 0, 0);
                 unknownBackButtonLabel_->setSizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
                 unknownBackButtonLabel_->setAutoFillBackground(false);
@@ -252,26 +253,12 @@ namespace Ui
             }
             Utils::ApplyStyle(unknownsHeader_, "background-color: rgba(255, 255, 255, 95%);");
             contactsLayout->addWidget(unknownsHeader_);
-            disconnector_->add("unknowns/back/clicked", connect(back, &QPushButton::clicked, [=]()
+            connect(back, &QPushButton::clicked, this, [=]()
             {
                 emit Utils::InterConnector::instance().unknownsGoBack();
-            }));
-            disconnector_->add("unknownsGoSeeThem", connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoSeeThem, [=]()
-            {
-                if (!unknownsHeader_->isVisible())
-                {
-                    searchWidget_->setVisible(false);
-                    unknownsHeader_->setVisible(true);
-                }
-            }));
-            disconnector_->add("unknownsGoBack", connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoBack, [=]()
-            {
-                if (unknownsHeader_->isVisible())
-                {
-                    searchWidget_->setVisible(true);
-                    unknownsHeader_->setVisible(false);
-                }
-            }));
+            });
+            connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoSeeThem, this, &MainPage::changeCLHeadToUnknownSlot);
+            connect(&Utils::InterConnector::instance(), &Utils::InterConnector::unknownsGoBack, this, &MainPage::changeCLHeadToSearchSlot);
         }
         contactsLayout->addWidget(contactListWidget_);
         QSpacerItem* contactsLayoutSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum);
@@ -322,10 +309,15 @@ namespace Ui
         connect(&Utils::InterConnector::instance(), SIGNAL(makeSearchWidgetVisible(bool)), searchWidget_, SLOT(setVisible(bool)), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(popPagesToRoot()), this, SLOT(popPagesToRoot()), Qt::QueuedConnection);
         connect(&Utils::InterConnector::instance(), SIGNAL(profileSettingsDoMessage(QString)), contactListWidget_, SLOT(select(QString)), Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::startSearchInDialog, this, &MainPage::startSearhInDialog, Qt::QueuedConnection);
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::setSearchFocus, this, &MainPage::setSearchFocus, Qt::QueuedConnection);
+
+        connect(&Utils::InterConnector::instance(), &Utils::InterConnector::searchEnd, this, &MainPage::searchEnd, Qt::QueuedConnection);
 
         connect(searchWidget_, SIGNAL(searchBegin()), this, SLOT(searchBegin()), Qt::QueuedConnection);
         connect(searchWidget_, SIGNAL(searchEnd()), this, SLOT(searchEnd()), Qt::QueuedConnection);
-        connect(searchWidget_, SIGNAL(search(QString)), Logic::getSearchModel(), SLOT(searchPatternChanged(QString)), Qt::QueuedConnection);
+        connect(searchWidget_, SIGNAL(inputEmpty()), this, SLOT(searchInputClear()), Qt::QueuedConnection);
+        connect(searchWidget_, SIGNAL(search(QString)), Logic::getSearchModelDLG(), SLOT(searchPatternChanged(QString)), Qt::QueuedConnection);
         connect(searchWidget_, SIGNAL(enterPressed()), contactListWidget_, SLOT(searchResult()), Qt::QueuedConnection);
         connect(searchWidget_, SIGNAL(upPressed()), contactListWidget_, SLOT(searchUpPressed()), Qt::QueuedConnection);
         connect(searchWidget_, SIGNAL(downPressed()), contactListWidget_, SLOT(searchDownPressed()), Qt::QueuedConnection);
@@ -347,15 +339,15 @@ namespace Ui
 
         searchWidget_->setVisible(!contactListWidget_->shouldHideSearch());
 
-        post_stats_with_settings();
+        QTimer::singleShot(Ui::period_for_start_stats_settings_ms, this, SLOT(post_stats_with_settings()));
         QObject::connect(settingsTimer_, SIGNAL(timeout()), this, SLOT(post_stats_with_settings()));
-
         settingsTimer_->start(Ui::period_for_stats_settings_ms);
+
         connect(Ui::GetDispatcher(), &core_dispatcher::myInfo, this, &MainPage::myInfo, Qt::UniqueConnection);
 
         addContactMenu_ = new FlatMenu(searchWidget_->searchEditIcon());
         addContactMenu_->addAction(QIcon(Utils::parse_image_name(":/resources/dialog_newchat_100.png")), QT_TRANSLATE_NOOP("contact_list", "New chat"), contactListWidget_, SLOT(allClicked()));
-        addContactMenu_->addAction(QIcon(Utils::parse_image_name(":/resources/dialog_newgroup_100.png")), QT_TRANSLATE_NOOP("contact_list", "Create Groupchat"), this, SLOT(createGroupChat()));
+        addContactMenu_->addAction(QIcon(Utils::parse_image_name(":/resources/dialog_newgroup_100.png")), QT_TRANSLATE_NOOP("contact_list", "Create groupchat"), this, SLOT(createGroupChat()));
         addContactMenu_->setExpandDirection(Qt::AlignLeft);
         addContactMenu_->stickToIcon();
         Utils::ApplyStyle(searchWidget_->searchEditIcon(), "QPushButton::menu-indicator { image:none; } QPushButton:pressed { background-color:transparent; }");
@@ -403,19 +395,22 @@ namespace Ui
     {
         static auto is_inited = false;
 
+        auto cl_width = ::ContactList::ItemWidth(false, false, false, leftPanelState_ == LeftPanelState::picture_only).px();
         if (leftPanelState_ == LeftPanelState::spreaded
             || (::ContactList::IsPictureOnlyView() != (leftPanelState_ == LeftPanelState::picture_only)))
         {
             setLeftPanelState(::ContactList::IsPictureOnlyView() ? LeftPanelState::picture_only : LeftPanelState::normal, is_inited);
+            cl_width = ::ContactList::ItemWidth(false, false, false, leftPanelState_ == LeftPanelState::picture_only).px();
         }
         else
         {
-            animateVisibilityCL(::ContactList::ItemWidth(false, false, false, leftPanelState_ == LeftPanelState::picture_only).px(), is_inited);
+            animateVisibilityCL(cl_width, is_inited);
         }
 
         Sidebar* sidebar = contactDialog_->getSidebar();
         if (pages_->currentWidget() == sidebar)
-            sidebar->setFixedWidth(getContactDialogWidth(width()));
+            sidebar->setFixedWidth(width() - cl_width);
+        
         is_inited = true;
     }
 
@@ -450,7 +445,7 @@ namespace Ui
         sidebar->setSidebarWidth(Utils::scale_value(428));
         pages_->addWidget(sidebar);
         pages_->push(sidebar);
-        sidebar->setFixedWidth(width() - ::ContactList::ItemWidth(false, false, false).px());
+        sidebar->setFixedWidth(width() - ::ContactList::ItemWidth(false, false, false, leftPanelState_ == LeftPanelState::picture_only).px());
     }
 
     void MainPage::raiseVideoWindow()
@@ -473,7 +468,7 @@ namespace Ui
             return;
 
         if (contactListWidget_->currentTab() == RECENTS)
-            Logic::getContactListModel()->select(Logic::getRecentsModel()->nextAimId(Logic::getContactListModel()->selectedContact()));
+            Logic::getContactListModel()->select(Logic::getRecentsModel()->nextAimId(Logic::getContactListModel()->selectedContact()), -1);
         else if (contactListWidget_->currentTab() == ALL)
             Logic::getContactListModel()->next();
     }
@@ -484,7 +479,7 @@ namespace Ui
             return;
 
         if (contactListWidget_->currentTab() == RECENTS)
-            Logic::getContactListModel()->select(Logic::getRecentsModel()->prevAimId(Logic::getContactListModel()->selectedContact()));
+            Logic::getContactListModel()->select(Logic::getRecentsModel()->prevAimId(Logic::getContactListModel()->selectedContact()), -1);
         else if (contactListWidget_->currentTab() == ALL)
             Logic::getContactListModel()->prev();
     }
@@ -544,8 +539,6 @@ namespace Ui
         Logic::setChatMembersModel(NULL);
         Ui::createGroupChat(empty_list);
         Logic::setChatMembersModel(oldModel);
-
-        GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::groupchat_from_create_button);
     }
 
     ContactDialog* MainPage::getContactDialog() const
@@ -658,7 +651,26 @@ namespace Ui
 
     void MainPage::searchEnd()
     {
+        if (NeedShowUnknownsHeader_)
+            changeCLHead(true);
+
+        searchWidget_->clearInput();
+
+        emit Utils::InterConnector::instance().hideNoSearchResults();
+        emit Utils::InterConnector::instance().hideSearchSpinner();
+        emit Utils::InterConnector::instance().disableSearchInDialog();
+
         contactListWidget_->setSearchMode(false);
+        contactListWidget_->setSearchInDialog(false);
+    }
+
+    void MainPage::searchInputClear()
+    {
+        emit Utils::InterConnector::instance().hideNoSearchResults();
+        emit Utils::InterConnector::instance().hideSearchSpinner();
+
+        if (!contactListWidget_->getSearchInDialog())
+            contactListWidget_->setSearchMode(false);
     }
 
     void MainPage::onVoipCallIncoming(const std::string& _account, const std::string& _contact)
@@ -899,7 +911,7 @@ namespace Ui
                     pl->setContentsMargins(0, 0, 0, 0);
                     pl->setAlignment(Qt::AlignCenter);
                     {
-                        auto w = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(44));
+                        auto w = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(44));
                         w->setSizePolicy(QSizePolicy::Policy::Preferred, w->sizePolicy().verticalPolicy());
                         w->setText(QT_TRANSLATE_NOOP("placeholders", "Install ICQ on mobile"));
                         pl->addWidget(w);
@@ -913,7 +925,7 @@ namespace Ui
                     pl->setContentsMargins(0, 0, 0, 0);
                     pl->setAlignment(Qt::AlignCenter);
                     {
-                        auto w = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(30));
+                        auto w = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(30));
                         w->setSizePolicy(QSizePolicy::Policy::Preferred, w->sizePolicy().verticalPolicy());
                         w->setText(QT_TRANSLATE_NOOP("placeholders", "to synchronize your contacts"));
                         pl->addWidget(w);
@@ -981,12 +993,12 @@ namespace Ui
                     pl->setSpacing(0);
                     pl->setAlignment(Qt::AlignCenter);
                     {
-                        auto w1 = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), CommonStyle::getTextCommonColor(), Utils::scale_value(46));
+                        auto w1 = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(18), CommonStyle::getTextCommonColor(), Utils::scale_value(46));
                         w1->setSizePolicy(QSizePolicy::Policy::Preferred, w1->sizePolicy().verticalPolicy());
                         w1->setText(QT_TRANSLATE_NOOP("placeholders", "or "));
                         pl->addWidget(w1);
 
-                        auto w2 = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(18), CommonStyle::getLinkColor(), Utils::scale_value(46));
+                        auto w2 = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(18), CommonStyle::getLinkColor(), Utils::scale_value(46));
                         w2->setSizePolicy(QSizePolicy::Policy::Preferred, w2->sizePolicy().verticalPolicy());
                         w2->setText(QT_TRANSLATE_NOOP("placeholders", "find friends"));
                         w2->setCursor(Qt::PointingHandCursor);
@@ -1002,7 +1014,7 @@ namespace Ui
                     pl->setContentsMargins(0, 0, 0, 0);
                     pl->setAlignment(Qt::AlignCenter);
                     {
-                        auto w = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(15), QColor("#696969"), Utils::scale_value(20));
+                        auto w = new Ui::TextEmojiWidget(p, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(15), QColor("#696969"), Utils::scale_value(20));
                         w->setSizePolicy(QSizePolicy::Policy::Preferred, w->sizePolicy().verticalPolicy());
                         w->setText(QT_TRANSLATE_NOOP("placeholders", "by phone number or UIN"));
                         pl->addWidget(w);
@@ -1104,8 +1116,9 @@ namespace Ui
 
     void MainPage::openCreatedGroupChat()
     {
-        auto connect_id = connect(GetDispatcher(), SIGNAL(openChat(QString)), contactListWidget_, SLOT(select(QString)));
-        QTimer::singleShot(2000, [this, connect_id] { disconnect(connect_id); } );
+//        auto connect_id = connect(GetDispatcher(), SIGNAL(openChat(QString)), contactListWidget_, SLOT(select(QString)));
+        auto connect_id = connect(GetDispatcher(), &core_dispatcher::openChat, this, [=](QString _aimId) { QTimer::singleShot(500, [=](){ contactListWidget_->select(_aimId); } ); });
+        QTimer::singleShot(3000, [=] { disconnect(connect_id); } );
     }
 
     void MainPage::popPagesToRoot()
@@ -1212,5 +1225,64 @@ namespace Ui
     bool MainPage::isVideoWindowActive()
     {
         return (videoWindow_ && videoWindow_->isActiveWindow());
+    }
+
+    void MainPage::setFocusOnInput()
+    {
+        if (contactDialog_)
+            contactDialog_->setFocusOnInputWidget();
+    }
+
+    void MainPage::clearSearchFocus()
+    {
+        searchWidget_->clearFocus();
+    }
+
+    void MainPage::onSendMessage(const QString& contact)
+    {
+        if (contactDialog_)
+            contactDialog_->onSendMessage(contact);
+    }
+
+    void MainPage::startSearhInDialog(QString _aimid)
+    {
+        changeCLHead(false);
+
+        setSearchFocus();
+
+        Logic::getSearchModelDLG()->setSearchInDialog(_aimid);
+
+        searchWidget_->clearInput();
+        contactListWidget_->setSearchMode(true);
+        contactListWidget_->setSearchInDialog(true);
+    }
+
+    void MainPage::changeCLHead(bool _showUnknownHeader)
+    {
+        if (unknownsHeader_->isVisible() != _showUnknownHeader)
+        {
+            searchWidget_->setVisible(!_showUnknownHeader);
+            unknownsHeader_->setVisible(_showUnknownHeader);
+        }
+    }
+
+    void MainPage::changeCLHeadToSearchSlot()
+    {
+        if (unknownsHeader_->isVisible())
+        {
+            NeedShowUnknownsHeader_ = false;
+        }
+
+        changeCLHead(false);
+    }
+
+    void MainPage::changeCLHeadToUnknownSlot()
+    {
+        if (!unknownsHeader_->isVisible())
+        {
+            NeedShowUnknownsHeader_ = true;
+        }
+
+        changeCLHead(true);
     }
 }

@@ -2,6 +2,7 @@
 #include "im_container.h"
 #include "login_info.h"
 #include "im_login.h"
+#include "wim/chat_params.h"
 #include "../../corelib/collection_helper.h"
 #include "../../corelib/enumerations.h"
 #include "wim/wim_im.h"
@@ -9,6 +10,7 @@
 #include "../Voip/VoipManager.h"
 
 #include "../core.h"
+#include "../tools/system.h"
 #include "../utils.h"
 #include "../archive/contact_archive.h"
 #include "../archive/history_message.h"
@@ -44,7 +46,10 @@ im_container::im_container(std::shared_ptr<voip_manager::VoipManager> voip_manag
     REGISTER_IM_MESSAGE("archive/messages/get", on_get_archive_messages);
     REGISTER_IM_MESSAGE("archive/messages/delete", on_delete_archive_messages);
     REGISTER_IM_MESSAGE("archive/messages/delete_from", on_delete_archive_messages_from);
-    REGISTER_IM_MESSAGE("search", on_search);
+
+    REGISTER_IM_MESSAGE("history_search", on_history_search);
+    REGISTER_IM_MESSAGE("history_search_ended", on_history_search_ended);
+
     REGISTER_IM_MESSAGE("dialogs/add", on_add_opened_dialog);
     REGISTER_IM_MESSAGE("dialogs/remove", on_remove_opened_dialog);
     REGISTER_IM_MESSAGE("dialogs/set_first_message", on_set_first_message);
@@ -97,16 +102,28 @@ im_container::im_container(std::shared_ptr<voip_manager::VoipManager> voip_manag
     REGISTER_IM_MESSAGE("livechat/join", on_join_livechat);
     REGISTER_IM_MESSAGE("set_locale", on_set_locale);
     REGISTER_IM_MESSAGE("set_avatar", on_set_avatar);
+
+    REGISTER_IM_MESSAGE("chats/create", on_create_chat);
+
+    REGISTER_IM_MESSAGE("chats/mod/params", on_mod_chat_params);
     REGISTER_IM_MESSAGE("chats/mod/name", on_mod_chat_name);
     REGISTER_IM_MESSAGE("chats/mod/about", on_mod_chat_about);
     REGISTER_IM_MESSAGE("chats/mod/public", on_mod_chat_public);
     REGISTER_IM_MESSAGE("chats/mod/join", on_mod_chat_join);
+    REGISTER_IM_MESSAGE("chats/mod/link", on_mod_chat_link);
+    REGISTER_IM_MESSAGE("chats/mod/ro", on_mod_chat_ro);
+    REGISTER_IM_MESSAGE("chats/mod/age", on_mod_chat_age);
+    
     REGISTER_IM_MESSAGE("chats/block", on_block_chat_member);
     REGISTER_IM_MESSAGE("chats/role/set", on_set_chat_member_role);
     REGISTER_IM_MESSAGE("close_promo", on_close_promo);
     REGISTER_IM_MESSAGE("phoneinfo", on_phoneinfo);
     REGISTER_IM_MESSAGE("snap/mark_as_read", on_snap_read);
     REGISTER_IM_MESSAGE("snap/get_metainfo", on_snap_download_metainfo);
+    REGISTER_IM_MESSAGE("masks/get_id_list", on_get_mask_id_list);
+    REGISTER_IM_MESSAGE("masks/preview/get", on_get_mask_preview);
+    REGISTER_IM_MESSAGE("masks/model/get", on_get_mask_model);
+    REGISTER_IM_MESSAGE("masks/get", on_get_mask);
 }
 
 
@@ -178,22 +195,26 @@ void core::im_container::fromInternalProxySettings2Voip(const core::proxy_settin
     using namespace voip_manager;
 
     if (!proxySettings.use_proxy_) {
-        voipProxySettings.type     = VoipProxySettings::kProxyType_None;
+        voipProxySettings.type          = VoipProxySettings::kProxyType_None;
     } else {
         switch (proxySettings.proxy_type_) {
-        case 0:
+        case 0:  
             voipProxySettings.type = VoipProxySettings::kProxyType_Http;
             break;
-        case 4:
+
+        case 4:  
             voipProxySettings.type = VoipProxySettings::kProxyType_Socks4;
             break;
-        case 5:
+
+        case 5:  
             voipProxySettings.type = VoipProxySettings::kProxyType_Socks5;
             break;
-        case 6:
+
+        case 6:  
             voipProxySettings.type = VoipProxySettings::kProxyType_Socks4a;
             break;
-        default:
+
+        default: 
             voipProxySettings.type = VoipProxySettings::kProxyType_None;
         }
     }
@@ -333,10 +354,10 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
         im->on_voip_update();
     } else if (type == "voip_set_window_offsets") {
         void* hwnd = (void*)(uintptr_t)_params.get_value_as_int64("handle");
-        int l = _params.get_value_as_int("left");
-        int t = _params.get_value_as_int("top");
-        int r = _params.get_value_as_int("right");
-        int b = _params.get_value_as_int("bottom");
+        auto l = _params.get_value_as_int("left");
+        auto t = _params.get_value_as_int("top");
+        auto r = _params.get_value_as_int("right");
+        auto b = _params.get_value_as_int("bottom");
 
         im->on_voip_window_set_offsets(hwnd, l, t, r, b);
     } else if (type == "voip_reset") {
@@ -357,7 +378,23 @@ void core::im_container::on_voip_call_message(int64_t _seq, coll_helper& _params
 	{
 		im->on_voip_minimal_bandwidth_switch();
 	}
-	else {
+	else if (type == "voip_load_mask")
+	{
+		const std::string maskPath = _params.get_value_as_string("path");
+		im->on_voip_load_mask(maskPath);
+	}
+	else if (type == "window_set_primary")
+	{
+		void* hwnd = (void*)(uintptr_t)_params.get_value_as_int64("handle");
+		const std::string contact = _params.get_value_as_string("contact");
+		im->on_voip_window_set_primary(hwnd, contact);
+	}
+    else if (type == "voip_init_mask_engine")
+    {
+        im->on_voip_init_mask_engine();
+    }
+	else 
+	{
         assert(false);
     }
 }
@@ -385,7 +422,7 @@ void core::im_container::on_voip_avatar_msg(std::shared_ptr<base_im> im, coll_he
 
     auto __load_avatar = [&_params, &im] (const std::string& prefix, __loader_func func) {
         const std::string contact = _params.get_value_as_string("contact");
-        const int size = _params.get_value_as_int("size");
+        const auto size = _params.get_value_as_int("size");
 
         assert(!contact.empty() && size);
         if (contact.empty() || !size) {
@@ -488,7 +525,9 @@ void im_container::on_get_archive_messages(int64_t _seq, coll_helper& _params)
         _seq,
         _params.get_value_as_string("contact"),
         _params.get_value_as_int64("from"),
-        _params.get_value_as_int64("count"));
+        _params.get_value_as_int64("count"),
+        _params.get_value_as_bool("to_older"),
+        _params.get_value_as_bool("need_prefetch"));
 }
 
 void core::im_container::on_message_typing(int64_t _seq, coll_helper& _params)
@@ -537,7 +576,7 @@ void core::im_container::on_send_message(int64_t _seq, coll_helper& _params)
     if (_params->is_value_exist("quotes"))
     {
         core::iarray* array = _params.get_value_as_array("quotes");
-        for (int i = 0; i < array->size(); ++i)
+        for (auto i = 0; i < array->size(); ++i)
         {
             core::archive::quote q;
             q.unserialize(array->get_at(i)->get_as_collection());
@@ -588,7 +627,7 @@ void core::im_container::on_feedback(int64_t _seq, coll_helper& _params)
     if (_params.is_value_exist("fb.attachement"))
     {
         core::iarray* array = _params.get_value_as_array("fb.attachement");
-        for (int i = 0; i < array->size(); ++i)
+        for (auto i = 0; i < array->size(); ++i)
         {
             files.push_back(array->get_at(i)->get_as_string());
         }
@@ -610,18 +649,6 @@ void core::im_container::on_phoneinfo(int64_t seq, coll_helper& _params)
     std::string gui_locale = _params.get_value_as_string("gui_locale");
 
     im->phoneinfo(seq, phone, gui_locale);
-
-
-    ////
-
-//    auto im = get_im(_params);
-//    if (!im)
-//        return;
-//
-//    std::string phone = _params.get_value_as_string("phone");
-//    std::string gui_locale = _params.get_value_as_string("gui_locale");
-//
-//    im->phoneinfo(seq, phone, gui_locale);
 }
 
 void core::im_container::on_set_state(int64_t _seq, coll_helper& _params)
@@ -677,7 +704,7 @@ void core::im_container::on_add_chat(int64_t _seq, coll_helper& _params)
     std::vector<std::string> members;
 
     auto member_array = _params.get_value_as_array("m_chat_members");
-    for (int i = 0; member_array && i < member_array->size(); ++i)
+    for (auto i = 0; member_array && i < member_array->size(); ++i)
     {
         members.push_back(member_array->get_at(i)->get_as_string());
     }
@@ -827,13 +854,14 @@ void core::im_container::on_logout(int64_t _seq, coll_helper& _params)
         if (!ptr_this)
             return;
 
-        g_core->start_session_stats();
-        g_core->post_message_to_gui("need_login", 0, nullptr);
+        g_core->start_session_stats(false /* delayed */);
 
         (*ptr_this->ims_.begin())->erase_auth_data();
 
         ptr_this->ims_.clear();
     };
+
+    g_core->post_message_to_gui("need_login", 0, nullptr);
 
 #ifndef STRIP_VOIP
     if (voip_manager_->get_call_manager()->call_get_count())
@@ -848,7 +876,7 @@ void core::im_container::on_logout(int64_t _seq, coll_helper& _params)
             {
                 return;
             }
-            (*ptr_this->ims_.begin())->logout(__onlogout);;
+            (*ptr_this->ims_.begin())->logout(__onlogout);
         };
 #ifndef STRIP_VOIP
         voip_manager_->get_call_manager()->call_stop_smart(__doLogout);
@@ -881,7 +909,7 @@ void core::im_container::on_stats(int64_t _seq, coll_helper& _params)
     core::stats::event_props_type props;
 
     core::iarray* prop_array = _params.get_value_as_array("props");
-    for (int i = 0; prop_array && i < prop_array->size(); ++i)
+    for (auto i = 0; prop_array && i < prop_array->size(); ++i)
     {
         core::coll_helper value(prop_array->get_at(i)->get_as_collection(), false);
         auto prop_name = value.get_value_as_string("name");
@@ -1029,21 +1057,66 @@ void core::im_container::on_set_first_message(int64_t _seq, coll_helper& _params
     im->set_first_message(_params.get_value_as_string("contact"), _params.get_value_as_int64("message"));
 }
 
-void core::im_container::on_search(int64_t _seq, coll_helper& _params)
+void core::im_container::on_history_search(int64_t _seq, coll_helper& _params)
 {
     auto im = get_im(_params);
     if (!im)
         return;
 
-    std::vector<std::string> searchPatterns;
-    core::iarray* searchArray = _params.get_value_as_array("search_patterns");
-    for (int i = 0; i < searchArray->size(); ++i)
+    std::vector<std::vector<std::string>> searchSymbolsPatterns;
+    core::iarray* searchSymbolsArray = _params.get_value_as_array("symbols_array");
+    for (auto i = 0; i < searchSymbolsArray->size(); ++i)
     {
-        core::coll_helper value(searchArray->get_at(i)->get_as_collection(), false);
-        searchPatterns.push_back(value.get_value_as_string("pattern"));
+        std::vector<std::string> patternForSymbol;
+        core::coll_helper symbol_value(searchSymbolsArray->get_at(i)->get_as_collection(), false);
+
+        auto symbols_patterns = symbol_value.get_value_as_array("symbols_patterns");
+        for (auto i = 0; i < symbols_patterns->size(); ++i)
+        {
+            core::coll_helper value(symbols_patterns->get_at(i)->get_as_collection(), false);
+            patternForSymbol.push_back(value.get_value_as_string("symbol_pattern"));
+        }
+        searchSymbolsPatterns.push_back(patternForSymbol);
     }
 
-    im->search(searchPatterns);
+    for (auto symbol_iter = searchSymbolsPatterns.begin(); symbol_iter != searchSymbolsPatterns.end(); ++symbol_iter)
+    {
+        for (auto iter = symbol_iter->begin(); iter != symbol_iter->end(); ++iter)
+            *iter = ::core::tools::system::to_upper(*iter);
+    }
+
+    im->history_search_in_cl(searchSymbolsPatterns, _seq, _params.get_value_as_uint("fixed_patterns_count"));
+
+    if (!_params.get_value_as_bool("search_in_history"))
+        return;
+
+    if (searchSymbolsPatterns.size() != 0) // && searchSymbolsPatterns.size() > 2)
+    {
+        im->setup_search_params(_seq);
+
+        std::string word = _params.get_value_as_string("init_pattern");
+        /*for (auto i  = 0u; i < searchSymbolsPatterns.size(); ++i)
+        {
+            word.append(::core::tools::system::to_lower(searchSymbolsPatterns[i][0]));
+        }*/
+
+        std::vector<std::string> aimids;
+        if (_params.is_value_exist("aimid"))
+        {
+            aimids.push_back(_params.get_value_as_string("aimid"));
+        }
+
+        im->history_search_in_history(word, aimids);
+    }
+}
+
+void core::im_container::on_history_search_ended(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->clear_search_params();
 }
 
 void core::im_container::on_set_last_read(int64_t _seq, coll_helper& _params)
@@ -1201,7 +1274,7 @@ void im_container::on_download_raise_priority(int64_t _seq, coll_helper& _params
     const auto proc_id = _params.get<int64_t>("proc_id");
     assert(proc_id > 0);
 
-    //im->raise_download_priority(proc_id);
+    im->raise_download_priority(proc_id);
 }
 
 void im_container::on_download_raise_contact_tasks_priority(int64_t _seq, coll_helper& _params)
@@ -1320,7 +1393,7 @@ void im_container::on_resolve_pending(int64_t _seq, coll_helper& _params)
     if (_params.is_value_exist("contacts"))
     {
         auto contacts_array = _params.get_value_as_array("contacts");
-        for (int i = 0; contacts_array && i < contacts_array->size(); ++i)
+        for (auto i = 0; contacts_array && i < contacts_array->size(); ++i)
             contacts.push_back(contacts_array->get_at(i)->get_as_string());
     }
 
@@ -1455,7 +1528,7 @@ void im_container::on_unfavorite(int64_t _seq, core::coll_helper &_params)
 themes::theme* im_container::get_theme(coll_helper& _params)
 {
     auto im = get_im(_params);
-    int theme_id = _params.get_value_as_int("id");
+    auto theme_id = _params.get_value_as_int("id");
     themes::theme *the_theme = im->get_theme_from_cache(theme_id);
     return the_theme;
 }
@@ -1478,7 +1551,7 @@ void core::im_container::on_update_profile(int64_t _seq, coll_helper& _params)
     std::vector<std::pair<std::string, std::string>> fields;
 
     auto field_array = _params.get_value_as_array("fields");
-    for (int i = 0; field_array && i < field_array->size(); ++i)
+    for (auto i = 0; field_array && i < field_array->size(); ++i)
     {
         core::coll_helper value(field_array->get_at(i)->get_as_collection(), false);
         auto field_name = value.get_value_as_string("field_name");
@@ -1496,8 +1569,9 @@ void core::im_container::on_join_livechat(int64_t _seq, coll_helper& _params)
         return;
 
     std::string stamp = _params.get_value_as_string("stamp");
+    int age = _params.is_value_exist("age") ? _params.get_value_as_int("age") : -1;
 
-    im->join_live_chat(_seq, stamp);
+    im->join_live_chat(_seq, stamp, age);
 }
 
 void core::im_container::on_set_locale(int64_t _seq, coll_helper& _params)
@@ -1538,6 +1612,12 @@ void core::im_container::on_set_avatar(int64_t _seq, coll_helper& _params)
     tools::binary_stream bs_data;
 
     core::istream* stream = _params.get_value_as_stream("avatar");
+    if (!stream)
+    {
+        assert(!"_params.get_value_as_stream(\"avatar\")");
+        return;
+    }
+
     uint32_t size = stream->size();
     if (stream && size)
     {
@@ -1545,7 +1625,33 @@ void core::im_container::on_set_avatar(int64_t _seq, coll_helper& _params)
         stream->reset();
     }
 
-    im->set_avatar(_seq, bs_data, _params.is_value_exist("aimid") ? _params.get_value_as_string("aimid") : std::string());
+    im->set_avatar(_seq, bs_data, _params.is_value_exist("aimid") ? _params.get_value_as_string("aimid") : std::string(), _params.is_value_exist("chat") ? _params.get_value_as_bool("chat") : false);
+}
+
+void core::im_container::on_create_chat(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+    
+    auto params = core::wim::chat_params::create(_params);
+    std::vector<std::string> members;
+    {
+        auto member_array = _params.get_value_as_array("members");
+        for (auto i = 0; member_array && i < member_array->size(); ++i)
+            members.push_back(member_array->get_at(i)->get_as_string());
+    }
+    im->create_chat(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_string("name"), members, params);
+}
+
+void core::im_container::on_mod_chat_params(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+    
+    auto params = core::wim::chat_params::create(_params);
+    im->mod_chat_params(_seq, _params.get_value_as_string("aimid"), params);
 }
 
 void core::im_container::on_mod_chat_name(int64_t _seq, coll_helper& _params)
@@ -1584,6 +1690,33 @@ void core::im_container::on_mod_chat_join(int64_t _seq, coll_helper& _params)
     im->mod_chat_join(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_bool("approved"));
 }
 
+void core::im_container::on_mod_chat_link(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+    
+    im->mod_chat_link(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_bool("link"));
+}
+
+void core::im_container::on_mod_chat_ro(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+    
+    im->mod_chat_ro(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_bool("ro"));
+}
+
+void core::im_container::on_mod_chat_age(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+    
+    im->mod_chat_age(_seq, _params.get_value_as_string("aimid"), _params.get_value_as_bool("age"));
+}
+
 void core::im_container::on_block_chat_member(int64_t _seq, coll_helper& _params)
 {
     auto im = get_im(_params);
@@ -1609,4 +1742,42 @@ void core::im_container::on_close_promo(int64_t _seq, coll_helper& _params)
         im->set_show_promo_in_auth(false);
         im->save_auth_to_export([im](){ im->start_after_close_promo(); });
     }
+}
+
+void im_container::on_get_mask_id_list(int64_t _seq, coll_helper& _params)
+{
+#ifndef STRIP_VOIP
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->get_mask_id_list(_seq);
+#endif //STRIP_VOIP
+}
+
+void im_container::on_get_mask_preview(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->get_mask_preview(_seq, _params.get_value_as_string("mask_id"));
+}
+
+void im_container::on_get_mask_model(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->get_mask_model(_seq);
+}
+
+void im_container::on_get_mask(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->get_mask(_seq, _params.get_value_as_string("mask_id"));
 }

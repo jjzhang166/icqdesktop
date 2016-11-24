@@ -168,6 +168,26 @@ namespace core
             bool save_2_file(const std::wstring& _file_name) const;
 
             bool load_from_file(const std::wstring& _file_name);
+
+            char* get_data_for_write()
+            {
+                return buffer_.data();
+            }
+            
+            void set_output(uint32_t _value)
+            {
+                output_cursor_ = _value;
+            }
+
+            void set_input(uint32_t _value)
+            {
+                input_cursor_ = _value;
+            }
+
+            uint32_t all_size() const
+            {
+                return buffer_.size();
+            }
         };
 
         template <> void core::tools::binary_stream::write<std::string>(const std::string& _val);

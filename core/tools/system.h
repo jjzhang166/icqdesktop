@@ -33,7 +33,9 @@ unsigned long get_current_thread_id();
 
 std::wstring get_user_downloads_dir();
 
-std::string to_upper(std::string str);
+std::string to_upper(const std::string& str);
+
+std::string to_lower(const std::string& str);
 
 size_t get_memory_size_mb();
 
@@ -45,8 +47,16 @@ bool create_directory(const std::wstring& path);
 
 bool create_directory(const boost::filesystem::wpath& path);
 
+bool create_directory_if_not_exists(const boost::filesystem::wpath& _path);
+
 bool create_empty_file(const std::wstring &_path);
 
 std::string get_os_version_string();
+
+bool read_file(const boost::filesystem::wpath& _path, std::string& _result);
+
+bool unzip(const boost::filesystem::path& _archive, const boost::filesystem::path& _target_dir);
+
+bool clean_directory(const boost::filesystem::path& _dir);
 
 CORE_TOOLS_SYSTEM_NS_END

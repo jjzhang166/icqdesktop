@@ -601,24 +601,28 @@ void MacSupport::createMenuBar(bool simple)
         menu->addSeparator();
         menuItems_.insert(edit_pasteEmoji, createAction(menu, Utils::Translations::Get("Emoji && Symbols"), "Meta+Ctrl+Space", mainWindow_, SLOT(pasteEmoji())));
         extendedMenus_.push_back(menu);
+        QObject::connect(menu, &QMenu::aboutToShow, menu, []() { emit Utils::InterConnector::instance().closeAnyPopupMenu(); });
         
         menu = mainMenu_->addMenu(Utils::Translations::Get("Contact"));
         menuItems_.insert(contact_addBuddy, createAction(menu, Utils::Translations::Get("Add Buddy"), "Ctrl+N", mainWindow_, SLOT(activateContactSearch())));
         menuItems_.insert(contact_profile, createAction(menu, Utils::Translations::Get("Profile"), "Ctrl+I", mainWindow_, SLOT(activateProfile())));
         menuItems_.insert(contact_close, createAction(menu, Utils::Translations::Get("Close"), "Ctrl+W", mainWindow_, SLOT(closeCurrent())));
         extendedMenus_.push_back(menu);
-        
+        QObject::connect(menu, &QMenu::aboutToShow, menu, []() { emit Utils::InterConnector::instance().closeAnyPopupMenu(); });
+
         menu = mainMenu_->addMenu(Utils::Translations::Get("View"));
         menuItems_.insert(view_unreadMessage, createAction(menu, Utils::Translations::Get("Next Unread Message"), "Ctrl+]", mainWindow_, SLOT(activateNextUnread())));
         menuItems_.insert(view_fullScreen, createAction(menu, Utils::Translations::Get("Enter Full Screen"), "Meta+Ctrl+F", mainWindow_, SLOT(toggleFullScreen())));
         extendedMenus_.push_back(menu);
-        
+        QObject::connect(menu, &QMenu::aboutToShow, menu, []() { emit Utils::InterConnector::instance().closeAnyPopupMenu(); });
+
         menu = mainMenu_->addMenu(Utils::Translations::Get("Window"));
         menuItems_.insert(window_nextChat, createAction(menu, Utils::Translations::Get("Select Next Chat"), "Shift+Ctrl+]", mainWindow_, SLOT(activateNextChat())));
         menuItems_.insert(window_prevChat, createAction(menu, Utils::Translations::Get("Select Previous Chat"), "Shift+Ctrl+[", mainWindow_, SLOT(activatePrevChat())));
         menuItems_.insert(window_minimizeWindow, createAction(menu, Utils::Translations::Get("Minimize"), "Ctrl+M", mainWindow_, SLOT(minimize())));
         menuItems_.insert(window_mainWindow, createAction(menu, Utils::Translations::Get("Main Window"), "Ctrl+1", mainWindow_, SLOT(activate())));
         extendedMenus_.push_back(menu);
+        QObject::connect(menu, &QMenu::aboutToShow, menu, []() { emit Utils::InterConnector::instance().closeAnyPopupMenu(); });
 
         if (false)
         {
@@ -873,16 +877,21 @@ NSString * translitedString(NSString * sourceString, LayoutsPtr sourceLayout, La
     return possibleString;
 }
 
-void MacSupport::getPossibleStrings(const QString& text, QStringList & result)
+void MacSupport::getPossibleStrings(const QString& text, std::vector<QStringList>& result, unsigned& _count)
 {
     QList<LayoutsPtr> layouts;
     
     setupLayouts(layouts);
     
-    result.append(text);
+    for (int i = 0; i < text.length(); ++i)
+    {
+        result.push_back(QStringList());
+        result[i].push_back(text.at(i));
+    }
     
     if (layouts.size() == 0)
     {
+		_count = 1;
         return;
     }
     
@@ -890,6 +899,7 @@ void MacSupport::getPossibleStrings(const QString& text, QStringList & result)
     
     LayoutsPtr sourceLayout = layouts[0];
     
+	_count = layouts.size();
     for (int i = 1; i < layouts.size(); i++)
     {
         LayoutsPtr targetLayout = layouts[i];
@@ -900,19 +910,22 @@ void MacSupport::getPossibleStrings(const QString& text, QStringList & result)
             
             if (translited.length)
             {
-                result.push_back(toQString(translited));
+                auto translited_q = toQString(translited);
+                for (int i = 0; i < text.length(); ++i)
+                {
+                    result[i].push_back(translited_q.at(i));
+                }
             }
         }
     }
 }
-
 
 bool dockClickHandler(id self,SEL _cmd,...)
 {
     Q_UNUSED(self)
     Q_UNUSED(_cmd)
     
-    if (mainWindow_)// && (mainWindow_->isHidden() || mainWindow_->isMinimized()))
+    if (mainWindow_ && !mainWindow_->isFullScreen())// && (mainWindow_->isHidden() || mainWindow_->isMinimized()))
     {
         mainWindow_->activate();
     }
@@ -954,24 +967,28 @@ bool MacSupport::nativeEventFilter(const QByteArray &data, void *message, long *
 
     if ([e type] == NSKeyDown && ([e modifierFlags] & (NSControlKeyMask | NSCommandKeyMask)))
     {
-        auto c = [[[e charactersIgnoringModifiers] lowercaseString] UTF8String];
-        static std::set<std::string> possibles;
+        static std::set<uint> possibles;
         if (possibles.empty())
         {
-            possibles.insert(",");
-            possibles.insert("n");
-            possibles.insert("i");
-            possibles.insert("w");
-            possibles.insert("f");
-            possibles.insert("]");
-            possibles.insert("[");
-            possibles.insert("{");
-            possibles.insert("}");
+            possibles.insert(kVK_ANSI_Comma);
+            possibles.insert(kVK_ANSI_N);
+            possibles.insert(kVK_ANSI_I);
+            possibles.insert(kVK_ANSI_W);
+            possibles.insert(kVK_ANSI_F);
+            possibles.insert(kVK_ANSI_LeftBracket);
+            possibles.insert(kVK_ANSI_RightBracket);
         }
-        if (([e modifierFlags] & NSCommandKeyMask) && possibles.find(c) != possibles.end())
+        if ([e modifierFlags] & NSCommandKeyMask)
         {
-            emit Utils::InterConnector::instance().closeAnyPopupMenu();
-            emit Utils::InterConnector::instance().closeAnyPopupWindow();
+            if (possibles.find(e.keyCode) != possibles.end())
+            {
+                emit Utils::InterConnector::instance().closeAnyPopupMenu();
+                emit Utils::InterConnector::instance().closeAnyPopupWindow();
+            }
+            else if (e.keyCode == kVK_ANSI_M)
+            {
+                emit Utils::InterConnector::instance().closeAnyPopupMenu();
+            }
         }
     }
     else if ([e type] == NSAppKitDefined && [e subtype] == NSApplicationDeactivatedEventType)
@@ -1011,4 +1028,49 @@ void MacSupport::registerDelegate()
      andEventID:kAEGetURL];
 }
 
+QString MacSupport::saveFileName(const QString &caption, const QString &dir, const QString &filter)
+{
+    __block QString path;
+    
+    NSSavePanel *panel = [NSSavePanel savePanel];
+    [panel setTitle:caption.toNSString()];
+    [panel setDirectoryURL:[NSURL URLWithString:dir.toNSString()]];
+    [panel setShowsTagField:NO];
+    [panel setNameFieldStringValue:dir.toNSString().lastPathComponent];
+    
+    __block bool leave = false;
+    [panel beginSheetModalForWindow:[NSApp mainWindow] completionHandler:^(NSInteger result) {
+        //
+        if (result == NSFileHandlingPanelOKButton)
+        {
+            path = QString::fromNSString([[panel URL] path]);
+        }
+        leave = true;
+        //
+    }];
+
+    if (auto editor = [panel fieldEditor:NO forObject:nil])
+    {
+        auto nameFieldString = [panel nameFieldStringValue];
+        if (auto nameFieldExtension = [nameFieldString pathExtension])
+        {
+            auto newLength = ([nameFieldString length] - [nameFieldExtension length] - 1);
+            [editor setSelectedRange:NSMakeRange(0, newLength)];
+        }
+    }
+    auto connection = QWidget::connect(&Utils::InterConnector::instance(), &Utils::InterConnector::closeAnyPopupMenu, [panel]()
+    {
+        [NSApp endSheet:panel];
+    });
+    
+    while (!leave)
+    {
+        qApp->processEvents();
+        [NSThread sleepForTimeInterval:0.01];
+    }
+
+    QWidget::disconnect(connection);
+    
+    return path;
+}
 

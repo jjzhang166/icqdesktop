@@ -50,12 +50,10 @@ QLayout* YoutubeLinkPreviewBlockLayout::asQLayout()
 void YoutubeLinkPreviewBlockLayout::cutTextByPreferredSize(
     const QString &title,
     const QString &annotation,
-    const QRect &widgetLtr,
+    const QRect& /*widgetLtr*/,
     Out QString &cutTitle,
     Out QString &cutAnnotation) const
 {
-    widgetLtr;
-
     Out cutTitle = title;
     Out cutAnnotation = annotation;
 }
@@ -171,9 +169,12 @@ QSize YoutubeLinkPreviewBlockLayout::setBlockGeometryInternal(const QRect &geome
 
     const auto isPreloader = block.isInPreloadingState();
 
-    const auto previewContentWidth = std::min(
+    auto previewContentWidth = std::min(
         geometry.width(),
         getPreviewWidthMax());
+
+    if (block.getMaxPreviewWidth() != 0)
+        previewContentWidth = std::min(previewContentWidth, block.getMaxPreviewWidth());
 
     const QRect previewContentLtr(
         geometry.topLeft(),
@@ -181,7 +182,15 @@ QSize YoutubeLinkPreviewBlockLayout::setBlockGeometryInternal(const QRect &geome
 
     PreviewImageRect_ = evaluatePreviewImageRect(block, previewContentLtr);
 
-    const auto titleLtr = evaluateTitleLtr(previewContentLtr, PreviewImageRect_, isPreloader);
+    auto titleWidth = std::min(
+        geometry.width(),
+        getPreviewWidthMax());
+
+    const QRect titleContentLtr(
+        geometry.topLeft(),
+        QSize(titleWidth, 0));
+
+    const auto titleLtr = evaluateTitleLtr(titleContentLtr, PreviewImageRect_, isPreloader);
 
     TitleGeometry_ = setTitleGeometry(block, titleLtr);
 

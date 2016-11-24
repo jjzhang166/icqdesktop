@@ -16,8 +16,14 @@ namespace platform_macos {
     void setPanelAttachedAsChild(bool attach, QWidget& parent, QWidget& child);
     void setAspectRatioForWindow(QWidget& wnd, float aspectRatio);
     bool windowIsOverlapped(QWidget* frame);
-    void setWindowPosition(QWidget& widget, const QWidget& parent, const bool top);
+    void setWindowPosition(QWidget& widget, const QRect& widgetRect);
     void moveAboveParentWindow(QWidget& parent, QWidget& child);
+    
+    QRect getWidgetRect(const QWidget& widget);
+    //QRect getWindowRect(const QWidget& parent);
+    
+    // Double click interval in ms.
+    int doubleClickInterval();
     
     // @return true, if iTunes was paused.
     bool pauseiTunes();
@@ -28,7 +34,7 @@ namespace platform_macos {
     
     class GraphicsPanelMacos {
     public:
-        static platform_specific::GraphicsPanel* create(QWidget* parent, std::vector<QWidget*>& panels);
+        static platform_specific::GraphicsPanel* create(QWidget* parent, std::vector<Ui::BaseVideoPanel*>& panels);
     };
     
     

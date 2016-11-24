@@ -29,6 +29,7 @@ Q_SIGNALS:
         void clicked();
     public:
         AddToChat(QWidget* _parent);
+        void setText(const QString& _text);
 
     protected:
         virtual void paintEvent(QPaintEvent*);
@@ -38,6 +39,7 @@ Q_SIGNALS:
 
     private:
         QPainter* painter_;
+        QString Text_;
         bool Hovered_;
     };
 
@@ -90,21 +92,27 @@ Q_SIGNALS:
         void approveAllClicked();
         void publicChanged(int);
         void approvedChanged(int);
+        void linkToChatClicked(int);
+        void ageClicked(int);
+        void readOnlyClicked(int);
         void spam();
         void remove();
         void touchScrollStateChanged(QScroller::State);
+        void searchClicked();
+        void chatRoleChanged(QString);
 
     private:
         void init();
         void initAvatarAndName();
         void initAddContactAndSpam();
-        void initFavoriteNotificationsTheme();
+        void initFavoriteNotificationsSearchTheme();
         void initChatMembers();
         void initEraseIgnoreDelete();
         void initListWidget();
         void connectSignals();
         void initDescription(const QString& description, bool full = false);
         void blockUser(const QString& aimId, bool block);
+        void readOnly(const QString& aimId, bool block);
         void changeRole(const QString& aimId, bool moder);
         void approve(const QString& aimId, bool approve);
         void changeTab(int tab);
@@ -115,6 +123,9 @@ Q_SIGNALS:
         ContactAvatarWidget* avatar_;
         TextEditEx* name_;
         TextEditEx* description_;
+        QWidget* notMemberTopSpacer_;
+        QWidget* notMemberBottomSpacer_;
+        TextEditEx* youAreNotAMember_;
         LineWidget* firstLine_;
         LineWidget* secondLine_;
         LineWidget* thirdLine_;
@@ -134,6 +145,12 @@ Q_SIGNALS:
         QCheckBox* publicCheckBox_;
         CustomButton* approvedButton_;
         QCheckBox* approvedCheckBox_;
+        CustomButton* linkToChat_;
+        QCheckBox* linkToChatCheckBox_;
+        CustomButton* readOnly_;
+        QCheckBox* readOnlyCheckBox_;
+        CustomButton* ageRestrictions_;
+        QCheckBox* ageCheckBox_;
         ActionButton* favoriteButton_;
         ActionButton* copyLink_;
         ActionButton* themesButton_;
@@ -151,6 +168,8 @@ Q_SIGNALS:
         ClickedWidget* blockList_;
         ClickedWidget* avatarName_;
         ClickedWidget* pendingList_;
+        ActionButton* searchInChat_;
+
         QLabel* allMembersCount_;
         QLabel* blockCount_;
         QLabel* pendingCount_;
@@ -166,11 +185,17 @@ Q_SIGNALS:
         LabelEx* moreLabel_;
         LabelEx* approveAll_;
         LabelEx* publicAbout_;
+        LabelEx* readOnlyAbout_;
+        LabelEx* linkToChatAbout_;
         LabelEx* approvalAbout_;
+        LabelEx* ageAbout_;
         QWidget* approveAllWidget_;
         QWidget* contactListWidget_;
         QWidget* privacyWidget_;
         QWidget* publicBottomSpace_;
+        QWidget* approvedBottomSpace_;
+        QWidget* linkBottomSpace_;
+        QWidget* readOnlyBottomSpace_;
         ContactList* cl_;
         SearchWidget* searchWidget_;
         QStackedWidget* stackedWidget_;

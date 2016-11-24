@@ -59,9 +59,9 @@ namespace Data
 		{
 			QPixmap* result = new QPixmap();
 			core::istream* stream = helper->get_value_as_stream("avatar");
-			uint32_t size = stream->size();
 			if (stream)
 			{
+				uint32_t size = stream->size();
 				result->loadFromData(stream->read(size), size);
 				stream->reset();
 			}
@@ -94,16 +94,6 @@ namespace Data
         result->largeIconId_ = helper->get_value_as_string("largeIconId");
         
 		return result;
-	}
-
-	void UnserializeSearchResult(core::coll_helper* helper, QStringList& cl)
-	{
-		core::iarray* contacts = helper->get_value_as_array("contacts");
-		for (int i = 0; i < contacts->size(); ++i)
-		{
-			core::coll_helper value(contacts->get_at(i)->get_as_collection(), false);
-			cl.push_back(value.get_value_as_string("aimId"));
-		}
 	}
 	
 	QString UnserializeActiveDialogHide(core::coll_helper* helper)

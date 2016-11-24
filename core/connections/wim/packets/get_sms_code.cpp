@@ -24,6 +24,7 @@ wim_packet(params),
     existing_(false),
     code_length_(0)
 {
+    set_can_change_hosts_scheme(true);
 }
 
 
@@ -35,7 +36,7 @@ validate_phone::~validate_phone()
 int32_t validate_phone::init_request(std::shared_ptr<core::http_request_simple> _request)
 {
     std::stringstream ss_url;
-    ss_url << "https://www.icq.com:443/smsreg/requestPhoneValidation.php?" << 
+    ss_url << "https://www.icq.com/smsreg/requestPhoneValidation.php?" << 
         "&locale=" << locale_ <<
         "&msisdn=" << phone_ <<
         "&smsFormatType=human" <<

@@ -123,8 +123,17 @@ void Ui::ImageContainer::swapImagePack(std::vector<std::shared_ptr<QImage> >& _i
 
 QPolygon getPolygon(const QRect& rc)
 {
-	const int cx = (rc.left() + rc.right()) * 0.5f;
-	const int cy = rc.y();
+    QRect rc1 = rc;
+    
+    
+// Fixed border under mac.
+#ifdef __APPLE__
+    rc1.setWidth(rc.width() + 1);
+    rc1.setHeight(rc.height() + 1);
+#endif
+    
+	const int cx = (rc1.left() + rc1.right()) * 0.5f;
+	const int cy = rc1.y();
 
 	int polygon[7][2];
 	polygon[0][0] = cx - SECURE_CALL_WINDOW_UP_ARROW;
@@ -136,17 +145,17 @@ QPolygon getPolygon(const QRect& rc)
 	polygon[2][0] = cx + SECURE_CALL_WINDOW_UP_ARROW;
 	polygon[2][1] = cy + SECURE_CALL_WINDOW_UP_ARROW;
 
-	polygon[3][0] = rc.right();
-	polygon[3][1] = rc.y() + SECURE_CALL_WINDOW_UP_ARROW;
+	polygon[3][0] = rc1.right();
+	polygon[3][1] = rc1.y() + SECURE_CALL_WINDOW_UP_ARROW;
 
-	polygon[4][0] = rc.bottomRight().x();
-	polygon[4][1] = rc.bottomRight().y();
+	polygon[4][0] = rc1.bottomRight().x();
+	polygon[4][1] = rc1.bottomRight().y();
 
-	polygon[5][0] = rc.bottomLeft().x() + 1;
-	polygon[5][1] = rc.bottomLeft().y();
+	polygon[5][0] = rc1.bottomLeft().x() + 1;
+	polygon[5][1] = rc1.bottomLeft().y();
 
-	polygon[6][0] = rc.left() + 1;
-	polygon[6][1] = rc.y() + SECURE_CALL_WINDOW_UP_ARROW;
+	polygon[6][0] = rc1.left() + 1;
+	polygon[6][1] = rc1.y() + SECURE_CALL_WINDOW_UP_ARROW;
 
 	QPolygon arrow;
 	arrow.setPoints(7, &polygon[0][0]);
@@ -377,6 +386,7 @@ void Ui::SecureCallWnd::changeEvent(QEvent* _e)
 void Ui::SecureCallWnd::onBtnOkClicked()
 {
     hide();
+    onSecureCallWndClosed();
 }
 
 void Ui::SecureCallWnd::onDetailsButtonClicked()
@@ -388,6 +398,16 @@ void Ui::SecureCallWnd::onDetailsButtonClicked()
     
     // On Mac it does not hide automatically, we make it manually.
     hide();
+    
+    onSecureCallWndClosed();
+}
+
+void Ui::SecureCallWnd::resizeEvent(QResizeEvent * event)
+{
+    QWidget::resizeEvent(event);
+#ifdef __APPLE__
+    updateMask();
+#endif
 }
 
 WidgetWithBorder::WidgetWithBorder(QWidget* parent) : QWidget (parent) {}

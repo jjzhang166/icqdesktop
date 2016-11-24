@@ -10,7 +10,7 @@ struct app_config
 
     app_config(
         const bool _is_server_history_enabled,
-        const int _forced_dpi,
+        const int32_t _forced_dpi,
         const bool _is_crash_enabled,
         const bool _full_log,
         const bool _unlock_context_menu_features);
@@ -19,7 +19,7 @@ struct app_config
 
     const bool is_server_history_enabled_;
 
-    const int forced_dpi_;
+    const int32_t forced_dpi_;
 
     const bool is_crash_enabled_;
 

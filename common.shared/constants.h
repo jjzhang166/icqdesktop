@@ -5,6 +5,7 @@
 #define settings_export_file_name "exported_ui.json"
 #define fetch_url_file_name "fetch"
 #define gui_settings_file_name "ui2.stg"
+#define hosts_config_file_name "hosts.stg"
 
 #define settings_language "language"
 #define settings_upload_directory "upload_directory"

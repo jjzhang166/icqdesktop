@@ -34,12 +34,8 @@ namespace core
     class network_log;
     struct proxy_settings;
     class proxy_settings_manager;
-
-    namespace archive
-    {
-        class local_history;
-    }
-
+    class hosts_config;
+    
     namespace update
     {
         class updater;
@@ -75,6 +71,7 @@ namespace core
         std::shared_ptr<core::theme_settings> theme_settings_;
         std::shared_ptr<core::stats::statistics> statistics_;
         std::shared_ptr<core::proxy_settings_manager> proxy_settings_manager_;
+        std::shared_ptr<core::hosts_config> hosts_config_;
 
         std::shared_ptr<dump::report_sender> report_sender_;
 
@@ -82,7 +79,6 @@ namespace core
         iconnector* gui_connector_;
         icore_factory* core_factory_;
         std::unique_ptr<async_executer> save_thread_;
-        std::shared_ptr<archive::local_history> local_history_;
 
         std::mutex user_proxy_mutex_;
 
@@ -92,9 +88,13 @@ namespace core
         common::core_gui_settings core_gui_settings_;
 
         std::atomic_uchar search_count_;
+        std::atomic_uchar history_search_count_;
+
+        uint32_t delayed_stat_timer_id_;
 
         void load_gui_settings();
         void load_proxy_settings();
+        void load_hosts_config();
         void post_gui_settings();
         void post_app_config();
         void on_message_update_gui_settings_value(int64_t _seq, coll_helper _params);
@@ -134,10 +134,14 @@ namespace core
         void receive_message_from_gui(const char * _message, int64_t _seq, icollection* _message_data);
 
         const common::core_gui_settings& get_core_gui_settings() const;
-
+        
         bool is_valid_search();
         void begin_search();
         unsigned end_search();
+
+        bool is_valid_history_search();
+        void begin_history_search();
+        unsigned end_history_search();
 
         void unlogin();
 
@@ -154,7 +158,7 @@ namespace core
 
         void insert_event(core::stats::stats_event_names _event);
         void insert_event(core::stats::stats_event_names _event, const core::stats::event_props_type& _props);
-        void start_session_stats();
+        void start_session_stats(bool _delayed);
         bool is_stats_enabled() const;
 
         void on_thread_finish();
@@ -197,10 +201,12 @@ namespace core
         //    post_message_to_gui(L"voip_signal", 0, coll.get());
         //}
 
-		// We save fix voip mute flag in settings,
-		// Because we want to call this fix once.
-		void set_voip_mute_fix_flag(bool bValue);
-		bool get_voip_mute_fix_flag();
+        // We save fix voip mute flag in settings,
+        // Because we want to call this fix once.
+        void set_voip_mute_fix_flag(bool bValue);
+        bool get_voip_mute_fix_flag();
+
+        hosts_config& get_hosts_config();
     };
 
     extern std::unique_ptr<core::core_dispatcher>		g_core;

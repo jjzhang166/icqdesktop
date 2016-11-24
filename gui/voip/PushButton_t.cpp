@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PushButton_t.h"
 #include "NameAndStatusWidget.h"
+#include "../controls/TextEmojiWidget.h"
 
 Ui::PushButton_t::PushButton_t(QWidget* parent/* = NULL*/) 
     : QPushButton(parent)
@@ -33,23 +34,22 @@ void Ui::PushButton_t::paintEvent(QPaintEvent*) {
     const QPixmap& icon   = !bitmapsForStates_[currentState_].isNull() ? bitmapsForStates_[currentState_] : bitmapsForStates_[normal];
     const QColor& color   = colorsForStates_[currentState_];
 
-    const QString& prefix  = prefix_;
     const QString& postfix = postfix_; 
 
     QFontMetrics fm(font());
-    const int offsetPrefix  = ((!icon.isNull()) & (!prefix.isEmpty()))  * fromIconToText_;
+    const int offsetPrefix  = ((!icon.isNull()) & (!!compiledText_))  * fromIconToText_;
     const int offsetPostfix = ((!icon.isNull()) & (!postfix.isEmpty())) * fromIconToText_;
 
     const int iconW = (iconW_ >= 0 ? iconW_ : icon.width())  * !icon.isNull();
     const int iconH = (iconH_ >= 0 ? iconH_ : icon.height()) * !icon.isNull();
 
-    const int prefixW  = !prefix.isEmpty() ? fm.width(prefix) : 0;
+    const int prefixW  = compiledText_ ? compiledText_->width(painter) : 0;
 
-    int desiredWidth = precalculateWidth();
+    int desiredWidth = precalculateWidth(&painter);
 
     int desiredHeight = 0;
     desiredHeight = std::max(iconH, desiredHeight);
-    desiredHeight = std::max(!prefix.isEmpty() ? fm.height()   : 0, desiredHeight);
+    desiredHeight = std::max(compiledText_ ? compiledText_->height(painter) : 0, desiredHeight);
     desiredHeight = std::max(!postfix.isEmpty() ? fm.height()   : 0, desiredHeight);
 
     const int actualWidth  = std::min(rc.width(),  desiredWidth);
@@ -70,13 +70,14 @@ void Ui::PushButton_t::paintEvent(QPaintEvent*) {
 
     painter.fillRect(rc, color);
 
-    if (!prefix.isEmpty()) {
+    if (compiledText_) {
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
         painter.setFont(font());
-        painter.drawText(rcDraw, Qt::AlignVCenter | Qt::AlignLeft, prefix);
+        // Hardcode baseline. TODO find better solution.
+        compiledText_->draw(painter, rcDraw.x(), Utils::scale_value(23), -1);
 
         rcDraw.setLeft(rcDraw.left() + prefixW + offsetPrefix);
     }
@@ -115,7 +116,7 @@ void Ui::PushButton_t::setPostfixColor(const QColor& color)
 
 void Ui::PushButton_t::setText(const QString& prefix, const QString& postfix)
 {
-    prefix_  = prefix;
+    setPrefixInternal(prefix);
     postfix_ = postfix;
     repaint();
 }
@@ -142,18 +143,18 @@ void Ui::PushButton_t::setOffsets(int fromIconToText) {
 
 bool Ui::PushButton_t::event(QEvent *event) {
     if (event->type() == QEvent::Enter)
-        (currentState_ = hovered), update();
+        setState(hovered);
     else if (event->type() == QEvent::Leave)
-        (currentState_ = normal), update();
+        setState(normal);
     if (event->type() == QEvent::MouseButtonPress)
-        (currentState_ = pressed), update();
+        setState(pressed);
 
     return QPushButton::event(event);
 }
 
 void Ui::PushButton_t::setPrefix(const QString& prefix)
 {
-    prefix_ = prefix;
+    setPrefixInternal(prefix);
     repaint();
 }
 
@@ -163,20 +164,25 @@ void Ui::PushButton_t::setPostfix(const QString& postfix)
     repaint();
 }
 
-int Ui::PushButton_t::precalculateWidth()
+int Ui::PushButton_t::precalculateWidth(QPainter* painter)
 {
     const QPixmap& icon   = !bitmapsForStates_[currentState_].isNull() ? bitmapsForStates_[currentState_] : bitmapsForStates_[normal];
 
-    const QString& prefix  = prefix_;
+    //const QString& prefix  = prefix_;
     const QString& postfix = postfix_; 
 
     QFontMetrics fm(font());
-    const int offsetPrefix  = ((!icon.isNull()) & (!prefix.isEmpty()))  * fromIconToText_;
+    const int offsetPrefix  = ((!icon.isNull()) & (!!compiledText_))  * fromIconToText_;
     const int offsetPostfix = ((!icon.isNull()) & (!postfix.isEmpty())) * fromIconToText_;
 
     const int iconW = (iconW_ >= 0 ? iconW_ : icon.width())  * !icon.isNull();
 
-    const int prefixW  = !prefix.isEmpty() ? fm.width(prefix) : 0;
+    // We will use own painter or painter from parameter for painEvent.
+    // If we create one more Painter in paintEvent we have crash.
+    std::unique_ptr<QPainter> ownPainter = painter ? nullptr : std::unique_ptr<QPainter>(new QPainter(this));
+
+    const int prefixW  = compiledText_ ? compiledText_->width((painter ? *painter : *ownPainter)) : 0;
+
     const int postfixW = !postfix.isEmpty() ? fm.width(postfix) : 0;
 
     int desiredWidth = 0;
@@ -186,4 +192,19 @@ int Ui::PushButton_t::precalculateWidth()
     desiredWidth += offsetPrefix + offsetPostfix;
 
     return desiredWidth;
+}
+
+void Ui::PushButton_t::setPrefixInternal(const QString& prefix)
+{
+    compiledText_.reset(new CompiledText());
+    if (!CompiledText::compileText(prefix, *compiledText_, false))
+    {
+        assert(false && "TextEmojiLabel::setText: couldn't compile text.");
+    }
+}
+
+void Ui::PushButton_t::setState(const eButtonState state)
+{
+    currentState_ = state;
+    update();
 }

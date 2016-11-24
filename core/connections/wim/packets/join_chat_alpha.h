@@ -18,15 +18,16 @@ namespace core
     {
         class join_chat_alpha : public robusto_packet
         {
+        private:
             std::string stamp_;
+            int age_;
 
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
             virtual int32_t parse_results(const rapidjson::Value& _node_results) override;
             virtual int32_t on_response_error_code() override;
 
         public:
-
-            join_chat_alpha(const wim_packet_params& _params, const std::string& _stamp);
+            join_chat_alpha(const wim_packet_params& _params, const std::string& _stamp, const int age);
 
             virtual ~join_chat_alpha();
         };

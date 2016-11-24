@@ -46,7 +46,7 @@ public:
 
     QSize getCtrlButtonSize() const;
 
-    virtual QString getSelectedText() const override;
+    virtual QString getSelectedText(bool isFullSelect = false) const override;
 
     QSize getTextButtonSize() const;
 
@@ -75,9 +75,11 @@ protected:
 
     virtual void onDownloaded() override;
 
+    virtual void onDownloadedAction() override;
+
     virtual void onDownloading(const int64_t _bytesTransferred, const int64_t _bytesTotal) override;
 
-    virtual void onDownloadingFailed() override;
+    virtual void onDownloadingFailed(const int64_t requestId) override;
 
     virtual void onLocalCopyInfoReady(const bool isCopyExists) override;
 
@@ -177,7 +179,7 @@ private:
 private Q_SLOTS:
     void onCtrlButtonClicked();
 
-    void onPttFinished(int _id);
+    void onPttFinished(int _id, bool _byPlay);
 
     void onPttPaused(int _id);
 

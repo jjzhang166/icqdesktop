@@ -68,7 +68,7 @@ namespace Ui
 
         QList<Logic::MessageKey> getWidgetsOverBottomOffset(const int32_t offset) const;
 
-        void insertWidgets(const WidgetsList& _widgets);
+        void insertWidgets(const WidgetsList& _widgets, bool _isMoveToButtonIfNeed, int64_t _mess_id);
 
         void removeWidget(QWidget *widget);
 
@@ -87,6 +87,8 @@ namespace Ui
         void resumeVisibleItems();
 
         void suspendVisibleItems();
+
+        void updateItemsWidth();
 
         QPoint viewport2Absolute(const QPoint viewportPos) const;
 
@@ -152,8 +154,6 @@ namespace Ui
         void simulateMouseEvents(ItemInfo &itemInfo, const QRect &scrollAreaWidgetGeometry, const QPoint &globalMousePos, const QPoint &scrollAreaMousePos);
 
         bool slideItemsApart(const ItemsInfoIter &changedItemIter, const int slideY, const SlideOp slideOp);
-
-        void updateItemsWidth();
 
         void updateItemsGeometry();
 

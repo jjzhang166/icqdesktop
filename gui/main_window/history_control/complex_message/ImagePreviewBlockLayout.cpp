@@ -98,7 +98,9 @@ void ImagePreviewBlockLayout::setPreviewGeometry(const QRect &blockLtr, ImagePre
             Utils::scale_value(block.getPreviewSize()) :
             MessageStyle::getImagePlaceholderSize());
 
-    const auto maxSizeWidth = std::min(blockLtr.width(), Style::getImageWidthMax());
+    auto maxSizeWidth = std::min(blockLtr.width(), Style::getImageWidthMax());
+    if (block.getMaxPreviewWidth())
+        maxSizeWidth = std::min(maxSizeWidth, block.getMaxPreviewWidth());
 
     const QSize maxSize(
         maxSizeWidth,

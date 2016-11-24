@@ -175,6 +175,10 @@ foto</translation>
         <source>Upload photo</source>
         <translation>Enviar foto</translation>
     </message>
+    <message>
+        <source>Edit photo</source>
+        <translation>Editar foto</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -552,10 +556,6 @@ foto</translation>
         <translation>digitando...</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Criar chat em grupo</translation>
-    </message>
-    <message>
         <source>Video</source>
         <translation>Vídeo</translation>
     </message>
@@ -574,6 +574,26 @@ foto</translation>
     <message>
         <source>Search</source>
         <translation>Busca</translation>
+    </message>
+    <message>
+        <source>CONTACTS</source>
+        <translation>CONTATOS</translation>
+    </message>
+    <message>
+        <source>ALL MESSAGES</source>
+        <translation>TODAS AS MENSAGENS</translation>
+    </message>
+    <message>
+        <source>MESSAGES</source>
+        <translation>MENSAGENS</translation>
+    </message>
+    <message>
+        <source>Search in all chats</source>
+        <translation>Buscar em todos os bate-papos</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Criar chat em grupo</translation>
     </message>
 </context>
 <context>
@@ -728,6 +748,10 @@ foto</translation>
     <message>
         <source>Forward</source>
         <translation>Avançar</translation>
+    </message>
+    <message>
+        <source>Open in browser</source>
+        <translation>Abrir no navegador</translation>
     </message>
 </context>
 <context>
@@ -1662,26 +1686,54 @@ foto</translation>
     </message>
 </context>
 <context>
-    <name>groupchat_pages</name>
+    <name>groupchats</name>
     <message>
-        <source>Done</source>
-        <translation>Feito</translation>
+        <source>Public chat</source>
+        <translation>Bate-papo público</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>O bate-papo ficará visível a todos</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Entrar com aprovação</translation>
+    </message>
+    <message>
+        <source>New members are waiting for admin approval</source>
+        <translation>Novos membros estão aguardando aprovação do administrador</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Somente leitura</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Novos membros podem ler, membros aprovados pelo administrador podem enviar</translation>
+    </message>
+    <message>
+        <source>Select members</source>
+        <translation>Selecionar membros</translation>
     </message>
     <message>
         <source>Next</source>
         <translation>Próximo</translation>
     </message>
     <message>
-        <source>You are not a member of this groupchat</source>
-        <translation>Você não é um membro deste bate-papo em grupo</translation>
+        <source>Done</source>
+        <translation>Feito</translation>
     </message>
     <message>
         <source>Add to chat</source>
         <translation>Adicionar ao bate-papo</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Criar chat em grupo</translation>
+        <source>You are not a member of this chat</source>
+        <translation>Você não é um membro deste bate-papo</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Nome do bate-papo</translation>
     </message>
 </context>
 <context>
@@ -1749,6 +1801,18 @@ foto</translation>
     <message>
         <source>Send %1 %2 %3 %4</source>
         <translation>Enviar %1 %2 %3 %4</translation>
+    </message>
+    <message>
+        <source>This chat is read-only</source>
+        <translation>Este bate-papo é somente leitura</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Sair e apagar</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2051,6 +2115,10 @@ o número do celular</translation>
         <source>Your name</source>
         <translation>Seu nome</translation>
     </message>
+    <message>
+        <source>No messages found</source>
+        <translation>Nenhuma mensagem encontrada</translation>
+    </message>
 </context>
 <context>
     <name>popup_window</name>
@@ -2164,10 +2232,22 @@ o número do celular</translation>
     </message>
     <message>
         <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Tem certeza de que deseja encaminhar mensagens para &lt;USER&gt;?</translation>
     </message>
     <message>
         <source>Confirmation</source>
+        <translation>Confirmação</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Configurações do bate-papo</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to ban user to write in this chat?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to allow user to write in this chat?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2475,7 +2555,7 @@ o número do celular</translation>
     </message>
     <message>
         <source>Chat list compact mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo compacto da lista de bate-papo</translation>
     </message>
 </context>
 <context>
@@ -2769,6 +2849,50 @@ Edite-o e tente novamente.</translation>
     <message>
         <source>Birthday</source>
         <translation>aniversário</translation>
+    </message>
+    <message>
+        <source>Search for messages</source>
+        <translation>Procurar mensagens</translation>
+    </message>
+    <message>
+        <source>Link to chat</source>
+        <translation>Link para o bate-papo</translation>
+    </message>
+    <message>
+        <source>Ability to join chat by link</source>
+        <translation>Possibilidade de entrar no bate-papo com um link</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Somente leitura</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Novos membros podem ler, membros aprovados pelo administrador podem enviar</translation>
+    </message>
+    <message>
+        <source>Age restriction</source>
+        <translation>Restrição de idade</translation>
+    </message>
+    <message>
+        <source>Members must be of legal age to join</source>
+        <translation>Para entrar, os membros devem ser maiores de idade</translation>
+    </message>
+    <message>
+        <source>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</source>
+        <translation>Infelizmente você foi deletado e não pode ver os membros dessa conversa ou enviar-lhes mensagens.</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Criar chat em grupo</translation>
+    </message>
+    <message>
+        <source>Ban to write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow to write</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

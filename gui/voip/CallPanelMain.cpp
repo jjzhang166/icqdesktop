@@ -249,7 +249,6 @@ Ui::CallPanelMainEx::CallPanelMainEx(QWidget* _parent, const CallPanelMainFormat
     , buttonMaximize_(NULL)
     , buttonLocalCamera_(NULL)
     , buttonLocalMic_(NULL)
-    , buttonSoundTurn_(NULL)
     , vVolControl_(this, false, true, vertSoundBg, [] (QPushButton& _btn, bool _muted)
 {
     if (_muted)
@@ -438,12 +437,8 @@ Ui::CallPanelMainEx::CallPanelMainEx(QWidget* _parent, const CallPanelMainFormat
         buttonLocalMic_ = addButton<QPushButton>(*bottomPartWidget, buttonMicDisable,    SLOT(onMicTurn()));
         bottomPartWidget->layout()->setSpacing(BOTTOM_PANEL_BETWEEN_BUTTONS_GAP);
         
-        // For Mac Volume button has default cursor, because it fix blinking on mouse hover.
-#ifdef __APPLE__
-        buttonSoundTurn_ = addButton<QPushButtonEx>(*bottomPartWidget, buttonSoundDisable,  SLOT(onSoundTurn()), true);
-#else
-        buttonSoundTurn_ = addButton<QPushButtonEx>(*bottomPartWidget, buttonSoundDisable,  SLOT(onSoundTurn()));
-#endif
+        // Volume controls group.
+        volumeGroup = addVolumeGroup(*bottomPartWidget, false, Utils::scale_value(660));
 
         if (format_.topPartFormat & kVPH_BackToVideo)
         {
@@ -453,8 +448,7 @@ Ui::CallPanelMainEx::CallPanelMainEx(QWidget* _parent, const CallPanelMainFormat
             backToVideo_->adjustSize();
         }
 
-        connect(buttonSoundTurn_ , SIGNAL(onHover()), this, SLOT(onSoundTurnHover()), Qt::QueuedConnection);
-
+        
         rootWidget_->layout()->addWidget(bottomPartWidget);
     }
 
@@ -490,49 +484,6 @@ void Ui::CallPanelMainEx::processOnWindowNormalled()
     {
         Utils::ApplyStyle(buttonMaximize_, maxButtonStyle);
     }
-}
-
-void Ui::CallPanelMainEx::onSoundTurnHover()
-{
-    if (!buttonSoundTurn_)
-    {
-        return;
-    }
-
-    const auto rc = rect();
-
-    VolumeControl* vc;
-    int xOffset = 0, yOffset = 0;
-    
-    if (rc.width() >= Utils::scale_value(660))
-    {
-        vc = &hVolControl_;
-#ifdef __APPLE__
-//        xOffset = Utils::scale_value(6); // i don't know where appeared this offsets
-        yOffset = Utils::scale_value(1);
-#endif
-    } else
-    {
-        vc = &vVolControl_;
-#ifdef __APPLE__
- //       yOffset = Utils::scale_value(-8);
-        xOffset = Utils::scale_value(1);
-#endif
-    }
-
-    auto p = vc->getAnchorPoint();
-    auto p2 = buttonSoundTurn_->mapToGlobal(buttonSoundTurn_->rect().topLeft());
-    
-    p2.setX(p2.x() - p.x() + xOffset);
-    p2.setY(p2.y() - p.y() + yOffset);
-
-    vc->move(p2);
-    vc->show();
-    vc->activateWindow();
-#ifdef __APPLE__
-    vc->raise();
-#endif
-    vc->setFocus(Qt::OtherFocusReason);
 }
 
 void Ui::CallPanelMainEx::onSoundTurn()
@@ -665,6 +616,45 @@ ButtonType* Ui::CallPanelMainEx::addButton(
     return btn;
 }
 
+Ui::VolumeGroup* Ui::CallPanelMainEx::addVolumeGroup(QWidget& _parentWidget,  bool rightAlignment, int verticalSize)
+{
+    VolumeGroup* volumeGroup = new VolumeGroup(&_parentWidget, true, [] (QPushButton& _btn, bool _muted)
+    {
+        if (_muted)
+        {
+            Utils::ApplyStyle(&_btn, buttonStyleEnabled);
+            Utils::ApplyStyle(&_btn, buttonSoundDisable);
+        }
+        else
+        {
+            Utils::ApplyStyle(&_btn, buttonStyleDisabled);
+            Utils::ApplyStyle(&_btn, buttonSoundEnable);
+        }
+    }, verticalSize);
+    
+    volumeGroup->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+    
+    if (!rightAlignment)
+    {
+        QBoxLayout* layout = qobject_cast<QBoxLayout*>(_parentWidget.layout());
+        if (layout)
+        {
+            layout->addWidget(volumeGroup, 0, Qt::AlignVCenter);
+        }
+    }
+    else
+    {
+        QBoxLayout* layout = qobject_cast<QBoxLayout*>(_parentWidget.layout());
+        if (layout)
+        {
+            qobject_cast<QBoxLayout*>(_parentWidget.layout())->addWidget(volumeGroup, 1, Qt::AlignRight);
+        }
+    }
+    
+    return volumeGroup;
+}
+
+
 void Ui::CallPanelMainEx::hideEvent(QHideEvent* _e)
 {
     QWidget::hideEvent(_e);
@@ -691,23 +681,6 @@ void Ui::CallPanelMainEx::resizeEvent(QResizeEvent* _e)
     QWidget::resizeEvent(_e);
     hVolControl_.hide();
     vVolControl_.hide();
-}
-
-void Ui::CallPanelMainEx::onMuteChanged(bool _muted)
-{
-    if (buttonSoundTurn_)
-    {
-        if (_muted)
-        {
-            Utils::ApplyStyle(buttonSoundTurn_, buttonStyleEnabled);
-            Utils::ApplyStyle(buttonSoundTurn_, buttonSoundDisable);
-        }
-        else
-        {
-            Utils::ApplyStyle(buttonSoundTurn_, buttonStyleDisabled);
-            Utils::ApplyStyle(buttonSoundTurn_, buttonSoundEnable);
-        }
-    }
 }
 
 void Ui::CallPanelMainEx::onVoipUpdateCipherState(const voip_manager::CipherState& _state)

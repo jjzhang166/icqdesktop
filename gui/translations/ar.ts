@@ -175,6 +175,10 @@ photo</source>
         <translation>تعديل
 صورة</translation>
     </message>
+    <message>
+        <source>Edit photo</source>
+        <translation>تعديل صورة</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -547,10 +551,6 @@ photo</source>
         <translation>دردشة جديدة</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>إنشاء الدردشة الجماعية</translation>
-    </message>
-    <message>
         <source>Video</source>
         <translation>فيديو</translation>
     </message>
@@ -569,6 +569,26 @@ photo</source>
     <message>
         <source>Search</source>
         <translation>بحث</translation>
+    </message>
+    <message>
+        <source>CONTACTS</source>
+        <translation>جهات الاتصال</translation>
+    </message>
+    <message>
+        <source>ALL MESSAGES</source>
+        <translation>البحث في هذه المحادثة</translation>
+    </message>
+    <message>
+        <source>MESSAGES</source>
+        <translation>الرسائل</translation>
+    </message>
+    <message>
+        <source>Search in all chats</source>
+        <translation>ابحث في كل الدردشات</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>إنشاء الدردشة الجماعية</translation>
     </message>
 </context>
 <context>
@@ -723,6 +743,10 @@ photo</source>
     <message>
         <source>Forward</source>
         <translation>إعادة إرسال</translation>
+    </message>
+    <message>
+        <source>Open in browser</source>
+        <translation>افتح في المتصفح</translation>
     </message>
 </context>
 <context>
@@ -1657,10 +1681,34 @@ photo</source>
     </message>
 </context>
 <context>
-    <name>groupchat_pages</name>
+    <name>groupchats</name>
     <message>
-        <source>Create Groupchat</source>
-        <translation>إنشاء الدردشة الجماعية</translation>
+        <source>Public chat</source>
+        <translation>الدردشة العامة</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>ستكون المحادثة ظاهرة للجميع</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>انضمام بموافقة</translation>
+    </message>
+    <message>
+        <source>New members are waiting for admin approval</source>
+        <translation>أعضاء جدد في انتظار موافقة المدير</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>قراءة فقط</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>بإمكان الأعضاء الجدد قراءة، والأعضاء الموافق عليهم من المدير بإمكانهم الإرسال</translation>
+    </message>
+    <message>
+        <source>Select members</source>
+        <translation>حدد الأعضاء</translation>
     </message>
     <message>
         <source>Next</source>
@@ -1671,12 +1719,16 @@ photo</source>
         <translation>القيام به</translation>
     </message>
     <message>
-        <source>You are not a member of this groupchat</source>
-        <translation>أنت لست عضوًا في مجموعة الدردشة هذه</translation>
-    </message>
-    <message>
         <source>Add to chat</source>
         <translation>إضافة إلى الدردشة</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat</source>
+        <translation>أنت لست عضوًا في هذه الدردشة</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>اسم الدردشة</translation>
     </message>
 </context>
 <context>
@@ -1744,6 +1796,18 @@ photo</source>
     <message>
         <source>Send %1 %2 %3 %4</source>
         <translation>إرسال %1 %2 %3 %4</translation>
+    </message>
+    <message>
+        <source>This chat is read-only</source>
+        <translation>هذه الدردشة للقراءة فقط</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>خروج وحذف</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2046,6 +2110,10 @@ your phone number</source>
         <source>by phone number or UIN</source>
         <translation>باستخدام رقم الهاتف أو UIN</translation>
     </message>
+    <message>
+        <source>No messages found</source>
+        <translation>لم يتم العثور على أية رسائل</translation>
+    </message>
 </context>
 <context>
     <name>popup_window</name>
@@ -2159,10 +2227,22 @@ your phone number</source>
     </message>
     <message>
         <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
-        <translation type="unfinished"></translation>
+        <translation>هل أنت متأكد من رغبتك في توجيه الرسائل إلى &lt;USER&gt;؟</translation>
     </message>
     <message>
         <source>Confirmation</source>
+        <translation>التأكيد</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>إعدادت المحادثة</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to ban user to write in this chat?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to allow user to write in this chat?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2470,7 +2550,7 @@ your phone number</source>
     </message>
     <message>
         <source>Chat list compact mode</source>
-        <translation type="unfinished"></translation>
+        <translation>الوضع الموجز لقائمة المحادثة</translation>
     </message>
 </context>
 <context>
@@ -2764,6 +2844,50 @@ Please edit phone number and try again.</source>
     <message>
         <source>Birthday</source>
         <translation>عيد الميلاد</translation>
+    </message>
+    <message>
+        <source>Search for messages</source>
+        <translation>البحث عن أية رسائل</translation>
+    </message>
+    <message>
+        <source>Link to chat</source>
+        <translation>رابط للدردشة</translation>
+    </message>
+    <message>
+        <source>Ability to join chat by link</source>
+        <translation>القدرة على الانضمام للدردشة برابط</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>قراءة فقط</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>بإمكان الأعضاء الجدد قراءة، والأعضاء الموافق عليهم من المدير بإمكانهم الإرسال</translation>
+    </message>
+    <message>
+        <source>Age restriction</source>
+        <translation>قيود السن</translation>
+    </message>
+    <message>
+        <source>Members must be of legal age to join</source>
+        <translation>يجب على الأعضاء أن يكونوا بالسن القانونية للانضمام</translation>
+    </message>
+    <message>
+        <source>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</source>
+        <translation>للأسف تم حذفك ولا يمكنك مشاهدة قائمة المشاركين في هذه الدردشة أو إرسال الرسائل إليهم.</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>إنشاء الدردشة الجماعية</translation>
+    </message>
+    <message>
+        <source>Ban to write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow to write</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

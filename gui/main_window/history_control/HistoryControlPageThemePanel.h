@@ -45,10 +45,12 @@ namespace Ui
         void setCallback(ThemePanelCallback);
         bool settingThemeToAll_;
         void setSelectionToAll(bool _fromSettings);
-        
+
+    public Q_SLOTS:
+        void cancelThemePressed();
+
     private Q_SLOTS:
         void backFromThemePressed();
-        void cancelThemePressed();
         void setToAllThemePressed();
         void setThemePressed();
         void timerUpdateTopThemeButtonsVisibility();

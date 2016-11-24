@@ -85,9 +85,14 @@ namespace Ui
     {
         Q_OBJECT
 
+    public Q_SLOTS:
+        void startSearhInDialog(QString _aimid);
+        void setSearchFocus();
+
     private Q_SLOTS:
         void searchBegin();
         void searchEnd();
+        void searchInputClear();
         void onContactSelected(QString _contact);
         void onAddContactClicked();
         void createGroupChat();
@@ -114,6 +119,9 @@ namespace Ui
         void animCLWidthFinished();
         void searchActivityChanged(bool _isActive);
 
+        void changeCLHeadToSearchSlot();
+        void changeCLHeadToUnknownSlot();
+
     private:
         MainPage(QWidget* _parent);
         static MainPage* _instance;
@@ -122,7 +130,6 @@ namespace Ui
         static MainPage* instance(QWidget* _parent = 0);
         static void reset();
         ~MainPage();
-        void setSearchFocus();
         void selectRecentChat(QString _aimId);
         void recentsTabActivate(bool _selectUnread = false);
         void contactListActivate(bool _addContact = false);
@@ -164,6 +171,11 @@ namespace Ui
         void notifyApplicationWindowActive(const bool isActive);
         bool isVideoWindowActive();
 
+        void setFocusOnInput();
+        void clearSearchFocus();
+
+        void onSendMessage(const QString& contact);
+
     protected:
         virtual void resizeEvent(QResizeEvent* _event);
 
@@ -173,10 +185,9 @@ namespace Ui
         QWidget* showIntroduceYourselfSuggestions(QWidget* _parent);
         void animateVisibilityCL(int _newWidth, bool _withAnimation);
         void setLeftPanelState(LeftPanelState _newState, bool _withAnimation);
+        void changeCLHead(bool _showUnknownHeader);
 
     private:
-        std::unique_ptr<Utils::SignalsDisconnector> disconnector_;
-
         UnknownsHeader              *unknownsHeader_;
 
         ContactList*                contactListWidget_;
@@ -207,6 +218,7 @@ namespace Ui
         BackButton*                 backButton_;
         QWidget*                    backButtonHost_;
         TextEmojiWidget*            unknownBackButtonLabel_;
+        bool                        NeedShowUnknownsHeader_;
 
         std::map<std::string, std::shared_ptr<IncomingCallWindow> > incomingCallWindows_;
         std::unique_ptr<LiveChats> liveChats_;

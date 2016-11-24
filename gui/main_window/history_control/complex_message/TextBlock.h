@@ -28,7 +28,7 @@ public:
 
     virtual IItemBlockLayout* getBlockLayout() const override;
 
-    virtual QString getSelectedText() const override;
+    virtual QString getSelectedText(bool isFullSelect = false) const override;
 
     virtual bool hasRightStatusPadding() const override;
 
@@ -39,6 +39,10 @@ public:
     virtual bool isSharingEnabled() const override;
 
     virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
+
+    virtual void setFontSize(int size) override;
+
+    virtual void setTextOpacity(double opacity) override;
 
 protected:
     virtual void drawBlock(QPainter &p) override;
@@ -61,6 +65,10 @@ private:
     TextEditEx *TextCtrl_;
 
     BlockSelectionType Selection_;
+
+    int TextFontSize_;
+
+    double TextOpacity_;
 
 private Q_SLOTS:
     void onAnchorClicked(const QUrl &_url);

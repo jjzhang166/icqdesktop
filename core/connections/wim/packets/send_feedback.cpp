@@ -14,9 +14,9 @@ using namespace core;
 using namespace wim;
 
 send_feedback::send_feedback(const wim_packet_params& _params, const std::string &url, const std::map<std::string, std::string>& fields, const std::vector<std::string>& attachments)
-    :
-    wim_packet(_params),
-    url_(url)
+    : wim_packet(_params)
+    , url_(url)
+    , result_(0)
 {
     fields_.insert(fields.begin(), fields.end());
     attachments_.assign(attachments.begin(), attachments.end());
@@ -111,7 +111,7 @@ int32_t send_feedback::init_request(std::shared_ptr<core::http_request_simple> _
             stemmed += L".txt";
             if (zipOpenNewFileInZip(zipFile, stemmed.string().c_str(), &zipInfo, 0, 0, 0, 0, 0, Z_DEFLATED, Z_DEFAULT_COMPRESSION) == ZIP_OK)
             {
-                succeeded &= (zipWriteInFileInZip(zipFile, &fullLog[0], (unsigned int)fullLog.size()) == ZIP_OK);
+                succeeded &= (zipWriteInFileInZip(zipFile, &fullLog[0], (uint32_t)fullLog.size()) == ZIP_OK);
                 succeeded &= (zipCloseFileInZip(zipFile) == ZIP_OK);
                 succeeded &= (zipClose(zipFile, 0) == ZIP_OK);
             }

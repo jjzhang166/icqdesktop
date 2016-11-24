@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-#include "exif.h"
 #include "utils.h"
 
 #include "LoadPixmapFromFileTask.h"
@@ -43,10 +42,6 @@ namespace Utils
             emit loadedSignal(QPixmap());
             return;
         }
-
-        const auto orientation = Exif::getExifOrientation((char*)data.data(), (size_t)data.size());
-
-        Exif::applyExifOrientation(orientation, InOut preview);
 
         assert(!preview.isNull());
         emit loadedSignal(preview);

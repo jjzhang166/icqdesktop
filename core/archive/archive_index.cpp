@@ -43,7 +43,7 @@ void archive_index::serialize(headers_list& _list) const
         _list.emplace_back(iter_header->second);
 }
 
-bool archive_index::serialize_from(int64_t _from, int64_t _count, headers_list& _list) const
+bool archive_index::serialize_from(int64_t _from, int64_t _count, headers_list& _list, bool _to_older) const
 {
     if (headers_index_.empty())
         return true;
@@ -63,20 +63,30 @@ bool archive_index::serialize_from(int64_t _from, int64_t _count, headers_list& 
             return false;
         }
     }
-
-    if (iter_header == headers_index_.begin())
-        return true;
-
-    do
+    
+    if (_to_older)
     {
-        --iter_header;
+        while (iter_header != headers_index_.begin())
+        {
+            --iter_header;
 
-        if (_count != -1 && _list.size() >= _count)
-            return true;
+            if (_count != -1 && _list.size() >= _count)
+                return true;
 
-        _list.emplace_front(iter_header->second);
+            _list.emplace_front(iter_header->second);
+        };
     }
-    while (iter_header != headers_index_.begin());
+    else
+    {
+        while (iter_header != headers_index_.end())
+        {
+            _list.emplace_back(iter_header->second);
+            ++iter_header;
+
+            if (_list.size() >= _count)
+                break;
+        };
+    }
 
     return true;
 }
@@ -444,12 +454,6 @@ bool archive_index::get_next_hole(int64_t _from, archive_hole& _hole, int64_t _d
 
 bool archive_index::need_optimize()
 {
-    assert(max_index_size < index_size_need_optimize);
-    assert(max_index_size > 0);
-    assert(index_size_need_optimize > 0);
-    if (max_index_size >= index_size_need_optimize || index_size_need_optimize <= 0 || max_index_size <= 0)
-        return false;
-
     return (headers_index_.size() > index_size_need_optimize);
 }
 

@@ -12,7 +12,7 @@ namespace Ui
     public:
         AvatarPreview(QPixmap _img, QWidget* _parent);
         ~AvatarPreview();
-        QSize sizeHint() const;
+        QSize sizeHint() const override;
     private:
         QPixmap img_;
     };

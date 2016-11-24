@@ -90,9 +90,9 @@ namespace core
             return get_report_path() + L"\\crashdump.dmp";
         }
 
-        int crash_handler::get_dump_type()
+        int32_t crash_handler::get_dump_type()
         {
-            static int dump_type = -1;
+            static int32_t dump_type = -1;
 
             if (dump_type == -1)
             {

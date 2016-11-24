@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "VideoFrame.h"
+#include "CommonUI.h"
 
 #ifdef __APPLE__
     #include "macos/VideoFrameMacos.h"
@@ -13,7 +14,7 @@
 
 platform_specific::GraphicsPanel* platform_specific::GraphicsPanel::create(
     QWidget* _parent,
-    std::vector<QWidget*>& _panels)
+    std::vector<Ui::BaseVideoPanel*>& _panels)
 {
 #ifdef __APPLE__
     return  platform_macos::GraphicsPanelMacos::create(_parent, _panels);
@@ -28,14 +29,14 @@ WId platform_specific::GraphicsPanel::frameId() const
     return QWidget::winId();
 }
 
-void platform_specific::GraphicsPanel::addPanels(std::vector<QWidget*>& /*panels*/)
+void platform_specific::GraphicsPanel::addPanels(std::vector<Ui::BaseVideoPanel*>& /*panels*/)
 {
 
 }
 
 void platform_specific::GraphicsPanel::clearPanels()
 {
-
+    
 }
 
 void platform_specific::GraphicsPanel::fullscreenModeChanged(bool /*fullscreen*/)

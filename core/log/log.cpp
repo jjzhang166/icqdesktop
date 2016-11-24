@@ -64,7 +64,7 @@ namespace
 
     fs::path logs_dir_;
 
-    int log_file_index_ = -1;
+    int32_t log_file_index_ = -1;
 
     std::wstring log_files_ext_;
 

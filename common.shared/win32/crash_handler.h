@@ -65,7 +65,7 @@ namespace core
 
         private:
             static bool need_write_dump();
-            static int get_dump_type();
+            static int32_t get_dump_type();
 
             // NOTE : this values must coincide with value in https://rink.hockeyapp.net
             static std::string product_bundle_;

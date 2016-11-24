@@ -8,6 +8,8 @@
 struct curl_context;
 namespace core
 {
+    class hosts_map;
+
     class ithread_callback;
 
     typedef std::function<void(tools::binary_stream&)> replace_log_function;
@@ -118,6 +120,8 @@ namespace core
 
         static std::vector<std::mutex*> ssl_sync_objects;
         proxy_settings get_user_proxy() const;
+
+        void replace_host(const hosts_map& _hosts);
     };
 }
 

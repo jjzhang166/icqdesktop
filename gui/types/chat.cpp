@@ -37,6 +37,7 @@ namespace Data
         , Controlled_(false)
         , YouPending_(false)
         , YouMember_(false)
+        , AgeRestriction_(false)
         , CreateTime_(-1)
         , MembersCount_(-1)
         , FriendsCount(-1)
@@ -77,6 +78,7 @@ namespace Data
 		info.YourRole_ = helper->get_value_as_string("your_role");
 		info.Owner_ = helper->get_value_as_string("owner");
         info.Creator_ = helper->get_value_as_string("creator");
+        info.DefaultRole_ = helper->get_value_as_string("default_role");
 		info.MembersVersion_ = helper->get_value_as_string("members_version");
 		info.InfoVersion_ = helper->get_value_as_string("info_version");
 		info.CreateTime_ =  helper->get_value_as_int("create_time");
@@ -92,6 +94,7 @@ namespace Data
 		info.Controlled_ = helper->get_value_as_bool("controlled");
         info.Stamp_ = helper->get_value_as_string("stamp");
         info.ApprovedJoin_ = helper->get_value_as_bool("joinModeration");
+        info.AgeRestriction_ = helper->get_value_as_bool("age_restriction");
         UnserializeChatMembers(helper, info.Members_);
 	}
 

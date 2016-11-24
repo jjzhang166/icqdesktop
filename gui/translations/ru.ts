@@ -175,6 +175,10 @@ photo</source>
         <source>Upload photo</source>
         <translation>Загрузка фото</translation>
     </message>
+    <message>
+        <source>Edit photo</source>
+        <translation>Сменить фото</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -547,10 +551,6 @@ photo</source>
         <translation>пишет...</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Создать групчат</translation>
-    </message>
-    <message>
         <source>Video</source>
         <translation>Видео</translation>
     </message>
@@ -569,6 +569,26 @@ photo</source>
     <message>
         <source>Search</source>
         <translation>Поиск</translation>
+    </message>
+    <message>
+        <source>CONTACTS</source>
+        <translation>КОНТАКТЫ</translation>
+    </message>
+    <message>
+        <source>ALL MESSAGES</source>
+        <translation>ВСЕ СООБЩЕНИЯ</translation>
+    </message>
+    <message>
+        <source>MESSAGES</source>
+        <translation>СООБЩЕНИЯ</translation>
+    </message>
+    <message>
+        <source>Search in all chats</source>
+        <translation>Искать во всех чатах</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Создать групчат</translation>
     </message>
 </context>
 <context>
@@ -723,6 +743,10 @@ photo</source>
     <message>
         <source>Forward</source>
         <translation>Переслать</translation>
+    </message>
+    <message>
+        <source>Open in browser</source>
+        <translation>Открыть в браузере</translation>
     </message>
 </context>
 <context>
@@ -1657,26 +1681,54 @@ photo</source>
     </message>
 </context>
 <context>
-    <name>groupchat_pages</name>
+    <name>groupchats</name>
     <message>
-        <source>Done</source>
-        <translation>Готово</translation>
+        <source>Public chat</source>
+        <translation>Публичный</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>При включении чат будет виден всем</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Вступление по запросу</translation>
+    </message>
+    <message>
+        <source>New members are waiting for admin approval</source>
+        <translation>Новые участники ожидают разрешение админа на вступление</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Только чтение</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Все участники могут только читать, одобренные админом могут писать</translation>
+    </message>
+    <message>
+        <source>Select members</source>
+        <translation>Выберите участников</translation>
     </message>
     <message>
         <source>Next</source>
         <translation>Далее</translation>
     </message>
     <message>
-        <source>You are not a member of this groupchat</source>
-        <translation>Вы не участник групчата</translation>
+        <source>Done</source>
+        <translation>Готово</translation>
     </message>
     <message>
         <source>Add to chat</source>
         <translation>Добавить в чат</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Создать групчат</translation>
+        <source>You are not a member of this chat</source>
+        <translation>Вы не участник чата</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Имя чата</translation>
     </message>
 </context>
 <context>
@@ -1744,6 +1796,18 @@ photo</source>
     <message>
         <source>Send %1 %2 %3 %4</source>
         <translation>Отправить %1 %2 %3 %4</translation>
+    </message>
+    <message>
+        <source>This chat is read-only</source>
+        <translation>Чат доступен только для чтения</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Выйти и удалить</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat. </source>
+        <translation>Вы не участник чата. </translation>
     </message>
 </context>
 <context>
@@ -2045,6 +2109,10 @@ your phone number</source>
         <source>Your name</source>
         <translation>Ваше имя</translation>
     </message>
+    <message>
+        <source>No messages found</source>
+        <translation>Ничего не найдено</translation>
+    </message>
 </context>
 <context>
     <name>popup_window</name>
@@ -2163,6 +2231,18 @@ your phone number</source>
     <message>
         <source>Confirmation</source>
         <translation>Подтверждение</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Настройки чата</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to ban user to write in this chat?</source>
+        <translation>Вы действительно хотите запретить пользователю писать в этот чат?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to allow user to write in this chat?</source>
+        <translation>Вы действительно хотите разрешить пользователю писать в этот чат?</translation>
     </message>
 </context>
 <context>
@@ -2726,7 +2806,7 @@ Please edit phone number and try again.</source>
     </message>
     <message>
         <source>Admin approval required to join</source>
-        <translation>Новые участники должны отправлять запрос на вступление в чат</translation>
+        <translation>Новые участники должны отправлять запрос на вступление</translation>
     </message>
     <message>
         <source>more</source>
@@ -2763,6 +2843,52 @@ Please edit phone number and try again.</source>
     <message>
         <source>Birthday</source>
         <translation>день рождения</translation>
+    </message>
+    <message>
+        <source>Search for messages</source>
+        <translation>Поиск по сообщениям</translation>
+    </message>
+    <message>
+        <source>Link to chat</source>
+        <translation>Ссылка на чат</translation>
+    </message>
+    <message>
+        <source>Ability to join chat by link</source>
+        <translation>Возможность войти в чат по ссылке</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Только чтение</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Все участники могут только читать, одобренные админом могут писать</translation>
+    </message>
+    <message>
+        <source>Age restriction</source>
+        <translation>Возрастное
+ограничение</translation>
+    </message>
+    <message>
+        <source>Members must be of legal age to join</source>
+        <translation>
+Участники чата должны быть совершеннолетними</translation>
+    </message>
+    <message>
+        <source>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</source>
+        <translation>К сожалению, вы были удалены и не можете видеть список участников этого чата или отправлять им сообщения.</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Создать групчат</translation>
+    </message>
+    <message>
+        <source>Ban to write</source>
+        <translation>Запретить писать</translation>
+    </message>
+    <message>
+        <source>Allow to write</source>
+        <translation>Разрешить писать</translation>
     </message>
 </context>
 <context>

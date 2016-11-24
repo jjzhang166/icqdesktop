@@ -162,6 +162,18 @@ loader_errors image_download_task::run()
     return loader_errors::success;
 }
 
+std::string image_download_task::to_log_str() const
+{
+    std::string result;
+    result.reserve(512);
+
+    result += "image(";
+    result += image_uri_;
+    result += ")";
+
+    return result;
+}
+
 tools::binary_stream& image_download_task::get_image_preview_data()
 {
     assert(image_preview_data_);
@@ -171,7 +183,19 @@ tools::binary_stream& image_download_task::get_image_preview_data()
 
 tasks_runner_slot image_download_task::get_slot() const
 {
-    return tasks_runner_slot::images;
+    assert(!image_local_path_.empty());
+
+    const auto uri_hash = std::hash<std::string>()(image_uri_);
+
+    const auto slot_index = (uri_hash % 3);
+
+    static const tasks_runner_slot slots[] = {
+        tasks_runner_slot::images_a,
+        tasks_runner_slot::images_b,
+        tasks_runner_slot::images_c
+    };
+
+    return slots[slot_index];
 }
 
 void image_download_task::on_before_suspend()
@@ -190,11 +214,11 @@ void image_download_task::on_result(const loader_errors _error)
 
     if (success)
     {
-        result_handler_->on_image_result((int32_t)_error, image_preview_data_, tools::from_utf16(image_local_path_));
+        result_handler_->on_image_result((int32_t)_error, image_preview_data_, image_uri_, tools::from_utf16(image_local_path_));
     }
     else
     {
-        result_handler_->on_image_result((int32_t)_error, std::make_shared<tools::binary_stream>(), std::string());
+        result_handler_->on_image_result((int32_t)_error, std::make_shared<tools::binary_stream>(), image_uri_, std::string());
     }
 }
 

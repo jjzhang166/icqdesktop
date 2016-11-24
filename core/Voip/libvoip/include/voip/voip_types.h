@@ -63,6 +63,7 @@ union  SystemObjects
   {
     void  *ICoreDispatcher;     // use "Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher" from GUI thread to get this ref ptr;
   }WinRT;
+  
 };
 
 union SystemVibroPattern
@@ -190,6 +191,49 @@ struct ChannelStatusContext {
     hbmp_t ended;
 };
 
+#define ANIMATION_CURVE_SAMPLERATE_HZ 50
+enum { kMaxAnimationCurveLen = 500 };
+
+enum VisualEffectTypes {
+    kVisualEffectType_Connecting = 0,
+    kVisualEffectType_Reconnecting,
+    //----------------------------
+    kVisualEffectType_Total
+};
+
+struct VisualEffectContext {
+    unsigned animationPeriodMs; // can be less then animation duration
+
+    unsigned width;
+    unsigned height;
+
+    unsigned frameWidth;
+    unsigned frameHeight;
+
+    int xOffset; // from viewport center
+    int yOffset; // from viewport center
+
+    unsigned curveLength;
+    unsigned colorBGRACurve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
+    float geometryCurve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
+};
+
+struct FocusEffectContext {
+    hbmp_t    image;
+    unsigned  curveLen;                     // in samples
+    float     curve[kMaxAnimationCurveLen]; // sampled at 50Hz (20ms step), 5 sec max
+};
+
+//#define WindowSettingsThemesCount 2
+typedef enum {
+    WindowTheme_One = 0,
+    WindowTheme_Two = 1,
+    WindowTheme_Three = 2,
+    WindowTheme_Four = 3,
+    WindowTheme_Total = 4
+} WindowThemeType;
+
+
 #if __PLATFORM_WINPHONE || WINDOWS_PHONE
   // See http://developer.nokia.com/Community/Wiki/How_to_create_a_DirectX_texture_with_a_picture
   // to find out how to get pixel data from BitmapImage object
@@ -204,12 +248,27 @@ struct ChannelStatusContext {
 };  //namespace voip
 #endif
 
+#if defined(__cplusplus)
+	#define VOIP_EXPORT_C extern "C"
+#else
+	#define VOIP_EXPORT_C extern
+#endif
+
+
 #ifdef __OBJC__
   #if TARGET_OS_IPHONE || __PLATFORM_IOS
     #define WebrtcRenderView RenderViewIOS
     #import <UIKit/UIKit.h>
     @interface WebrtcRenderView : UIView {}
     @end
+    //
+    // CallKit integration
+    //
+    VOIP_EXPORT_C NSString *const VoipCallKitAudioSessionChangedNotification;
+    VOIP_EXPORT_C NSString *const VoipCallKitAudioSessionActiveKey;
+    VOIP_EXPORT_C NSString *const VoipCallKitWaitForAudioSessionActivationNotification;
+    VOIP_EXPORT_C NSString *const VoipCallKitWaitForAudioSessionDeactivationNotification;
+
   #else
     #define WebrtcRenderView RenderViewOSX
     #import <Cocoa/Cocoa.h>

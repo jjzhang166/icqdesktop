@@ -175,6 +175,10 @@ photo</translation>
         <source>Upload photo</source>
         <translation>Upload photo</translation>
     </message>
+    <message>
+        <source>Edit photo</source>
+        <translation>Edit photo</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -547,10 +551,6 @@ photo</translation>
         <translation>typing...</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Create Groupchat</translation>
-    </message>
-    <message>
         <source>Video</source>
         <translation>Video</translation>
     </message>
@@ -569,6 +569,26 @@ photo</translation>
     <message>
         <source>Search</source>
         <translation>Search</translation>
+    </message>
+    <message>
+        <source>CONTACTS</source>
+        <translation>CONTACTS</translation>
+    </message>
+    <message>
+        <source>ALL MESSAGES</source>
+        <translation>ALL MESSAGES</translation>
+    </message>
+    <message>
+        <source>MESSAGES</source>
+        <translation>MESSAGES</translation>
+    </message>
+    <message>
+        <source>Search in all chats</source>
+        <translation>Search in all chats</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Create groupchat</translation>
     </message>
 </context>
 <context>
@@ -723,6 +743,10 @@ photo</translation>
     <message>
         <source>Forward</source>
         <translation>Forward</translation>
+    </message>
+    <message>
+        <source>Open in browser</source>
+        <translation>Open in browser</translation>
     </message>
 </context>
 <context>
@@ -1657,26 +1681,54 @@ photo</translation>
     </message>
 </context>
 <context>
-    <name>groupchat_pages</name>
+    <name>groupchats</name>
     <message>
-        <source>Done</source>
-        <translation>Done</translation>
+        <source>Public chat</source>
+        <translation>Public chat</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>Chat will be visible to everyone</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Join with Approval</translation>
+    </message>
+    <message>
+        <source>New members are waiting for admin approval</source>
+        <translation>New members are waiting for admin approval</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Read only</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>New members can read, approved by admin members can send</translation>
+    </message>
+    <message>
+        <source>Select members</source>
+        <translation>Select members</translation>
     </message>
     <message>
         <source>Next</source>
         <translation>Next</translation>
     </message>
     <message>
-        <source>You are not a member of this groupchat</source>
-        <translation>You are not a member of this groupchat</translation>
+        <source>Done</source>
+        <translation>Done</translation>
     </message>
     <message>
         <source>Add to chat</source>
         <translation>Add to chat</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Create Groupchat</translation>
+        <source>You are not a member of this chat</source>
+        <translation>You are not a member of this chat</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Chat name</translation>
     </message>
 </context>
 <context>
@@ -1744,6 +1796,18 @@ photo</translation>
     <message>
         <source>Send %1 %2 %3 %4</source>
         <translation>Send %1 %2 %3 %4</translation>
+    </message>
+    <message>
+        <source>This chat is read-only</source>
+        <translation>This chat is read-only</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Leave and delete</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat. </source>
+        <translation>You are not a member of this chat. </translation>
     </message>
 </context>
 <context>
@@ -2046,6 +2110,10 @@ your phone number</translation>
         <source>Your name</source>
         <translation>Your name</translation>
     </message>
+    <message>
+        <source>No messages found</source>
+        <translation>No messages found</translation>
+    </message>
 </context>
 <context>
     <name>popup_window</name>
@@ -2164,6 +2232,18 @@ your phone number</translation>
     <message>
         <source>Confirmation</source>
         <translation>Confirmation</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Chat settings</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to ban user to write in this chat?</source>
+        <translation>Are you sure you want to ban user to write in this chat?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to allow user to write in this chat?</source>
+        <translation>Are you sure you want to allow user to write in this chat?</translation>
     </message>
 </context>
 <context>
@@ -2764,6 +2844,50 @@ Please edit phone number and try again.</translation>
     <message>
         <source>Birthday</source>
         <translation>birthday</translation>
+    </message>
+    <message>
+        <source>Search for messages</source>
+        <translation>Search for messages</translation>
+    </message>
+    <message>
+        <source>Link to chat</source>
+        <translation>Link to Chat</translation>
+    </message>
+    <message>
+        <source>Ability to join chat by link</source>
+        <translation>Ability to join chat by link</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Read only</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>New members can read, approved by admin members can send</translation>
+    </message>
+    <message>
+        <source>Age restriction</source>
+        <translation>Age restriction</translation>
+    </message>
+    <message>
+        <source>Members must be of legal age to join</source>
+        <translation>Members must be of legal age to join</translation>
+    </message>
+    <message>
+        <source>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</source>
+        <translation>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Create groupchat</translation>
+    </message>
+    <message>
+        <source>Ban to write</source>
+        <translation>Ban to write</translation>
+    </message>
+    <message>
+        <source>Allow to write</source>
+        <translation>Allow to write</translation>
     </message>
 </context>
 <context>

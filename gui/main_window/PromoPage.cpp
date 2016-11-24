@@ -207,7 +207,7 @@ namespace Ui
                 subLayout->setAlignment(Qt::AlignCenter);
                 sub->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
                 {
-                    promoTopic = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(26));
+                    promoTopic = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(24), CommonStyle::getTextCommonColor(), Utils::scale_value(26));
                     promoTopic->setSizePolicy(QSizePolicy::Policy::Preferred, promoTopic->sizePolicy().verticalPolicy());
                     promoTopic->setText(pages[currentPage].topic_);
                     subLayout->addWidget(promoTopic);
@@ -222,7 +222,7 @@ namespace Ui
                 subLayout->setAlignment(Qt::AlignCenter);
                 sub->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
                 {
-                    promoText1 = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), QColor("#696969"), Utils::scale_value(36));
+                    promoText1 = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), QColor("#696969"), Utils::scale_value(36));
                     promoText1->setSizePolicy(QSizePolicy::Policy::Preferred, promoText1->sizePolicy().verticalPolicy());
                     promoText1->setText(pages[currentPage].text1_);
                     subLayout->addWidget(promoText1);
@@ -237,7 +237,7 @@ namespace Ui
                 subLayout->setAlignment(Qt::AlignCenter);
                 sub->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
                 {
-                    promoText2 = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(16), QColor("#696969"), Utils::scale_value(18));
+                    promoText2 = new TextEmojiWidget(sub, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(16), QColor("#696969"), Utils::scale_value(18));
                     promoText2->setSizePolicy(QSizePolicy::Policy::Preferred, promoText2->sizePolicy().verticalPolicy());
                     promoText2->setText(pages[currentPage].text2_);
                     subLayout->addWidget(promoText2);

@@ -36,6 +36,8 @@ public:
 	void setFillColor(QColor);
     QSize sizeHint() const override;
     
+    void setMenu(QMenu* menu);
+
 private:
     QPixmap		pixmapToDraw_;
     QPixmap		pixmapDefault_;

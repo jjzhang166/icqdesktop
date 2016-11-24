@@ -18,6 +18,8 @@ namespace voip_manager
 class QLabel;
 namespace Ui
 {
+    class VolumeGroup;
+    
     class SliderEx : public QWidget
     {
         Q_OBJECT
@@ -99,11 +101,9 @@ namespace Ui
             void onStopCall();
             void onMicTurn();
             void onSoundTurn();
-            void onSoundTurnHover();
             void onSecureCallClicked();
             void onSecureCallWndOpened();
             void onSecureCallWndClosed();
-            void onMuteChanged(bool _muted);
 
             void onVoipCallNameChanged(const std::vector<voip_manager::Contact>&);
             void onVoipMediaLocalVideo(bool _enabled);
@@ -136,7 +136,9 @@ namespace Ui
         private:
             template<typename ButtonType>
             ButtonType* addButton(QWidget& _parentWidget, const QString& _propertyName, const char* _slot, bool _bDefaultCursor = false, bool rightAlignment = false);
-
+        
+            VolumeGroup* addVolumeGroup(QWidget& _parentWidget, bool rightAlignment, int verticalSize);
+        
         private:
             std::string               activeContact_;
             const CallPanelMainFormat format_;
@@ -145,13 +147,13 @@ namespace Ui
             VolumeControl             vVolControl_;
             VolumeControl             hVolControl_;
             bool                      secureCallEnabled_;
-
+            VolumeGroup*              volumeGroup;
+        
         private:
             QPushButton*   buttonMaximize_;
             QPushButton*   buttonLocalCamera_;
             QPushButton*   buttonLocalMic_;
             BackToVideoButton*   backToVideo_;
-            QPushButtonEx* buttonSoundTurn_;
             SecureCallWnd* secureCallWnd_;
     };
 }

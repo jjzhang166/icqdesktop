@@ -20,14 +20,20 @@ namespace
     }
 }
 
-QFont getTextFont()
+QFont getTextFont(int size)
 {
-    return Fonts::appFontScaled(15);
+    return Fonts::appFont(size == -1 ? 
+#ifdef __linux__
+	Utils::scale_value(16)
+#else
+	Utils::scale_value(15)
+#endif //__linux__
+ : size);
 }
 
-QColor getTextColor()
+QColor getTextColor(double opacity)
 {
-    return QColor(0x28, 0x28, 0x28);
+    return QColor(0x28, 0x28, 0x28, opacity * 255);
 }
 
 QColor getTimeColor()

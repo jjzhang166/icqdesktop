@@ -19,10 +19,9 @@ namespace
 namespace Ui
 {
     GeneralDialog::GeneralDialog(QWidget* _mainWidget, QWidget* _parent, bool _ignoreKeyPressEvents/* = false*/)
-        : QDialog(nullptr)//(platform::is_apple() ? nullptr : _parent)
+        : QDialog(nullptr)
         , mainWidget_(_mainWidget)
-        , semiWindow_(new SemitransparentWindow(Utils::InterConnector::instance().getMainWindow()))
-        , disconnector_(new Utils::SignalsDisconnector)
+        , semiWindow_(new SemitransparentWindow(_parent))
         , nextButton_(nullptr)
         , labelHost_(nullptr)
         , headHost_(nullptr)
@@ -31,6 +30,9 @@ namespace Ui
         , y_(-1)
         , bottomLabel_(nullptr)
         , ignoreKeyPressEvents_(_ignoreKeyPressEvents)
+        , shadow_(true)
+        , leftButtonDisableOnClicked_(false)
+        , rightButtonDisableOnClicked_(false)
     {
         setParent(semiWindow_);
         setFocus();
@@ -39,24 +41,33 @@ namespace Ui
         mainLayout->setMargin(0);
         mainLayout->setSpacing(0);
         auto mainHost = new QWidget(this);
+        mainHost->setObjectName("mainHost");
 
         auto globalLayout = new QVBoxLayout(mainHost);
         globalLayout->setMargin(0);
         globalLayout->setSpacing(0);
 
         headHost_ = new QWidget(mainHost);
+        headHost_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        Utils::ApplyStyle(headHost_, "height: 1dip;");
         headHost_->setVisible(false);
         globalLayout->addWidget(headHost_);
 
         labelHost_ = new QWidget(mainHost);
+        labelHost_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        Utils::ApplyStyle(labelHost_, "height: 1dip;");
         labelHost_->setVisible(false);
         globalLayout->addWidget(labelHost_);
 
         errorHost_ = new QWidget(mainHost);
+        errorHost_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        Utils::ApplyStyle(errorHost_, "height: 1dip;");
         errorHost_->setVisible(false);
         globalLayout->addWidget(errorHost_);
 
         textHost_ = new QWidget(mainHost);
+        textHost_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        Utils::ApplyStyle(textHost_, "height: 1dip;");
         textHost_->setVisible(false);
         globalLayout->addWidget(textHost_);
 
@@ -74,16 +85,11 @@ namespace Ui
         mainHost->setAutoFillBackground(true);
         mainHost->setPalette(pal);
 
-//        this->setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowSystemMenuHint);
-        this->setWindowFlags(Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowSystemMenuHint);
-        this->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Minimum);
-        Utils::addShadowToWindow(this, true);
-        QWidget::connect(semiWindow_, SIGNAL(clicked()), this, SLOT(close()));
-        //if (platform::is_apple())
-        {
-            this->setFocusPolicy(Qt::FocusPolicy::WheelFocus);
-            QWidget::connect(&Utils::InterConnector::instance(), SIGNAL(closeAnyPopupWindow()), this, SLOT(reject()));
-        }
+        setWindowFlags(Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowSystemMenuHint);
+        setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Minimum);
+
+        QWidget::connect(&Utils::InterConnector::instance(), &Utils::InterConnector::closeAnySemitransparentWindow, this, &GeneralDialog::reject);
+        QWidget::connect(&Utils::InterConnector::instance(), &Utils::InterConnector::closeAnyPopupWindow, this, &GeneralDialog::reject);
         
         mainLayout->setSizeConstraint(QLayout::SetFixedSize);
         mainLayout->addWidget(mainHost);
@@ -147,7 +153,7 @@ namespace Ui
 
     void GeneralDialog::addLabel(const QString& _text)
     {
-        TextEmojiWidget *label = nullptr;
+        TextEmojiWidget *label = nullptr; // ????
 
         labelHost_->setVisible(true);
         auto hostLayout = new QHBoxLayout(labelHost_);
@@ -166,14 +172,6 @@ namespace Ui
             name_->setContentsMargins(0, 0, 0, 0);
             name_->setContextMenuPolicy(Qt::NoContextMenu);
             hostLayout->addWidget(name_);
-            
-//            label = new TextEmojiWidget(labelHost_, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(24), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(24));
-//            label->setContentsMargins(0, 0, 0, 0);
-//            label->setSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
-//            label->setAutoFillBackground(false);
-//            label->setText(_text);
-//            label->setMultiline(true);
-//            hostLayout->addWidget(label);
         }
 
         QWidget::connect(label, &TextEmojiWidget::setSize, [this](int, int dh)
@@ -248,7 +246,7 @@ namespace Ui
         Testing::setAccessibleName(nextButton_, "nextButton_");
     }
 
-    void GeneralDialog::addButtonsPair(QString _buttonTextLeft, QString _buttonTextRight, int _marginPx, int _buttonBetweenPx)
+    void GeneralDialog::addButtonsPair(QString _buttonTextLeft, QString _buttonTextRight, int _marginPx, int _buttonBetweenPx, bool _rejectable, bool _acceptable)
     {
         bottomWidget_->setVisible(true);
         auto bottomLayout = new QHBoxLayout(bottomWidget_);
@@ -261,12 +259,14 @@ namespace Ui
             auto cancelButton = new QPushButton(bottomWidget_);
             Utils::ApplyStyle(cancelButton, Ui::CommonStyle::getGrayButtonStyle());
             setButtonActive(true);
+            cancelButton->setAccessibleName("left_button");
             cancelButton->setFlat(true);
             cancelButton->setCursor(QCursor(Qt::PointingHandCursor));
             cancelButton->setText(_buttonTextLeft);
             cancelButton->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
             QObject::connect(cancelButton, &QPushButton::clicked, this, &GeneralDialog::leftButtonClick, Qt::QueuedConnection);
-            QObject::connect(cancelButton, &QPushButton::clicked, this, &GeneralDialog::reject, Qt::QueuedConnection);
+            if (_rejectable)
+                QObject::connect(cancelButton, &QPushButton::clicked, this, &GeneralDialog::reject, Qt::QueuedConnection);
             bottomLayout->addWidget(cancelButton);
 
             auto betweenSpacer = new QSpacerItem(_buttonBetweenPx, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
@@ -280,7 +280,8 @@ namespace Ui
             nextButton_->setText(_buttonTextRight);
             nextButton_->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Preferred);
             QObject::connect(nextButton_, &QPushButton::clicked, this, &GeneralDialog::rightButtonClick, Qt::QueuedConnection);
-            QObject::connect(nextButton_, &QPushButton::clicked, this, &GeneralDialog::accept, Qt::QueuedConnection);
+            if (_acceptable)
+                QObject::connect(nextButton_, &QPushButton::clicked, this, &GeneralDialog::accept, Qt::QueuedConnection);
             bottomLayout->addWidget(nextButton_);
         }
 
@@ -316,6 +317,7 @@ namespace Ui
     GeneralDialog::~GeneralDialog()
     {
 //        semiWindow_->setVisible(false);
+        semiWindow_->setParent(0);
         semiWindow_->deleteLater();
         //delete semiWindow_;
     }
@@ -327,6 +329,11 @@ namespace Ui
 
     bool GeneralDialog::showInPosition(int _x, int _y)
     {
+        if (shadow_)
+        {
+            shadow_ = false;
+            Utils::addShadowToWindow(this, true);
+        }
         x_ = _x;
         y_ = _y;
         show();
@@ -390,12 +397,10 @@ namespace Ui
     void GeneralDialog::mousePressEvent(QMouseEvent* _e)
     {
         QDialog::mousePressEvent(_e);
-
-        if (platform::is_apple() &&
-            !this->geometry().contains(mapToParent(_e->pos())))
-        {
+        if (!geometry().contains(mapToParent(_e->pos())))
             close();
-        }
+        else
+            _e->accept();
     }
 
     void GeneralDialog::keyPressEvent(QKeyEvent* _e)
@@ -422,19 +427,43 @@ namespace Ui
         QDialog::keyPressEvent(_e);
     }
 
-    void GeneralDialog::resizeEvent(QResizeEvent * _event)
+    void GeneralDialog::showEvent(QShowEvent *event)
+    {
+        QDialog::showEvent(event);
+        emit shown(this);
+    }
+
+    void GeneralDialog::hideEvent(QHideEvent *event)
+    {
+//        QPixmap imageCropHolderOverlay(geometry().size());
+//        render(&imageCropHolderOverlay, QPoint(), QRegion(geometry()));
+//        QPalette palette;
+//        palette.setBrush(imageCropHolder_->backgroundRole(), QBrush(imageCropHolderOverlay));
+//        imageCropHolder_->setPalette(palette);
+        
+        
+        emit hidden(this);
+        QDialog::hideEvent(event);
+    }
+
+    void GeneralDialog::moveEvent(QMoveEvent *_event)
+    {
+        QDialog::moveEvent(_event);
+        emit moved(this);
+    }
+    
+    void GeneralDialog::resizeEvent(QResizeEvent *_event)
     {
         QDialog::resizeEvent(_event);
-
         if (keepCenter_)
         {
             moveToPosition(x_, y_);
         }
-
         if (bottomLabel_)
         {
             bottomLabel_->setFixedWidth(mainWidget_->geometry().width());
         }
+        emit resized(this);
     }
 
     void GeneralDialog::addError(QString _messageText)
@@ -493,11 +522,14 @@ namespace Ui
 
     void GeneralDialog::leftButtonClick()
     {
+        if (auto leftButton = bottomWidget_->findChild<QPushButton *>("left_button"))
+            leftButton->setEnabled(!leftButtonDisableOnClicked_);
         emit leftButtonClicked();
     }
 
     void GeneralDialog::rightButtonClick()
     {
+        nextButton_->setEnabled(!rightButtonDisableOnClicked_);
         emit rightButtonClicked();
     }
 }

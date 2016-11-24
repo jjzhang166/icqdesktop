@@ -2,12 +2,19 @@
 #include "FFMpegPlayer.h"
 #include "../../utils/utils.h"
 
+#ifdef __WIN32__
+#include "win32/WindowRenderer.h"
+#endif //__WIN32__
+
 namespace Ui
 {
     const int32_t maxQueueSize(1024*1024*15);
     const int32_t minFramesCount(25);
 
     static ffmpeg::AVPacket flush_pkt;
+
+    const int max_video_w = 1280;
+    const int max_video_h = 720;
 
     bool ThreadMessagesQueue::getMessage(ThreadMessage& _message, std::function<bool()> _isQuit, int32_t _wait_timeout)
     {
@@ -138,8 +145,11 @@ namespace Ui
             frameRGB_(0),
             volume_(100),
             mute_(false),
-            startTime_(0),
-            startTimeSet_(false)
+            startTimeVideo_(0),
+            startTimeAudio_(0),
+            startTimeVideoSet_(false),
+            startTimeAudioSet_(false),
+            seek_position_(-1)
     {
 
     }
@@ -250,8 +260,6 @@ namespace Ui
     {
         ffmpeg::AVCodecContext* videoCodecContext = videoStream_->codec;
 
-        //ffmpeg::AVPacket packet;
-
         while (!isQuit())
         {
             if (!_stream_finished)
@@ -268,6 +276,8 @@ namespace Ui
 
             if (_packet->data == (uint8_t*) &flush_pkt)
             {
+                seek_position_ = flush_pkt.dts;
+
                 flushVideoBuffers();
 
                 continue;
@@ -294,6 +304,14 @@ namespace Ui
 
             if (got_frame)
             {
+                if (seek_position_ > 0 && _frame->pkt_dts < seek_position_)
+                {
+                    ffmpeg::av_frame_unref(_frame);
+                    continue;
+                }
+
+                seek_position_ = 0;
+
                 return true;
             }
             else if (_stream_finished)
@@ -521,6 +539,11 @@ namespace Ui
 
         audioData_.frame_ = ffmpeg::av_frame_alloc();
 
+        //openal::alSourcef(audioData_.uiSource_, AL_PITCH, 1.f);
+        //openal::alSource3f(audioData_.uiSource_, AL_POSITION, 0, 0, 0);
+        //openal::alSource3f(audioData_.uiSource_, AL_VELOCITY, 0, 0, 0);
+        //openal::alSourcei(audioData_.uiSource_, AL_LOOPING, 0);
+
         // Generate some AL Buffers for streaming
         openal::alGenBuffers(audio::num_buffers, audioData_.uiBuffers_);
 
@@ -640,33 +663,18 @@ namespace Ui
         openal::alDeleteBuffers(audio::num_buffers, audioData_.uiBuffers_);
     }
 
-
-    bool VideoContext::playNextAudioFrame(ffmpeg::AVPacket* _packet, /*in out*/ bool& _stream_finished, /*in out*/ bool& _eof)
+    bool VideoContext::readFrameAudio(ffmpeg::AVPacket* _packet, bool& _stream_finished, bool& _eof, openal::ALvoid** _frameData, openal::ALsizei& _frameDataSize)
     {
-        if (!audioStream_)
-        {
-            return false;
-        }
+        int64_t seek_position_audio = -1;
 
-        openal::alGetSourcei(audioData_.uiSource_, AL_BUFFERS_QUEUED, &audioData_.iQueuedBuffers_);
-
-        if (!audioData_.iQueuedBuffers_)
+        for (;;)
         {
-            audioData_.queueInited_ = false;
-        }
+            if (isQuit())
+                return false;
 
-        if (audioData_.iQueuedBuffers_ < audio::num_buffers)
-        {
-            if (!_stream_finished)
+            if (!audioQueue_.get(*_packet))
             {
-                if (!audioQueue_.get(*_packet))
-                {
-                    return true;
-                }
-            }
-            else
-            {
-
+                continue;
             }
 
             if (!_packet->data)
@@ -677,14 +685,16 @@ namespace Ui
             {
                 flushAudioBuffers();
 
+                seek_position_audio = flush_pkt.pts;
+
+                //audioData_.queueInited_ = false;
+
                 openal::alSourceStop(audioData_.uiSource_);
+                //openal::alSourcei(audioData_.uiSource_, AL_BUFFER, 0);
 
-                openal::alSourcei(audioData_.uiSource_, AL_BUFFER, 0);
-
-                return true;
+                continue;
             }
 
-            // The audio packet can contain several frames
             int got_frame = 0;
 
             int len = avcodec_decode_audio4(audioData_.audioCodecContext_, audioData_.frame_, &got_frame, _packet);
@@ -695,9 +705,7 @@ namespace Ui
             }
 
             if (len < 0)
-            {
                 return false;
-            }
 
             if (!got_frame)
             {
@@ -707,89 +715,120 @@ namespace Ui
 
                     return false;
                 }
+
+                continue;
             }
             else
             {
-                openal::ALvoid* frameData = 0;
-                openal::ALsizei frameDataSize = 0;
+                setStartTimeAudio(audioData_.frame_->pkt_dts);
+                 //qDebug() << "audio: " << audioData_.frame_->pkt_dts;
 
-                if (audioData_.outSamplesData_) 
+                 if (seek_position_audio > 0 && audioData_.frame_->pkt_dts < seek_position_audio)
+                 {
+                     ffmpeg::av_frame_unref(audioData_.frame_);
+ 
+                     continue;
+                 }
+ 
+                 seek_position_audio = 0;
+            }
+
+            if (audioData_.outSamplesData_) 
+            {
+                int64_t delay = ffmpeg::swr_get_delay(audioData_.swrContext_, audioData_.srcRate_);
+
+                int64_t dstSamples = ffmpeg::av_rescale_rnd(delay + audioData_.frame_->nb_samples, audioData_.dstRate_, audioData_.srcRate_, ffmpeg::AV_ROUND_UP);
+
+                if (dstSamples > audioData_.maxResampleSamples_) 
                 {
-                    int64_t delay = ffmpeg::swr_get_delay(audioData_.swrContext_, audioData_.srcRate_);
+                    audioData_.maxResampleSamples_ = dstSamples;
+                    ffmpeg::av_free(audioData_.outSamplesData_[0]);
 
-                    int64_t dstSamples = ffmpeg::av_rescale_rnd(delay + audioData_.frame_->nb_samples, audioData_.dstRate_, audioData_.srcRate_, ffmpeg::AV_ROUND_UP);
-
-                    if (dstSamples > audioData_.maxResampleSamples_) 
+                    if (ffmpeg::av_samples_alloc(audioData_.outSamplesData_, 0, audio::outChannels, audioData_.maxResampleSamples_, audio::outFormat, 1) < 0) 
                     {
-                        audioData_.maxResampleSamples_ = dstSamples;
-                        ffmpeg::av_free(audioData_.outSamplesData_[0]);
-
-                        if (ffmpeg::av_samples_alloc(audioData_.outSamplesData_, 0, audio::outChannels, audioData_.maxResampleSamples_, audio::outFormat, 1) < 0) 
-                        {
-                            audioData_.outSamplesData_[0] = 0;
-                            return false;
-                        }
-                    }
-                    int32_t res = 0;
-                    if ((res = ffmpeg::swr_convert(audioData_.swrContext_, audioData_.outSamplesData_, dstSamples, (const uint8_t**) audioData_.frame_->extended_data, audioData_.frame_->nb_samples)) < 0) 
-                    {
+                        audioData_.outSamplesData_[0] = 0;
                         return false;
                     }
-
-                    qint32 resultLen = ffmpeg::av_samples_get_buffer_size(0, audio::outChannels, res, audio::outFormat, 1);
-
-                    frameData = audioData_.outSamplesData_[0];
-                    frameDataSize = resultLen;
-                } 
-                else 
-                {
-                    frameData = audioData_.frame_->extended_data[0];
-                    frameDataSize = audioData_.frame_->nb_samples * audioData_.sampleSize_;
                 }
 
-                // set volume
-                openal::ALfloat volume = (mute_ ? (0.0) : (float(volume_)/100.0));
-                openal::alSourcef(audioData_.uiSource_, AL_GAIN, volume);
+                int32_t res = 0;
+                if ((res = ffmpeg::swr_convert(audioData_.swrContext_, audioData_.outSamplesData_, dstSamples, (const uint8_t**) audioData_.frame_->extended_data, audioData_.frame_->nb_samples)) < 0) 
+                    return false;
 
-                if (!audioData_.queueInited_)
-                {
-                    openal::alBufferData(audioData_.uiBuffers_[audioData_.iQueuedBuffers_], audioData_.fmt_, frameData, frameDataSize, audioData_.freq_);
-                    openal::alSourceQueueBuffers(audioData_.uiSource_, 1, &audioData_.uiBuffers_[audioData_.iQueuedBuffers_]);
-                }
-                else
-                {
-                    // Copy audio data to Buffer
-                    openal::alBufferData(audioData_.uiBuffer_, audioData_.fmt_, frameData, frameDataSize, audioData_.freq_);
-                    // Queue Buffer on the Source
-                    openal::alSourceQueueBuffers(audioData_.uiSource_, 1, &audioData_.uiBuffer_);
-                }
+                qint32 resultLen = ffmpeg::av_samples_get_buffer_size(0, audio::outChannels, res, audio::outFormat, 1);
 
-                return true;
+                *_frameData = audioData_.outSamplesData_[0];
+                _frameDataSize = resultLen;
+            } 
+            else 
+            {
+                *_frameData = audioData_.frame_->extended_data[0];
+                _frameDataSize = audioData_.frame_->nb_samples * audioData_.sampleSize_;
             }
+
+            return true;
         }
-        else
+    }
+
+    bool VideoContext::playNextAudioFrame(ffmpeg::AVPacket* _packet, /*in out*/ bool& _stream_finished, /*in out*/ bool& _eof)
+    {
+        openal::ALint iBuffersProcessed = 0;
+
+        openal::ALvoid* frameData = 0;
+        openal::ALsizei frameDataSize = 0;
+
+        // set volume
+        openal::ALfloat volume = (mute_ ? (0.0) : (float(volume_)/100.0));
+        openal::alSourcef(audioData_.uiSource_, AL_GAIN, volume);
+            
+        openal::ALint iState = 0;
+        openal::ALint iQueuedBuffers = 0;
+
+        if (!audioData_.queueInited_)
         {
+            for (int i = 0; i < audio::num_buffers; ++i)
+            {
+                if (!readFrameAudio(_packet, _stream_finished, _eof, &frameData, frameDataSize))
+                    return false;
+
+                openal::alBufferData(audioData_.uiBuffers_[i], audioData_.fmt_, frameData, frameDataSize, audioData_.freq_);
+                openal::alSourceQueueBuffers(audioData_.uiSource_, 1, &audioData_.uiBuffers_[i]);
+            }
+
             audioData_.queueInited_ = true;
         }
 
-        cleanupAudioBuffers();
+        openal::alGetSourcei(audioData_.uiSource_, AL_BUFFERS_PROCESSED, &iBuffersProcessed);
 
-        // Check the status of the Source.  If it is not playing, then playback was completed,
-        // or the Source was starved of audio data, and needs to be restarted.
-        openal::alGetSourcei(audioData_.uiSource_, AL_SOURCE_STATE, &audioData_.iState_);
-        if (audioData_.iState_ != AL_PLAYING)
+        while (iBuffersProcessed)
+        {
+            audioData_.uiBuffer_ = 0;
+            openal::alSourceUnqueueBuffers(audioData_.uiSource_, 1, &audioData_.uiBuffer_);
+
+            if (!readFrameAudio(_packet, _stream_finished, _eof, &frameData, frameDataSize))
+                return false;
+
+            openal::alBufferData(audioData_.uiBuffer_, audioData_.fmt_, frameData, frameDataSize, audioData_.freq_);
+            openal::alSourceQueueBuffers(audioData_.uiSource_, 1, &audioData_.uiBuffer_);
+
+            iBuffersProcessed--;
+        }
+
+        openal::alGetSourcei(audioData_.uiSource_, AL_SOURCE_STATE, &iState);
+        if (iState != AL_PLAYING)
         {
             // If there are Buffers in the Source Queue then the Source was starved of audio
             // data, so needs to be restarted (because there is more audio data to play)
-            openal::alGetSourcei(audioData_.uiSource_, AL_BUFFERS_QUEUED, &audioData_.iQueuedBuffers_);
-            if (audioData_.iQueuedBuffers_)
+
+            openal::alGetSourcei(audioData_.uiSource_, AL_BUFFERS_QUEUED, &iQueuedBuffers);
+            if (iQueuedBuffers)
             {
                 openal::alSourcePlay(audioData_.uiSource_);
             }
             else
             {
                 // Finished playing
-                return false;
+                return true;
             }
         }
 
@@ -894,7 +933,7 @@ namespace Ui
         emit videoSizeChanged(scaledSize_);
 
         swsContext_ = sws_getCachedContext(0, getWidth(), getHeight(), videoCodecContext->pix_fmt, 
-            scaledSize_.width(), scaledSize_.height(), ffmpeg::AV_PIX_FMT_RGB24, SWS_FAST_BILINEAR/*SWS_BICUBIC*/, 0, 0, 0);
+            scaledSize_.width(), scaledSize_.height(), ffmpeg::AV_PIX_FMT_RGBA, SWS_FAST_BILINEAR/*SWS_BICUBIC*/, 0, 0, 0);
 
         if (!swsContext_)
         {
@@ -902,9 +941,9 @@ namespace Ui
         }
 
         frameRGB_ = ffmpeg::av_frame_alloc();
-        int numBytes = ffmpeg::av_image_get_buffer_size(ffmpeg::AV_PIX_FMT_RGB24, scaledSize_.width(), scaledSize_.height(), 1);
+        int numBytes = ffmpeg::av_image_get_buffer_size(ffmpeg::AV_PIX_FMT_RGBA, scaledSize_.width(), scaledSize_.height(), 1);
         scaledBuffer_.resize(numBytes);
-        av_image_fill_arrays(frameRGB_->data, frameRGB_->linesize, &scaledBuffer_[0], ffmpeg::AV_PIX_FMT_RGB24, scaledSize_.width(), scaledSize_.height(), 1);
+        av_image_fill_arrays(frameRGB_->data, frameRGB_->linesize, &scaledBuffer_[0], ffmpeg::AV_PIX_FMT_RGBA, scaledSize_.width(), scaledSize_.height(), 1);
 
         return true;
     }
@@ -922,21 +961,24 @@ namespace Ui
 
 
 
-    QImage VideoContext::scale(const uint8_t* const _srcSlice[], const int _srcStride[])
+    QImage VideoContext::scale(const uint8_t* const _srcSlice[], const int _srcStride[], int _height)
     {
-        ffmpeg::sws_scale(swsContext_, _srcSlice, _srcStride, 0, getHeight(), frameRGB_->data, frameRGB_->linesize);
+        //auto t1 = std::chrono::system_clock::now();
 
-        // Convert the frame to QImage
-        QImage img(scaledSize_.width(), scaledSize_.height(), QImage::Format_RGB888);
+        ffmpeg::sws_scale(swsContext_, _srcSlice, _srcStride, 0, _height, frameRGB_->data, frameRGB_->linesize);
+
+        QImage img(scaledSize_.width(), scaledSize_.height(), QImage::Format_RGBA8888);
 
         for (int32_t y = 0; y < scaledSize_.height(); ++y)
         {
-            memcpy(img.scanLine(y), frameRGB_->data[0] + y*frameRGB_->linesize[0], scaledSize_.width()*3);
+            memcpy(img.scanLine(y), frameRGB_->data[0] + y*frameRGB_->linesize[0], scaledSize_.width()*4);
         }
 
-        return img;
+        //auto t2 = std::chrono::system_clock::now();
 
-        
+        //qDebug() << "scale time" << (t2 - t1)/std::chrono::microseconds(1);
+
+        return img;
     }
 
     bool VideoContext::enableAudio() const
@@ -966,15 +1008,22 @@ namespace Ui
 
     bool VideoContext::seekMs(int _tsms)
     {
-        int64_t frameNumber = ffmpeg::av_rescale(_tsms, videoStream_->time_base.den, videoStream_->time_base.num);
-        frameNumber /= 1000;
+        int64_t _ts_video = ffmpeg::av_rescale(_tsms, videoStream_->time_base.den, videoStream_->time_base.num);
+        _ts_video /= 1000;
 
-        return seekFrame(frameNumber);
+        int64_t _ts_audio = 0;
+        if (enableAudio())
+        {
+            _ts_audio = ffmpeg::av_rescale(_tsms, audioStream_->time_base.den, audioStream_->time_base.num);
+            _ts_audio /= 1000;
+        }
+
+        return seekFrame(_ts_video, _ts_audio);
     }
 
-    bool VideoContext::seekFrame(int64_t _frame)
+    bool VideoContext::seekFrame(int64_t _ts_video, int64_t _ts_audio)
     {
-        if (ffmpeg::avformat_seek_file(formatContext_, videoStream_->index, INT64_MIN, startTime_ + _frame, INT64_MAX, AVSEEK_FLAG_FRAME) < 0)
+        if (ffmpeg::avformat_seek_file(formatContext_, videoStream_->index, INT64_MIN, startTimeVideo_ + _ts_video, INT64_MAX, 0) < 0)
         {
             return false;
         }
@@ -982,8 +1031,13 @@ namespace Ui
         videoQueue_.free();
         audioQueue_.free();
 
-        videoQueue_.push(&flush_pkt);
-        audioQueue_.push(&flush_pkt);
+        flush_pkt.dts = (startTimeVideo_ + _ts_video);
+        flush_pkt.pts = (startTimeAudio_ + _ts_audio);
+
+        if (enableAudio())
+            pushAudioPacket(&flush_pkt);
+
+        pushVideoPacket(&flush_pkt);
 
         return true;
     }
@@ -1014,18 +1068,32 @@ namespace Ui
         audioClock_ = 0.0;
     }
 
-    void VideoContext::setStartTime(const int64_t& _startTime)
+    void VideoContext::setStartTimeVideo(const int64_t& _startTime)
     {
-        if (startTimeSet_)
+        if (startTimeVideoSet_)
             return;
 
-        startTimeSet_ = true;
-        startTime_ = _startTime;
+        startTimeVideoSet_ = true;
+        startTimeVideo_ = _startTime;
     }
 
-    const int64_t& VideoContext::getStartTime() const
+    const int64_t& VideoContext::getStartTimeVideo() const
     {
-        return startTime_;
+        return startTimeVideo_;
+    }
+
+    void VideoContext::setStartTimeAudio(const int64_t& _startTime)
+    {
+        if (startTimeAudioSet_)
+            return;
+
+        startTimeAudioSet_ = true;
+        startTimeAudio_ = _startTime;
+    }
+
+    const int64_t& VideoContext::getStartTimeAudio() const
+    {
+        return startTimeAudio_;
     }
     //////////////////////////////////////////////////////////////////////////
     // DemuxThread
@@ -1109,11 +1177,6 @@ namespace Ui
                 seekPosition = -1;
 
                 eof = false;
-
-                if (ctx_.enableAudio())
-                    ctx_.pushAudioPacket(&flush_pkt);
-
-                ctx_.pushVideoPacket(&flush_pkt);
             }
 
             if (ctx_.getAudioQueueSize() + ctx_.getVideoQueueSize() > maxQueueSize
@@ -1187,9 +1250,23 @@ namespace Ui
     {
         ffmpeg::AVFrame* frame = ffmpeg::av_frame_alloc();
 
-        QSize scaledSize = ctx_.getScaledSize();
+        //QSize scaledSize = ctx_.getScaledSize();
 
-        ctx_.updateScaleContext(scaledSize.width(), scaledSize.height());
+        int w = std::max(ctx_.getWidth(), ctx_.getHeight());
+        int h = std::min(ctx_.getWidth(), ctx_.getHeight());
+
+        if (w > max_video_w || h > max_video_h)
+        {
+            w = (ctx_.getWidth() > ctx_.getHeight()) ? 1280 : 720;
+            h = (ctx_.getWidth() > ctx_.getHeight()) ? 720 : 1280;
+        }
+        else
+        {
+            w = ctx_.getWidth();
+            h = ctx_.getHeight();
+        }
+
+        ctx_.updateScaleContext(w, h);
 
         std::unique_ptr<QTransform> imageTransform;
 
@@ -1220,7 +1297,7 @@ namespace Ui
                     {
                         break;
                     }
-                    case thread_message_type::tmt_update_scaled_size:
+                    /*case thread_message_type::tmt_update_scaled_size:
                     {
                         scaledSize = ctx_.getScaledSize();
 
@@ -1231,22 +1308,32 @@ namespace Ui
                             ctx_.updateScaleContext(newSize.width(), newSize.height());
                         }
                         break;
-                    }
+                    }*/
                     case thread_message_type::tmt_pause:
                     {
+                        if (decode_thread_state::dts_failed == current_state)
+                        {
+                            break;
+                        }
+
                         current_state = dts_paused;
 
                         break;
                     }
                     case thread_message_type::tmt_play:
                     {
+                        if (decode_thread_state::dts_failed == current_state)
+                        {
+                            break;
+                        }
+
                         current_state = dts_playing;
 
                         break;
                     }
                     case thread_message_type::tmt_get_next_video_frame:
                     {
-                        if (current_state == decode_thread_state::dts_end_of_media)
+                        if (current_state == decode_thread_state::dts_end_of_media || current_state == decode_thread_state::dts_failed)
                         {
                             break;
                         }
@@ -1254,10 +1341,10 @@ namespace Ui
                         ffmpeg::av_frame_unref(frame);
 
                         eof = false;
-                        
+
                         if (ctx_.getNextVideoFrame(frame, &av_packet, stream_finished, eof))
                         {
-                            ctx_.setStartTime(frame->pkt_dts);
+                            ctx_.setStartTimeVideo(frame->pkt_dts);
 
                             // Consider sync
                             double pts = frame->pkt_dts;
@@ -1274,12 +1361,13 @@ namespace Ui
                             pts *= ctx_.getVideoTimebase();
                             pts = ctx_.synchronizeVideo(frame, pts);
 
+                            
                             if (ctx_.isQuit())
                             {
                                 break;
                             }
 
-                            QImage lastFrame = ctx_.scale(frame->data, frame->linesize);
+                            QImage lastFrame = ctx_.scale(frame->data, frame->linesize, frame->height);
 
                             if (imageTransform)
                             {
@@ -1288,14 +1376,17 @@ namespace Ui
 
                             emit ctx_.nextframeReady(lastFrame, pts, false);
                         }
-
-                        if (eof)
+                        else if (eof)
                         {
                             current_state = decode_thread_state::dts_end_of_media;
 
                             stream_finished = false;
 
                             emit ctx_.nextframeReady(QImage(), 0, true);
+                        }
+                        else
+                        {
+                            break;
                         }
 
                         break;
@@ -1338,7 +1429,7 @@ namespace Ui
             {
                 ThreadMessage msg;
 
-                if (ctx_.getAudioThreadMessage(msg, (ctx_.getAudioThreadState() == decode_thread_state::dts_playing) ? 5 : 60000))
+                if (ctx_.getAudioThreadMessage(msg, (ctx_.getAudioThreadState() == decode_thread_state::dts_playing) ? 10 : 60000))
                 {
                     switch (msg.message_)
                     {
@@ -1431,6 +1522,142 @@ namespace Ui
     }
 
 
+    void FrameRenderer::renderFrame(QPainter& _painter, const QRect& _clientRect)
+    {
+        QSize imageSize = activeImage_.size();
+
+        QRect imageRect(0, 0, imageSize.width(), imageSize.height());
+
+        int32_t w = (int32_t) (((double) imageSize.width() / (double) imageSize.height()) * (double) _clientRect.height());
+
+        QSize scaledSize;
+
+        if (w > _clientRect.width())
+        {
+            w = _clientRect.width();
+
+            scaledSize.setHeight(((double) imageSize.height() / (double) imageSize.width()) * (double) _clientRect.width());
+        }
+        else
+        {
+            scaledSize.setHeight(_clientRect.height());
+        }
+
+        scaledSize.setWidth(w);
+
+        int cx = (_clientRect.width() - scaledSize.width()) / 2;
+        int cy = (_clientRect.height() - scaledSize.height()) / 2;
+
+        QRect drawRect(cx, cy, scaledSize.width(), scaledSize.height());
+
+        //auto t1 = std::chrono::system_clock::now();
+
+        _painter.drawImage(drawRect, activeImage_, imageRect);
+
+        //auto t2 = std::chrono::system_clock::now();
+
+        //qDebug() << "draw time" << (t2 - t1)/std::chrono::microseconds(1);
+    }
+
+    void FrameRenderer::updateFrame(QImage _image)
+    {
+        activeImage_ = _image;
+    }
+
+    bool FrameRenderer::isActiveImageNull() const
+    {
+        return activeImage_.isNull();
+    }
+
+    GDIRenderer::GDIRenderer(QWidget* _parent)
+        : QWidget(_parent)
+    {
+        setMouseTracking(true);
+    }
+
+    QWidget* GDIRenderer::getWidget()
+    {
+        return this;
+    }
+
+    void GDIRenderer::redraw()
+    {
+        update();
+    }
+
+    void GDIRenderer::paintEvent(QPaintEvent* _e)
+    {
+        QPainter p;
+        p.begin(this);
+
+        QRect clientRect = geometry();
+
+        renderFrame(p, clientRect);
+
+        p.end();
+    }
+
+    void GDIRenderer::filterEvents(QWidget* _parent)
+    {
+        installEventFilter(_parent);
+    }
+
+    OpenGLRenderer::OpenGLRenderer(QWidget* _parent)
+#ifdef __linux__
+	: QWidget(_parent)
+#else
+        : QOpenGLWidget(_parent)
+#endif //__linux__
+    {
+        setMouseTracking(true);
+    }
+
+    QWidget* OpenGLRenderer::getWidget()
+    {
+        return this;
+    }
+
+    void OpenGLRenderer::redraw()
+    {
+        update();
+    }
+
+    void OpenGLRenderer::paintEvent(QPaintEvent* _e)
+    {
+#ifdef __linux__
+	return QWidget::paintEvent(_e);
+#else
+        QPainter p;
+        p.begin(this);
+
+        QRect clientRect = geometry();
+
+        p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+        renderFrame(p, clientRect);
+
+        p.end();
+#endif //__linux__
+    }
+
+    void OpenGLRenderer::filterEvents(QWidget* _parent)
+    {
+        installEventFilter(_parent);
+    }
+
+
+    FrameRenderer* CreateRenederer(QWidget* _parent)
+    {
+        if (platform::is_windows_vista_or_late() || platform::is_apple())
+        {
+            return (new OpenGLRenderer(_parent));
+        }
+
+        return (new GDIRenderer(_parent));
+    }
+
+    const auto mouse_move_rate = std::chrono::milliseconds(200);
+
     //////////////////////////////////////////////////////////////////////////
     // FFMpegPlayer
     //////////////////////////////////////////////////////////////////////////
@@ -1440,9 +1667,21 @@ namespace Ui
             videoDecodeThread_(ctx_),
             audioDecodeThread_(ctx_),
             state_(decode_thread_state::dts_none),
-            firstFrame_(true),
-            lastVideoPosition_(0)
+            isFirstFrame_(true),
+            lastVideoPosition_(0),
+            lastEmitMouseMove_(std::chrono::system_clock::now() - mouse_move_rate)
     {
+        QHBoxLayout* layout = new QHBoxLayout();
+        layout->setSpacing(0);
+        layout->setContentsMargins(0, 0, 0, 0);
+        setLayout(layout);
+
+        renderer_ = CreateRenederer(this);
+        renderer_->filterEvents(this);
+        layout->addWidget(renderer_->getWidget());
+
+        setAutoFillBackground(false);
+
         ffmpeg::av_init_packet(&flush_pkt);
         flush_pkt.data = (uint8_t*) &flush_pkt;
 
@@ -1485,47 +1724,6 @@ namespace Ui
         ctx_.closeFile();
     }
 
-    void FFMpegPlayer::paintEvent(QPaintEvent* _e)
-    {
-        QPainter p(this);
-
-        QSize imageSize = Utils::unscale_bitmap(activeImage_.size());
-        QRect clientRect = geometry();
-
-        
-        int cx = (clientRect.width() - imageSize.width()) / 2;
-        int cy = (clientRect.height() - imageSize.height()) / 2;
-
-        p.drawImage(cx, cy, activeImage_);
-
-        QWidget::paintEvent(_e);
-    }
-
-    void FFMpegPlayer::mouseMoveEvent(QMouseEvent * _e)
-    {
-        return QWidget::mouseMoveEvent(_e);
-    }
-
-    void FFMpegPlayer::resizeEvent(QResizeEvent* _e)
-    {
-        QSize sz = _e->size();
-
-        if (ctx_.getRotation() == 90 || ctx_.getRotation() == 270)
-        {
-            int32_t tempWidth = sz.width();
-
-            sz.setWidth(sz.height());
-            sz.setHeight(tempWidth);
-        }
-
-        sz.setWidth(Utils::scale_bitmap(sz.width()));
-        sz.setHeight(Utils::scale_bitmap(sz.height()));
-        
-        ctx_.updateScaledVideoSize(sz);
-
-        QWidget::resizeEvent(_e);
-    }
-
     void FFMpegPlayer::updateVideoPosition(const DecodedFrame& _frame)
     {
         if (_frame.eof_)
@@ -1548,9 +1746,9 @@ namespace Ui
 
     void FFMpegPlayer::onTimer()
     {
-        if (firstFrame_)
+        if (isFirstFrame_)
         {
-            firstFrame_ = false;
+            isFirstFrame_ = false;
 
             ctx_.resetFrameTimer();
         }
@@ -1590,23 +1788,29 @@ namespace Ui
 
             state_ = decode_thread_state::dts_end_of_media;
 
+            if (firstFrame_)
+                renderer_->updateFrame(firstFrame_->image_);
+
+            renderer_->redraw();
+
             return;
         }
 
         ctx_.postVideoThreadMessage(ThreadMessage(thread_message_type::tmt_get_next_video_frame));
 
-        activeImage_ = frame.image_;
-        
+        renderer_->updateFrame(frame.image_);
+
         // Sync video to audio
         double delay = ctx_.computeDelay(frame.pts_);
 
+        
         int timeout = (int)(delay * 1000.0 + 0.5);
 
         timer_->setInterval(timeout);
 
         decodedFrames_.pop_front();
 
-        repaint();
+        renderer_->redraw();
     }
 
     bool FFMpegPlayer::openMedia(const QString& _mediaPath)
@@ -1637,27 +1841,16 @@ namespace Ui
             {
                 if (!_eof)
                 {
-                    Utils::check_pixel_ratio(_image);
-                    
                     decodedFrames_.emplace_back(_image, _pts);
+
+                    if (!firstFrame_)
+                    {
+                        firstFrame_.reset(new DecodedFrame(_image, _pts));
+                    }
                 }
                 else
                 {
                     decodedFrames_.emplace_back(_eof);
-                }
-
-            }, Qt::QueuedConnection);
-
-            connect(&ctx_, &VideoContext::videoSizeChanged, this, [this](QSize _sz)
-            {
-                if (!activeImage_.isNull())
-                {
-                    activeImage_ = activeImage_.scaled(_sz);
-
-                    for (auto& _frame : decodedFrames_)
-                    {
-                        _frame.image_ = _frame.image_.scaled(_sz);
-                    }
                 }
 
             }, Qt::QueuedConnection);
@@ -1692,9 +1885,14 @@ namespace Ui
         state_ = decode_thread_state::dts_playing;
     }
 
+    bool FFMpegPlayer::canPause() const
+    {
+        return !renderer_->isActiveImageNull();
+    }
+
     void FFMpegPlayer::pause()
     {
-        if (state_ == decode_thread_state::dts_playing)
+        if (state_ == decode_thread_state::dts_playing && canPause())
         {
             ctx_.postDemuxThreadMessage(ThreadMessage(thread_message_type::tmt_pause));
             ctx_.postVideoThreadMessage(ThreadMessage(thread_message_type::tmt_pause));
@@ -1754,5 +1952,29 @@ namespace Ui
     int64_t FFMpegPlayer::getDuration() const
     {
         return ctx_.getDuration();
+    }
+
+    bool FFMpegPlayer::eventFilter(QObject* _obj, QEvent* _event)
+    {
+        QObject* objectRenderer = qobject_cast<QObject*>(renderer_->getWidget());
+
+        if (objectRenderer == _obj)
+        {
+            if (QEvent::Leave == _event->type())
+            {
+                emit mouseLeaveEvent();
+            }
+            else if (QEvent::MouseMove == _event->type())
+            {
+                const auto currentTime = std::chrono::system_clock::now();
+                if (currentTime - lastEmitMouseMove_ > mouse_move_rate)
+                {
+                    lastEmitMouseMove_ = currentTime;
+                    emit mouseMoved();
+                }
+            }
+        }
+
+        return QObject::eventFilter(_obj, _event);
     }
 }

@@ -75,6 +75,8 @@ namespace HistoryControl
 
         virtual QString toLink() const override;
 
+        virtual bool haveOpenInBrowserMenu() override;
+
 	// --------------------------------------------------------------------------------------------------------------------------------
 	// Protected
 

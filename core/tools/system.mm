@@ -125,10 +125,17 @@ std::wstring core::tools::system::get_user_downloads_dir()
 	return str;
 }
 
-std::string core::tools::system::to_upper(std::string str)
+std::string core::tools::system::to_upper(const std::string& str)
 {
     NSString *string = [NSString stringWithCString:str.c_str() encoding:NSUTF8StringEncoding];
     string = [string uppercaseString];
+    return std::string([string UTF8String]);
+}
+
+std::string core::tools::system::to_lower(const std::string& str)
+{
+    NSString *string = [NSString stringWithCString:str.c_str() encoding:NSUTF8StringEncoding];
+    string = [string lowercaseString];
     return std::string([string UTF8String]);
 }
 

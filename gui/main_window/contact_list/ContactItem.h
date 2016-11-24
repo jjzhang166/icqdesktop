@@ -33,8 +33,8 @@ namespace Logic
 		bool is_checked() const;
 		void set_checked(bool _isChecked);
 
-        void set_chat_admin(bool _value);
-        bool is_you_admin() const;
+        void set_chat_role(const QString& role);
+        QString get_chat_role() const;
 		
 		void set_input_text(const QString& _inputText);
 		QString get_input_text() const;
@@ -49,9 +49,9 @@ namespace Logic
 		std::shared_ptr<Logic::contact_profile>		profile_;
 		
 		
-        bool            isYouAdmin_;
 		bool			visible_;
 		QString			input_text_;
+        QString         chat_role_;
 	};
 
 	static_assert(std::is_move_assignable<ContactItem>::value, "ContactItem must be move assignable");

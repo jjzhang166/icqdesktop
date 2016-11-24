@@ -1,12 +1,9 @@
 #ifndef __VIDEO_WINDOW_H__
 #define __VIDEO_WINDOW_H__
 
-#include "VideoPanel.h"
-#include "VideoPanelHeader.h"
-#include "DetachedVideoWnd.h"
-#include "VoipSysPanelHeader.h"
 #include "VideoFrame.h"
-#include "secureCallWnd.h"
+#include "DetachedVideoWnd.h"
+
 #ifdef __APPLE__
     #include "macos/VideoFrameMacos.h"
 #endif
@@ -21,6 +18,10 @@ namespace Ui
 {
 	class DetachedVideoWindow;
 	class ShadowWindow;
+    class VoipSysPanelHeader;
+    class VideoPanel;
+    class MaskPanel;
+    class SecureCallWnd;
 
     class VideoWindow : public AspectRatioResizebleWnd
     {
@@ -37,14 +38,24 @@ namespace Ui
         void paintEvent(QPaintEvent *_e) override;
         void changeEvent(QEvent *) override;
         void escPressed() override;
+
         void executeCommandList();
 
         
 #ifndef _WIN32
+#ifndef __APPLE__
         void mouseDoubleClickEvent(QMouseEvent* _e) override;
+#endif
         void enterEvent(QEvent* _e) override;
         void leaveEvent(QEvent* _e) override;
         void mouseMoveEvent(QMouseEvent* _e) override;
+        void mouseReleaseEvent(QMouseEvent * event) override;
+        void mousePressEvent(QMouseEvent * event) override;
+        void wheelEvent(QWheelEvent * event) override;
+        void moveEvent(QMoveEvent * event) override;
+        
+        // @return true if we resend message to any transporent panel.
+        template <typename E> bool resendMouseEventToPanel(E* event_);
 #endif
 
     private:
@@ -64,6 +75,17 @@ namespace Ui
 		// We use this proxy to catch methods call during fullscreen animation.
 		// we will save commands and call it later, after fullscreen animation.
 		void callMethodProxy(const QString& _method);
+
+		void showPanel(QWidget* widget);
+		void hidePanel(QWidget* widget);
+
+		void fadeInPanels(int kAnimationDefDuration);
+		void fadeOutPanels(int kAnimationDefDuration);
+		void hidePanels();
+
+        // call this method in all cases, when you need to hide panels.
+        void tryRunPanelsHideTimer();
+        void hideSecurityDialog();
 
     private Q_SLOTS:
         void checkOverlap();
@@ -102,6 +124,14 @@ namespace Ui
         void companionName(QString& name);
         void showToolTip(bool &show);
 
+		void onSetPreviewPrimary();
+		void onSetContactPrimary();
+
+        void onShowMaskList();
+        void onHideMaskList();
+
+        void getCallStatus(bool& isAccepted);
+
     public:
         VideoWindow();
         ~VideoWindow();
@@ -113,37 +143,19 @@ namespace Ui
     private:
         FrameControl_t* rootWidget_;
 
-        template<typename __Type> class VideoPanelUnit
-        {
-            std::unique_ptr<__Type> panel_;
-            UIEffects*              effect_;
-
-        public:
-            VideoPanelUnit();
-            ~VideoPanelUnit();
-
-            bool init(const std::function<__Type*()>& creator);
-
-            void fadeIn(unsigned int _ms);
-            void fadeOut(unsigned int _ms);
-
-            void show();
-            void hide();
-
-            WId getId() const;
-            operator __Type*();
-            operator __Type*() const;
-            bool operator!() const;
-            __Type* operator->();
-            const __Type* operator->() const;
-        };
-
-        VideoPanelUnit<VideoPanelHeader>   topPanelSimple_;
-        VideoPanelUnit<VoipSysPanelHeader> topPanelOutgoing_;
-
+        // List of all panels of video window.
+		std::vector<BaseVideoPanel*> panels_;
+        
+#ifndef _WIN32
+        // Transporent widgets, we resend mouse events to this widgets under mac,
+        // because we did not find better way to catch mouse events for tranporent panels.
+		std::vector<BaseVideoPanel*> transporentPanels_;
+#endif
+        
+		std::unique_ptr<VideoPanelHeader>   topPanelSimple_;
+		std::unique_ptr<VoipSysPanelHeader> topPanelOutgoing_;
         std::unique_ptr<VideoPanel>          videoPanel_;
-        //std::unique_ptr<VideoPanelHeader>    video_panel_header_;
-        //std::unique_ptr<VoipSysPanelHeader>  video_panel_header_with_avatars_;
+		std::unique_ptr<MaskPanel>           maskPanel_;
 
         std::unique_ptr<DetachedVideoWindow> detachedWnd_;
         ResizeEventFilter*     eventFilter_;
@@ -180,6 +192,10 @@ namespace Ui
         QList<QString> commandList_;
         bool isFullscreenAnimation_;
         bool changeSpaceAnimation_;
+        
+        // We have own double click processing,
+        // Because Qt has bug with double click and fullscreen.
+        QTime doubleClickTime_;
 #endif
     };
 }

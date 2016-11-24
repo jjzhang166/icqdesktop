@@ -42,6 +42,8 @@ namespace Ui
         virtual void resizeEvent(QResizeEvent*) override;
 
         virtual void paintEvent(QPaintEvent* _e) override;
+        
+        virtual void changeEvent(QEvent* _e) override;
 
         void releaseKeyboardAndClose();
     };

@@ -160,6 +160,32 @@ bool core::tools::tlv::unserialize(const binary_stream& _stream)
     return true;
 }
 
+bool core::tools::tlv::try_get_field_with_type(const binary_stream& _stream, const uint32_t _type, uint32_t& _length)
+{
+    _length = 0;
+    if (_stream.available() < sizeof(uint32_t)*2)
+        return false;
+
+    auto type = _stream.read<uint32_t>();
+    auto length = _stream.read<uint32_t>();
+
+    if (length == 0)
+        return true;
+
+    if (_stream.available() < (length))
+        return false;
+
+    if (type == _type)
+    {
+        _length = length;
+    }
+    else
+    {
+        _stream.read(length);
+    }
+
+    return true;
+}
 
 template<> binary_stream tlv::get_value() const
 {

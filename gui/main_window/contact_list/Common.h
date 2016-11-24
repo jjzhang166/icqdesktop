@@ -8,7 +8,7 @@
 FONTS_NS_BEGIN
 
 enum class FontFamily;
-enum class FontStyle;
+enum class FontWeight;
 
 FONTS_NS_END
 
@@ -43,7 +43,7 @@ namespace ContactList
 	class DipFont
 	{
 	public:
-        DipFont(const Fonts::FontFamily _family, const Fonts::FontStyle _style, const DipPixels _size);
+        DipFont(const Fonts::FontFamily _family, const Fonts::FontWeight _weight, const DipPixels _size);
 
 		QFont font() const;
 
@@ -52,7 +52,7 @@ namespace ContactList
 
         Fonts::FontFamily Family_;
 
-        Fonts::FontStyle Style_;
+        Fonts::FontWeight Weight_;
 
 	};
 
@@ -74,7 +74,8 @@ namespace ContactList
             const bool _drawLastRead,
             const QPixmap& _lastReadAvatar,
             const QString& role,
-            int _UnreadsCounter);
+            int _UnreadsCounter,
+            const QString _term);
 
 		const QString AimId_;
 
@@ -116,13 +117,15 @@ namespace ContactList
 
         const int unreadsCounter_;
 
+        const QString searchTerm_;
+
     private:
         QString Status_;
 	};
 
 	const auto dip = [](const int _px) { return DipPixels(_px); };
 
-	const auto dif = [](const Fonts::FontFamily _family, const Fonts::FontStyle _style, const int _sizePx) { return DipFont(_family, _style, dip(_sizePx)); };
+	const auto dif = [](const Fonts::FontFamily _family, const Fonts::FontWeight _weight, const int _sizePx) { return DipFont(_family, _weight, dip(_sizePx)); };
 
 	QString FormatTime(const QDateTime &time);
 
@@ -139,6 +142,7 @@ namespace ContactList
 
     int ContactItemHeight();
     int GroupItemHeight();
+    int SearchInAllChatsHeight();
 
     bool IsPictureOnlyView();
 
@@ -216,9 +220,7 @@ namespace ContactList
         const DipPixels timeY() const { return !is_cl_ ? avatarY() + dip(24) : dip(27); }
         const DipFont timeFont() const
         {
-            return !is_cl_ ?
-                dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), timeFontSize().px()) :
-                dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), 12);
+            return dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), 12);
         }
         const QColor timeFontColor() const { return QColor(0x69, 0x69, 0x69); }
 
@@ -241,15 +243,15 @@ namespace ContactList
         const DipPixels contactNameTopY (){ return  dip(2);}
         const DipPixels nameY (){ return  dip(12);}
 
-        QString getContactNameStylesheet(const QString& fontColor, const Fonts::FontStyle fontStyle)
+        QString getContactNameStylesheet(const QString& fontColor, const Fonts::FontWeight fontWeight)
         {
-            assert(fontStyle > Fonts::FontStyle::MIN);
-            assert(fontStyle < Fonts::FontStyle::MAX);
+            assert(fontWeight > Fonts::FontWeight::Min);
+            assert(fontWeight < Fonts::FontWeight::Max);
 
-            const auto fontQss = Fonts::appFontFullQss(contactNameFontSize().px(), Fonts::defaultAppFontFamily(), fontStyle);
+            const auto fontQss = Fonts::appFontFullQss(contactNameFontSize().px(), Fonts::defaultAppFontFamily(), fontWeight);
 
             const auto result =
-                QString("%1; color: %2; background-color: transparent")
+                QString("%1; color: %2; background-color: transparent;")
                 .arg(fontQss)
                 .arg(fontColor);
 
@@ -278,8 +280,9 @@ namespace ContactList
         }
 
         const DipPixels addContactY (){ return  dip(30);}
-        const DipFont addContactFont (){ return  dif(Fonts::defaultAppFontFamily(), Fonts::FontStyle::SEMIBOLD, 16);}
-        const DipFont emptyIgnoreListFont (){ return dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), 16);}
+        const DipFont addContactFont (){ return  dif(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Semibold, 16);}
+        const DipFont emptyIgnoreListFont (){ return dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), 16);}
+        const DipFont findInAllChatsFont (){ return dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), 16);}
         const QColor emptyIgnoreListColor(){ return QColor("#000000");}
 
         DipPixels GetGroupX()
@@ -287,7 +290,7 @@ namespace ContactList
             return GetAddContactX();
         }
         const DipPixels groupY (){ return dip(17);}
-        const DipFont groupFont (){ return dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), 12);}
+        const DipFont groupFont (){ return dif(Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), 12);}
         const QColor groupColor(){ return QColor("#579e1c");}
 
         const DipPixels dragOverlayPadding (){ return dip(8);}
@@ -364,10 +367,11 @@ namespace ContactList
 
         const QString getFontWeight(const bool isUnread)
         {
-            const auto fontWeight = Fonts::appFontWeightQss(
-                 isUnread ? QFont::Weight::DemiBold : QFont::Weight::Normal);
+            const auto fontWeight = (isUnread ? Fonts::FontWeight::Semibold : Fonts::FontWeight::Normal);
 
-            return fontWeight;
+            const auto fontWeightQss = Fonts::appFontWeightQss(fontWeight);
+
+            return fontWeightQss;
         };
 
         const DipPixels serviceItemHeight (){ return  dip(25);}
@@ -384,16 +388,16 @@ namespace ContactList
 
 
 		const DipPixels nameHeight (){ return  dip(24);}
-		const DipPixels messageFontSize (){ return  dip(14);}
+        const DipPixels messageFontSize (){ return  dip(15);}
 		const DipPixels messageHeight (){ return  dip(24);}
 		const DipPixels messageX (){ return  GetContactNameX();}
 		const DipPixels messageY (){ return  dip(34);}
 
 		const QString getMessageStylesheet(const bool isUnread)
         {
-            const auto fontStyle = (isUnread ? Fonts::FontStyle::SEMIBOLD : Fonts::FontStyle::NORMAL);
+            const auto fontWeight = Fonts::FontWeight::Normal;
 
-            const auto fontQss = Fonts::appFontFullQss(messageFontSize().px(), Fonts::defaultAppFontFamily(), fontStyle);
+            const auto fontQss = Fonts::appFontFullQss(messageFontSize().px(), Fonts::defaultAppFontFamily(), fontWeight);
 
             const auto fontColor = getRecentsMessageFontColor(isUnread);
 
@@ -409,7 +413,7 @@ namespace ContactList
 		const DipPixels deliveryStateRightPadding (){ return  dip(4);}
 
 
-		const DipFont unreadsFont (){ return  dif(Fonts::defaultAppFontFamily(), Fonts::FontStyle::SEMIBOLD, 13);}
+		const DipFont unreadsFont (){ return  dif(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Semibold, 13);}
 		const DipPixels unreadsPadding (){ return  dip(6);}
 		const DipPixels unreadsMinimumExtent (){ return  dip(20);}
 		const DipPixels unreadsY (){ return is_cl_ ? dip(12) : dip(24);}
@@ -417,7 +421,7 @@ namespace ContactList
 
         const DipPixels lastReadY (){ return  dip(38);}
 
-        const DipFont unknownsUnreadsFont (){ return  dif(Fonts::defaultAppFontFamily(), Fonts::FontStyle::SEMIBOLD, 13);}
+        const DipFont unknownsUnreadsFont (){ return  dif(Fonts::defaultAppFontFamily(), Fonts::FontWeight::Semibold, 13);}
         const DipPixels unknownsUnreadsPadding (){ return  dip(6);}
         const DipPixels unknownsUnreadsMinimumExtent (){ return  dip(20);}
         const DipPixels unknownsUnreadsY (){ return  dip(9);}
@@ -464,4 +468,24 @@ namespace ContactList
     void RenderMouseState(QPainter &painter, const bool isHovered, const bool isSelected, const ContactList::ContactListParams& _contactListPx, const ContactList::ViewParams& viewParams_);
 
     void RenderContactName(QPainter &painter, const ContactList::VisualDataBase &visData, const int y, const int rightBorderPx, ContactList::ViewParams _viewParams, ContactList::ContactListParams& _contactListPx);
+
+    int RenderDate(QPainter &painter, const QDateTime &date, const VisualDataBase &item, ContactListParams& _contactListPx, const ViewParams& viewParams_);
+
+    int RenderRemove(QPainter &painter, ContactListParams& _contactListPx, const ViewParams& viewParams_);
+
+    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView, int width);
+}
+
+namespace Logic
+{
+    class AbstractItemDelegateWithRegim : public QItemDelegate
+    {
+    public:
+        AbstractItemDelegateWithRegim(QObject* parent)
+            : QItemDelegate(parent)
+        {}
+        virtual void setRegim(int _regim) = 0;
+
+        virtual void setFixedWidth(int width) = 0;
+    };
 }

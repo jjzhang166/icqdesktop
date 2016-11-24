@@ -148,19 +148,19 @@ namespace Ui
 
             resultsWidget_->contactAddResult(_contact, _res);
 
-            Logic::getContactListModel()->setCurrent(_contact, true);			
+            Logic::getContactListModel()->setCurrent(_contact, -1, true);			
         });
         GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::add_user_search_results);
     }
 
     void SearchContactsWidget::onMsgContact(QString _contact)
     {
-        Logic::getContactListModel()->setCurrent(_contact, true);
+        Logic::getContactListModel()->setCurrent(_contact, -1, true);
     }
 
     void SearchContactsWidget::onCallContact(QString _contact)
     {
-        Logic::getContactListModel()->setCurrent(_contact, true);
+        Logic::getContactListModel()->setCurrent(_contact, -1, true);
         Ui::GetDispatcher()->getVoipController().setStartA(_contact.toUtf8(), false);
     }
 

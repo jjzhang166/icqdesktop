@@ -26,8 +26,8 @@ namespace Ui
             pixmapSize.setWidth(pixmapSize.width() / Utils::scale_bitmap(1));
             pixmapSize.setHeight(pixmapSize.height() / Utils::scale_bitmap(1));
             
-            float yOffset = -(pixmapSize.height() - currentSize_.height()) / 2;
-            float xOffset = -(pixmapSize.width() - currentSize_.width()) / 2;
+            float yOffset = -(pixmapSize.height() - currentSize_.height()) / 2.0;
+            float xOffset = -(pixmapSize.width() - currentSize_.width()) / 2.0;
             if (!tiling_)
             {
                 float pixmapSidesRatio = 1. * pixmapSize.width() / pixmapSize.height();
@@ -41,14 +41,14 @@ namespace Ui
                     {
                         int width = currentSize_.width();
                         int height = width / pixmapSidesRatio;
-                        yOffset = -(height - currentSize_.height()) / 2;
+                        yOffset = -(height - currentSize_.height()) / 2.0;
                         drawPixmap(0, yOffset, width, height);
                     }
                     else
                     {
                         int height = currentSize_.height();
                         int width = height * pixmapSidesRatio;
-                        xOffset = -(width - currentSize_.width()) / 2;
+                        xOffset = -(width - currentSize_.width()) / 2.0;
                         drawPixmap(xOffset, 0, width, height);
                     }
                 }
@@ -56,14 +56,14 @@ namespace Ui
                 {
                     float height = currentSize_.width() / pixmapSidesRatio;
                     float width = currentSize_.width();
-                    yOffset = -(height - currentSize_.height())/2;
+                    yOffset = -(height - currentSize_.height())/2.0;
                     drawPixmap(0, yOffset, width, height);
                 }
                 else if (currentSize_.width() <= pixmapSize.width() && currentSize_.height() > pixmapSize.height())
                 {
                     float height = currentSize_.height();
                     float width = currentSize_.height() * pixmapSidesRatio;
-                    xOffset = -(width - currentSize_.width()) / 2;
+                    xOffset = -(width - currentSize_.width()) / 2.0;
                     drawPixmap(xOffset, 0, width, height);
                 }
             }

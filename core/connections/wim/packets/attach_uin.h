@@ -21,7 +21,7 @@ namespace core
         {
             virtual int32_t init_request(std::shared_ptr<core::http_request_simple> _request) override;
             virtual int32_t parse_response_data(const rapidjson::Value& _data) override;
-            int32_t execute_request(std::shared_ptr<core::http_request_simple> request);
+            int32_t execute_request(std::shared_ptr<core::http_request_simple> request) override;
             virtual int32_t on_empty_data() override;
 
             wim_packet_params from_params_;

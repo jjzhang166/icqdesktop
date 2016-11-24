@@ -21,6 +21,7 @@ namespace Data
 		ADD_CONTACT,
         VIEW_ALL_MEMBERS,
         EMPTY_IGNORE_LIST,
+        SEARCH_IN_ALL_CHATS,
 
 		MAX 
 	};
@@ -159,8 +160,6 @@ namespace Data
 	QPixmap* UnserializeAvatar(core::coll_helper* helper);
 
 	Buddy* UnserializePresence(core::coll_helper* helper);
-
-	void UnserializeSearchResult(core::coll_helper* helper, QStringList& contacts);
 
 	QString UnserializeActiveDialogHide(core::coll_helper* helper);
     

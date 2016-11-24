@@ -3,6 +3,8 @@
 
 namespace Ui
 {
+    class CompiledText;
+
     class PushButton_t : public QPushButton {
     public:
         enum eButtonState {
@@ -26,11 +28,14 @@ namespace Ui
         void setPostfix(const QString& postfix);
         void setPostfixColor(const QColor& color);
 
-        int precalculateWidth();
+        int precalculateWidth(QPainter* painter = nullptr);
+        void setState(const eButtonState state);
 
     protected:
         void paintEvent(QPaintEvent*) override;
         bool event(QEvent*) override;
+
+        void setPrefixInternal(const QString& prefix);
 
     private:
         eButtonState  currentState_;
@@ -40,9 +45,9 @@ namespace Ui
         int           iconW_;
         int           iconH_;
         Qt::Alignment alignment_;
-        QString       prefix_;
         QString       postfix_;
         QColor        postfixColor_;
+        std::unique_ptr<CompiledText>	compiledText_;
     };   
 }
 

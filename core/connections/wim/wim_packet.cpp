@@ -11,11 +11,13 @@ using namespace core;
 using namespace wim;
 
 wim_packet::wim_packet(const wim_packet_params& params)
-    :	params_(params),
-    http_code_(-1),
-    status_code_(-1),
-    status_detail_code_(-1),
-    repeat_count_(0)
+    :   params_(params),
+    http_code_(uint32_t(-1)),
+    status_code_(uint32_t(-1)),
+    status_detail_code_(uint32_t(-1)),
+    repeat_count_(uint32_t(0)),
+    can_change_hosts_scheme_(false),
+    hosts_scheme_changed_(false)
 {
 
 }
@@ -35,6 +37,8 @@ int32_t wim_packet::execute()
     int32_t err = init_request(request);
     if (err != 0)
         return err;
+
+    request->replace_host(params_.hosts_);
 
     err = execute_request(request);
     if (err != 0)
@@ -69,10 +73,12 @@ int32_t wim_packet::execute_request(std::shared_ptr<core::http_request_simple> r
         auto header = request->get_header();
         uint32_t size = header->available();
         auto buf = (const char *)header->read(size);
+
         if (buf && size)
         {
             header_str_.assign(buf, size);
         }
+
         header->reset_out();
     }
     
@@ -128,6 +134,7 @@ int32_t wim_packet::parse_response(std::shared_ptr<core::tools::binary_stream> r
     try
     {
         const auto json_str = response->read(response->available());
+
 #ifdef DEBUG__OUTPUT_NET_PACKETS
         puts(json_str);
 #endif // DEBUG__OUTPUT_NET_PACKETS
@@ -183,13 +190,9 @@ int32_t wim_packet::parse_response(std::shared_ptr<core::tools::binary_stream> r
             return on_response_error_code();
         }
     }
-    catch (const std::exception&)
-    {
-
-    }
     catch (...)
     {
-
+        return 0;
     }
 
     return 0;
@@ -375,6 +378,11 @@ uint32_t core::wim::wim_packet::get_repeat_count() const
     return repeat_count_;
 }
 
+void core::wim::wim_packet::set_repeat_count(const uint32_t _count)
+{
+    repeat_count_ = _count;
+}
+
 void core::wim::wim_packet::replace_log_messages(tools::binary_stream& _bs)
 {
     uint32_t sz = _bs.available();
@@ -428,4 +436,31 @@ void core::wim::wim_packet::replace_log_messages(tools::binary_stream& _bs)
     {
         replace_marker(_marker);
     }
+}
+
+bool wim_packet::can_change_hosts_scheme() const
+{
+    return can_change_hosts_scheme_;
+}
+
+void wim_packet::set_can_change_hosts_scheme(const bool _can)
+{
+    can_change_hosts_scheme_ = _can;
+}
+
+void wim_packet::change_hosts_scheme()
+{
+    hosts_scheme_changed_ = !hosts_scheme_changed_;
+
+    params_.hosts_.change_scheme();
+}
+
+bool wim_packet::is_hosts_scheme_changed() const
+{
+    return hosts_scheme_changed_;
+}
+
+const hosts_map& wim_packet::get_hosts_scheme() const
+{
+    return params_.hosts_;
 }

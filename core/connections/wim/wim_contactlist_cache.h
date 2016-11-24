@@ -84,28 +84,32 @@ namespace core
         class contactlist
         {
             bool changed_;
+            bool need_update_search_cache_;
+            void set_need_update_cache(bool _need_update_search_cache);
 
-            std::map<std::string, std::shared_ptr<cl_buddy>> search_cache_;
-            std::vector<std::string> last_search_patterns_;
+            std::string last_search_patterns_;
 
             std::list<std::shared_ptr<cl_group>> groups_;
-            std::map< std::string, std::shared_ptr<cl_buddy> > contacts_index_;
 
             ignorelist_cache ignorelist_;
 
-            contactlist(const contactlist&) {};
-
         public:
-
-
-
-            contactlist() : changed_(false) {}
+            // TODO : make it private
+            std::map<std::string, std::shared_ptr<cl_buddy>> search_cache_;
+            std::map<std::string, std::shared_ptr<cl_buddy>> tmp_cache_;
+            std::map< std::string, std::shared_ptr<cl_buddy> > contacts_index_;
+            std::map<std::string, int32_t> search_priority_;
+            
+            contactlist() : changed_(false), need_update_search_cache_(false) {}
 
             void update_cl(const contactlist& _cl);
             void update_ignorelist(const ignorelist_cache& _ignorelist);
 
             void set_changed(bool _is_changed) {changed_ = _is_changed;}
             bool is_changed() const {return changed_;}
+
+            bool get_need_update_search_cache() const { return need_update_search_cache_; };
+
             bool exist(const std::string& contact) { return contacts_index_.find(contact) != contacts_index_.end(); }
 
             std::string get_contact_friendly_name(const std::string& contact_login);
@@ -118,7 +122,9 @@ namespace core
             void serialize_search(icollection* _coll);
             void serialize_ignorelist(icollection* _coll);
             void serialize_contact(const std::string& _aimid, icollection* _coll);
-            bool search(std::vector<std::string> search_patterns);
+            std::vector<std::string> search(const std::vector<std::vector<std::string>>& search_patterns, int32_t fixed_patterns_count);
+            std::vector<std::string> search(const std::string& search_pattern, bool first, int32_t searh_priority, int32_t fixed_patters_count);
+
             void update_presence(const std::string& _aimid, std::shared_ptr<cl_presence> _presence);
             void merge_from_diff(const std::string& _type, std::shared_ptr<contactlist> _diff, std::shared_ptr<std::list<std::string>> removedContacts);
             

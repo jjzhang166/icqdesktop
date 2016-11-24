@@ -308,14 +308,14 @@ namespace Ui
         uinLoginLayout->setSpacing(0);
         uinLoginLayout->setContentsMargins(0, 0, 0, 0);
 
-        uinEdit = new QLineEdit(uinLoginWidget);
+        uinEdit = new LineEditEx(uinLoginWidget);
         uinEdit->setFont(Fonts::appFontScaled(18));
         Utils::ApplyStyle(uinEdit, Ui::CommonStyle::getLineEditStyle());
         Testing::setAccessibleName(uinEdit, "StartWindowUinField");
 
         uinLoginLayout->addWidget(uinEdit);
 
-        passwordEdit = new QLineEdit(uinLoginWidget);
+        passwordEdit = new LineEditEx(uinLoginWidget);
         passwordEdit->setEchoMode(QLineEdit::Password);
         passwordEdit->setFont(Fonts::appFontScaled(18));
         Utils::ApplyStyle(passwordEdit, Ui::CommonStyle::getLineEditStyle());
@@ -493,11 +493,14 @@ namespace Ui
             auto lastPhone = get_gui_settings()->get_value(login_page_last_entered_phone, QString());
             if (!lastPhone.isEmpty())
             {
-                phoneInfoRequestsCount_++;
-                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-                collection.set_value_as_string("phone", lastPhone.toStdString());
-                collection.set_value_as_string("gui_locale", get_gui_settings()->get_value(settings_language, QString("")).toStdString());
-                phoneInfoLastRequestSpecialId_ = GetDispatcher()->post_message_to_core("phoneinfo", collection.get());
+                QTimer::singleShot(500, this, [=]() // workaround: phoneinfo/set_can_change_hosts_scheme ( https://jira.mail.ru/browse/IMDESKTOP-3773 )
+                {
+                    phoneInfoRequestsCount_++;
+                    Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                    collection.set_value_as_string("phone", lastPhone.toStdString());
+                    collection.set_value_as_string("gui_locale", get_gui_settings()->get_value(settings_language, QString("")).toStdString());
+                    phoneInfoLastRequestSpecialId_ = GetDispatcher()->post_message_to_core("phoneinfo", collection.get());
+                });
             }
         }
     }

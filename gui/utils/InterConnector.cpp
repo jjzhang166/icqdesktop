@@ -178,8 +178,20 @@ namespace Utils
     {
 #ifdef __APPLE__
         QDesktopServices::unsetUrlHandler("");
-#endif __APPLE__
+#endif //__APPLE__
         QDesktopServices::unsetUrlHandler("http");
         QDesktopServices::unsetUrlHandler("https");
+    }
+
+    void InterConnector::setFocusOnInput()
+    {
+        if (MainWindow_)
+            MainWindow_->setFocusOnInput();
+    }
+
+    void InterConnector::onSendMessage(const QString& contact)
+    {
+        if (MainWindow_)
+            MainWindow_->onSendMessage(contact);
     }
 }

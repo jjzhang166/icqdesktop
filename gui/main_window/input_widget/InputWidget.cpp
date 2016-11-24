@@ -17,6 +17,10 @@
 #include "../../utils/utils.h"
 #include "../../utils/InterConnector.h"
 
+#ifdef __APPLE__
+#   include "../../utils/SChar.h"
+#endif
+
 const int widget_min_height = 73;
 const int widget_max_height = 230;
 const int document_min_height = 32;
@@ -33,6 +37,7 @@ namespace Ui
     input_edit::input_edit(QWidget* _parent)
         : TextEditEx(_parent, MessageStyle::getTextFont(), CommonStyle::getTextCommonColor(), true, false)
     {
+        limitCharacters(Utils::getInputMaximumChars());
         setUndoRedoEnabled(true);
     }
 
@@ -103,6 +108,7 @@ namespace Ui
         quote_text_->setOpenLinks(true);
         quote_text_->setOpenExternalLinks(true);
         quote_text_->setWordWrapMode(QTextOption::NoWrap);
+        quote_text_->setContextMenuPolicy(Qt::NoContextMenu);
 
         QPalette p = quote_text_->palette();
         p.setColor(QPalette::Text, QColor("#696969"));
@@ -169,6 +175,25 @@ namespace Ui
         hLayout->addWidget(files_block_);
         files_block_->hide();
 
+        input_disabled_block_ = new QWidget(this);
+        input_disabled_block_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        auto disabled_layout = new QHBoxLayout(input_disabled_block_);
+        disabled_layout->setSpacing(0);
+        disabled_layout->setContentsMargins(0, 0, 0, 0);
+        disabled_layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding));
+        disable_label_ = new QLabel(this);
+        disable_label_->setFont(Fonts::appFontScaled(16));
+        pal.setColor(QPalette::Foreground, QColor("#959595"));
+        disable_label_->setPalette(pal);
+        disable_label_->setAlignment(Qt::AlignCenter);
+        disable_label_->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+        disable_label_->setWordWrap(true);
+        disabled_layout->addWidget(disable_label_);
+        connect(disable_label_, SIGNAL(linkActivated(const QString&)), this, SLOT(disableActionClicked(const QString&)), Qt::QueuedConnection);
+        disabled_layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding));
+        hLayout->addWidget(input_disabled_block_);
+        input_disabled_block_->hide();
+
         connect(text_edit_, &TextEditEx::focusOut, [this]()
         {
             emit editFocusOut();
@@ -200,6 +225,9 @@ namespace Ui
         connect(file_button_, SIGNAL(clicked()), this, SLOT(attach_file()), Qt::QueuedConnection);
         connect(file_button_, SIGNAL(clicked()), this, SLOT(stats_attach_file()), Qt::QueuedConnection);
         connect(cancel_quote_, SIGNAL(clicked()), this, SLOT(clear()), Qt::QueuedConnection);
+        connect(this, SIGNAL(needUpdateSizes()), this, SLOT(updateSizes()), Qt::QueuedConnection);
+
+        connect(Logic::getContactListModel(), SIGNAL(youRoleChanged(QString)), this, SLOT(chatRoleChanged(QString)), Qt::QueuedConnection);
 
         connect(smiles_button_, &QPushButton::clicked, [this]()
         {
@@ -231,15 +259,7 @@ namespace Ui
 
     void InputWidget::resizeEvent(QResizeEvent * _e)
     {
-        initQuotes(contact_);
-        edit_content_changed();
-
-        QRect edit_rect = text_edit_->geometry();
-        file_button_->setGeometry(edit_rect.right() - Utils::scale_value(24) - Utils::scale_value(16) - Utils::scale_value(16)/*margin*/,
-            edit_rect.top() + ((edit_rect.height() - Utils::scale_value(24))/2),
-            Utils::scale_value(24),
-            Utils::scale_value(24));
-
+        updateSizes();
         return QWidget::resizeEvent(_e);
     }
 
@@ -262,6 +282,11 @@ namespace Ui
                 }
                 
                 if (_e->modifiers() == Qt::CTRL && _e->key() == Qt::Key_End)
+                {
+                    QApplication::sendEvent((QObject*)page, _e);
+                }
+                
+                if (platform::is_apple() && ((_e->modifiers().testFlag(Qt::KeyboardModifier::MetaModifier) && _e->key() == Qt::Key_Right) || _e->key() == Qt::Key_End))
                 {
                     QApplication::sendEvent((QObject*)page, _e);
                 }
@@ -324,9 +349,14 @@ namespace Ui
             if (text_edit_->catchEnter(modifiers))
             {
                 send();
-                return;
             }
         }
+
+        if (_e->matches(QKeySequence::Find))
+        {
+            emit ctrlFPressedInInputWidget();
+        }
+
         return QWidget::keyPressEvent(_e);
     }
 
@@ -386,7 +416,7 @@ namespace Ui
         Logic::getContactListModel()->setInputText(contact_, input_text);
 
         send_button_->setEnabled(!input_text.trimmed().isEmpty() || !quotes_[contact_].isEmpty() || !files_to_send_[contact_].isEmpty() || !image_buffer_[contact_].isNull());
-        file_button_->setVisible(input_text.isEmpty() && files_to_send_[contact_].isEmpty() && image_buffer_[contact_].isNull());
+        file_button_->setVisible(input_text.isEmpty() && files_to_send_[contact_].isEmpty() && image_buffer_[contact_].isNull() && !disabled_.contains(contact_));
 
         int doc_height = text_edit_->document()->size().height();
 
@@ -418,7 +448,7 @@ namespace Ui
 
     void InputWidget::quote(QList<Data::Quote> _quotes)
     {
-        if (_quotes.isEmpty())
+        if (_quotes.isEmpty() || disabled_.contains(contact_))
             return;
 
         text_edit_->setFocus();
@@ -433,8 +463,11 @@ namespace Ui
 
     void InputWidget::insert_emoji(int32_t _main, int32_t _ext)
     {
+#ifdef __APPLE__
+        text_edit_->insertPlainText(Utils::SChar(_main, _ext).ToQString());
+#else
         text_edit_->insertEmoji(_main, _ext);
-
+#endif
         text_edit_->setFocus();
     }
 
@@ -461,6 +494,11 @@ namespace Ui
                 quotesArray->push_back(val.get());
             }
             collection.set_value_as_array("quotes", quotesArray.get());
+            Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::quotes_send_answer);
+
+            core::stats::event_props_type props;
+            props.push_back(std::make_pair("Quotes_MessagesCount", std::to_string(quotes_[contact_].size())));
+            Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::quotes_messagescount, props);
         }
 
         Ui::GetDispatcher()->post_message_to_core("send_message", collection.get());
@@ -473,11 +511,6 @@ namespace Ui
     void InputWidget::send()
     {
         auto text = text_edit_->getPlainText().trimmed();
-
-        if ((unsigned)text.length() > Utils::getInputMaximumChars())
-        {
-            text.resize(Utils::getInputMaximumChars());
-        }
 
         text = text.trimmed();
 
@@ -536,6 +569,12 @@ namespace Ui
                 quotesArray->push_back(val.get());
             }
             collection.set_value_as_array("quotes", quotesArray.get());
+            Ui::GetDispatcher()->post_stats_to_core(text.isEmpty() ? core::stats::stats_event_names::quotes_send_alone : core::stats::stats_event_names::quotes_send_answer);
+
+            core::stats::event_props_type props;
+            props.push_back(std::make_pair("Quotes_MessagesCount", std::to_string(quotes_[contact_].size())));
+            Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::quotes_messagescount, props);
+
         }
 
         Ui::GetDispatcher()->post_message_to_core("send_message", collection.get());
@@ -619,12 +658,22 @@ namespace Ui
         activateWindow();
         is_initializing_ = true;
         text_edit_->setPlainText(Logic::getContactListModel()->getInputText(contact_), false);
-        text_edit_->setFocus(Qt::FocusReason::MouseFocusReason);
         is_initializing_ = false;
 
         auto contactDialog = Utils::InterConnector::instance().getContactDialog();
         if (contactDialog)
             contactDialog->hideSmilesMenu();
+
+        auto role = Logic::getContactListModel()->getYourRole(contact_);
+        if (role == "notamember")
+            disable(NotAMember);
+        else if (role == "readonly")
+            disable(ReadOnlyChat);
+        else
+            enable();
+
+        text_edit_->setFocus(Qt::FocusReason::MouseFocusReason);
+        
     }
 
     void InputWidget::hide()
@@ -637,6 +686,56 @@ namespace Ui
     void InputWidget::hideNoClear()
     {
         setVisible(false);
+    }
+
+    void InputWidget::disable(DisableReason reason)
+    {
+        disabled_.insert(contact_, reason);
+        text_edit_->clear();
+        text_edit_->setEnabled(false);
+        auto contactDialog = Utils::InterConnector::instance().getContactDialog();
+        if (contactDialog)
+            contactDialog->hideSmilesMenu();
+
+        if (reason == ReadOnlyChat)
+        {
+            disable_label_->setFixedWidth(width());
+            disable_label_->setVisible(true);
+            disable_label_->setText(QT_TRANSLATE_NOOP("input_widget", "This chat is read-only"));
+        }
+        else if (reason == NotAMember)
+        {
+            disable_label_->setFixedWidth(width());
+            disable_label_->setVisible(true);
+            disable_label_->setText(QString(QT_TRANSLATE_NOOP("input_widget", "You are not a member of this chat. ")) 
+                                    + QString("<a style=\"text-decoration:none\" href=\"leave\"><span style=\"color:#579e1c;\">") 
+                                    + QString(QT_TRANSLATE_NOOP("input_widget", "Leave and delete")) + QString("</span></a>"));
+        }
+
+        clear_files(contact_);
+        clear_quote(contact_);
+        smiles_button_->hide();
+        text_edit_->hide();
+        file_button_->hide();
+        send_button_->hide();
+        input_disabled_block_->setVisible(true);
+        input_disabled_block_->setFixedHeight(Utils::scale_value(widget_min_height));
+    }
+
+    void InputWidget::enable()
+    {
+        disabled_.remove(contact_);
+        text_edit_->setEnabled(true);
+        initFiles(contact_);
+        initQuotes(contact_);
+        smiles_button_->show();
+        text_edit_->show();
+        file_button_->show();
+        send_button_->show();
+        edit_content_changed();
+        input_disabled_block_->hide();
+        
+        emit needUpdateSizes();
     }
 
     void InputWidget::set_current_height(int _val)
@@ -749,41 +848,45 @@ namespace Ui
         if (!isVisible())
             return;
 
-        static uint typedTime = 0;
-        typedTime = QDateTime::currentDateTime().toTime_t();
+        static qint64 typedTime = 0;
+        typedTime = QDateTime::currentMSecsSinceEpoch();
 
-        static uint prevCheckingTime = 0;
-        uint currCheckingTime = QDateTime::currentDateTime().toTime_t();
+        static qint64 prevCheckingTime = 0;
+        const qint64 currCheckingTime = QDateTime::currentMSecsSinceEpoch();
 
-        static uint prevTypingTime = 0;
-        uint currTypingTime = QDateTime::currentDateTime().toTime_t();
+        static qint64 prevTypingTime = 0;
+        const qint64 currTypingTime = QDateTime::currentMSecsSinceEpoch();
         
-        if ((currCheckingTime - prevCheckingTime) >= 1)
+        if ((currCheckingTime - prevCheckingTime) >= 1000)
         {
-            if ((currTypingTime - prevTypingTime) >= 5)
+            if ((currTypingTime - prevTypingTime) >= 4000)
             {
                 Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
                 collection.set_value_as_qstring("contact", contact_);
                 collection.set_value_as_int("status", (int32_t)core::typing_status::typing);
                 Ui::GetDispatcher()->post_message_to_core("message/typing", collection.get());
+
                 prevTypingTime = currTypingTime;
             }
             prevCheckingTime = currCheckingTime;
-            
-            QTimer::singleShot(1500, [=]()
-            {
-                if ((QDateTime::currentDateTime().toTime_t() - typedTime) >= 1)
-                {
-                    Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-                    collection.set_value_as_qstring("contact", contact_);
-                    collection.set_value_as_int("status", (int32_t)core::typing_status::typed);
-                    Ui::GetDispatcher()->post_message_to_core("message/typing", collection.get());
-                    typedTime = 0;
-                    prevCheckingTime = 0;
-                    prevTypingTime = 0;
-                }
-            });
         }
+        
+        auto contact = contact_;
+        QTimer::singleShot(1000, [contact]()
+        {
+            if ((QDateTime::currentMSecsSinceEpoch() - typedTime) >= 1000)
+            {
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_qstring("contact", contact);
+                collection.set_value_as_int("status", (int32_t)core::typing_status::typed);
+                Ui::GetDispatcher()->post_message_to_core("message/typing", collection.get());
+
+                typedTime = 0;
+                prevCheckingTime = 0;
+                prevTypingTime = 0;
+            }
+        });
+
     }
 
     void InputWidget::stats_message_enter()
@@ -821,6 +924,20 @@ namespace Ui
     {
         clear_quote(contact_);
         clear_files(contact_);
+    }
+
+    void InputWidget::updateSizes()
+    {
+        initQuotes(contact_);
+        edit_content_changed();
+
+        QRect edit_rect = text_edit_->geometry();
+        file_button_->setGeometry(edit_rect.right() - Utils::scale_value(24) - Utils::scale_value(16) - Utils::scale_value(16)/*margin*/,
+            edit_rect.top() + ((edit_rect.height() - Utils::scale_value(24))/2),
+            Utils::scale_value(24),
+            Utils::scale_value(24));
+
+        disable_label_->setFixedWidth(width());
     }
 
     void InputWidget::initQuotes(const QString& contact)
@@ -906,5 +1023,41 @@ namespace Ui
         image_buffer_[contact_] = QPixmap();
         initFiles(contact_);
         edit_content_changed();
+    }
+
+    void InputWidget::disableActionClicked(const QString& action)
+    {
+        if (action == "leave" && disabled_.contains(contact_) && disabled_[contact_] == NotAMember)
+            Logic::getContactListModel()->removeContactFromCL(contact_);
+    }
+
+    void InputWidget::chatRoleChanged(QString contact)
+    {
+        auto role = Logic::getContactListModel()->getYourRole(contact);
+        if (contact_ == contact)
+        {
+            if (role == "notamember")
+            {
+                disable(NotAMember);
+                return;
+            }
+            else if (role == "readonly")
+            {
+                disable(ReadOnlyChat);
+                return;
+            }
+        }
+
+        if (disabled_.contains(contact))
+        {
+            if (contact_ == contact)
+                enable();
+            else if (role == "notamember")
+                disabled_[contact] = NotAMember;
+            else if (role == "readonly")
+                disabled_[contact] = ReadOnlyChat;
+            else
+                disabled_.remove(contact);
+        }
     }
 }

@@ -3,6 +3,7 @@
 
 #include "NameAndStatusWidget.h"
 #include "WindowHeaderFormat.h"
+#include "CommonUI.h"
 
 namespace voip_manager
 {
@@ -16,7 +17,7 @@ namespace Ui
 
     class PushButton_t;
 
-    class MoveablePanel : public QWidget
+    class MoveablePanel : public BaseTopVideoPanel
     {
         Q_OBJECT
     Q_SIGNALS:

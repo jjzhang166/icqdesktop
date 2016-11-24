@@ -200,6 +200,18 @@ namespace Ui
     {
         trayIcon_->setVisible(_show);
     }
+    
+    void MainWindow::setFocusOnInput()
+    {
+        if (mainPage_)
+            mainPage_->setFocusOnInput();
+    }
+
+    void MainWindow::onSendMessage(const QString& contact)
+    {
+        if (mainPage_)
+            mainPage_->onSendMessage(contact);
+    }
 
     MainWindow::MainWindow(QApplication* app)
         : gallery_(new Previewer::GalleryWidget(this))
@@ -218,6 +230,7 @@ namespace Ui
         , TaskBarIconHidden_(false)
         , callPanelMainEx(NULL)
         , mplayer_(nullptr)
+        , IsMaximized_(false)
 	{
         Utils::InterConnector::instance().setMainWindow(this);
 
@@ -252,6 +265,7 @@ namespace Ui
         }
 
         app_->installNativeEventFilter(this);
+        app_->installEventFilter(this);
 
         QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         sizePolicy.setHorizontalStretch(0);
@@ -455,7 +469,7 @@ namespace Ui
         activate();
 
         if (!_contact.empty()) {
-            Logic::getContactListModel()->setCurrent(_contact.c_str(), true, true);
+            Logic::getContactListModel()->setCurrent(_contact.c_str(), -1, true, true);
         }
     }
 
@@ -464,8 +478,8 @@ namespace Ui
         setVisible(true);
         trayIcon_->Hide();
         activateWindow();
+        isMaximized() ? showMaximized() : showNormal();
 #ifdef _WIN32
-        ShowWindow((HWND)winId(), get_gui_settings()->get_value<bool>(settings_window_maximized, false) ? SW_MAXIMIZE : SW_RESTORE);
         SetWindowPos((HWND)Shadow_->winId(), (HWND)winId(), 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 #endif //_WIN32
         showIconInTaskbar(get_gui_settings()->get_value<bool>(settings_show_in_taskbar, false));
@@ -473,6 +487,10 @@ namespace Ui
         getMacSupport()->activateWindow(winId());
         getMacSupport()->updateMainMenu();
 #endif //__APPLE__
+
+        auto currentHistoryPage = Utils::InterConnector::instance().getHistoryPage(Logic::getContactListModel()->selectedContact());
+        if (currentHistoryPage)
+            currentHistoryPage->updateItems();
 	}
 
     void MainWindow::openGallery(const QString& _aimId, const Data::Image& _image, const QString& _localPath)
@@ -841,6 +859,35 @@ namespace Ui
 		return false;
 	}
 
+    bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+    {
+        if (event->type() == QEvent::KeyPress && stackedWidget_->currentWidget() == mainPage_)
+        {
+            auto keyEvent = (QKeyEvent*)(event);
+            if (keyEvent && (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab))
+            {
+                if (keyEvent->modifiers() == Qt::NoModifier)
+                {
+                    emit Utils::InterConnector::instance().searchEnd();
+
+                    if (mainPage_)
+                    {
+                        mainPage_->clearSearchFocus();
+                        mainPage_->setFocusOnInput();
+                    }
+
+                    return true;
+                }
+                else if (keyEvent->modifiers() == Qt::ShiftModifier)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     void MainWindow::enterEvent(QEvent* _event)
     {
         QMainWindow::enterEvent(_event);
@@ -860,8 +907,8 @@ namespace Ui
         QMainWindow::leaveEvent(_event);
 
 #ifdef __APPLE__
-        if (qApp->activeWindow() == this)
-            qApp->setActiveWindow(nullptr);
+//        if (qApp->activeWindow() == this)
+//            qApp->setActiveWindow(nullptr);
 #endif
     }
 
@@ -906,23 +953,7 @@ namespace Ui
 
 	void MainWindow::changeEvent(QEvent* _event)
 	{
-		if (_event->type() == QEvent::WindowStateChange)
-		{
-			maximizeButton_->setProperty("Minimize", isMaximized());
-			maximizeButton_->setProperty("Maximize", !isMaximized());
-			maximizeButton_->setStyle(QApplication::style());
-
-            if (callPanelMainEx) {
-                if (isMaximized()) {
-                    callPanelMainEx->processOnWindowMaximized();
-                } else {
-                    callPanelMainEx->processOnWindowNormalled();
-                }
-            }
-
-			get_gui_settings()->set_value<bool>(settings_window_maximized, isMaximized());
-		}
-        else if (_event->type() == QEvent::ActivationChange)
+        if (_event->type() == QEvent::ActivationChange)
         {
             if (isActiveWindow())
             {
@@ -976,7 +1007,9 @@ namespace Ui
     {
         QWidget* w = stackedWidget_->currentWidget();
         if (w && qobject_cast<MainPage*>(w) && mainPage_ && _event->matches(QKeySequence::Find))
+        {
             mainPage_->setSearchFocus();
+        }
 
 #ifndef __APPLE__
         if (w && qobject_cast<MainPage*>(w) && _event->key() == Qt::Key_Escape)
@@ -1075,6 +1108,63 @@ namespace Ui
         WTSRegisterSessionNotification( (HWND)winId(), NOTIFY_FOR_THIS_SESSION);
 #endif //_WIN32
 	}
+
+    void MainWindow::resize(int w, int h)
+    {
+        const auto screen = getScreen();
+        const auto screenGeometry = QApplication::desktop()->screenGeometry(screen);
+
+        if (screenGeometry.width() < w)
+            w = screenGeometry.width();
+
+        if (screenGeometry.height() < h)
+            h = screenGeometry.height();
+
+        return QMainWindow::resize(w, h);
+    }
+
+    void MainWindow::showMaximized()
+    {
+        QMainWindow::showNormal();
+        IsMaximized_ = true;
+        const auto screen = getScreen();
+        const auto screenGeometry = QApplication::desktop()->availableGeometry(screen);
+        setGeometry(screenGeometry);
+
+        updateState();
+    }
+
+    void MainWindow::showNormal()
+    {
+        QMainWindow::showNormal();
+        IsMaximized_ = false;
+        auto mainRect = Ui::get_gui_settings()->get_value(settings_main_window_rect, QRect(0, 0, Utils::scale_value(1000), Utils::scale_value(600)));
+        setGeometry(mainRect);
+
+        updateState();
+    }
+
+    void MainWindow::updateState()
+    {
+        maximizeButton_->setProperty("Minimize", isMaximized());
+        maximizeButton_->setProperty("Maximize", !isMaximized());
+        maximizeButton_->setStyle(QApplication::style());
+
+        if (callPanelMainEx) {
+            if (isMaximized()) {
+                callPanelMainEx->processOnWindowMaximized();
+            } else {
+                callPanelMainEx->processOnWindowNormalled();
+            }
+        }
+
+        get_gui_settings()->set_value<bool>(settings_window_maximized, isMaximized());
+    }
+
+    bool MainWindow::isMaximized()
+    {
+        return IsMaximized_;
+    }
 
     void MainWindow::checkPosition()
     {
@@ -1473,7 +1563,7 @@ namespace Ui
             }
             else
             {
-                Logic::getContactListModel()->setCurrent("", true);
+                Logic::getContactListModel()->setCurrent("", -1, true);
             }
         }
         else

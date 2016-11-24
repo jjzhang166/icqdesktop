@@ -9,7 +9,7 @@ namespace Ui
 
 
     MultimediaViewer::MultimediaViewer(QWidget* _parent)
-        :   QWidget(_parent), closed_(false)
+        :   QWidget(_parent), closed_(false), videoPlayer_(0)
     {
         setStyleSheet(Utils::LoadStyle(":/main_window/mplayer/mstyles.qss"));
 
@@ -26,14 +26,13 @@ namespace Ui
 
         rootWidget->setStyleSheet("background: rgba(0,0,0,65%);");
         rootLayout->addWidget(rootWidget);
-        //this->setCentralWidget(rootWidget);
 
         setMouseTracking(true);
         grabKeyboard();
 
         setFocusPolicy(Qt::FocusPolicy::WheelFocus);
 
-        auto soundsManager = GetSoundsManager();
+        /*auto soundsManager = */GetSoundsManager();
     }
 
     MultimediaViewer::~MultimediaViewer()
@@ -105,18 +104,19 @@ namespace Ui
             emit mediaLoaded();
         });
 
-        connect(videoPlayer_, &VideoPlayer::sizeChanged, this, [this](QSize _sz)
-        {
-            QRect thisRect = geometry();
-
-            videoPlayer_->move(
-                ((thisRect.width() - _sz.width()) / 2),
-                ((thisRect.height() - _sz.height()) / 2));
-
-        });
+//         connect(videoPlayer_, &VideoPlayer::sizeChanged, this, [this](QSize _sz)
+//         {
+//             QRect thisRect = geometry();
+// 
+//             videoPlayer_->move(
+//                 ((thisRect.width() - _sz.width()) / 2),
+//                 ((thisRect.height() - _sz.height()) / 2));
+// 
+//         });
 
 
         videoPlayer_->show();
+        videoPlayer_->moveToTop();
         videoPlayer_->setFocus();
     }
 
@@ -126,5 +126,17 @@ namespace Ui
         {
             videoPlayer_->play(_mediaSource);
         }
+    }
+    
+    void MultimediaViewer::changeEvent(QEvent* _e)
+    {
+        /*if (_e->type() == QEvent::ActivationChange)
+        {
+            if (videoPlayer_ && isActiveWindow())
+            {
+                videoPlayer_->moveToTop();
+                qDebug() << "move to top";
+            }
+        }*/
     }
 }

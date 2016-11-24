@@ -369,7 +369,7 @@ namespace Ui
             showSetThemeToCurrent = false;
         }
         
-        Logic::getContactListModel()->setCurrent(contactToOpen, true, false, [this, theme, _targetContact, showSetThemeToCurrent, contactToOpen](HistoryControlPage *page)
+        Logic::getContactListModel()->setCurrent(contactToOpen, -1, true, false, [this, theme, _targetContact, showSetThemeToCurrent, contactToOpen](HistoryControlPage *page)
         {
             // consider peculiar case when themeSelected gets called without ThemePanelChoice-callback from previous call
             if (settingInProcess_)

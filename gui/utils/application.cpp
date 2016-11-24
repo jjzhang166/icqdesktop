@@ -63,7 +63,13 @@ namespace Utils
 #endif //_WIN32
 
         app_.reset(new QApplication(_argc, _argv));
-
+        
+#ifdef __APPLE__
+        // Fix float separator: force use . (dot).
+        // http://doc.qt.io/qt-5/qcoreapplication.html#locale-settings
+        setlocale(LC_NUMERIC, "C");
+#endif
+        
         peer_.reset(new LocalPeer(0, !isMainInstance()));
         if (isMainInstance())
         {

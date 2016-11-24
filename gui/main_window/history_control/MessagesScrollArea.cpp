@@ -83,6 +83,8 @@ namespace Ui
         , IsUserActive_(false)
         , UserActivityTimer_(this)
         , Layout_(new MessagesScrollAreaLayout(this, Scrollbar_, typingWidget))
+        , IsSearching_(false)
+        , scrollValue_(-1)
     {
         assert(parent);
         assert(Layout_);
@@ -148,14 +150,13 @@ namespace Ui
         widgets.emplace_back(
             std::make_pair(key, widget)
         );
-
-        insertWidgets(widgets);
+        insertWidgets(widgets, true /* _isMoveToButtonIfNeed */, -1 /* _mess_id */);
     }
 
-    void MessagesScrollArea::insertWidgets(const WidgetsList& _widgets)
+    void MessagesScrollArea::insertWidgets(const WidgetsList& _widgets, bool _isMoveToButtonIfNeed, int64_t _mess_id)
     {
         assert(!_widgets.empty());
-        Layout_->insertWidgets(_widgets);
+        Layout_->insertWidgets(_widgets, _isMoveToButtonIfNeed, _mess_id);
 
         for (auto iter : _widgets)
         {
@@ -243,6 +244,7 @@ namespace Ui
 
     void MessagesScrollArea::scrollToBottom()
     {
+        setIsSearch(false);
         stopScrollAnimation();
 
         if (!Layout_->isViewportAtBottom())
@@ -604,6 +606,8 @@ namespace Ui
 
         if (selectedItems > 0)
             emit messagesSelected();
+        else
+            emit messagesDeselected();
     }
 
     void MessagesScrollArea::wheelEvent(QWheelEvent *e)
@@ -831,10 +835,17 @@ namespace Ui
     {
         assert(value >= 0);
 
-        if (Scrollbar_->isInFetchRange(value))
+        const auto scrollBounds = Layout_->getViewportScrollBounds();
+        const auto absY = Layout_->getViewportAbsY();
+
+        if ((scrollValue_ == -1 || scrollValue_ < value) && IsSearching_ && MessagesScrollbar::getPreloadingDistance() + absY > scrollBounds.second)
         {
-            emit fetchRequestedEvent();
+            emit fetchRequestedEvent(false /* don't move to bottom */);
         }
+        else if ((scrollValue_ == -1 || scrollValue_ > value) && Scrollbar_->isInFetchRange(value))
+        {
+            emit fetchRequestedEvent(true);
+        } 
 
         if (Mode_ == ScrollingMode::Selection)
         {
@@ -845,12 +856,12 @@ namespace Ui
         {
             emit scrollMovedToBottom();
         }
+
+        scrollValue_ = value;
     }
 
     void MessagesScrollArea::applySelection(const bool forShift)
     {
-        forShift;
-
         assert(!LastMouseGlobalPos_.isNull());
 
         const auto selectionBegin = Layout_->absolute2Viewport(SelectionBeginAbsPos_);
@@ -1040,6 +1051,21 @@ namespace Ui
     bool MessagesScrollArea::isScrollAtBottom() const
     {
         return Layout_->isViewportAtBottom();
+    }
+
+    void MessagesScrollArea::setIsSearch(bool _isSearch)
+    {
+        IsSearching_ = _isSearch;
+    }
+
+    bool MessagesScrollArea::getIsSearch() const
+    {
+        return IsSearching_;
+    }
+
+    void MessagesScrollArea::updateItems()
+    {
+        Layout_->updateItemsWidth();
     }
 }
 

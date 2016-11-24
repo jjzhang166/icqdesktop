@@ -39,7 +39,7 @@ namespace
     QString getChatNameStylesheet(const QString& _color)
     {
         return QString("font: %1 %2px \"%3\"; color: %4; background-color: transparent")
-            .arg(Fonts::appFontWeightQss(QFont::Weight::Normal))
+            .arg(Fonts::appFontWeightQss(Fonts::FontWeight::Normal))
             .arg(Utils::scale_value(18))
             .arg(Fonts::defaultAppFontQssName())
             .arg(_color);
@@ -48,7 +48,7 @@ namespace
     QString getChatDescriptionStylesheet(const QString& _color)
     {
         return QString("font: %1 %2px \"%3\"; color: %4; background-color: transparent")
-            .arg(Fonts::appFontWeightQss(QFont::Weight::Normal))
+            .arg(Fonts::appFontWeightQss(Fonts::FontWeight::Normal))
             .arg(Utils::scale_value(14))
             .arg(Fonts::defaultAppFontQssName())
             .arg(_color);
@@ -57,7 +57,7 @@ namespace
     QString getFriendsStylesheet(const QString& _color)
     {
         return QString("font: %1 %2px \"%3\"; color: %4; background-color: transparent")
-            .arg(Fonts::appFontWeightQss(QFont::Weight::DemiBold))
+            .arg(Fonts::appFontWeightQss(Fonts::FontWeight::Semibold))
             .arg(Utils::scale_value(12))
             .arg(Fonts::defaultAppFontQssName())
             .arg(_color);

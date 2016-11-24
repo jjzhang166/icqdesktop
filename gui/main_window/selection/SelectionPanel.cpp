@@ -53,7 +53,7 @@ Ui::Selection::SelectionPanel::SelectionPanel(MessagesScrollArea* _messages, QWi
 
     connect(forward, &QPushButton::clicked, this, [=]()
     {
-        forwardMessage(messages_->getQuotes());
+        forwardMessage(messages_->getQuotes(), false);
     });
 
     connect(copy, &QPushButton::clicked, [this]()

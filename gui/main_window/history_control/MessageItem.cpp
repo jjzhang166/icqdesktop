@@ -355,6 +355,9 @@ namespace Ui
 
         ContentMenu_ = new ContextMenu(this);
 
+        if (ContentWidget_->haveOpenInBrowserMenu())
+            ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_openbrowser_100.png")), QT_TRANSLATE_NOOP("context_menu", "Open in browser"), makeData("open_in_browser"));
+
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_link_100.png")), QT_TRANSLATE_NOOP("context_menu", "Copy link"), makeData("copy_link"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_attach_100.png")), QT_TRANSLATE_NOOP("context_menu", "Copy file"), makeData("copy_file"));
         ContentMenu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_download_100.png")), QT_TRANSLATE_NOOP("context_menu", "Save as..."), makeData("save_as"));
@@ -522,7 +525,11 @@ namespace Ui
         MessageBody_ = new TextEditEx(
             this,
             Fonts::defaultAppFontFamily(),
+#ifdef __linux__
+            Utils::scale_value(16),
+#else
             Utils::scale_value(15),
+#endif //__linux__
             palette,
             false,
             false
@@ -567,7 +574,7 @@ namespace Ui
         Sender_ = new TextEmojiWidget(
             this,
             Fonts::defaultAppFontFamily(),
-            Fonts::defaultAppFontStyle(),
+            Fonts::defaultAppFontWeight(),
             Utils::scale_value(12),
             color
         );
@@ -576,7 +583,7 @@ namespace Ui
 
     void MessageItem::drawAvatar(QPainter& _p)
     {
-        if (Data_->Sender_.isEmpty() || Data_->AvatarSize_ <= 0)
+        if (!Data_ || Data_->Sender_.isEmpty() || Data_->AvatarSize_ <= 0)
         {
             return;
         }
@@ -1362,6 +1369,10 @@ namespace Ui
         {
             emit copy(ContentWidget_->toLink());
         }
+        else if (command == "open_in_browser")
+        {
+            QDesktopServices::openUrl(ContentWidget_->toLink());
+        }
         else if (command == "copy_file")
         {
             ContentWidget_->copyFile();
@@ -1815,7 +1826,11 @@ namespace Ui
 
         int32_t getMessageTopPadding()
         {
+#ifdef __linux__
+            return Utils::scale_value(7);
+#else
             return Utils::scale_value(4);
+#endif //__linux__
         }
 
         int32_t getMessageBottomPadding()

@@ -2,5 +2,6 @@
 
 namespace Translit
 {
-    QStringList getPossibleStrings(const QString& text);
+    std::vector<QStringList> getPossibleStrings(const QString& text);
+    int getMaxSearchTextLength();
 }

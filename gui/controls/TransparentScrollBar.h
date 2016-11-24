@@ -139,7 +139,7 @@ namespace Ui
         virtual void enterEvent(QEvent *_e) override;
         virtual void leaveEvent(QEvent *_e) override;
         virtual QItemSelectionModel::SelectionFlags selectionCommand(const QModelIndex &index,
-                                                                 const QEvent *event = 0) const;
+                                                                 const QEvent *event = 0) const override;
     };
 
     class ListViewWithTrScrollBar : public FocusableListView, public AbstractWidgetWithScrollBar
@@ -190,7 +190,7 @@ namespace Ui
         virtual void wheelEvent(QWheelEvent *event) override;
         void updateGeometry();
     private:
-        bool eventFilter(QObject *obj, QEvent *event);
+        bool eventFilter(QObject *obj, QEvent *event) override;
     };
 
     class TextEditExWithTrScrollBar : public QTextBrowser, public AbstractWidgetWithScrollBar

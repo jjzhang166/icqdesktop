@@ -49,7 +49,7 @@ namespace Ui
                 pl->setAlignment(Qt::AlignCenter);
                 {
                     auto w = new ContactAvatarWidget(this, _aimid, _display_name, Utils::scale_value(180), true);
-                    w->SetIsInMyProfile(true);
+                    w->SetMode(ContactAvatarWidget::Mode::MyProfile);
 
                     w->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
                     pl->addWidget(w);

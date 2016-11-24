@@ -127,22 +127,28 @@ namespace Ui
 		}
 	}
 
-	void HistoryControl::contactSelected(QString _aimId)
+    void HistoryControl::contactSelected(QString _aimId, qint64 _messageId)
 	{
         assert(!_aimId.isEmpty());
         if (!Logic::getContactListModel()->getContactItem(_aimId))
             return;
-
+        
+        if (_messageId != -1)
+        {
+            Logic::GetMessagesModel()->messagesDeletedUpTo(_aimId, -1 /* _id */);
+            Logic::GetMessagesModel()->setRecvLastMsg(_aimId, false);
+        }
+        
         HistoryControlPage* oldPage = qobject_cast<HistoryControlPage*>(stacked_widget_->currentWidget());
-		if (oldPage)
+		if (oldPage && _messageId == -1)
 		{
             if (oldPage->aimId() == _aimId)
                 return;
 
-			oldPage->updateNewPlate(true);
+			oldPage->updateState(true);
 		}
 
-        emit Utils::InterConnector::instance().historyControlReady(_aimId);
+        emit Utils::InterConnector::instance().historyControlReady(_aimId, _messageId);
 		auto iter = pages_.find(_aimId);
         const auto createNewPage = (iter == pages_.end());
 		if (createNewPage)
@@ -161,7 +167,7 @@ namespace Ui
         auto contactPage = *iter;
 
 		stacked_widget_->setCurrentWidget(contactPage);
-		contactPage->updateNewPlate(false);
+		contactPage->updateState(false);
 		contactPage->open();
 
         for (auto page : pages_)
@@ -221,6 +227,8 @@ namespace Ui
 
 		delete iter_page.value();
 		pages_.erase(iter_page);
+
+        emit Utils::InterConnector::instance().dialogClosed(_aimId);
 	}
 
     HistoryControlPage* HistoryControl::getCurrentPage() const

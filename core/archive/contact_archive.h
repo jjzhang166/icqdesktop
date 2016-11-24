@@ -49,9 +49,11 @@ namespace core
                 get_all,
                 skip_patches_and_deleted
             };
-            void get_messages(int64_t _from, int64_t _count, history_block& _messages, get_message_policy policy) const;
-            void get_messages_index(int64_t _from, int64_t _count, headers_list& _headers) const;
+            void get_messages(int64_t _from, int64_t _count, history_block& _messages, get_message_policy policy, bool _to_older) const;
+            void get_messages_index(int64_t _from, int64_t _count, headers_list& _headers, bool _to_older) const;
             bool get_messages_buddies(std::shared_ptr<archive::msgids_list> _ids, std::shared_ptr<history_block> _messages) const;
+            static bool get_history_file(const std::wstring& _file_name, core::tools::binary_stream& _data
+                , std::shared_ptr<int64_t> _offset, std::shared_ptr<int64_t> _remaining_size, int64_t& _cur_index, std::shared_ptr<int64_t> _mode);
 
             bool get_next_hole(int64_t _from, archive_hole& _hole, int64_t _depth);
 
@@ -65,7 +67,7 @@ namespace core
                 Out dlg_state& _updated_state,
                 Out dlg_state_changes& _state_changes);
 
-            int load_from_local();
+            int32_t load_from_local();
 
             bool need_optimize();
             void optimize();

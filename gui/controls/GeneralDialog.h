@@ -17,6 +17,10 @@ namespace Ui
     Q_SIGNALS:
 		void leftButtonClicked();
 		void rightButtonClicked();
+        void shown(QWidget *);
+        void hidden(QWidget *);
+        void moved(QWidget *);
+        void resized(QWidget *);
 
     private Q_SLOTS:
         void leftButtonClick();
@@ -32,7 +36,7 @@ namespace Ui
         bool showInPosition(int _x, int _y);
 
         void addAcceptButton(QString _buttonText, int _buttonMarginPx, const bool _isEnabled);
-        void addButtonsPair(QString _buttonTextLeft, QString _buttonTextRight, int _marginPx, int _buttonBetweenPx);
+        void addButtonsPair(QString _buttonTextLeft, QString _buttonTextRight, int _marginPx, int _buttonBetweenPx, bool _rejectable = true, bool _acceptable = true);
 
         QPushButton* takeAcceptButton();
 
@@ -42,9 +46,18 @@ namespace Ui
         void addText(QString _messageText, int _upperMarginPx);
         void addError(QString _messageText);
         void setKeepCenter(bool _isKeepCenter);
+        inline void setShadow(bool b) { shadow_ = b; }
+        
+        inline void setLeftButtonDisableOnClicked(bool v) { leftButtonDisableOnClicked_ = v; }
+        inline void setRightButtonDisableOnClicked(bool v) { rightButtonDisableOnClicked_ = v; }
 
     protected:
-       virtual void resizeEvent(QResizeEvent *) override;
+        virtual void showEvent(QShowEvent *) override;
+        virtual void hideEvent(QHideEvent *) override;
+        virtual void moveEvent(QMoveEvent *) override;
+        virtual void resizeEvent(QResizeEvent *) override;
+        virtual void mousePressEvent(QMouseEvent* _e) override;
+        virtual void keyPressEvent(QKeyEvent* _e) override;
 
     private:
         QLayout *initBottomLayout(const int32_t _buttonMarginPx);
@@ -67,14 +80,10 @@ namespace Ui
         int                     x_;
         int                     y_;
         QLabel*                 bottomLabel_;
-        
         bool                    ignoreKeyPressEvents_;
-
-        std::unique_ptr<Utils::SignalsDisconnector> disconnector_;
-
-    protected:
-        virtual void mousePressEvent(QMouseEvent* _e) override;
-        virtual void keyPressEvent(QKeyEvent* _e) override;
-
+        bool                    shadow_;
+        
+        bool                    leftButtonDisableOnClicked_;
+        bool                    rightButtonDisableOnClicked_;
     };
 }

@@ -5,9 +5,11 @@
 #include "../../../cache/themes/themes.h"
 #include "../../../controls/TextEmojiWidget.h"
 #include "../../../controls/PictureWidget.h"
+#include "../../../controls/ContactAvatarWidget.h"
 #include "../../../utils/log/log.h"
 #include "../../../utils/Text2DocConverter.h"
 #include "../../../my_info.h"
+#include "../../contact_list/ContactListModel.h"
 
 #include "QuoteBlockLayout.h"
 #include "Selection.h"
@@ -64,19 +66,18 @@ IItemBlockLayout* QuoteBlock::getBlockLayout() const
     return Layout_;
 }
 
-QString QuoteBlock::getSelectedText() const
+QString QuoteBlock::getSelectedText(bool isFullSelect) const
 {
     QString result;
-    int i = 0;
     for (auto b : Blocks_)
     {
-        ++i;
         if (!b->isSelected())
             continue;
 
-        result += QString("> %1 (%2): ").arg(Quote_.senderFriendly_, QDateTime::fromTime_t(Quote_.time_).toString("dd.MM.yyyy hh:mm"));
+        if (isFullSelect)
+            result += QString("> %1 (%2): ").arg(Quote_.senderFriendly_, QDateTime::fromTime_t(Quote_.time_).toString("dd.MM.yyyy hh:mm"));
+
         QString source = b->getSelectedText();
-        source.remove(QChar::LineFeed);
         result += source;
         result += QChar::LineFeed;
     }
@@ -93,7 +94,6 @@ QString QuoteBlock::getSourceText() const
         ++i;
         result += QString("> %1 (%2): ").arg(Quote_.senderFriendly_, QDateTime::fromTime_t(Quote_.time_).toString("dd.MM.yyyy hh:mm"));
         QString source = b->getSourceText();
-        source.remove(QChar::LineFeed);
         result += source;
         result += QChar::LineFeed;
     }
@@ -131,6 +131,40 @@ Data::Quote QuoteBlock::getQuote() const
         quote.id_ = Quote_.id_;
 
    return quote;
+}
+
+IItemBlock* QuoteBlock::findBlockUnder(const QPoint &pos) const
+{
+    for (auto block : Blocks_)
+    {
+        assert(block);
+        if (!block)
+        {
+            continue;
+        }
+
+        const auto blockLayout = block->getBlockLayout();
+        assert(blockLayout);
+
+        if (!blockLayout)
+        {
+            continue;
+        }
+
+        const auto &blockGeometry = blockLayout->getBlockGeometry();
+
+        const auto topY = blockGeometry.top();
+        const auto bottomY = blockGeometry.bottom();
+        const auto posY = pos.y();
+
+        const auto isPosOverBlock = ((posY >= topY) && (posY <= bottomY));
+        if (isPosOverBlock)
+        {
+            return block;
+        }
+    }
+
+    return nullptr;
 }
 
 bool QuoteBlock::hasRightStatusPadding() const
@@ -188,17 +222,20 @@ QRect QuoteBlock::setBlockGeometry(const QRect &ltr)
     if (needForwardBlock())
        b.moveTop(b.y() + ForwardLabel_->height() + Style::getForwardLabelBottomMargin());
 
+    int i = 1;
     for (auto block : Blocks_)
     {
-        if (block->containsImage() && b.width() > Style::getMaxImageWidthInQuote())
-            b.setWidth(Style::getMaxImageWidthInQuote());
-
+        block->setMaxPreviewWidth(Style::getMaxImageWidthInQuote());
         auto blockGeometry = block->setBlockGeometry(b);
-        b.moveTopLeft(blockGeometry.bottomLeft());
-        r.setBottomLeft(blockGeometry.bottomLeft());
+        auto bl = QPoint(blockGeometry.bottomLeft().x(), blockGeometry.bottomLeft().y() + Style::getQuoteBlockSpacing());
+        b.moveTopLeft(bl);
+        r.setBottomLeft(i == Blocks_.size() ? blockGeometry.bottomLeft() : bl);
+        ++i;
     }
+    r.setBottom(r.bottom() + Style::getQuoteBottomSpace());
     r.moveLeft(r.x() - Style::getQuoteOffsetLeft());
     r.moveLeft(r.x() - Style::getForwardIconOffset());
+
     if (!quoteOnly())
     {
         if (Quote_.isLastQuote_)
@@ -206,6 +243,7 @@ QRect QuoteBlock::setBlockGeometry(const QRect &ltr)
         else
             r.setHeight(r.height() + Style::getTextQuoteOffset());
     }
+
     setGeometry(r);
     r.setHeight(r.height() - Style::getQuoteSpacing());
     Geometry_ = r;
@@ -224,12 +262,24 @@ void QuoteBlock::onActivityChanged(const bool isVisible)
 void QuoteBlock::addBlock(GenericBlock* block)
 {
     block->setBubbleRequired(false);
+    block->setFontSize(Utils::scale_value(14));
+    block->setTextOpacity(0.8);
     Blocks_.push_back(block);
+
+    connect(block, SIGNAL(clicked()), this, SLOT(blockClicked()), Qt::QueuedConnection);
 }
 
 bool QuoteBlock::quoteOnly() const
 {
     return !ReplyBlock_;
+}
+
+void QuoteBlock::blockClicked()
+{
+//     if (!Quote_.isForward_)
+//     {
+//         Logic::getContactListModel()->setCurrent(Logic::getContactListModel()->selectedContact(), Quote_.msgId_, true);
+//     }
 }
 
 void QuoteBlock::drawBlock(QPainter &p)
@@ -238,12 +288,12 @@ void QuoteBlock::drawBlock(QPainter &p)
     p.save();
     p.setPen(pen);
     auto bl = rect().bottomLeft();
-    bl.setX(bl.x() + Style::getForwardIconOffset());
+    bl.setX(bl.x() + Style::getLineOffset());
     if (Quote_.isLastQuote_ && !quoteOnly())
-        bl = QPoint(rect().bottomLeft().x() + Style::getForwardIconOffset(), rect().bottomLeft().y() - Style::getQuoteOffsetBottom());
+        bl = QPoint(rect().bottomLeft().x() + Style::getLineOffset(), rect().bottomLeft().y() - Style::getQuoteOffsetBottom());
     
     auto tl = rect().topLeft();
-    tl.setX(tl.x() + Style::getForwardIconOffset());
+    tl.setX(tl.x() + Style::getLineOffset());
     if (Quote_.isFirstQuote_)
     {
         tl.setY(tl.y() + Style::getFirstQuoteOffset());
@@ -262,27 +312,13 @@ void QuoteBlock::initialize()
 {
     GenericBlock::initialize();
 
-    TextCtrl_ = new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontStyle(), Utils::scale_value(12), QColor("#696969"));
+    TextCtrl_ = new TextEmojiWidget(this, Fonts::defaultAppFontFamily(), Fonts::defaultAppFontWeight(), Utils::scale_value(12), QColor("#579e1c"));
+
+    Avatar_ = new ContactAvatarWidget(this, Quote_.senderId_, Quote_.senderFriendly_, Utils::scale_value(20), true);
     
-//     const auto current = QDateTime::currentDateTime();
-//     const auto date = QDateTime::fromTime_t(Quote_.time_);
-//     const auto days = date.daysTo(current);
-//     QString time = ", ";
-//     if (days == 0)
-//         time += QT_TRANSLATE_NOOP("contact_list", "today");
-//     else if (days == 1)
-//         time += QT_TRANSLATE_NOOP("contact_list", "yesterday");
-//     else
-//         time += Utils::GetTranslator()->formatDate(date.date(), date.date().year() == date.date().year());
-//     if (date.date().year() == current.date().year())
-//     {
-//         time += QT_TRANSLATE_NOOP("contact_list", " at ");
-//         time += date.time().toString(Qt::SystemLocaleShortDate);
-//     }
-//     
-//     TextCtrl_->setText(Quote_.senderFriendly_ + time);
     TextCtrl_->setText(Quote_.senderFriendly_);
     TextCtrl_->show();
+    Avatar_->show();
 }
 
 bool QuoteBlock::replaceBlockWithSourceText(IItemBlock *block)
@@ -304,6 +340,8 @@ bool QuoteBlock::replaceBlockWithSourceText(IItemBlock *block)
     
     textBlock->show();
     
+    connect(textBlock, SIGNAL(clicked()), this, SLOT(blockClicked()), Qt::QueuedConnection);
+
     existingBlock->deleteLater();
     existingBlock = textBlock;
     

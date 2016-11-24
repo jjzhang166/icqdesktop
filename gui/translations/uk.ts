@@ -175,6 +175,10 @@ photo</source>
         <source>Upload photo</source>
         <translation>Передати фотографію</translation>
     </message>
+    <message>
+        <source>Edit photo</source>
+        <translation>Редагувати фотографію</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -552,10 +556,6 @@ photo</source>
         <translation>пише...</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Створити групчат</translation>
-    </message>
-    <message>
         <source>Video</source>
         <translation>Відео</translation>
     </message>
@@ -574,6 +574,26 @@ photo</source>
     <message>
         <source>Search</source>
         <translation>Пошук</translation>
+    </message>
+    <message>
+        <source>CONTACTS</source>
+        <translation>КОНТАКТИ</translation>
+    </message>
+    <message>
+        <source>ALL MESSAGES</source>
+        <translation>ВСІ ПОВІДОМЛЕННЯ</translation>
+    </message>
+    <message>
+        <source>MESSAGES</source>
+        <translation>ПОВІДОМЛЕННЯ</translation>
+    </message>
+    <message>
+        <source>Search in all chats</source>
+        <translation>Шукати у всіх чатах</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Створити групчат</translation>
     </message>
 </context>
 <context>
@@ -728,6 +748,10 @@ photo</source>
     <message>
         <source>Forward</source>
         <translation>Переслати</translation>
+    </message>
+    <message>
+        <source>Open in browser</source>
+        <translation>Відкрити у браузері</translation>
     </message>
 </context>
 <context>
@@ -1663,26 +1687,54 @@ photo</source>
     </message>
 </context>
 <context>
-    <name>groupchat_pages</name>
+    <name>groupchats</name>
     <message>
-        <source>Done</source>
-        <translation>Готово</translation>
+        <source>Public chat</source>
+        <translation>Загальнодоступний</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>Чат буде видно будь-кому</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Приєднатися зі схваленням</translation>
+    </message>
+    <message>
+        <source>New members are waiting for admin approval</source>
+        <translation>Нові учасники чекають на схвалення адміністратора</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Лише для читання</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Нові учасники можуть читати. Учасники, схвалені адміністратором, можуть надсилати.</translation>
+    </message>
+    <message>
+        <source>Select members</source>
+        <translation>Вибрати учасників</translation>
     </message>
     <message>
         <source>Next</source>
         <translation>Далі</translation>
     </message>
     <message>
-        <source>You are not a member of this groupchat</source>
-        <translation>Ви не є учасником групчату</translation>
+        <source>Done</source>
+        <translation>Готово</translation>
     </message>
     <message>
         <source>Add to chat</source>
         <translation>Додати до чату</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Створити групчат</translation>
+        <source>You are not a member of this chat</source>
+        <translation>Ви не є учасником цього чату</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Ім&apos;я чату</translation>
     </message>
 </context>
 <context>
@@ -1750,6 +1802,18 @@ photo</source>
     <message>
         <source>Send %1 %2 %3 %4</source>
         <translation>Надіслати %1 %2 %3 %4</translation>
+    </message>
+    <message>
+        <source>This chat is read-only</source>
+        <translation>Цей чат лише для читання</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Вийти і видалити</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2052,6 +2116,10 @@ your phone number</source>
         <source>Your name</source>
         <translation>Ваше ім&apos;я</translation>
     </message>
+    <message>
+        <source>No messages found</source>
+        <translation>Не знайдено жодних повідомлень</translation>
+    </message>
 </context>
 <context>
     <name>popup_window</name>
@@ -2165,10 +2233,22 @@ your phone number</source>
     </message>
     <message>
         <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Дійсно переслати повідомлення користувачу &lt;USER&gt;?</translation>
     </message>
     <message>
         <source>Confirmation</source>
+        <translation>Підтвердження</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Параметри чату</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to ban user to write in this chat?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to allow user to write in this chat?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2476,7 +2556,7 @@ your phone number</source>
     </message>
     <message>
         <source>Chat list compact mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Компактний режим списку чату</translation>
     </message>
 </context>
 <context>
@@ -2770,6 +2850,50 @@ Please edit phone number and try again.</source>
     <message>
         <source>Birthday</source>
         <translation>день народження</translation>
+    </message>
+    <message>
+        <source>Search for messages</source>
+        <translation>Шукати повідомлення</translation>
+    </message>
+    <message>
+        <source>Link to chat</source>
+        <translation>Посилання на чат</translation>
+    </message>
+    <message>
+        <source>Ability to join chat by link</source>
+        <translation>Можливість приєднуватись до чату за посиланням</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Лише для читання</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Нові учасники можуть читати. Учасники, схвалені адміністратором, можуть надсилати.</translation>
+    </message>
+    <message>
+        <source>Age restriction</source>
+        <translation>Вікові обмеження</translation>
+    </message>
+    <message>
+        <source>Members must be of legal age to join</source>
+        <translation>Учасники повинні досягти повноліття, щоб приєднатися</translation>
+    </message>
+    <message>
+        <source>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</source>
+        <translation>На жаль, вас було видалено, та ви не можете бачити список учасників цього чату або відправляти їм повідомлення.</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Створити групчат</translation>
+    </message>
+    <message>
+        <source>Ban to write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow to write</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

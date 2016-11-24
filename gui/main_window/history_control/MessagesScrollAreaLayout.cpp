@@ -45,6 +45,8 @@ namespace Ui
             case MessagesScrollAreaLayout::SlideOp::NoSlide: lhs << "no-slide"; break;
             case MessagesScrollAreaLayout::SlideOp::SlideUp: lhs << "slide-up"; break;
             case MessagesScrollAreaLayout::SlideOp::SlideDown: lhs << "slide-down"; break;
+            default:
+                ;
         }
 
         return lhs;
@@ -203,20 +205,17 @@ namespace Ui
         }
     }
 
-    void MessagesScrollAreaLayout::addItem(QLayoutItem *item)
+    void MessagesScrollAreaLayout::addItem(QLayoutItem* /*item*/)
     {
-        item;
     }
 
-    QLayoutItem* MessagesScrollAreaLayout::itemAt(int index) const
+    QLayoutItem* MessagesScrollAreaLayout::itemAt(int /*index*/) const
     {
-        index;
         return nullptr;
     }
 
-    QLayoutItem* MessagesScrollAreaLayout::takeAt(int index)
+    QLayoutItem* MessagesScrollAreaLayout::takeAt(int /*index*/)
     {
-        index;
         return nullptr;
     }
 
@@ -385,7 +384,7 @@ namespace Ui
         return result;
     }
 
-    void MessagesScrollAreaLayout::insertWidgets(const WidgetsList& _widgets)
+    void MessagesScrollAreaLayout::insertWidgets(const WidgetsList& _widgets, bool _isMoveToButtonIfNeed, int64_t _mess_id)
     {
         assert(!_widgets.empty());
 
@@ -410,7 +409,13 @@ namespace Ui
             }
 
             if (auto messageItem = qobject_cast<MessageItem*>(widget))
-                connect(messageItem, &MessageItem::selectionChanged, ScrollArea_, &MessagesScrollArea::notifySelectionChanges);
+            {
+                connect(
+                    messageItem,
+                    &MessageItem::selectionChanged,
+                    ScrollArea_,
+                    &MessagesScrollArea::notifySelectionChanges);
+            }
 
             Widgets_.emplace(widget);
 
@@ -421,8 +426,7 @@ namespace Ui
 
             __TRACE(
                 "geometry",
-                "    is-at-bottom=<" << logutils::yn(isAtBottom) << ">"
-                );
+                "    is-at-bottom=<" << logutils::yn(isAtBottom) << ">");
 
             // -----------------------------------------------------------------------
             // find a proper place for the widget
@@ -449,9 +453,31 @@ namespace Ui
             slideItemsApart(itemInfoIter, insertedItemHeight, slideOp);
         }
 
-        if (isAtBottom)
+        if (isAtBottom && _isMoveToButtonIfNeed)
         {
             moveViewportToBottom();
+        }
+
+        if (_mess_id != -1)
+        {
+            const auto delta = ViewportSize_.height() / 2;
+
+            auto it = LayoutItems_.begin();
+
+            while (it != LayoutItems_.end() && (*it)->Key_.getId() != _mess_id)
+            {
+                ++it;
+            }
+
+            assert(it != LayoutItems_.end());
+
+            if (it == LayoutItems_.end())
+            {
+                it = LayoutItems_.begin();
+            }
+
+            QRect rect = (*it)->AbsGeometry_;
+            ViewportAbsY_ = (rect.y() - delta);
         }
 
         applyItemsGeometry();
@@ -1011,12 +1037,20 @@ namespace Ui
     {
         for (auto &item : LayoutItems_)
         {
-            const auto activateItem = (!item->IsActive_ && item->IsVisible_ && item->IsGeometrySet_);
+            const auto activateItem = (!item->IsActive_ && item->IsGeometrySet_);
             if (activateItem)
             {
                 item->IsActive_ = true;
 
                 onItemActivityChanged(item->Widget_, true);
+            }
+
+            const auto makeItemVisible = (!item->IsVisible_ && item->IsGeometrySet_);
+            if (makeItemVisible)
+            {
+                item->IsVisible_ = true;
+
+                onItemVisibilityChanged(item->Widget_, true);
             }
         }
     }
@@ -1025,6 +1059,13 @@ namespace Ui
     {
         for (auto &item : LayoutItems_)
         {
+            if (item->IsVisible_)
+            {
+                item->IsVisible_ = false;
+
+                onItemVisibilityChanged(item->Widget_, false);
+            }
+
             if (item->IsActive_)
             {
                 item->IsActive_ = false;
@@ -1255,6 +1296,8 @@ namespace Ui
     {
         const auto viewportAbsMiddleY = evalViewportAbsMiddleY();
 
+        bool atBottom = ScrollArea_->isScrollAtBottom();
+
         const auto end = LayoutItems_.end();
         for (
             auto iter = LayoutItems_.begin();
@@ -1291,6 +1334,9 @@ namespace Ui
                 );
 
                 slideItemsApart(iter, deltaY, slideOp);
+
+                if (atBottom)
+                    ScrollArea_->scrollToBottom();
             }
         }
 

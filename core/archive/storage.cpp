@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "storage.h"
+#include "history_message.h"
 #include "../tools/system.h"
 
 using namespace core;
@@ -159,4 +160,70 @@ bool storage::read_data_block(int64_t _offset, core::tools::binary_stream& _data
         return false;
 
     return true;
+}
+
+bool storage::fast_read_data_block(core::tools::binary_stream& buffer, int64_t& current_pos, int64_t& _begin, int64_t _end_position)
+{
+    bool is_small_file = false;
+
+    static auto step = sizeof(uint32_t) / sizeof(char);
+    if (current_pos + 4 * step >= buffer.all_size())
+    {
+        is_small_file = true;
+    }
+
+    if (!is_small_file)
+    {
+        uint32_t sz1 = 0, sz2 = 0, sz3 = 0, sz4 = 0;
+
+        while (!is_small_file)
+        {
+            if (current_pos + 4 * step >= _end_position)
+            {
+                is_small_file = true;
+                break;
+            }
+
+            sz1 = *((uint32_t*)(&(buffer.get_data())[current_pos]));
+            sz2 = *((uint32_t*)(&(buffer.get_data())[current_pos + step]));
+
+            if (sz1 == 0 || sz1 != sz2 || sz1 > max_data_block_size)
+            {
+                ++current_pos;
+                continue;
+            }
+
+            if (current_pos + 4 * step + sz1 <= _end_position)
+            {
+                sz3 = *((uint32_t*)(&(buffer.get_data())[current_pos + 2 * step + sz1]));
+                sz4 = *((uint32_t*)(&(buffer.get_data())[current_pos + 3 * step + sz1]));
+
+                if (sz3 != sz1 || sz3 != sz4)
+                {
+                    ++current_pos;
+                    continue;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                is_small_file = true;
+                break;
+            }
+        };
+
+        if (!is_small_file)
+        {
+            current_pos += 2 * step;
+            _begin = current_pos;
+
+            buffer.set_output(current_pos);
+            buffer.set_input(current_pos + sz1);
+
+            current_pos += sz1 + 2 * step;
+        }
+    }
+
+    return !is_small_file;
 }

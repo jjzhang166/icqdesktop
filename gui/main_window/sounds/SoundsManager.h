@@ -31,7 +31,7 @@ namespace Ui
 		Q_OBJECT
 Q_SIGNALS:
         void pttPaused(int);
-        void pttFinished(int);
+        void pttFinished(int, bool);
 
 	public:
 		SoundsManager();

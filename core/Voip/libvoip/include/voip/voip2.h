@@ -2,12 +2,15 @@
 #define __VOIP2_H__
 
 #include "voip_types.h"
+#include "std_connectors.hpp"
 
 namespace voip2 {
 
 using namespace voip;
 
 #define PREVIEW_RENDER_NAME     "@preview"
+#define MASKARAD_USER "@maskarad"
+
 enum LayoutType {       // -= remote =-         -= camera =-
     LayoutType_One,     // equally spaced       detached
     LayoutType_Two,     // equally spaced       as remote
@@ -112,45 +115,8 @@ enum VoipOutgoingMsg {
     | #     | 11     |
     | A--D  | 12--15 |
 */
-#define ANIMATION_CURVE_SAMPLERATE_HZ 50
-enum { kMaxAnimationCurveLen = 500 };
-
-enum VisualEffectTypes {
-    kVisualEffectType_Connecting = 0,
-    kVisualEffectType_Reconnecting,
-    //----------------------------
-    kVisualEffectType_Total
-};
-
-struct VisualEffectContext {
-    unsigned animationPeriodMs; // can be less then animation duration
-
-    unsigned width;
-    unsigned height;
-
-    unsigned frameWidth;
-    unsigned frameHeight;
-
-    int xOffset; // from viewport center
-    int yOffset; // from viewport center
-
-    unsigned curveLength;
-    unsigned colorBGRACurve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
-    float geometryCurve[kMaxAnimationCurveLen];// sampled at 50Hz (20ms step), 5 sec max
-};
-
-//#define WindowSettingsThemesCount 2
-typedef enum {
-    WindowTheme_One = 0,
-    WindowTheme_Two = 1,
-    WindowTheme_Three = 2,
-    WindowTheme_Four = 3,
-    WindowTheme_Total = 4
-} WindowThemeType;
 
 struct WindowSettings {
-
-    WindowThemeType theme;
     
     struct {
         // picture size
@@ -177,9 +143,10 @@ struct WindowSettings {
         unsigned offsetRight;
 
         ChannelStatusContext status;
+        
         // Avatar color rings
         VisualEffectContext visualEffect[kVisualEffectType_Total];
-
+        
         hbmp_t   logoImage;
         unsigned logoPosition;// combination of values from Position enum, if (hwnd == NULL) sets position for all windows
         int      logoOffsetL;
@@ -229,11 +196,15 @@ struct WindowSettings {
     unsigned header_height_pix;
     unsigned gap_width_pix;
 
+    FocusEffectContext focusEffect;
+
     // Avatar bounce animation
+    // TODO: make context
     unsigned  avatarAnimationCurveLen;   // in samples
     float     avatarAnimationCurve[kMaxAnimationCurveLen];     // sampled at 50Hz (20ms step), 5 sec max
 
     // Glow animation
+    // TODO: make context
     unsigned      statusGlowRadius;           // 0 - disable glow effect, otherwise set radius
     double        glowAttenuation;
     unsigned char connectedGlowColor[4];
@@ -246,6 +217,8 @@ struct WindowSettings {
     unsigned char oldverBackround_bgra[4];   
     unsigned oldverBackroundHeightPer; // 0 - 100 %
     unsigned oldverTextLargeDelayMs; // if 0 - TextLarge will be shown on hover only
+    
+    unsigned animationTimeMs;
 };
 /*
     Integration design:
@@ -400,6 +373,31 @@ enum DeviceStatus {
     DeviceStatus_Stopped_StartFail,
 };
 
+struct VideoDeviceCapability {
+    bool canFlash;
+    struct {
+        bool On;
+        bool Auto;
+    } FlashModes;
+
+    bool canTorch;
+    struct {
+        bool On;
+        bool Auto;
+    } TorchModes;
+};
+
+enum VideoDeviceFlashFlags {
+    VideoDevice_FlashOff = 0,
+    VideoDevice_FlashOn,
+    VideoDevice_FlashAuto,
+};
+enum VideoDeviceTorchFlags {
+    VideoDevice_TorchOff = 0,
+    VideoDevice_TorchOn,
+    VideoDevice_TorchAuto
+};
+
 class VoipObserver {
 public:
     virtual void DeviceListChanged          (DeviceType deviceType) = 0;
@@ -408,6 +406,7 @@ public:
     virtual void AudioDeviceVolumeChanged   (DeviceType deviceType, float volume) = 0;
     virtual void AudioDeviceMuteChanged     (DeviceType deviceType, bool mute) = 0;
     virtual void AudioDeviceSpeakerphoneChanged(bool speakerphoneOn) = 0;
+    virtual void VideoDeviceCapabilityChanged(const char* camera_uid, VideoDeviceCapability caps) {}
 
     virtual void RenderMouseTap     (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, voip2::MouseTap mouseTap, voip2::ViewArea viewArea) = 0;
     virtual void ButtonPressed      (const char* account_uid, const char* user_id, voip::hwnd_t hwnd, voip::ButtonType type) = 0;
@@ -420,12 +419,29 @@ public:
     virtual void InterruptByGsmCall(bool gsmCallStarted) = 0;
 
     virtual void MinimalBandwidthMode_StateChanged(bool mbmEnabled) = 0;
+    
+    // TODO: For now it is used only for Masksrad.
+    virtual void RecordFileReady(const char* filename, unsigned width, unsigned height) {}
+    virtual void StillImageReady(const char *data, unsigned len, unsigned width, unsigned height) {}
+
+    // @return res = true on success.
+    virtual void MaskEngineInitStatus(bool success) {}
+    virtual void MaskLoadStatus(const char* mask_path, bool success) {}
 };
 
 enum {
     MAX_DEVICE_NAME_LEN = 512,
     MAX_DEVICE_GUID_LEN = 512,
     MAX_SAS_LENGTH      = 128
+};
+
+struct MaskInfo
+{
+    String     name;                       // todo: how to localize names?
+    String     mask_path;                  // should be passed to LoadMask()
+    String     preview_path;               // path to preview image file
+    int        version;
+    Vector<String>      categories;        // which tabs to put this mask into
 };
 
 struct CreatePrms; // hidden from application
@@ -451,7 +467,7 @@ public:
     );
     static void  DestroyVoip2(Voip2*);
 
-    virtual bool Init(CreatePrms* createPrms = NULL) = 0;
+    virtual bool Init(bool iosCallKitSupport = false, CreatePrms* createPrms = NULL) = 0;
     virtual void EnableMsgQueue() = 0;
     virtual void StartSignaling() = 0;
 
@@ -486,6 +502,13 @@ public:
     virtual void CallDecline(const char* user_id, bool busy = false) = 0;
     virtual void CallStop   () = 0; // Does not affect incoming calls
 
+    // -- Camera interface
+    virtual void StartCallRecording(unsigned rotateAngle, float aspectRatio) = 0;
+    virtual void StopCallRecording(bool deleteRecordedFile=false) = 0;
+    virtual void CaptureStillImage(unsigned rotateAngle, bool mirror, float aspectRatio) = 0;
+    virtual void SetVideoDeviceParams(VideoDeviceFlashFlags flash, VideoDeviceTorchFlags torch, bool enableManualFocus, bool enableManualExposure) = 0;
+    // -- Camera interface
+
     virtual void ShowIncomingConferenceParticipants(const char* user_id, ConferenceParticipants& conferenceParticipants) = 0;
     virtual void SendAndPlayOobDTMF(const char* user_id, int code, int play_ms=200, int play_Db=10) = 0;
 
@@ -499,13 +522,21 @@ public:
                                                 int radiusPix = 0, // negative value set radius to min(width/2, height/2)
                                                 unsigned smoothingBorderPx = 0, unsigned attenuation_from_0_to_100 = 0) = 0;
     virtual void WindowChangeOrientation    (OrientationMode mode) = 0;
-    virtual void WindowSetLayoutType        (hwnd_t wnd, LayoutType layoutType) = 0;
-    virtual void WindowSwitchAspectMode     (hwnd_t wnd, const char* user_id) = 0;
-    virtual void WindowSetPrimary           (hwnd_t wnd, const char* user_id) = 0;
-    virtual void WindowSetControlsStatus    (hwnd_t wnd, bool visible, unsigned off_left, unsigned off_top, unsigned off_right, unsigned off_bottom, unsigned period_ms, bool enableOverlap) = 0;
+    virtual void WindowSetLayoutType        (hwnd_t wnd, LayoutType layoutType, bool animated=true) = 0;
+    virtual void WindowSwitchAspectMode     (hwnd_t wnd, const char* user_id, bool animated=true) = 0;
+    virtual void WindowSetPrimary           (hwnd_t wnd, const char* user_id, bool animated=true) = 0;
+    virtual void WindowSetControlsStatus    (hwnd_t wnd, bool visible, unsigned off_left, unsigned off_top, unsigned off_right, unsigned off_bottom, bool animated, bool enableOverlap) = 0;
     virtual void WindowAddButton            (ButtonType type, ButtonPosition position) = 0;
     virtual void WindowSetAvatarPosition    (hwnd_t wnd, unsigned position) = 0; // position - combination of values from Position enum, if (hwnd == NULL) sets position for all windows
     virtual void WindowSetTheme             (hwnd_t wnd, voip2::WindowThemeType theme) = 0;
+
+    // Mask API
+    static bool GetMaskEngineVersion(unsigned int &version);                // Downloaded data must match engine's version.
+                                                                            // Return false if engine is not compiled into library.
+    virtual void InitMaskEngine(const char *data_folder_path = 0) = 0;      // Use NULL to destroy. On error you can catch signal.
+    virtual void EnumerateMasks(const char *mask_base_folder, Vector<MaskInfo> &masks) = 0;
+    virtual void LoadMask(const char *mask_path) = 0;                       // Use NULL to unload mask.
+    
 
 #if (__PLATFORM_WINPHONE || WINDOWS_PHONE) && defined(__cplusplus_winrt)
     virtual void GetVoipInfo(voip2::CallInfo& callInfo) = 0;

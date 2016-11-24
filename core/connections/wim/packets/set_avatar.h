@@ -24,11 +24,16 @@ namespace core
             virtual int32_t execute_request(std::shared_ptr<core::http_request_simple> request) override;
 
             std::string aimid_;
+            bool chat_;
             tools::binary_stream image_;
+            
+            std::string id_;
 
         public:
-            set_avatar(const wim_packet_params& _params, tools::binary_stream _image, const std::string& _aimId);
+            set_avatar(const wim_packet_params& _params, tools::binary_stream _image, const std::string& _aimId, const bool _chat);
             virtual ~set_avatar();
+            
+            inline const std::string &get_id() const { return id_; }
         };
     }
 }

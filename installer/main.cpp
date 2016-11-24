@@ -49,9 +49,9 @@ int main(int _argc, char* _argv[])
 	QString icq_path = app.applicationDirPath() += "/icq";
 	QFile::remove(icq_path);
 #ifdef __x86_64__
-    QFile::copy(":/bin/release64/gui/icq", icq_path);
+    QFile::copy(":/bin/Release64/icq", icq_path);
 #else
-    QFile::copy(":/bin/release32/gui/icq", icq_path);
+    QFile::copy(":/bin/Release32/icq", icq_path);
 #endif
     std::string chmod("chmod 755 ");
     icq_path.replace(" ", "\\ ");

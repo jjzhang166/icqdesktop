@@ -61,7 +61,7 @@ namespace Utils
         }
         else
         {
-            assert(!"not implemented yet!");
+            clipPath.moveTo(x, y);
         }
 
         // lb

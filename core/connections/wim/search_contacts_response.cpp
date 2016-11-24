@@ -61,7 +61,7 @@ void search_contacts_response::serialize(core::coll_helper root_coll)
     if (data_.empty())
         return;
     ifptr<iarray> array(root_coll->create_array());
-    array->reserve((int)data_.size());
+    array->reserve((int32_t)data_.size());
     for (auto c: data_)
     {
         coll_helper coll(root_coll->create_collection(), true);

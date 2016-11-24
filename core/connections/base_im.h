@@ -25,9 +25,14 @@ namespace core
     enum class typing_status;
     class auto_callback;
 
-    namespace wim {
+    class masks;
+
+    namespace wim
+    {
+        class im;
         class wim_packet;
         struct wim_packet_params;
+        class chat_params;
     }
 
     namespace archive
@@ -63,12 +68,15 @@ namespace core
 
     protected:
 
+        std::unique_ptr<masks> masks_;
+
         std::wstring get_contactlist_file_name();
         std::wstring get_my_info_file_name();
         std::wstring get_active_dilaogs_file_name();
         std::wstring get_favorites_file_name();
         std::wstring get_im_data_path();
         std::wstring get_file_name_by_url(const std::string& _url);
+        std::wstring get_masks_path();
         std::wstring get_stickers_path();
         std::wstring get_themes_path();
         std::wstring get_im_downloads_path(const std::string &alt);
@@ -77,6 +85,8 @@ namespace core
         virtual std::string _get_protocol_uid() = 0;
         void set_id(int32_t _id);
         int32_t get_id() const;
+
+        void create_masks(std::weak_ptr<wim::im> _im);
 
         std::shared_ptr<stickers::face> get_stickers();
         std::shared_ptr<themes::face> get_themes();
@@ -139,7 +149,7 @@ namespace core
         // history functions
         virtual void get_archive_images(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) = 0;
         virtual void repair_archive_images(int64_t _seq_, const std::string& _contact) = 0;
-        virtual void get_archive_messages(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) = 0;
+        virtual void get_archive_messages(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count, bool _to_older, bool _need_prefetch) = 0;
         virtual void get_archive_index(int64_t _seq_, const std::string& _contact, int64_t _from, int64_t _count) = 0;
         virtual void get_archive_messages_buddies(int64_t _seq_, const std::string& _contact, std::shared_ptr<archive::msgids_list> _ids) = 0;
         virtual void set_last_read(const std::string& _contact, int64_t _message) = 0;
@@ -160,15 +170,25 @@ namespace core
         virtual void get_themes_meta(int64_t _seq, const ThemesScale _themes_scale) = 0;
         virtual void resolve_pending(int64_t _seq, const std::string& _aimid, const std::vector<std::string>& _contact, bool _approve) = 0;
 
+        virtual void create_chat(int64_t _seq, const std::string& _aimid, const std::string& _name, const std::vector<std::string>& _members, core::wim::chat_params *&_params) = 0;
+        
+        virtual void mod_chat_params(int64_t _seq, const std::string& _aimid, core::wim::chat_params *&_params) = 0;
         virtual void mod_chat_name(int64_t _seq, const std::string& _aimid, const std::string& _name) = 0;
         virtual void mod_chat_about(int64_t _seq, const std::string& _aimid, const std::string& _about) = 0;
         virtual void mod_chat_public(int64_t _seq, const std::string& _aimid, bool _public) = 0;
         virtual void mod_chat_join(int64_t _seq, const std::string& _aimid, bool _approved) = 0;
+        virtual void mod_chat_link(int64_t _seq, const std::string& _aimid, bool _link) = 0;
+        virtual void mod_chat_ro(int64_t _seq, const std::string& _aimid, bool _ro) = 0;
+        virtual void mod_chat_age(int64_t _seq, const std::string& _aimid, bool _age) = 0;
+        
         virtual void block_chat_member(int64_t _seq, const std::string& _aimid, const std::string& _contact, bool _block) = 0;
         virtual void set_chat_member_role(int64_t _seq, const std::string& _aimid, const std::string& _contact, const std::string& _role) = 0;
 
         // search functions
-        virtual void search(std::vector<std::string> searchPatterns) = 0;
+        virtual void history_search_in_history(const std::string& search_patterns, const std::vector<std::string>& _aimids) = 0;
+        virtual void history_search_in_cl(const std::vector<std::vector<std::string>>& search_patterns, int64_t _req_id, unsigned fixed_patterns_count) = 0;
+        virtual void setup_search_params(int64_t _req_id) = 0;
+        virtual void clear_search_params() = 0;
 
         // cl
         virtual std::string get_contact_friendly_name(const std::string& contact_login) = 0;
@@ -207,6 +227,7 @@ namespace core
         virtual void on_voip_user_update_avatar_text_header(const std::string& contact, const unsigned char* data, unsigned size, unsigned h, unsigned w);
         virtual void on_voip_window_update_background(void* hwnd, const unsigned char* data, unsigned size, unsigned w, unsigned h);
         virtual void on_voip_window_set_offsets(void* hwnd, unsigned l, unsigned t, unsigned r, unsigned b);
+		virtual void on_voip_window_set_primary(void* hwnd, const std::string& contact);
 
         virtual void on_voip_device_changed(const std::string& dev_type, const std::string& uid);
 
@@ -217,6 +238,11 @@ namespace core
         virtual void on_voip_mute_incoming_call_sounds(bool mute);
 		virtual void on_voip_minimal_bandwidth_switch();
 
+		virtual void on_voip_load_mask(const std::string& path);
+        virtual void on_voip_init_mask_engine();
+
+        virtual void voip_set_model_path(const std::string& _local_path);
+        virtual bool has_created_call();
 
         virtual void post_voip_msg_to_server(const voip_manager::VoipProtoMsg& msg) = 0;
         virtual void post_voip_alloc_to_server(const std::string& data) = 0;
@@ -225,8 +251,8 @@ namespace core
 
         virtual std::shared_ptr<wim::wim_packet> prepare_voip_pac(const voip_manager::VoipProtoMsg& data) = 0;
 
-        virtual themes::theme* get_theme_from_cache(int _theme_id) = 0;
-        virtual void get_theme(int64_t _seq, int _theme_id) = 0;
+        virtual themes::theme* get_theme_from_cache(int32_t _theme_id) = 0;
+        virtual void get_theme(int64_t _seq, int32_t _theme_id) = 0;
 
         // files functions
         virtual void upload_file_sharing(
@@ -293,9 +319,9 @@ namespace core
         virtual void update_profile(int64_t _seq, const std::vector<std::pair<std::string, std::string>>& _field) = 0;
 
         // live chats
-        virtual void join_live_chat(int64_t _seq, const std::string& _stamp) = 0;
+        virtual void join_live_chat(int64_t _seq, const std::string& _stamp, const int _age) = 0;
 
-        virtual void set_avatar(const int64_t _seq, tools::binary_stream image, const std::string& _aimId) = 0;
+        virtual void set_avatar(const int64_t _seq, tools::binary_stream image, const std::string& _aimId, const bool _chat) = 0;
 
         virtual void save_auth_to_export(std::function<void()> _on_result) = 0;
         virtual void set_show_promo_in_auth(bool _need_promo) = 0;
@@ -303,6 +329,12 @@ namespace core
 
         virtual void read_snap(const uint64_t _snap_id, const std::string& _aimId, const bool _mark_prev_snaps_read) = 0;
         virtual void download_snap_metainfo(const int64_t seq, const std::string& _contact_aimid, const std::string &ttl_id) = 0;
+
+        // masks
+        virtual void get_mask_id_list(int64_t _seq) = 0;
+        virtual void get_mask_preview(int64_t _seq, const std::string& mask_id) = 0;
+        virtual void get_mask_model(int64_t _seq) = 0;
+        virtual void get_mask(int64_t _seq, const std::string& mask_id) = 0;
     };
 
 }

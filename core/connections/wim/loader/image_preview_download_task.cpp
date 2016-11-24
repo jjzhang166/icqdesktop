@@ -3,7 +3,6 @@
 #include "../../../core.h"
 #include "../../../http_request.h"
 #include "../../../tools/strings.h"
-#include "../../../tools/url_parser.h"
 #include "../../../log/log.h"
 #include "../../../utils.h"
 
@@ -38,7 +37,6 @@ image_preview_download_task::image_preview_download_task(
 {
     assert(_max_preview_height >= 0);
     assert(_max_preview_width >= 0);
-    //assert(tools::has_valid_url_header(image_uri_));
 
     image_local_path_ = get_path_in_cache(cache_dir_, image_uri_, path_type::link_preview);
 }
@@ -174,11 +172,11 @@ void image_preview_download_task::on_result(const loader_errors _error)
 
     if (success)
     {
-        result_handler_->on_image_result((int32_t)_error, image_preview_data_, tools::from_utf16(image_local_path_));
+        result_handler_->on_image_result((int32_t)_error, image_preview_data_, image_uri_, tools::from_utf16(image_local_path_));
     }
     else
     {
-        result_handler_->on_image_result((int32_t)_error, std::make_shared<tools::binary_stream>(), std::string());
+        result_handler_->on_image_result((int32_t)_error, std::make_shared<tools::binary_stream>(), image_uri_, std::string());
     }
 }
 

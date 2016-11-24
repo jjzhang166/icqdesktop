@@ -36,6 +36,8 @@ namespace Style
     int32_t getSiteNameTopPadding();
 
     int32_t getQuoteOffsetLeft();
+
+    int32_t getQuoteAvatarOffset();
     
     int32_t getQuoteOffsetTop();
     
@@ -51,11 +53,21 @@ namespace Style
 
     int32_t getQuoteLineTopMargin();
 
+    int32_t getQuoteAvatarOffsetTop();
+
     int32_t getQuoteLineBottomMargin();
 
     int32_t getForwardLabelBottomMargin();
 
     int32_t getForwardIconOffset();
+
+    int32_t getLineOffset();
+
+    int32_t getForwardLabelOffset();
+
+    int32_t getQuoteBlockSpacing();
+
+    int32_t getQuoteBottomSpace();;
 
     QFont getYoutubeTitleFont();
 }

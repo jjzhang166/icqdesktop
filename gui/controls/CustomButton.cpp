@@ -100,6 +100,11 @@ void Ui::CustomButton::enterEvent(QEvent* _e)
     update();
 }
 
+void Ui::CustomButton::setMenu(QMenu* menu)
+{
+    QPushButton::setMenu(menu);
+}
+
 void Ui::CustomButton::mousePressEvent(QMouseEvent * _e)
 {
     if (!pixmapPressed_.isNull())

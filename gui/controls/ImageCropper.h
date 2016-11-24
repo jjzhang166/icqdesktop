@@ -17,14 +17,16 @@ namespace Ui
         CursorPositionBottomRight
     };
 
-    namespace {
+    namespace
+    {
         const QRect INIT_CROPPING_RECT = QRect();
         const QSizeF INIT_PROPORTION = QSizeF(1.0, 1.0);
         const int INDENT = 10;
         const int CORNER_RECT_SIZE = 4;
     }
 
-    class ImageCropperPrivate {
+    class ImageCropperPrivate
+    {
     public:
         ImageCropperPrivate() :
             imageForCropping(QPixmap()),
@@ -60,7 +62,7 @@ namespace Ui
         Q_OBJECT
 
     public:
-        ImageCropper(QWidget *parent = 0);
+        ImageCropper(QWidget *parent, const QSize &minimumSize = QSize());
         ~ImageCropper();
 
         public slots:

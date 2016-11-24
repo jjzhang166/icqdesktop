@@ -19,10 +19,9 @@ Previewer::ImageLoader::ImageLoader(const QString& _aimId, const Data::Image& _i
     , image_(_image)
     , seq_(0)
     , state_(State::Success)
-    , pixmap_(_localPath)
     , localFileName_(_localPath)
 {
-    if (pixmap_.isNull())
+    if (!Utils::loadPixmap(_localPath, pixmap_))
     {
         load();
     }
@@ -81,7 +80,7 @@ QString Previewer::ImageLoader::getFileName()
             QString(), core::file_sharing_function::download_file_metainfo);
 
         QString fileName;
-        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::fileSharingFileMetainfoDownloaded,
+        connect(Ui::GetDispatcher(), &Ui::core_dispatcher::fileSharingFileMetainfoDownloaded, this,
             [this, seq, &fileName](qint64 s, QString name, QString /*downloadUri*/, qint64 /*size*/)
             {
                 if (seq == s)

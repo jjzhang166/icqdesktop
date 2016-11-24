@@ -30,6 +30,8 @@ namespace Ui
 		int width(QPainter& _painter);
         int height(QPainter& _painter);
         void setKerning(int _kerning) { kerning_ = _kerning; }
+
+        static bool compileText(const QString& _text, CompiledText& _result, bool _multiline);
 	};
 
 	enum TextEmojiAlign
@@ -73,7 +75,7 @@ namespace Ui
         void setSize(int, int);
 
     public:
-        TextEmojiWidget(QWidget* _parent, Fonts::FontFamily _fontFamily, Fonts::FontStyle _fontStyle, int _fontSize, const QColor& _color, int _sizeToBaseline = -1);
+        TextEmojiWidget(QWidget* _parent, Fonts::FontFamily _fontFamily, Fonts::FontWeight _fontWeight, int _fontSize, const QColor& _color, int _sizeToBaseline = -1);
 		virtual ~TextEmojiWidget();
 
 		int ascent();
@@ -97,8 +99,6 @@ namespace Ui
 
     private:
         static TextEmojiWidgetEvents& events();
-
-        Utils::SignalsDisconnector disconnector_;
 	};
 
     class TextEmojiWidgetEvents : public QObject
@@ -151,7 +151,7 @@ namespace Ui
             return descent_;
         }
     };
-
+    
 }
 
 

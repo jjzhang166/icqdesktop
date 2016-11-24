@@ -31,7 +31,7 @@ namespace core
             std::string status_;
             std::string trunk_code_;
             std::string modified_phone_number_;
-            std::vector<int> remaining_lengths_;
+            std::vector<int32_t> remaining_lengths_;
             std::vector<std::string> prefix_state_;
             std::string modified_prefix_;
             

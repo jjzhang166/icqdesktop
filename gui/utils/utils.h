@@ -8,6 +8,11 @@ class QApplication;
 QPixmap qt_pixmapFromWinHBITMAP(HBITMAP bitmap, int hbitmapFormat = 0);
 #endif //_WIN32
 
+namespace Ui
+{
+    class GeneralDialog;
+}
+
 namespace Utils
 {
     class ShadowWidgetEventFilter : public QObject
@@ -25,19 +30,6 @@ namespace Utils
 
     private:
         int ShadowWidth_;
-    };
-
-    class SignalsDisconnector
-    {
-    private:
-        std::map<std::string, QMetaObject::Connection> connections_;
-
-    public:
-        SignalsDisconnector();
-        ~SignalsDisconnector();
-        void add(const char* _key, QMetaObject::Connection&& _connection);
-        void remove(const char* _key);
-        void clean();
     };
 
     inline const std::string QStringToString(const QString& _s)
@@ -59,14 +51,12 @@ namespace Utils
 
     QPixmap getDefaultAvatar(const QString& _uin, const QString& _displayName, const int _sizePx, const bool _isFilled);
 
-    QStringList GetPossibleStrings(const QString& _text);
-
+    std::vector<QStringList> GetPossibleStrings(const QString& _text, unsigned& _count);
+    
     QPixmap roundImage(const QPixmap& _img, const QString& _state, bool _isDefault, bool _miniIcons);
 
     void addShadowToWidget(QWidget* _target);
     void addShadowToWindow(QWidget* _target, bool _enabled = true);
-
-    void setWidgetPopup(QWidget* _target, bool _isPopUp);
 
 	void grabTouchWidget(QWidget* _target, bool _topWidget = false);
 
@@ -134,7 +124,7 @@ namespace Utils
 
     void copyFileToClipboard(const QString& _path);
 
-    bool saveAs(const QString& _inputFilename, QString& _filename, QString& _directory);
+    bool saveAs(const QString& _inputFilename, QString& _filename, QString& _directory, bool asSheet = true /* for OSX only */);
 
     typedef std::vector<std::pair<QString, Ui::KeyToSendMessage>> SendKeysIndex;
 
@@ -148,6 +138,14 @@ namespace Utils
     void UpdateProfile(const std::vector<std::pair<std::string, QString>>& _fields);
 
     QString getItemSafe(const std::vector<QString>& _values, size_t _selected, QString _default);
+
+    Ui::GeneralDialog *NameEditorDialog(
+        QWidget* _parent,
+        const QString& _chatName,
+        const QString& _buttonText,
+        const QString& _headerText,
+        Out QString& resultChatName,
+        bool acceptEnter = true);
 
     bool NameEditor(
         QWidget* _parent,

@@ -7,7 +7,7 @@
 FONTS_NS_BEGIN
 
 enum class FontFamily;
-enum class FontStyle;
+enum class FontWeight;
 
 FONTS_NS_END
 
@@ -48,6 +48,7 @@ namespace Ui
         bool isFitToText_;
         int flashInterval_;
         int add_;
+        int limit_;
 
         QTimer* flashChangeTimer_;
 
@@ -63,6 +64,8 @@ namespace Ui
         TextEditEx(QWidget* _parent, const Fonts::FontFamily _fontFamily, int _fontSize, const QPalette& _palette, bool _input, bool _isFitToText);
         TextEditEx(QWidget* _parent, const Fonts::FontFamily _fontFamily, int _fontSize, const QColor& _color, bool _input, bool _isFitToText);
         TextEditEx(QWidget* _parent, const QFont& _font, const QColor& _color, bool _input, bool _isFitToText);
+        
+        void limitCharacters(int count);
 
         virtual QSize sizeHint() const override;
 
@@ -104,6 +107,6 @@ namespace Ui
         virtual QMimeData* createMimeDataFromSelection() const override;
         virtual bool canInsertFromMimeData(const QMimeData* _source) const override;
         virtual void insertFromMimeData(const QMimeData* _source) override;
-        virtual void contextMenuEvent(QContextMenuEvent *e);
+        virtual void contextMenuEvent(QContextMenuEvent *e) override;
     };
 }

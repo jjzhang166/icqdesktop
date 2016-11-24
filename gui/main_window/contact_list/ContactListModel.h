@@ -20,6 +20,28 @@ namespace Ui
 
 namespace Logic
 {
+    struct ItemLessThan
+    {
+        inline bool operator() (const Logic::ContactItem& first, const Logic::ContactItem& second)
+        {
+            if (first.Get()->GroupId_ == second.Get()->GroupId_)
+            {
+                if (first.is_group() && second.is_group())
+                    return false;
+
+                if (first.is_group())
+                    return true;
+
+                if (second.is_group())
+                    return false;
+
+                return first.Get()->GetDisplayName().toUpper() < second.Get()->GetDisplayName().toUpper();
+            }
+
+            return first.Get()->GroupId_ < second.Get()->GroupId_;
+        }
+    };
+
     class contact_profile;
     typedef std::shared_ptr<contact_profile> profile_ptr;
 
@@ -32,7 +54,7 @@ namespace Logic
         void currentDlgStateChanged() const;
         void selectedContactChanged(QString) const;
         void contactChanged(QString) const;
-        void select(QString) const;
+        void select(QString, qint64) const;
         void profile_loaded(profile_ptr _profile) const;
         void contact_added(QString _contact, bool _result);
         void contact_removed(QString _contact);
@@ -43,7 +65,8 @@ namespace Logic
         void liveChatJoined(QString);
         void liveChatRemoved(QString);
         void switchTab(QString);
-		void ignoreContact(QString);
+		void ignore_contact(QString);
+        void youRoleChanged(QString);
 
     private Q_SLOTS:
 
@@ -57,9 +80,7 @@ namespace Logic
 
 
     public Q_SLOTS:
-        void searchPatternChanged(QString);
         void refresh();
-        void searchResult(QStringList);
 
         void authAddContact(QString _aimId);
         void authBlockContact(QString _aimId);
@@ -86,7 +107,7 @@ namespace Logic
         std::vector<ContactItem> getSearchedContacts(bool _isClSorting);
 
         void setFocus();
-        void setCurrent(QString _aimId, bool _select = false, bool _switchTab = false, std::function<void(Ui::HistoryControlPage*)> _getPageCallback = nullptr);
+        void setCurrent(QString _aimId, qint64 id, bool _select = false, bool _switchTab = false, std::function<void(Ui::HistoryControlPage*)> _getPageCallback = nullptr);
 
         const ContactItem* getContactItem(const QString& _aimId) const;
 
@@ -114,6 +135,8 @@ namespace Logic
         void ignoreContact(const QString& _aimId, bool _ignore);
         bool ignoreContactWithConfirm(const QString& _aimId);
         bool isYouAdmin(const QString& _aimId);
+        QString getYourRole(const QString& _aimId);
+        void setYourRole(const QString& _aimId, const QString& _role);
         void removeContactFromCL(const QString& _aimId);
         void renameChat(const QString& _aimId, const QString& _friendly);
         void renameContact(const QString& _aimId, const QString& _friendly);
@@ -173,7 +196,6 @@ namespace Logic
         QTimer* timer_;
 
         std::vector<ContactItem> match_;
-        QStringList searchPatterns_;
         bool searchRequested_;
         bool isSearch_;
         bool isWithCheckedBox_;

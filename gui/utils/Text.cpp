@@ -57,11 +57,23 @@ namespace Utils
         if (platform::is_windows())
         {
             static bool isVistaOrLater = platform::is_windows_vista_or_late();
-            const auto isMultiline = (textHeight >= Utils::scale_value(isVistaOrLater ? 40 : 34));
+            const auto isMultiline = (textHeight >= Utils::scale_value(isVistaOrLater ? 38 : 34));
             const auto fix = (
                 isMultiline ?
                     Utils::scale_value(9) :
                     Utils::scale_value(-4)
+            );
+
+            return (contentHeight + fix);
+        }
+
+	if (platform::is_linux())
+        {
+            const auto isMultiline = (textHeight >= Utils::scale_value(20));
+            const auto fix = (
+                isMultiline ?
+                    Utils::scale_value(10) :
+                    Utils::scale_value(-5)
             );
 
             return (contentHeight + fix);

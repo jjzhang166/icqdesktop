@@ -34,7 +34,7 @@ public:
 
     QString getProgressText() const;
 
-    virtual QString getSelectedText() const override;
+    virtual QString getSelectedText(bool isFullSelect = false) const override;
 
     virtual bool hasRightStatusPadding() const override;
 
@@ -46,7 +46,9 @@ public:
 
     virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
 
-    virtual bool containsImage() const override;
+    virtual void setMaxPreviewWidth(int width) override;
+
+    virtual int getMaxPreviewWidth() const override { return MaxPreviewWidth_; }
 
 protected:
     void checkExistingLocalCopy();
@@ -91,9 +93,11 @@ protected:
 
     virtual void onDownloaded() = 0;
 
+    virtual void onDownloadedAction() = 0;
+
     virtual void onDownloading(const int64_t bytesTransferred, const int64_t bytesTotal) = 0;
 
-    virtual void onDownloadingFailed() = 0;
+    virtual void onDownloadingFailed(const int64_t requestId) = 0;
 
     virtual void onLocalCopyInfoReady(const bool isCopyExists) = 0;
 
@@ -102,6 +106,8 @@ protected:
     virtual void onMenuCopyFile() final override;
 
     virtual void onMenuSaveFileAs() final override;
+
+    virtual void onMenuOpenInBrowser() final override;
 
     virtual void onMetainfoDownloaded() = 0;
 
@@ -144,7 +150,7 @@ private:
 
     IFileSharingBlockLayout *Layout_;
 
-    const QString Link_;
+    QString Link_;
 
     int64_t PreviewMetaRequestId_;
 
@@ -153,6 +159,8 @@ private:
     const core::file_sharing_content_type Type_;
 
     QString directUri_;
+
+    int MaxPreviewWidth_;
 
 private Q_SLOTS:
     void onFileDownloaded(qint64 seq, QString rawUri, QString localPath);

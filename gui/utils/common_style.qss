@@ -116,3 +116,17 @@ QCheckBox#greenSwitcher::indicator::checked
     image: url(":/resources/widgets/content_switch_on_100.png");
 
 }
+QCheckBox#greenSwitcher::indicator::checked::disabled
+{
+    width: 44dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_switch_on_dis_100.png");
+
+}
+QCheckBox#greenSwitcher::indicator::disabled
+{
+    width: 44dip;
+    height: 20dip;
+    image: url(":/resources/widgets/content_switch_dis_100.png");
+
+}

@@ -176,6 +176,7 @@ namespace core
         {
             http_request_simple request(_proxy, utils::get_user_agent(), _params.must_stop_);
             request.set_url(get_update_server() + _file);
+            request.set_timeout(60 * 1000 * 15);
             request.set_need_log(false);
             if (!request.get())
                 return -1;
@@ -254,7 +255,7 @@ namespace core
                 return -1;
             }
 
-            int pos = path.rfind("/");
+            auto pos = path.rfind("/");
             if (pos == std::string::npos)
                 return - 1;
 

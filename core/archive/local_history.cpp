@@ -1,16 +1,17 @@
 #include "stdafx.h"
 
+#include "../../common.shared/url_parser/url_parser.h"
+
 #include "../../corelib/collection_helper.h"
 
 #include "../log/log.h"
-
-#include "../tools/url_parser.h"
 
 #include "image_cache.h"
 #include "history_message.h"
 #include "contact_archive.h"
 #include "archive_index.h"
 #include "not_sent_messages.h"
+#include "messages_data.h"
 
 #include "local_history.h"
 
@@ -68,10 +69,10 @@ bool local_history::repair_images(const std::string& _contact)
 void local_history::get_messages_index(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ headers_list& _headers)
 {
     get_contact_archive(_contact)->load_from_local();
-    get_contact_archive(_contact)->get_messages_index(_from, _count, _headers);
+    get_contact_archive(_contact)->get_messages_index(_from, _count, _headers, true /* _to_older */);
 }
 
-bool local_history::get_messages(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ std::shared_ptr<history_block> _messages)
+bool local_history::get_messages(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ std::shared_ptr<history_block> _messages, bool _to_older)
 {
     headers_list headers;
 
@@ -80,7 +81,7 @@ bool local_history::get_messages(const std::string& _contact, int64_t _from, int
         return false;
 
     archive->load_from_local();
-    archive->get_messages_index(_from, _count, headers);
+    archive->get_messages_index(_from, _count, headers, _to_older);
 
     auto ids_list = std::make_shared<archive::msgids_list>();
 
@@ -92,6 +93,17 @@ bool local_history::get_messages(const std::string& _contact, int64_t _from, int
     return true;
 }
 
+bool local_history::get_history_file(const std::string& _contact, /*out*/ core::tools::binary_stream& _history_archive
+    , std::shared_ptr<int64_t> _offset, std::shared_ptr<int64_t> _remaining_size, int64_t& _cur_index, std::shared_ptr<int64_t> _mode)
+{
+    std::wstring contact_folder = core::tools::from_utf8(_contact);
+    std::replace(contact_folder.begin(), contact_folder.end(), L'|', L'_');
+    std::wstring file_name = archive_path_ + L"/" + contact_folder + L"/" + version_db_filename(L"_db");
+
+    contact_archive::get_history_file(file_name, _history_archive, _offset, _remaining_size, _cur_index, _mode);
+    return true;
+}
+
 void local_history::get_messages_buddies(
     const std::string& _contact,
     std::shared_ptr<archive::msgids_list> _ids,
@@ -100,9 +112,18 @@ void local_history::get_messages_buddies(
     get_contact_archive(_contact)->get_messages_buddies(_ids, _messages);
 }
 
-void local_history::get_dlg_state(const std::string& _contact, /*out*/ dlg_state& _state)
+void local_history::get_dlg_state(const std::string& _contact, dlg_state& _state)
 {
-    _state = get_contact_archive(_contact)->get_dlg_state();
+        _state = get_contact_archive(_contact)->get_dlg_state();
+}
+
+void local_history::get_dlg_states(const std::vector<std::string>& _contacts, std::vector<dlg_state>& _states)
+{
+    for (auto iter : _contacts)
+    {
+        auto state = get_contact_archive(iter)->get_dlg_state();
+        _states.push_back(state);
+    }
 }
 
 void local_history::set_dlg_state(const std::string& _contact, const dlg_state& _state, Out dlg_state& _result, Out dlg_state_changes& _changes)
@@ -239,13 +260,13 @@ void local_history::delete_messages_up_to(const std::string& _contact, const int
 
 void local_history::find_previewable_links(
     const archive::history_block_sptr &_block,
-    Out tools::url_vector_t &_uris)
+    Out common::tools::url_vector_t &_uris)
 {
     for (const auto &message : *_block)
     {
         assert(message);
 
-        auto message_uris = tools::parse_urls(message->get_text());
+        auto message_uris = common::tools::url_parser::parse_urls(message->get_text());
 
         _uris.insert(
             _uris.end(),
@@ -266,7 +287,7 @@ void local_history::mark_message_duplicated(const std::string _message_internal_
 }
 
 void local_history::update_message_post_time(
-    const std::string& _message_internal_id, 
+    const std::string& _message_internal_id,
     const std::chrono::system_clock::time_point& _time_point)
 {
     get_pending_messages().update_message_post_time(_message_internal_id, _time_point);
@@ -438,7 +459,7 @@ std::shared_ptr<request_buddies_handler> face::get_messages_buddies(const std::s
     return handler;
 }
 
-std::shared_ptr<request_buddies_handler> face::get_messages(const std::string& _contact, int64_t _from, int64_t _count)
+std::shared_ptr<request_buddies_handler> face::get_messages(const std::string& _contact, int64_t _from, int64_t _count, bool _to_older)
 {
     assert(!_contact.empty());
 
@@ -447,9 +468,9 @@ std::shared_ptr<request_buddies_handler> face::get_messages(const std::string& _
     auto out_messages = std::make_shared<history_block>();
     std::weak_ptr<face> wr_this = shared_from_this();
 
-    thread_->run_async_function([_contact, out_messages, _from, _count, history_cache]()->int32_t
+    thread_->run_async_function([_contact, out_messages, _from, _count, history_cache, _to_older]()->int32_t
     {
-        return (history_cache->get_messages(_contact, _from, _count, out_messages) ? 0 : -1);
+        return (history_cache->get_messages(_contact, _from, _count, out_messages, _to_older) ? 0 : -1);
 
     })->on_result_ = [wr_this, handler, out_messages, _contact, history_cache](int32_t _error)
     {
@@ -465,6 +486,75 @@ std::shared_ptr<request_buddies_handler> face::get_messages(const std::string& _
 
         if (handler->on_result)
             handler->on_result(out_messages);
+    };
+
+    return handler;
+}
+
+std::shared_ptr<request_history_file_handler> face::get_history_block(std::shared_ptr<contact_and_offsets> _contacts
+                                                                     , std::shared_ptr<contact_and_msgs> _archive, std::shared_ptr<tools::binary_stream> _data)
+{
+    assert(!_contacts->empty());
+
+    auto history_cache = history_cache_;
+    auto handler = std::make_shared<request_history_file_handler>();
+    std::weak_ptr<face> wr_this = shared_from_this();
+
+    std::shared_ptr<contact_and_offsets> remaining(new contact_and_offsets());
+
+    thread_->run_priority_async_function([_contacts, _archive, history_cache, remaining, _data]()->int32_t
+    {
+        auto remain_size = std::make_shared<int64_t>(1024 * 1024 * 10);
+        auto index = 0u;
+
+        _archive->clear();
+        auto has_result = false;
+        int64_t cur_index = 0;
+
+        while (*remain_size > 0 && index < _contacts->size())
+        {
+            auto _contact = (*_contacts)[index].first.first;
+            auto regim = (*_contacts)[index].first.second;
+            auto _offset = (*_contacts)[index].second;
+            ++index;
+
+            auto prev_cur_index = cur_index;
+            auto cur_result = history_cache->get_history_file(_contact, *_data, _offset, remain_size, cur_index, regim);
+            has_result |= cur_result;
+
+            if (!cur_result)
+            {
+                *_offset = -2;
+            }
+
+            //if (cur_result && cur_index != prev_cur_index)
+            {
+                _archive->push_back(std::make_pair(_contact, prev_cur_index));
+            }
+        }
+        _archive->push_back(std::make_pair("", cur_index));
+
+        auto last_index = index;
+        for (; index < _contacts->size(); ++index)
+        {
+            remaining->push_back((*_contacts)[index]);
+        }
+        _contacts->resize(last_index);
+
+        return (has_result ? 0 : -1);
+
+    })->on_result_ = [wr_this, handler, _archive, history_cache, remaining, _data](int32_t _error)
+    {
+        // we calc count of finished threads
+        // if (_error == -1)
+        //    return;
+
+        auto ptr_this = wr_this.lock();
+        if (!ptr_this)
+            return;
+
+        if (handler->on_result)
+            handler->on_result(_archive, remaining, _data);
     };
 
     return handler;
@@ -486,6 +576,27 @@ std::shared_ptr<request_dlg_state_handler> face::get_dlg_state(const std::string
     {
         if (handler->on_result)
             handler->on_result(*dialog);
+    };
+
+    return handler;
+}
+
+std::shared_ptr<request_dlg_states_handler> face::get_dlg_states(const std::vector<std::string>& _contacts)
+{
+    auto handler = std::make_shared<request_dlg_states_handler>();
+    auto history_cache = history_cache_;
+    auto dialogs = std::make_shared<std::vector<dlg_state>>();
+
+    thread_->run_priority_async_function([history_cache, _contacts, dialogs]()->int32_t
+    {
+        history_cache->get_dlg_states(_contacts, *dialogs);
+
+        return 0;
+
+    })->on_result_ = [handler, dialogs](int32_t _error)
+    {
+        if (handler->on_result)
+            handler->on_result(*dialogs);
     };
 
     return handler;
@@ -618,7 +729,7 @@ std::shared_ptr<find_previewable_links_handler> face::find_previewable_links(con
 
     auto handler = std::make_shared<find_previewable_links_handler>();
     auto history_cache = history_cache_;
-    auto uris = std::make_shared<tools::url_vector_t>();
+    auto uris = std::make_shared<common::tools::url_vector_t>();
 
     thread_->run_async_function(
         [_block, history_cache, uris]
@@ -857,7 +968,7 @@ std::shared_ptr<not_sent_messages_handler> face::update_pending_messages_by_imst
 }
 
 std::shared_ptr<async_task_handlers> face::update_message_post_time(
-    const std::string& _message_internal_id, 
+    const std::string& _message_internal_id,
     const std::chrono::system_clock::time_point& _time_point)
 {
     auto handler = std::make_shared<async_task_handlers>();

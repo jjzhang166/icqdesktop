@@ -4,6 +4,11 @@
 #include <QWidget>
 #include "../VideoFrame.h"
 
+namespace Ui
+{
+	class BaseVideoPanel;
+}
+
 namespace platform_win32
 {
     
@@ -11,7 +16,7 @@ class GraphicsPanelWin32 : public platform_specific::GraphicsPanel
 {
     Q_OBJECT
 public:
-    GraphicsPanelWin32(QWidget* _parent, std::vector<QWidget*>& _panels);
+    GraphicsPanelWin32(QWidget* _parent, std::vector<Ui::BaseVideoPanel*>& _panels);
     virtual ~GraphicsPanelWin32();
 };
 

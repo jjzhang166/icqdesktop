@@ -9,6 +9,8 @@ using namespace core;
 // login_info
 //////////////////////////////////////////////////////////////////////////
 login_info::login_info()
+    : login_type_(login_type::lt_phone)
+    , save_auth_data_(false)
 {
 }
 

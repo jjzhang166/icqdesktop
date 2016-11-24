@@ -5,9 +5,9 @@
 
 UI_MESSAGE_STYLE_NS_BEGIN
 
-QFont getTextFont();
+QFont getTextFont(int size = -1);
 
-QColor getTextColor();
+QColor getTextColor(double opacity = 1.0);
 
 QColor getTimeColor();
 

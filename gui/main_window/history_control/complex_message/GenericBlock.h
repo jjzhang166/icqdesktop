@@ -24,6 +24,9 @@ class GenericBlock :
 {
     Q_OBJECT
 
+    Q_SIGNALS:
+        void clicked();
+
 public:
     GenericBlock(
         ComplexMessageItem *parent,
@@ -81,7 +84,9 @@ public:
 
     virtual QSize sizeHint() const override;
 
-    virtual bool containsImage() const { return false; }
+    virtual void setMaxPreviewWidth(int width) { }
+
+    virtual int getMaxPreviewWidth() const { return 0; }
 
 protected:
     virtual bool drag() override;
@@ -102,6 +107,8 @@ protected:
 
     virtual void onMenuSaveFileAs();
 
+    virtual void onMenuOpenInBrowser();
+
     virtual void onRestoreResources();
 
     virtual void onUnloadResources();
@@ -109,6 +116,12 @@ protected:
     virtual void paintEvent(QPaintEvent *e) final override;
 
     virtual void mouseMoveEvent(QMouseEvent *e) override;
+
+    virtual void mousePressEvent(QMouseEvent *e) override;
+
+    virtual void mouseReleaseEvent(QMouseEvent *e) override;
+
+    void clickHandled() { ClickHandled_ = true; }
 
 private:
     GenericBlock();
@@ -131,7 +144,11 @@ private:
 
     bool IsBubbleRequired_;
 
+    bool ClickHandled_;
+
     QPoint mousePos_;
+
+    QPoint mouseClickPos_;
 
 private Q_SLOTS:
     void onResourceUnloadingTimeout();

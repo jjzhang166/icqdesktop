@@ -152,6 +152,14 @@
 #include <QtMultimediaWidgets/QVideoWidget>
 #include <QtEndian>
 #include <QDrag>
+#include <QOpenGLTexture>
+#include <QOpenGLShaderProgram>
+#include <QGlWidget>
+#include <QOpenglWidget.h>
+#include <QOpenglWindow.h>
+#include <QOpenGLFunctions>
+#include <QOpenGLBuffer>
+
 
 #undef max
 #undef MAX
@@ -365,6 +373,14 @@
 #import <QtMultimedia/QMediaPlayer.h>
 #import <QtCore/qendian.h>
 #import <QtGui/qdrag.h>
+#import <QtGui/QOpenGLTexture.h>
+#import <QtGui/QOpenGLShaderProgram.h>
+#import <QtOpenGL/QGLWidget>
+#import <QtWidgets/QOpenglWidget.h>
+#import <QtGui/QOpenglWindow.h>
+#import <QtGui/QOpenGLFunctions.h>
+#import <QtGui/QOpenGLBuffer.h>
+
 #endif // _WIN32
 
 #include "../common.shared/common.h"

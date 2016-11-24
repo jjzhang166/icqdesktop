@@ -5,17 +5,24 @@
 
 #include "options.h"
 
-CORE_TOOLS_NS_BEGIN
+namespace common
+{
+    namespace tools
+    {
+        struct url;
 
-struct url_info;
-
-typedef std::vector<url_info> url_vector_t;
-
-CORE_TOOLS_NS_END
+        typedef std::vector<url> url_vector_t;
+    }
+}
 
 namespace core
 {
     class coll_helper;
+
+    namespace tools
+    {
+        class binary_stream;
+    }
 
     namespace archive
     {
@@ -37,6 +44,8 @@ namespace core
         typedef std::list<image_data> image_list;
         typedef std::list<message_header> headers_list;
         typedef std::list<int64_t> msgids_list;
+        typedef std::vector<std::pair<std::string, int64_t>> contact_and_msgs;
+        typedef std::vector<std::pair<std::pair<std::string, std::shared_ptr<int64_t>>, std::shared_ptr<int64_t>>> contact_and_offsets;
 
         struct request_images_handler
         {
@@ -75,6 +84,16 @@ namespace core
             request_dlg_state_handler()
             {
                 on_result = [](const dlg_state& _state){};
+            }
+        };
+
+        struct request_dlg_states_handler
+        {
+            std::function<void(const std::vector<dlg_state>& _states)>	on_result;
+
+            request_dlg_states_handler()
+            {
+                on_result = [](const std::vector<dlg_state>& _states){};
             }
         };
 
@@ -138,9 +157,29 @@ namespace core
             }
         };
 
+        struct request_history_file_handler
+        {
+            std::function<void(std::shared_ptr<contact_and_msgs>, std::shared_ptr<contact_and_offsets>, std::shared_ptr<tools::binary_stream> _data)>	on_result;
+
+            request_history_file_handler()
+            {
+                on_result = [](std::shared_ptr<contact_and_msgs>, std::shared_ptr<contact_and_offsets>, std::shared_ptr<tools::binary_stream>){};
+            }
+        };
+
+        struct request_msg_ids_handler
+        {
+            std::function<void(std::shared_ptr<std::vector<int64_t>>)>	on_result;
+
+            request_msg_ids_handler()
+            {
+                on_result = [](std::shared_ptr<std::vector<int64_t>>){};
+            }
+        };
+
         struct find_previewable_links_handler
         {
-            std::function<void(const tools::url_vector_t &_uris)> on_result_;
+            std::function<void(const common::tools::url_vector_t &_uris)> on_result_;
         };
 
         class local_history : public std::enable_shared_from_this<local_history>
@@ -164,8 +203,14 @@ namespace core
             bool repair_images(const std::string& _contact);
             void get_messages_index(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ headers_list& _headers);
             void get_messages_buddies(const std::string& _contact, std::shared_ptr<archive::msgids_list> _ids, /*out*/ std::shared_ptr<history_block> _messages);
-            bool get_messages(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ std::shared_ptr<history_block> _messages);
-            void get_dlg_state(const std::string& _contact, /*out*/dlg_state& _state);
+            bool get_messages(const std::string& _contact, int64_t _from, int64_t _count, /*out*/ std::shared_ptr<history_block> _messages, bool _to_older);
+            bool get_history_file(const std::string& _contact, /*out*/ core::tools::binary_stream& _history_archive
+                , std::shared_ptr<int64_t> _offset, std::shared_ptr<int64_t> _remaining_size, int64_t& _cur_index, std::shared_ptr<int64_t> _mode);
+
+            void get_dlg_state(const std::string& _contact, dlg_state& _state);
+
+            void get_dlg_states(const std::vector<std::string>& _contacts, std::vector<dlg_state>& _states);
+
             void set_dlg_state(const std::string& _contact, const dlg_state& _state, Out dlg_state& _result, Out dlg_state_changes& _changes);
             bool clear_dlg_state(const std::string& _contact);
             std::shared_ptr<archive_hole> get_next_hole(const std::string& _contact, int64_t _from, int64_t _depth = -1);
@@ -201,7 +246,7 @@ namespace core
 
             void find_previewable_links(
                 const archive::history_block_sptr &_block,
-                Out tools::url_vector_t &_uris);
+                Out common::tools::url_vector_t &_uris);
 
             static void serialize(std::shared_ptr<headers_list> _headers, coll_helper& _coll);
             static void serialize_headers(std::shared_ptr<archive::history_block> _data, coll_helper& _coll);
@@ -221,8 +266,15 @@ namespace core
             std::shared_ptr<async_task_handlers> repair_images(const std::string& _contact);
             std::shared_ptr<request_headers_handler> get_messages_index(const std::string& _contact, int64_t _from, int64_t _count);
             std::shared_ptr<request_buddies_handler> get_messages_buddies(const std::string& _contact, std::shared_ptr<archive::msgids_list> _ids);
-            std::shared_ptr<request_buddies_handler> get_messages(const std::string& _contact, int64_t _from, int64_t _count);
+            std::shared_ptr<request_buddies_handler> get_messages(const std::string& _contact, int64_t _from, int64_t _count, bool _to_older);
+
+            std::shared_ptr<request_history_file_handler> get_history_block(std::shared_ptr<contact_and_offsets> _contacts
+                , std::shared_ptr<contact_and_msgs> _archive, std::shared_ptr<tools::binary_stream> _data);
+
             std::shared_ptr<request_dlg_state_handler> get_dlg_state(const std::string& _contact);
+
+            std::shared_ptr<request_dlg_states_handler> get_dlg_states(const std::vector<std::string>& _contacts);
+            
             std::shared_ptr<set_dlg_state_handler> set_dlg_state(const std::string& _contact, const dlg_state& _state);
             std::shared_ptr<async_task_handlers> clear_dlg_state(const std::string& _contact);
             std::shared_ptr<request_next_hole_handler> get_next_hole(const std::string& _contact, int64_t _from, int64_t _depth = -1);

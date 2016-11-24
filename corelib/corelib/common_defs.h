@@ -10,4 +10,8 @@ namespace common
 }
 #endif // _WIN32
 
+namespace common
+{
+    unsigned int get_limit_search_results();
+}
 #endif // __COMMON_DEFS_H_

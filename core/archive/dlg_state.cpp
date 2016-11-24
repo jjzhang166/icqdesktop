@@ -17,7 +17,7 @@ using namespace archive;
 
 namespace
 {
-    const int offline_timeout = 30 * 60; //30 min
+    const int32_t offline_timeout = 30 * 60; //30 min
 }
 
 enum dlg_state_fields
@@ -35,6 +35,7 @@ enum dlg_state_fields
     friendly = 12,
     official = 13,
     fake = 14,
+    hidden_msg_id = 15,
 };
 
 dlg_state::dlg_state()
@@ -43,6 +44,7 @@ dlg_state::dlg_state()
     , yours_last_read_(-1)
     , theirs_last_read_(-1)
     , theirs_last_delivered_(-1)
+    , hidden_msg_id_(-1)
     , last_message_(new history_message())
     , visible_(true)
     , official_(false)
@@ -75,6 +77,7 @@ void dlg_state::copy_from(const dlg_state& _state)
     last_message_friendly_ = _state.last_message_friendly_;
     dlg_state_patch_version_ = _state.dlg_state_patch_version_;
     history_patch_version_ = _state.history_patch_version_;
+    hidden_msg_id_ = _state.hidden_msg_id_;
     del_up_to_ = _state.del_up_to_;
     friendly_ = _state.friendly_;
     official_ = _state.official_;
@@ -226,6 +229,7 @@ void dlg_state::serialize(core::tools::binary_stream& _data) const
     state_pack.push_child(core::tools::tlv(dlg_state_fields::friendly, get_friendly()));
     state_pack.push_child(core::tools::tlv(dlg_state_fields::official, get_official()));
     state_pack.push_child(core::tools::tlv(dlg_state_fields::fake, get_fake()));
+    state_pack.push_child(core::tools::tlv(dlg_state_fields::hidden_msg_id, get_hidden_msg_id()));
 
     if (has_history_patch_version())
     {
@@ -267,6 +271,7 @@ bool dlg_state::unserialize(core::tools::binary_stream& _data)
     auto tlv_friendly = state_pack.get_item(dlg_state_fields::friendly);
     auto tlv_official = state_pack.get_item(dlg_state_fields::official);
     auto tlv_fake = state_pack.get_item(dlg_state_fields::fake);
+    auto tlv_hidden_msg_id = state_pack.get_item(dlg_state_fields::hidden_msg_id);
 
     if (!tlv_unreads_count || !tlv_last_msg_id || !tlv_yours_last_read || !tlv_theirs_last_read ||
         !tlv_theirs_last_delivered || !tlv_last_message || !tlv_visible)
@@ -311,6 +316,11 @@ bool dlg_state::unserialize(core::tools::binary_stream& _data)
     if (tlv_fake)
     {
         set_fake(tlv_fake->get_value<bool>());
+    }
+
+    if (tlv_hidden_msg_id)
+    {
+        set_hidden_msg_id(tlv_hidden_msg_id->get_value<int64_t>());
     }
 
     core::tools::binary_stream bs_message = tlv_last_message->get_value<core::tools::binary_stream>();
@@ -423,8 +433,11 @@ void archive_state::merge_state(const dlg_state& _new_state, Out dlg_state_chang
 
     if (!_new_state.has_last_msgid() && !_new_state.get_last_message().has_msgid() && _new_state.get_last_message().get_internal_id().empty())
     {
-        assert(!"corrupted dlg state");
-        return;
+        auto del_up_to = _new_state.get_del_up_to();
+        if (del_up_to == -1 || del_up_to == state_->get_del_up_to())
+        {
+            return;
+        }
     }
 
     if (!update_history_patch && !patch_version_changed && _new_state.has_last_msgid() && state_->has_last_msgid() && _new_state.get_last_msgid() < state_->get_last_msgid())
@@ -439,6 +452,10 @@ void archive_state::merge_state(const dlg_state& _new_state, Out dlg_state_chang
     state_->set_official(_new_state.get_official());
     state_->set_theirs_last_read(_new_state.get_theirs_last_read());
     state_->set_theirs_last_delivered(_new_state.get_theirs_last_delivered());
+
+    auto hidden_msg_id = _new_state.get_hidden_msg_id();
+    if (hidden_msg_id != -1)
+        state_->set_hidden_msg_id(hidden_msg_id);
 
     if (!_new_state.get_friendly().empty())
     {

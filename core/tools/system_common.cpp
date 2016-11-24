@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "system.h"
 
+#include "../../external/minizip/unzip.h"
+
 #if defined(_WIN32)
 #include <Windows.h>
 
@@ -18,7 +20,7 @@
 
 namespace core { namespace tools { namespace system {
 
-    const int mb = 1024 * 1024;
+    const int32_t mb = 1024 * 1024;
 
     /**
     * Returns the size of physical memory (RAM) in bytes.
@@ -46,7 +48,7 @@ namespace core { namespace tools { namespace system {
         /* Prefer sysctl() over sysconf() except sysctl() HW_REALMEM and HW_PHYSMEM */
 
 #if defined(CTL_HW) && (defined(HW_MEMSIZE) || defined(HW_PHYSMEM64))
-        int mib[2];
+        int32_t mib[2];
         mib[0] = CTL_HW;
 #if defined(HW_MEMSIZE)
         mib[1] = HW_MEMSIZE;            /* OSX. --------------------- */
@@ -75,14 +77,14 @@ namespace core { namespace tools { namespace system {
 
 #elif defined(CTL_HW) && (defined(HW_PHYSMEM) || defined(HW_REALMEM))
         /* DragonFly BSD, FreeBSD, NetBSD, OpenBSD, and OSX. -------- */
-        int mib[2];
+        int32_t mib[2];
         mib[0] = CTL_HW;
 #if defined(HW_REALMEM)
         mib[1] = HW_REALMEM;		/* FreeBSD. ----------------- */
 #elif defined(HW_PYSMEM)
         mib[1] = HW_PHYSMEM;		/* Others. ------------------ */
 #endif
-        unsigned int size = 0;		/* 32-bit */
+        unsigned int32_t size = 0;		/* 32-bit */
         size_t len = sizeof( size );
         if ( sysctl( mib, 2, &size, &len, NULL, 0 ) == 0 )
             return (size_t)size / mb;
@@ -120,6 +122,13 @@ namespace core { namespace tools { namespace system {
         return boost::filesystem::create_directories(path, e);
     }
 
+    bool create_directory_if_not_exists(const boost::filesystem::wpath& _path)
+    {
+        if (!system::is_exist(_path))
+            return system::create_directory(_path);
+        return true;
+    }
+    
     std::wstring create_temp_file_path()
     {
         std::wstring result;
@@ -148,4 +157,105 @@ namespace core { namespace tools { namespace system {
         return out.save_2_file(_path);
     }
 
+    bool read_file(const boost::filesystem::wpath& _path, std::string& _result)
+    {
+        auto file = std::ifstream(_path.string());
+        if (!file)
+            return false;
+
+        _result = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+
+        return true;
+    }
+
+    bool unzip(const boost::filesystem::path& _archive, const boost::filesystem::path& _target_dir)
+    {
+        unzFile zip = unzOpen(_archive.string().c_str());
+        if (!zip) 
+            return false;
+
+        if (unzGoToFirstFile(zip) != UNZ_OK)
+            return false;
+
+        if (!create_directory_if_not_exists(_target_dir))
+        {
+            unzClose(zip);
+            return false;
+        }
+
+        const int32_t buffer_size = 32768;
+        std::vector<char> buffer(buffer_size);
+
+        while (true)
+        {
+            if (unzGetCurrentFileInfo(zip, nullptr, buffer.data(), buffer_size, nullptr, 0, nullptr, 0) != UNZ_OK)
+            {
+                unzClose(zip);
+                return false;
+            }
+
+            auto archive_file_path = boost::filesystem::path(buffer.data());
+            if (archive_file_path.filename() == ".")
+            {
+                const auto result = unzGoToNextFile(zip);
+                if (result != UNZ_OK)
+                {
+                    unzClose(zip);
+                    return result == UNZ_END_OF_LIST_OF_FILE;
+                }
+                continue;
+            }
+
+            const auto parent = archive_file_path.parent_path();
+            if (!parent.empty())
+            {
+                if (!create_directory_if_not_exists(_target_dir / parent))
+                {
+                    unzClose(zip);
+                    return false;
+                }
+            }
+
+            if (unzOpenCurrentFile(zip) != UNZ_OK)
+            {
+                unzClose(zip);
+                return false;
+            }
+
+            const auto file_path = _target_dir / archive_file_path;
+
+            std::ofstream out(file_path.string(), std::ios::binary);
+            if (!out)
+            {
+                unzCloseCurrentFile(zip);
+                unzClose(zip);
+                return false;
+            }
+
+            int32_t readed = 0;
+            while ((readed = unzReadCurrentFile(zip, buffer.data(), buffer_size)) > 0)
+            {
+                out.write(buffer.data(), readed);
+            }
+
+            unzCloseCurrentFile(zip);
+
+            const auto result = unzGoToNextFile(zip);
+            if (result != UNZ_OK)
+            {
+                unzClose(zip);
+                return result == UNZ_END_OF_LIST_OF_FILE;
+            }
+        }
+    }
+
+    bool clean_directory(const boost::filesystem::path& _dir)
+    {
+        for(auto& entry : boost::make_iterator_range(
+            boost::filesystem::directory_iterator(_dir), boost::filesystem::directory_iterator()))
+        {
+            boost::filesystem::remove_all(entry);
+        }
+        return true;
+    }
 }}}

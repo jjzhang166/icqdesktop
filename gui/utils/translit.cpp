@@ -131,46 +131,30 @@ namespace
 
 namespace Translit
 {
-	QStringList getPossibleStrings(const QString& text)
+    std::vector<QStringList> getPossibleStrings(const QString& text)
     {
         static QMap<QChar, QStringList> table = makeTable();
 
-        QStringList result = table[text.at(0).toUpper()];
-        int max = std::min(10, text.length());
-        for (int i = 1; i < max; ++i)
+        int max = std::min(getMaxSearchTextLength(), text.length());
+        std::vector<QStringList> result(max);
+
+        for (auto i = 0; i < max; ++i)
         {
-            QStringList chList = table[text.at(i).toUpper()];
+            auto chList = table[text.at(i).toUpper()];
             if (chList.empty())
             {
-                return QStringList();
-            }
-            if (chList.size() == 1)
-            {
-                for (QStringList::iterator iter = result.begin(); iter != result.end(); ++iter)
-                {
-                    iter->append(chList.at(0));
-                }
-
-                continue;
+                return std::vector<QStringList>();
             }
 
-            const auto oldSize = result.size();
-            QStringList temp = result;
-            for (int j = 1; j < chList.size(); ++j)
-                result.append(temp);
-
-            int k = 0, l = 0;
-            for (QStringList::iterator iter = result.begin(); iter != result.end(); ++iter, ++k)
-            {
-                if (k >= oldSize)
-                {
-                    k = 0;
-                    l++;
-                }
-                iter->append(chList.at(l));
-            }
+            for (int j = 0; j < chList.size(); ++j)
+                result[i].append(chList[j]);
         }
 
         return result;
+    }
+
+    int getMaxSearchTextLength()
+    {
+        return 50;
     }
 }

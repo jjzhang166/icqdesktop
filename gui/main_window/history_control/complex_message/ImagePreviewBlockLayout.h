@@ -18,7 +18,7 @@ public:
     const QRect& getPreviewRect() const;
 
 protected:
-    virtual QSize setBlockGeometryInternal(const QRect &blockLtr);
+    virtual QSize setBlockGeometryInternal(const QRect &blockLtr) override;
 
 private:
     void setActionButtonGeometry(const QRect &previewRect, ImagePreviewBlock &block);

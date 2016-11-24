@@ -9,6 +9,7 @@
 #define _CRT_NON_CONFORMING_SWPRINTFS
 #define _WIN32_LEAN_AND_MEAN
 
+#include <stdint.h>
 
 #include "../gui.shared/translator_base.h"
 #include "../gui.shared/constants.h"
@@ -34,7 +35,6 @@
 #include <limits>
 #include <cmath>
 #include <regex>
-#include <stdint.h>
 #include <chrono>
 
 #ifdef _WIN32

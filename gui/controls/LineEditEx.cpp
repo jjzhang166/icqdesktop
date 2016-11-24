@@ -36,7 +36,10 @@ namespace Ui
 			emit emptyTextBackspace();
 
 		if (_event->key() == Qt::Key_Escape)
+        {
 			emit escapePressed();
+            return;
+        }
 
 		if (_event->key() == Qt::Key_Up)
 			emit upArrow();

@@ -31,10 +31,10 @@ namespace
 
         switch (scalePercents)
         {
-        case 100: return Utils::scale_value(150);
-        case 125: return Utils::scale_value(225 * 0.8);
-        case 150: return Utils::scale_value(225);
-        case 200: return Utils::scale_value(300);
+            case 100: return Utils::scale_value(150);
+            case 125: return Utils::scale_value(225 * 0.8);
+            case 150: return Utils::scale_value(225);
+            case 200: return Utils::scale_value(300);
         }
 
         assert(!"unexpected scale value");
@@ -54,10 +54,10 @@ namespace
 
         switch (scalePercents)
         {
-        case 100: return core::sticker_size::small;
-        case 125: return core::sticker_size::medium;
-        case 150: return core::sticker_size::medium;
-        case 200: return core::sticker_size::large;
+            case 100: return core::sticker_size::small;
+            case 125: return core::sticker_size::medium;
+            case 150: return core::sticker_size::medium;
+            case 200: return core::sticker_size::large;
         }
 
         assert(!"unexpected scale");
@@ -75,7 +75,6 @@ StickerBlock::StickerBlock(ComplexMessageItem *parent,  const HistoryControl::St
 {
     Layout_ = new StickerBlockLayout();
     setLayout(Layout_);
-    setAttribute(Qt::WA_TransparentForMouseEvents, true);
 
     Placeholder_ = Themes::GetPixmap(Themes::PixmapResourceId::StickerHistoryPlaceholder);
     LastSize_ = Placeholder_->GetSize();
@@ -97,7 +96,7 @@ IItemBlockLayout* StickerBlock::getBlockLayout() const
     return Layout_;
 }
 
-QString StickerBlock::getSelectedText() const
+QString StickerBlock::getSelectedText(bool isFullSelect) const
 {
     return IsSelected_ ? QT_TRANSLATE_NOOP("contact_list", "Sticker") : QString();
 }
@@ -122,10 +121,8 @@ bool StickerBlock::isSelected() const
     return IsSelected_;
 }
 
-void StickerBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection)
+void StickerBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType /*selection*/)
 {
-    selection;
-
     const QRect globalWidgetRect(
         mapToGlobal(rect().topLeft()),
         mapToGlobal(rect().bottomRight()));
@@ -182,11 +179,9 @@ void StickerBlock::drawBlock(QPainter &p)
 
         p.drawImage(
             QRect(
-            offset, 0,
-            LastSize_.width(), LastSize_.height()
-            ),
-            Sticker_
-            );
+                offset, 0,
+                LastSize_.width(), LastSize_.height()),
+            Sticker_);
     }
 
     if (isSelected())
@@ -294,10 +289,10 @@ void StickerBlock::updateStickerSize()
     const auto aspectRatio = ((double)stickerSize.width() / (double)stickerSize.height());
     const auto fixedStickerSize =
         Utils::scale_bitmap(
-        QSize(
-        getStickerMaxHeight() * aspectRatio,
-        getStickerMaxHeight()
-        )
+            QSize(
+                getStickerMaxHeight() * aspectRatio,
+                getStickerMaxHeight()
+            )
         );
 
     const auto isHeightChanged = (LastSize_.height() != fixedStickerSize.height());

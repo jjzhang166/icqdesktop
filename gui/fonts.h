@@ -17,37 +17,38 @@ enum class FontFamily
     MAX,
 };
 
-enum class FontStyle
+enum class FontWeight
 {
-    MIN,
+    Min,
 
-    NORMAL,
-    BOLD,
-    SEMIBOLD,
-    LIGHT,
+    Light,
+    Normal,
+    Medium,
+    Semibold,
+    Bold,
 
-    MAX
+    Max,
 };
 
 QFont appFont(const int32_t _sizePx);
 
 QFont appFont(const int32_t _sizePx, const FontFamily _family);
 
-QFont appFont(const int32_t _sizePx, const FontStyle _style);
+QFont appFont(const int32_t _sizePx, const FontWeight _weight);
 
-QFont appFont(const int32_t _sizePx, const FontFamily _family, const FontStyle _style);
+QFont appFont(const int32_t _sizePx, const FontFamily _family, const FontWeight _weight);
 
 QFont appFontScaled(const int32_t _sizePx);
 
-QFont appFontScaled(const int32_t _sizePx, const FontStyle _style);
+QFont appFontScaled(const int32_t _sizePx, const FontWeight _weight);
 
-QFont appFontScaled(const int32_t _sizePx, const FontFamily _family, const FontStyle _style);
+QFont appFontScaled(const int32_t _sizePx, const FontFamily _family, const FontWeight _weight);
 
-QString appFontFullQss(const int32_t _sizePx, const FontFamily _fontFamily, const FontStyle _fontStyle);
+QString appFontFullQss(const int32_t _sizePx, const FontFamily _fontFamily, const FontWeight _weight);
 
-QString appFontFullNameQss(const FontFamily _fontFamily, const FontStyle _fontStyle);
+QString appFontFamilyNameQss(const FontFamily _fontFamily, const FontWeight _fontWeight);
 
-QString appFontWeightQss(const QFont::Weight _weight);
+QString appFontWeightQss(const FontWeight _weight);
 
 FontFamily defaultAppFontFamily();
 
@@ -55,6 +56,18 @@ QString defaultAppFontQssName();
 
 QString defaultAppFontQssWeight();
 
-FontStyle defaultAppFontStyle();
+FontWeight defaultAppFontWeight();
 
 FONTS_NS_END
+
+namespace std
+{
+    template<>
+    struct hash<Fonts::FontWeight>
+    {
+        size_t operator()(const Fonts::FontWeight &_v) const
+        {
+            return (size_t)_v;
+        }
+    };
+}

@@ -13,6 +13,8 @@ gui/[Dd]ebug/*
 coretest/[Dd]ebug/*
 bin/[Dd]ebug/*
 mplayer/[Dd]ebug/*
+installerpack/[Dd]ebug/*
+installerloader/[Dd]ebug/*
 
 core/[Rr]elease/*
 corelib/[Rr]elease/*
@@ -20,6 +22,9 @@ gui/[Rr]elease/*
 coretest/[Rr]elease/*
 bin/[Rr]elease/*
 mplayer/[Rr]elease/*
+installerpack/[Rr]elease/*
+installerloader/[Rr]elease/*
+
 
 ICQReleaseDebug/
 ReleaseDebug/

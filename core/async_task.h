@@ -4,6 +4,7 @@
 #pragma once
 
 #include "tools/threadpool.h"
+#include "core.h"
 
 namespace core
 {
@@ -31,6 +32,17 @@ namespace core
         async_task_handlers()
         {
             on_result_ = [](int32_t){};
+        }
+    };
+
+    template<typename T>
+    struct t_async_task_handlers
+    {
+        std::function<void(T)>	on_result_;
+
+        t_async_task_handlers()
+        {
+            on_result_ = [](T){};
         }
     };
 
@@ -71,6 +83,25 @@ namespace core
         virtual std::shared_ptr<async_task_handlers> run_async_task(std::shared_ptr<async_task> task);
 
         virtual std::shared_ptr<async_task_handlers> run_async_function(std::function<int32_t()> func);
+
+        template<typename T>
+        std::shared_ptr<t_async_task_handlers<T>> run_t_async_function(std::function<T()> func)
+        {
+            auto handler = std::make_shared<t_async_task_handlers<T>>();
+
+            push_back([func, handler]
+            {
+                auto result = func();
+
+                g_core->excute_core_context([handler, result]
+                {
+                    if (handler->on_result_)
+                        handler->on_result_(result);
+                });
+            });
+
+            return handler;
+        }
 
         virtual std::shared_ptr<async_task_handlers> run_priority_async_function(std::function<int32_t()> func);
     };

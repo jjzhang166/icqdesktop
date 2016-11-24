@@ -58,7 +58,7 @@ void Previewer::ImageCache::onGetImagesResult(Data::ImageListPtr _result)
     loadImages(from);
 }
 
-void Previewer::ImageCache::loadImages(uint64_t _from)
+void Previewer::ImageCache::loadImages(int64_t _from)
 {
     Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
     collection.set_value_as_qstring("contact", aimId_);

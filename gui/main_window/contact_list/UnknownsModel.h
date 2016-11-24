@@ -69,7 +69,6 @@ namespace Logic
     private:
         int correctIndex(int _i) const;
 
-        std::unique_ptr<Utils::SignalsDisconnector> disconnector_;
         std::vector<Data::DlgState> dialogs_;
         QHash<QString, int> indexes_;
         QTimer* timer_;

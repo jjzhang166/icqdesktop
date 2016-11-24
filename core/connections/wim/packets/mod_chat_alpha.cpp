@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "mod_chat_alpha.h"
+#include "../chat_params.h"
 
 #include "../../../http_request.h"
 #include "../../../tools/system.h"
@@ -12,6 +13,7 @@ mod_chat_alpha::mod_chat_alpha(
     const std::string& _aimid)
     : robusto_packet(_params)
     , aimid_(_aimid)
+    , chat_params_(new chat_params())
 {
 }
 
@@ -19,24 +21,14 @@ mod_chat_alpha::~mod_chat_alpha()
 {
 }
 
-void mod_chat_alpha::set_about(const std::string& _about)
+chat_params *mod_chat_alpha::get_chat_params()
 {
-    about_.reset(_about);
+    return chat_params_.get();
 }
 
-void mod_chat_alpha::set_name(const std::string& _name)
+void mod_chat_alpha::set_chat_params(chat_params *&_chat_params)
 {
-    name_ = _name;
-}
-
-void mod_chat_alpha::set_public(bool _public)
-{
-    public_.reset(_public);
-}
-
-void mod_chat_alpha::set_join(bool _approved)
-{
-    approved_.reset(_approved);
+    chat_params_.reset(_chat_params);
 }
 
 int32_t mod_chat_alpha::init_request(std::shared_ptr<core::http_request_simple> _request)
@@ -54,14 +46,20 @@ int32_t mod_chat_alpha::init_request(std::shared_ptr<core::http_request_simple> 
 
     rapidjson::Value node_params(rapidjson::Type::kObjectType);
     node_params.AddMember("sn", aimid_, a);
-    if (!name_.empty())
-        node_params.AddMember("name", name_, a);
-    else if (about_.is_initialized())
-        node_params.AddMember("about", about_.get(), a);
-    else if (public_.is_initialized())
-        node_params.AddMember("public", public_.get(), a);
-    else if (approved_.is_initialized())
-        node_params.AddMember("joinModeration", approved_.get(), a);
+    if (chat_params_->get_name().is_initialized())
+        node_params.AddMember("name", chat_params_->get_name().get(), a);
+    if (chat_params_->get_about().is_initialized())
+        node_params.AddMember("about", chat_params_->get_about().get(), a);
+    if (chat_params_->get_public().is_initialized())
+        node_params.AddMember("public", chat_params_->get_public().get(), a);
+    if (chat_params_->get_join().is_initialized())
+        node_params.AddMember("joinModeration", chat_params_->get_join().get(), a);
+    if (chat_params_->get_joiningByLink().is_initialized())
+        node_params.AddMember("live", chat_params_->get_joiningByLink().get(), a);
+    if (chat_params_->get_readOnly().is_initialized())
+        node_params.AddMember("defaultRole", std::string(chat_params_->get_readOnly().get() ? "readonly" : "member"), a);
+    if (chat_params_->get_ageGate().is_initialized())
+        node_params.AddMember("ageRestriction", chat_params_->get_ageGate().get(), a);
     doc.AddMember("params", node_params, a);
 
     rapidjson::StringBuffer buffer;

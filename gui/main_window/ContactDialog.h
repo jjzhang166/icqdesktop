@@ -37,17 +37,18 @@ namespace Ui
 
 	public Q_SLOTS:
 
-		void onContactSelected(QString _aimId);
+		void onContactSelected(QString _aimId, qint64 _messageId);
 		void onSmilesMenu();
 		void onInputEditFocusOut();
+        void onSendMessage(QString _contact);
 
     private Q_SLOTS:
         void updateDragOverlay();
         void historyControlClicked();
-        void onSendMessage(QString _contact);
+        void onCtrlFPressedInInputWidget();
 
 	Q_SIGNALS:
-		void contactSelected(QString _aimId);
+		void contactSelected(QString _aimId, qint64 _messageId);
 		void sendMessage(QString);
         void clicked();
 

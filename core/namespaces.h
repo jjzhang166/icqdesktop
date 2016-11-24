@@ -25,7 +25,3 @@
 #define CORE_DISK_CACHE_NS disk_cache
 #define CORE_DISK_CACHE_NS_BEGIN CORE_NS_BEGIN namespace CORE_DISK_CACHE_NS {
 #define CORE_DISK_CACHE_NS_END } CORE_NS_END
-
-#define PLATFORM_NS platform
-#define PLATFORM_NS_BEGIN namespace PLATFORM_NS
-#define PLATFORM_NS_END }

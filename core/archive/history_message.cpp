@@ -44,6 +44,7 @@ namespace
     const std::string c_time = "time";
     const std::string c_text = "text";
     const std::string c_sticker = "sticker";
+    const std::string c_sticker_id = "stickerId";
     const std::string c_mult = "mult";
     const std::string c_voip = "voip";
     const std::string c_chat = "chat";
@@ -337,7 +338,9 @@ enum message_fields : uint32_t
     mf_quote_friendly                           = 40,
     mf_quote_is_forward                         = 41,
     mf_chat_event_new_chat_rules                = 42,
-    mf_chat_event_sender_aimid                  = 43
+    mf_chat_event_sender_aimid                  = 43,
+    mf_quote_set_id                             = 44,
+    mf_quote_sticker_id                         = 45,
 };
 
 sticker_data::sticker_data()
@@ -372,6 +375,14 @@ void core::archive::sticker_data::serialize(icollection* _collection)
 {
     coll_helper coll(_collection, false);
 
+    auto ids = get_ids();
+
+    coll.set<uint32_t>("set_id", ids.first);
+    coll.set<uint32_t>("sticker_id", ids.second);
+}
+
+std::pair<int32_t, int32_t> core::archive::sticker_data::get_ids()
+{
     std::vector<std::string> components;
     components.reserve(4);
 
@@ -380,10 +391,7 @@ void core::archive::sticker_data::serialize(icollection* _collection)
     assert(components.size() == 4);
     if (components.size() != 4)
     {
-        coll.set<uint32_t>("set_id", 0);
-        coll.set<uint32_t>("sticker_id", 0);
-
-        return;
+        return std::make_pair(0, 0);
     }
 
     assert(components[0] == "ext");
@@ -395,8 +403,7 @@ void core::archive::sticker_data::serialize(icollection* _collection)
     const auto sticker_id = std::stoul(components[3]);
     assert(sticker_id > 0);
 
-    coll.set<uint32_t>("set_id", set_id);
-    coll.set<uint32_t>("sticker_id", sticker_id);
+    return std::make_pair(set_id, sticker_id);
 }
 
 core::archive::voip_data::voip_data()
@@ -468,7 +475,7 @@ bool core::archive::voip_data::unserialize(
         const auto &incall_node = incall_node_iter->value;
         if (incall_node.IsBool())
         {
-            is_incoming_ = (int)incall_node.GetBool();
+            is_incoming_ = (int32_t)incall_node.GetBool();
         }
         else
         {
@@ -1398,6 +1405,11 @@ void chat_event_data::serialize_mchat_members(Out tools::tlvpack &_pack) const
     _pack.push_child(tools::tlv(message_fields::mf_chat_event_mchat_members, members_pack));
 }
 
+bool chat_event_data::is_type_deleted() const
+{
+    return type_ == chat_event_type::message_deleted;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // history_message class
 //////////////////////////////////////////////////////////////////////////
@@ -1672,6 +1684,8 @@ void history_message::serialize(core::tools::binary_stream& _data) const
 {
     core::tools::tlvpack msg_pack;
 
+    // text is the first for fast searching
+    msg_pack.push_child(core::tools::tlv(mf_text, (std::string) text_));
     msg_pack.push_child(core::tools::tlv(mf_msg_id, (int64_t) msgid_));
     msg_pack.push_child(core::tools::tlv(mf_prev_msg_id, (int64_t) prev_msg_id_));
     msg_pack.push_child(core::tools::tlv(mf_flags, (uint32_t) flags_.value_));
@@ -1679,7 +1693,6 @@ void history_message::serialize(core::tools::binary_stream& _data) const
     msg_pack.push_child(core::tools::tlv(mf_wimid, (std::string) wimid_));
     msg_pack.push_child(core::tools::tlv(mf_internal_id, (std::string) internal_id_));
     msg_pack.push_child(core::tools::tlv(mf_sender_friendly, (std::string) sender_friendly_));
-    msg_pack.push_child(core::tools::tlv(mf_text, (std::string) text_));
 
     if (chat_)
     {
@@ -1997,6 +2010,45 @@ int32_t history_message::unserialize(const rapidjson::Value& _node,
     return 0;
 }
 
+void history_message::jump_to_text_field(core::tools::binary_stream& _stream, uint32_t& length)
+{
+    while (_stream.available())
+    {
+        if (!core::tools::tlv::try_get_field_with_type(_stream, message_fields::mf_text, length))
+            return;
+        else if (length != 0)
+            return;
+    }
+}
+
+bool history_message::is_sticker(core::tools::binary_stream& _stream)
+{
+    uint32_t length;
+    while (_stream.available())
+    {
+        if (!core::tools::tlv::try_get_field_with_type(_stream, message_fields::mf_sticker, length))
+            return false;
+        else if (length != 0)
+            return true;
+    }
+
+    return false;
+}
+
+int64_t history_message::get_id_field(core::tools::binary_stream& _stream)
+{
+    uint32_t length = 0;
+    while (_stream.available())
+    {
+        if (!core::tools::tlv::try_get_field_with_type(_stream, message_fields::mf_msg_id, length))
+            return -1;
+        else if (length != 0)
+            return _stream.read<int64_t>();
+    }
+
+    return -1;
+}
+
 bool history_message::is_outgoing() const
 {
     return flags_.flags_.outgoing_;
@@ -2020,6 +2072,11 @@ void history_message::set_patch(const bool _patch)
 bool history_message::is_deleted() const
 {
     return flags_.flags_.deleted_;
+}
+
+bool history_message::is_chat_event_deleted() const
+{
+    return chat_event_ && chat_event_->is_type_deleted();
 }
 
 bool history_message::is_modified() const
@@ -2162,6 +2219,9 @@ bool history_message::contents_equal(const history_message& _msg) const
             assert(chat_event_);
             assert(_msg.chat_event_);
             return chat_event_->contents_equal(*_msg.chat_event_);
+
+        default:
+            return true;
     }
 
     return true;
@@ -2204,6 +2264,8 @@ bool history_message::has_text() const
 quote::quote()
     : time_(-1)
     , msg_id_(-1)
+    , setId_(-1)
+    , stickerId_(-1)
     , is_forward_(false)
 {
 }
@@ -2219,6 +2281,10 @@ void quote::serialize(icollection* _collection) const
     helper.set_value_as_int("time", time_);
     helper.set_value_as_int64("msg", msg_id_);
     helper.set_value_as_bool("forward", is_forward_);
+    if (setId_ != -1)
+        helper.set_value_as_int("setId", setId_);
+    if (stickerId_ != -1)
+        helper.set_value_as_int("stickerId", stickerId_);
 }
 
 void quote::serialize(core::tools::tlvpack& _pack) const
@@ -2241,6 +2307,12 @@ void quote::serialize(core::tools::tlvpack& _pack) const
     if (!senderFriendly_.empty())
         _pack.push_child(core::tools::tlv(message_fields::mf_quote_friendly, senderFriendly_));
 
+    if (setId_ != -1)
+        _pack.push_child(core::tools::tlv(message_fields::mf_quote_set_id, setId_));
+
+    if (stickerId_ != -1)
+        _pack.push_child(core::tools::tlv(message_fields::mf_quote_sticker_id, stickerId_));
+
     _pack.push_child(core::tools::tlv(message_fields::mf_quote_is_forward, is_forward_));
 }
 
@@ -2255,6 +2327,12 @@ void quote::unserialize(icollection* _coll)
     time_ = helper.get_value_as_int("time");
     msg_id_ = helper.get_value_as_int64("msg");
     is_forward_ = helper.get_value_as_bool("forward");
+
+    if (helper.is_value_exist("setId"))
+        setId_ = helper.get_value_as_int("setId");
+    
+    if (helper.is_value_exist("stickerId"))
+        stickerId_ = helper.get_value_as_int("stickerId");
 }
 
 void quote::unserialize(const rapidjson::Value& _node, bool _is_forward)
@@ -2275,6 +2353,15 @@ void quote::unserialize(const rapidjson::Value& _node, bool _is_forward)
     if (time_iter != _node.MemberEnd() && time_iter->value.IsInt())
         time_ = time_iter->value.GetInt();
 
+    const auto sticker_iter = _node.FindMember(c_sticker_id);
+    if (sticker_iter != _node.MemberEnd() && sticker_iter->value.IsString())
+    {
+        sticker_data sticker(sticker_iter->value.GetString());
+        auto ids = sticker.get_ids();
+        setId_ = ids.first;
+        stickerId_ = ids.second;
+    }
+
     is_forward_ = _is_forward;
 }
 
@@ -2288,6 +2375,8 @@ void quote::unserialize(const core::tools::tlvpack &_pack)
     const auto tlv_type = _pack.get_item(message_fields::mf_voip_event_type);
     const auto tlv_sn_friendly = _pack.get_item(message_fields::mf_quote_friendly);
     const auto tlv_forward = _pack.get_item(message_fields::mf_quote_is_forward);
+    const auto tlv_set_id = _pack.get_item(message_fields::mf_quote_set_id);
+    const auto tlv_sticker_id = _pack.get_item(message_fields::mf_quote_sticker_id);
 
     if (tlv_text)
         text_ = tlv_text->get_value<std::string>(std::string());
@@ -2309,13 +2398,30 @@ void quote::unserialize(const core::tools::tlvpack &_pack)
 
     if (tlv_forward)
         is_forward_ = tlv_forward->get_value<bool>(false);
+
+    if (tlv_set_id)
+        setId_ = tlv_set_id->get_value<int32_t>(-1);
+
+    if (tlv_sticker_id)
+        stickerId_ = tlv_sticker_id->get_value<int32_t>(-1);
 }
+
+std::string quote::get_sticker() const
+{
+     if (setId_ == -1 && stickerId_ == -1)
+         return std::string();
+
+     std::stringstream ss_message;
+     ss_message << "ext:" << setId_ << ":" << "sticker:" << stickerId_;
+
+     return ss_message.str();
+};
 
 namespace
 {
     const auto INDEX_DIVISOR = 62;
 
-    typedef std::unordered_map<char, int> ReverseIndexMap;
+    typedef std::unordered_map<char, int32_t> ReverseIndexMap;
 
     const ReverseIndexMap& get_reverse_index_map()
     {
@@ -2345,7 +2451,7 @@ namespace
         return map;
     }
 
-    int calculate_size(const char ch0, const char ch1)
+    int32_t calculate_size(const char ch0, const char ch1)
     {
         const auto &map = get_reverse_index_map();
 
@@ -2413,7 +2519,7 @@ namespace
             return;
         }
 
-        coll.set_value_as_int("content_type", (int) content_type);
+        coll.set_value_as_int("content_type", (int32_t) content_type);
 
         coll.set_value_as_int("width", width);
         coll.set_value_as_int("height", height);

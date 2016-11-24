@@ -22,7 +22,7 @@ public:
 
     virtual IItemBlockLayout* getBlockLayout() const override;
 
-    virtual QString getSelectedText() const override;
+    virtual QString getSelectedText(bool isFullSelect = false) const override;
 
     virtual bool hasRightStatusPadding() const override;
 
@@ -31,14 +31,16 @@ public:
     virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
 
     virtual QRect setBlockGeometry(const QRect &ltr) override;
-    
+
     virtual QString getSourceText() const override;
-    
+
     virtual QString formatRecentsText() const override;
 
     virtual bool isBubbleRequired() const override { return false; }
 
     virtual bool isSharingEnabled() const override { return false; }
+
+    virtual HistoryControl::StickerInfoSptr getStickerInfo() const override { return Info_; };
 
 protected:
     virtual void drawBlock(QPainter &p) override;
@@ -51,7 +53,6 @@ private Q_SLOTS:
     void onStickers();
 
 private:
-
     void connectStickerSignal(const bool _isConnected);
 
     void loadSticker();
@@ -69,11 +70,11 @@ private:
     Themes::IThemePixmapSptr Placeholder_;
 
     StickerBlockLayout *Layout_;
-    
+
     ComplexMessageItem* Parent_;
 
     QSize LastSize_;
-    
+
     bool IsSelected_;
 
     QRect Geometry_;

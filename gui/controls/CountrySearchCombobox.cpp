@@ -88,12 +88,12 @@ namespace Ui
 		setLayout(mainLayout);
 	}
 
-	void CountrySearchCombobox::setComboboxViewClass(char* _className)
+	void CountrySearchCombobox::setComboboxViewClass(const char* _className)
 	{
 		ComboboxView_->setProperty(_className, true);
 	}
 
-	void CountrySearchCombobox::setClass(char* _className)
+	void CountrySearchCombobox::setClass(const char* _className)
 	{
 		setProperty(_className, true);
 	}

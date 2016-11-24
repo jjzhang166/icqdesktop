@@ -30,63 +30,71 @@ namespace ContactList
         const bool _drawLastRead,
         const QPixmap& _lastReadAvatar,
         const bool isTyping,
-        const DeliveryState deliveryState)
+        const DeliveryState deliveryState,
+        const QString term,
+        const bool haveLastMsg,
+        qint64 _msg_id)
         : VisualDataBase(aimId, avatar, state, status, isHovered, isSelected, contactName, haveLastSeen, lastSeen, false /*_isWithCheckBox*/
-            , false /* _isChatMember */, isOfficial, _drawLastRead, _lastReadAvatar, QString() /* role */, unreadsCounter)
+            , false /* _isChatMember */, isOfficial, _drawLastRead, _lastReadAvatar, QString() /* role */, unreadsCounter, term)
         , DeliveryState_(deliveryState)
         , Muted_(muted)
         , senderNick_(senderNick)
         , IsTyping_(isTyping)
+        , HaveLastMsg_(haveLastMsg)
+        , msg_id_(_msg_id)
     {
         assert(deliveryState >= DeliveryState::Min);
         assert(deliveryState <= DeliveryState::Max);
         assert(unreadsCounter >= 0);
     }
 
-    void RenderRecentsItem(QPainter &painter, const RecentItemVisualData &item, const ViewParams& viewParams_)
+    void RenderRecentsItem(QPainter &painter, const RecentItemVisualData &item, const ViewParams& viewParams)
     {
-        auto contactListPxInRecents = GetRecentsParams(viewParams_.regim_);
+        auto contactListPxInRecents = GetRecentsParams(viewParams.regim_);
         painter.save();
 
         painter.setBrush(Qt::NoBrush);
         painter.setPen(Qt::NoPen);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        RenderMouseState(painter, item.IsHovered_, item.IsSelected_, contactListPxInRecents, viewParams_);
+        RenderMouseState(painter, item.IsHovered_, item.IsSelected_, contactListPxInRecents, viewParams);
         RenderAvatar(painter, contactListPxInRecents.avatarX().px(), item.Avatar_, contactListPxInRecents);
 
-        int rightBorderPx = CorrectItemWidth(ItemWidth(viewParams_).px(), viewParams_.fixedWidth_) - contactListPxInRecents.itemHorPadding().px();
+        int rightBorderPx = CorrectItemWidth(ItemWidth(viewParams).px(), viewParams.fixedWidth_) - contactListPxInRecents.itemHorPadding().px();
 
-        if (viewParams_.regim_ != ::Logic::MembersWidgetRegim::FROM_ALERT)
+        if (viewParams.regim_ != ::Logic::MembersWidgetRegim::FROM_ALERT && viewParams.regim_ != ::Logic::MembersWidgetRegim::HISTORY_SEARCH)
         {
-            if (viewParams_.regim_ == ::Logic::MembersWidgetRegim::UNKNOWN)
+            if (viewParams.regim_ == ::Logic::MembersWidgetRegim::UNKNOWN)
             {
                 if (!item.unreadsCounter_)
                 {
-                    if (!viewParams_.pictOnly_)
-                        rightBorderPx = RenderAddContact(painter, true, contactListPxInRecents, viewParams_);
+                    if (!viewParams.pictOnly_)
+                        rightBorderPx = RenderAddContact(painter, true, contactListPxInRecents, viewParams);
                 }
                 else
                 {
-                    rightBorderPx = RenderNotifications(painter, item.unreadsCounter_, false /* muted */, viewParams_, contactListPxInRecents, false /* isUnknownHeader */);
+                    rightBorderPx = RenderNotifications(painter, item.unreadsCounter_, false /* muted */, viewParams, contactListPxInRecents, false /* isUnknownHeader */);
                 }
             }
             else
             {
                 if (!item.drawLastRead_ || item.Muted_)
                 {
-                    rightBorderPx = RenderNotifications(painter, item.unreadsCounter_, item.Muted_, viewParams_, contactListPxInRecents, false /* isUnknownHeader */);
+                    rightBorderPx = RenderNotifications(painter, item.unreadsCounter_, item.Muted_, viewParams, contactListPxInRecents, false /* isUnknownHeader */);
                 }
             }
         }
 
-        if (viewParams_.pictOnly_)
+        if (viewParams.regim_ == ::Logic::MembersWidgetRegim::HISTORY_SEARCH && item.HaveLastMsg_)
+            rightBorderPx = RenderDate(painter, item.LastSeen_, item, contactListPxInRecents, viewParams);
+
+        if (viewParams.pictOnly_)
         {
             painter.restore();
             return;
         }
 
-        RenderContactName(painter, item, contactListPxInRecents.nameY().px(), rightBorderPx, viewParams_, contactListPxInRecents);
+        RenderContactName(painter, item, contactListPxInRecents.nameY().px(), rightBorderPx, viewParams, contactListPxInRecents);
 
         const int lastReadLeftMargin = Utils::scale_value(4);
         const int lastReadRightMargin = Utils::scale_value(4);
@@ -94,11 +102,11 @@ namespace ContactList
 
         rightBorderPx -= (item.drawLastRead_ ? lastReadWidth : 0);
 
-        const int messageWidth = RenderContactMessage(painter, item, rightBorderPx, viewParams_, contactListPxInRecents);
+        const int messageWidth = RenderContactMessage(painter, item, rightBorderPx, viewParams, contactListPxInRecents);
 
-        if (viewParams_.regim_ == Logic::MembersWidgetRegim::UNKNOWN)
+        if (viewParams.regim_ == Logic::MembersWidgetRegim::UNKNOWN)
         {
-            RenderRemoveContact(painter, item.IsHovered_, contactListPxInRecents, viewParams_);
+            RenderRemoveContact(painter, item.IsHovered_, contactListPxInRecents, viewParams);
             painter.restore();
             return;
         }
@@ -113,15 +121,15 @@ namespace ContactList
         painter.restore();
     }
 
-    void RenderRecentsDragOverlay(QPainter &painter, const ViewParams& viewParams_)
+    void RenderRecentsDragOverlay(QPainter &painter, const ViewParams& viewParams)
     {
         painter.save();
 
         painter.setPen(Qt::NoPen);
         painter.setRenderHint(QPainter::Antialiasing);
-        auto recentParams = GetRecentsParams(viewParams_.regim_);
+        auto recentParams = GetRecentsParams(viewParams.regim_);
 
-        auto width = CorrectItemWidth(ItemWidth(viewParams_).px(), viewParams_.fixedWidth_);
+        auto width = CorrectItemWidth(ItemWidth(viewParams).px(), viewParams.fixedWidth_);
         painter.fillRect(0, 0, width, recentParams.itemHeight().px(), QBrush(QColor(255, 255, 255, 255 * 0.9)));
         painter.setBrush(QBrush(QColor(255, 255, 255, 0)));;
         QPen pen (QColor(0x57, 0x9e, 0x1c), recentParams.dragOverlayBorderWidth().px(), Qt::DashLine, Qt::RoundCap);
@@ -145,7 +153,7 @@ namespace ContactList
         painter.restore();
     }
 
-    void RenderServiceItem(QPainter &painter, const QString& text, bool renderState, bool drawLine, const ViewParams& viewParams_)
+    void RenderServiceItem(QPainter &painter, const QString& text, bool renderState, bool drawLine, const ViewParams& viewParams)
     {
         painter.save();
 
@@ -155,12 +163,13 @@ namespace ContactList
         QPen pen;
         pen.setColor(QColor(0x57,0x9e,0x1c));
         painter.setPen(pen);
-        QFont f = Fonts::appFontScaled(12, Fonts::defaultAppFontFamily(), Fonts::FontStyle::BOLD);
-        painter.setFont(f);
 
-        auto recentParams = GetRecentsParams(viewParams_.regim_);
+        auto font = Fonts::appFontScaled(12, Fonts::defaultAppFontFamily(), Fonts::FontWeight::Bold);
+        painter.setFont(font);
 
-        if (!viewParams_.pictOnly_)
+        auto recentParams = GetRecentsParams(viewParams.regim_);
+
+        if (!viewParams.pictOnly_)
         {
             Utils::drawText(painter, QPointF(recentParams.itemHorPadding().px(), recentParams.serviceItemHeight().px() / 2), Qt::AlignVCenter, text);
         }
@@ -180,7 +189,7 @@ namespace ContactList
             QPixmap p(Utils::parse_image_name(Logic::getRecentsModel()->isFavoritesVisible() ? ":/resources/cl_group_close_100.png" : ":/resources/cl_group_open_100.png"));
             Utils::check_pixel_ratio(p);
             double ratio = Utils::scale_bitmap(1);
-            QFontMetrics m(f);
+            QFontMetrics m(font);
             int x = recentParams.itemHorPadding().px() + m.width(text) + recentParams.favoritesStatusPadding().px();
             int y = recentParams.serviceItemHeight().px() / 2 - (p.height() / 2. / ratio) + Utils::scale_value(1);
             painter.drawPixmap(x, y, p);
@@ -189,15 +198,15 @@ namespace ContactList
         painter.restore();
     }
 
-    void RenderUnknownsHeader(QPainter &painter, const QString& title, const int count, const ViewParams& viewParams_)
+    void RenderUnknownsHeader(QPainter &painter, const QString& title, const int count, const ViewParams& viewParams)
     {
-        auto recentParams = GetRecentsParams(viewParams_.regim_);
+        auto recentParams = GetRecentsParams(viewParams.regim_);
         painter.save();
 
         painter.setPen(Qt::NoPen);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        if (!viewParams_.pictOnly_)
+        if (!viewParams.pictOnly_)
         {
             QPen pen;
             pen.setColor(Utils::rgbaStringFromColor(Ui::CommonStyle::getTextCommonColor()));
@@ -206,7 +215,7 @@ namespace ContactList
             QFont f;
             if (count)
             {
-                f = Fonts::appFontScaled(16, Fonts::FontStyle::SEMIBOLD);
+                f = Fonts::appFontScaled(16, Fonts::FontWeight::Semibold);
             }
             else
             {
@@ -233,7 +242,7 @@ namespace ContactList
             painter.setPen(Qt::NoPen);
             painter.setRenderHint(QPainter::Antialiasing);
 
-            RenderNotifications(painter, count, false, viewParams_, recentParams, true /* isUnknownHeader */);
+            RenderNotifications(painter, count, false, viewParams, recentParams, true /* isUnknownHeader */);
             painter.restore();
         }
     }
@@ -241,7 +250,7 @@ namespace ContactList
 
 namespace ContactList
 {
-    int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx, const ViewParams& viewParams_, ContactListParams& _recentParams)
+    int RenderContactMessage(QPainter &painter, const RecentItemVisualData &visData, const int rightBorderPx, const ViewParams& viewParams, ContactListParams& _recentParams)
     {
         if (!visData.HasStatus())
         {
@@ -251,7 +260,9 @@ namespace ContactList
         static auto plainTextControl = CreateTextBrowser("message", _recentParams.getMessageStylesheet(false), _recentParams.messageHeight().px());
         static auto unreadsTextControl = CreateTextBrowser("messageUnreads", _recentParams.getMessageStylesheet(true), _recentParams.messageHeight().px());
 
-        const auto hasUnreads = (viewParams_.regim_ != ::Logic::MembersWidgetRegim::FROM_ALERT && (visData.unreadsCounter_ > 0));
+        const auto hasUnreads = (viewParams.regim_ != ::Logic::MembersWidgetRegim::FROM_ALERT
+            && viewParams.regim_ != ::Logic::MembersWidgetRegim::HISTORY_SEARCH
+            && (visData.unreadsCounter_ > 0));
         auto &textControl = (hasUnreads ? unreadsTextControl : plainTextControl);
 
         const auto maxWidth = (rightBorderPx - _recentParams.messageX().px());
@@ -270,7 +281,7 @@ namespace ContactList
         const auto &senderNick = visData.senderNick_;
         const auto showLastMessage = Ui::get_gui_settings()->get_value<bool>(settings_show_last_message, true);
 
-        if (!showLastMessage && viewParams_.regim_ != Logic::MembersWidgetRegim::FROM_ALERT)
+        if (!showLastMessage && viewParams.regim_ != Logic::MembersWidgetRegim::FROM_ALERT && viewParams.regim_ != Logic::MembersWidgetRegim::HISTORY_SEARCH)
             return -1;
 
         if (!senderNick.isEmpty() && !visData.IsTyping_ && showLastMessage)
@@ -286,7 +297,9 @@ namespace ContactList
             const auto charFormat = cursor.charFormat();
 
             auto boldCharFormat = charFormat;
-            boldCharFormat.setFont(Fonts::appFontScaled(14, Fonts::FontStyle::SEMIBOLD));
+
+            const auto boldFontSize = 15;
+            boldCharFormat.setFont(Fonts::appFontScaled(boldFontSize, Fonts::FontWeight::Normal));
 
             cursor.setCharFormat(boldCharFormat);
 
@@ -301,13 +314,83 @@ namespace ContactList
             messageTextMaxWidth -= doc.idealWidth();
         }
 
-        const auto STATUS_LIMIT = 90;
-        const auto text = visData.GetStatus().trimmed().simplified().left(STATUS_LIMIT);
+        const auto text = visData.GetStatus().trimmed().simplified();
+
+        const auto boldFontSize = 15;
+        auto base_font = Fonts::appFontScaled(boldFontSize, Fonts::FontWeight::Semibold);
+        auto term_font = Fonts::appFontScaled(boldFontSize, Fonts::FontWeight::Semibold);
 
         QFontMetrics m(font);
-        const auto elidedText = m.elidedText(text, Qt::ElideRight, messageTextMaxWidth);
+        QFontMetrics term_m(term_font);
 
-        Logic::Text2Doc(elidedText, cursor, Logic::Text2DocHtmlMode::Pass, false);
+        auto term = visData.searchTerm_;
+        auto elidedText = text;
+        int begin_term = term == "" ? 0 : text.indexOf(term, 0, Qt::CaseInsensitive);
+
+        QString left_part;
+        QString right_part;
+        QString term_visible_part;
+
+        if (term != "" && begin_term != -1)
+        {
+            static QString stat_term = "";
+            static QHash<qint64, std::pair<int, std::vector<QString>>> words_parts_and_width;
+
+            if (stat_term != term)
+            {
+                stat_term = term;
+                words_parts_and_width.clear();
+            }
+
+            auto need_update = false;
+            if (words_parts_and_width.count(visData.msg_id_) == 0)
+            {
+                need_update = true;
+            }
+            else if (words_parts_and_width[visData.msg_id_].first != messageTextMaxWidth)
+            {
+                words_parts_and_width.remove(visData.msg_id_);
+                need_update = true;
+            }
+
+            if (need_update)
+            {
+                Logic::CutText(text, term, messageTextMaxWidth, m, term_m, cursor, Logic::Text2DocHtmlMode::Pass, false, nullptr, left_part, right_part, term_visible_part);
+
+                std::vector<QString> parts;
+                parts.push_back(left_part);
+                parts.push_back(right_part);
+                parts.push_back(term_visible_part);
+                words_parts_and_width.insert(visData.msg_id_, std::make_pair(messageTextMaxWidth, parts));
+            }
+            else
+            {
+                auto width_and_parts = words_parts_and_width[visData.msg_id_];
+                left_part = width_and_parts.second[0];
+                right_part = width_and_parts.second[1];
+                term_visible_part = width_and_parts.second[2];
+            }
+
+        }
+        else
+        {
+            left_part = m.elidedText(text, Qt::ElideRight, messageTextMaxWidth);
+        }
+
+        {
+            const auto charFormat = cursor.charFormat();
+            auto boldCharFormat = charFormat;
+            boldCharFormat.setFont(hasUnreads ? base_font : term_font);
+            boldCharFormat.setForeground(QBrush(QColor("#579e1c")));
+
+            Logic::Text2Doc(left_part, cursor, Logic::Text2DocHtmlMode::Pass, false);
+
+            cursor.setCharFormat(boldCharFormat);
+            Logic::Text2Doc(term_visible_part, cursor, Logic::Text2DocHtmlMode::Pass, false);
+
+            cursor.setCharFormat(hasUnreads ? boldCharFormat : charFormat);
+            Logic::Text2Doc(right_part, cursor, Logic::Text2DocHtmlMode::Pass, false);
+        }
 
         Logic::FormatDocument(doc, _recentParams.messageHeight().px());
 
@@ -335,14 +418,14 @@ namespace ContactList
         painter.drawPixmap(_xOffset, _recentParams.lastReadY().px(), _recentParams.getLastReadAvatarSize(), _recentParams.getLastReadAvatarSize(), _avatar);
     }
 
-    int RenderNotifications(QPainter &painter, const int unreads, bool muted, const ViewParams& viewParams_, ContactListParams& _recentParams, bool _isUnknownHeader)
+    int RenderNotifications(QPainter &painter, const int unreads, bool muted, const ViewParams& viewParams, ContactListParams& _recentParams, bool _isUnknownHeader)
     {
-        auto width = CorrectItemWidth(ItemWidth(viewParams_).px(), viewParams_.fixedWidth_);
+        auto width = CorrectItemWidth(ItemWidth(viewParams).px(), viewParams.fixedWidth_);
         assert(unreads >= 0);
 
         if (muted)
         {
-            if (!viewParams_.pictOnly_)
+            if (!viewParams.pictOnly_)
             {
                 Themes::IThemePixmapSptr pixmap = Themes::GetPixmap(unreads == 0 ? Themes::PixmapResourceId::ContentMuteNotify : Themes::PixmapResourceId::ContentMuteNotifyNew);
                 auto mutedX = (width - _recentParams.itemHorPadding().px()) - pixmap->GetWidth();
@@ -383,11 +466,11 @@ namespace ContactList
 
         const auto ballonHeight = _recentParams.unreadsMinimumExtent().px();
 
-        auto unreadsX = ((width - (viewParams_.regim_ != Logic::MembersWidgetRegim::UNKNOWN ? _recentParams.itemHorPadding().px() : _recentParams.itemHorPaddingUnknown().px())) - balloonWidth);
+        auto unreadsX = ((width - (viewParams.regim_ != Logic::MembersWidgetRegim::UNKNOWN ? _recentParams.itemHorPadding().px() : _recentParams.itemHorPaddingUnknown().px())) - balloonWidth);
         const auto balloonRadius = (ballonHeight / 2);
         auto unreadsY = _isUnknownHeader ? _recentParams.unknownsUnreadsY().px() : _recentParams.unreadsY().px();
 
-        if (viewParams_.pictOnly_)
+        if (viewParams.pictOnly_)
         {
             unreadsX = _recentParams.itemHorPadding().px();
             unreadsY = (_recentParams.itemHeight().px() - _recentParams.avatarH().px()) / 2;
@@ -395,7 +478,7 @@ namespace ContactList
             painter.setBrush(QColor("#FFFFFF"));
             painter.drawRoundedRect(unreadsX - gap, unreadsY - gap, balloonWidth + 2 * gap, ballonHeight + 2 * gap, balloonRadius + gap, balloonRadius + gap);
         }
-        else if (viewParams_.regim_ == Logic::MembersWidgetRegim::UNKNOWN)
+        else if (viewParams.regim_ == Logic::MembersWidgetRegim::UNKNOWN)
         {
             unreadsX -= _recentParams.interPadding().px() + _recentParams.removeContactSize().px();
         }

@@ -139,7 +139,7 @@ namespace core
             _coll.set_value_as_collection("homeaddress", coll_address.get());
 
             ifptr<iarray> phones(_coll->create_array());
-            phones->reserve((int)phones_.size());
+            phones->reserve((int32_t)phones_.size());
             for (auto phone: phones_)
             {
                 coll_helper coll_phone(_coll->create_collection(), true);

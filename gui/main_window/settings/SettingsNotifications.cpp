@@ -64,7 +64,7 @@ void GeneralSettingsWidget::Creator::initNotifications(QWidget* _parent, std::ma
             outgoingSoundWidgets.check_->setEnabled(false);
             outgoingSoundWidgets.text_->setEnabled(false);
         }
-        GetDisconnector()->add("sounds/outgoing", connect(enableSoundsWidgets.check_, &QCheckBox::toggled, [enableSoundsWidgets, outgoingSoundWidgets]()
+        connect(enableSoundsWidgets.check_, &QCheckBox::toggled, scrollArea, [enableSoundsWidgets, outgoingSoundWidgets]()
         {
             bool c = enableSoundsWidgets.check_->isChecked();
             if (!c)
@@ -80,7 +80,7 @@ void GeneralSettingsWidget::Creator::initNotifications(QWidget* _parent, std::ma
                 outgoingSoundWidgets.check_->setEnabled(true);
                 outgoingSoundWidgets.text_->setEnabled(true);
             }
-        }));
+        });
         GeneralCreator::addSwitcher(
             0,
             scrollArea,

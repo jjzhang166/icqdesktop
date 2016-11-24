@@ -42,7 +42,7 @@ namespace Ui
 
     double getMinWidth()
     {
-        return Utils::scale_value(360.0);
+        return Utils::scale_value(320.0);
     }
 
     double getMinHeight()
@@ -54,6 +54,9 @@ namespace Ui
     {
         return Utils::scale_value(500.0);
     }
+
+    const uint32_t hideTimeout = 2000;
+    const uint32_t hideTimeoutShort = 100;
 
     //////////////////////////////////////////////////////////////////////////
     // VideoProgressSlider
@@ -95,9 +98,15 @@ namespace Ui
     // VideoPlayerHeader
     //////////////////////////////////////////////////////////////////////////
     VideoPlayerHeader::VideoPlayerHeader(QWidget* _parent, const QString& _caption)
-        : QWidget(_parent)
+        : QWidget(nullptr)
     {
-
+        setAttribute(Qt::WA_TranslucentBackground, true);
+        
+        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
+        
+        setStyleSheet(Utils::LoadStyle(":/main_window/mplayer/mstyles.qss"));
+        
+        
         QHBoxLayout* rootLayout = new QHBoxLayout();
         rootLayout->setContentsMargins(Utils::scale_value(12), 0, 0, 0);
 
@@ -122,6 +131,8 @@ namespace Ui
         {
             emit signalClose();
         });
+
+        setMouseTracking(true);
     }
 
     VideoPlayerHeader::~VideoPlayerHeader()
@@ -154,12 +165,18 @@ namespace Ui
     // VideoPlayerControlPanel
     //////////////////////////////////////////////////////////////////////////
     VideoPlayerControlPanel::VideoPlayerControlPanel(QWidget* _parent, FFMpegPlayer* _player)
-        :   QWidget(_parent),
+        :   QWidget(nullptr),
             player_(_player),
             duration_(0),
             position_(0),
             positionSliderTimer_(new QTimer(this))
     {
+        setWindowOpacity(0.65f);
+        
+        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
+        
+        setStyleSheet(Utils::LoadStyle(":/main_window/mplayer/mstyles.qss"));
+        
         bool mute = get_gui_settings()->get_value<bool>(setting_mplayer_mute, false);
         int32_t volume = get_gui_settings()->get_value<int32_t>(setting_mplayer_volume, 100);
 
@@ -169,24 +186,6 @@ namespace Ui
         QHBoxLayout* rootLayout = new QHBoxLayout();
         rootLayout->setContentsMargins(getMargin(), Utils::scale_value(6), getMargin(), getMargin());
         rootLayout->setAlignment(Qt::AlignTop);
-
-        QWidget* timeLeftWidget = new QWidget(this);
-        timeLeftWidget->setFixedWidth(getTimeWidth());
-        QVBoxLayout* timeLeftLayout = new QVBoxLayout();
-        timeLeftLayout->setContentsMargins(0, Utils::scale_value(10), 0, 0);
-        timeLeftLayout->setSpacing(0);
-
-        {
-            timeLeft_ = new QLabel(this);
-            timeLeft_->setObjectName("VideoTimeProgress");
-            timeLeft_->setFixedWidth(getTimeWidth());
-            timeLeft_->setText("00:00:00");
-            timeLeft_->setAlignment(Qt::AlignLeft);
-            timeLeftLayout->addWidget(timeLeft_);
-            timeLeftWidget->setLayout(timeLeftLayout);
-        }
-
-        rootLayout->addWidget(timeLeftWidget);
 
         QWidget* sliderWidget = new QWidget(this);
         rootLayout->addWidget(sliderWidget);
@@ -313,11 +312,12 @@ namespace Ui
         setLayout(rootLayout);
 
         connectSignals(_player);
+
+        setMouseTracking(true);
     }
     
     VideoPlayerControlPanel::~VideoPlayerControlPanel()
     {
-
     }
 
     void VideoPlayerControlPanel::showVolumeControl(const bool _isShow)
@@ -407,7 +407,6 @@ namespace Ui
             progressSlider_->setMaximum((int) _duration);
             progressSlider_->setPageStep(_duration/10);
 
-            timeLeft_->setText(getDurationString(0));
             timeRight_->setText(getDurationString(_duration));
         });
 
@@ -418,7 +417,6 @@ namespace Ui
             if (!progressSlider_->isSliderDown())
                 progressSlider_->setSliderPosition((int) _position);
 
-            timeLeft_->setText(getDurationString(position_));
             timeRight_->setText(getDurationString(duration_ - position_));
         });
 
@@ -489,58 +487,66 @@ namespace Ui
         playButton_->setChecked(_pause);
     }
 
-
+    void VideoPlayerControlPanel::mouseMoveEvent(QMouseEvent * _event)
+    {
+        QWidget::mouseMoveEvent(_event);
+    }
     
     
 
     VideoPlayer::VideoPlayer(QWidget* _parent)
-        :   QWidget(_parent),
+    :   QWidget(platform::is_windows() ? nullptr : _parent),
             animControlPanel_(nullptr),
             animHeader_(nullptr),
             parent_(_parent),
-            mediaLoaded_(false)
+            mediaLoaded_(false),
+            controlsShowed_(false)
     {
+        if (platform::is_windows())
+        {
+            setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
+        }
+        
         setStyleSheet(Utils::LoadStyle(":/main_window/mplayer/mstyles.qss"));
         
         setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-
+        
         QVBoxLayout* rootLayout = new QVBoxLayout();
         rootLayout->setContentsMargins(0, 0, 0, 0);
         rootLayout->setSpacing(0);
 
         player_ = new FFMpegPlayer(this);
-
         rootLayout->addWidget(player_);
 
-        controlPanel_ = new VideoPlayerControlPanel(this, player_);
-        header_ = new VideoPlayerHeader(this, "");
-
-        connect(header_, &VideoPlayerHeader::signalClose, this, [this]()
+        controlPanel_.reset(new VideoPlayerControlPanel(this, player_));
+        header_.reset(new VideoPlayerHeader(this, ""));
+        
+        
+        connect(header_.get(), &VideoPlayerHeader::signalClose, this, [this]()
         {
             emit signalClose();
         });
 
-        installEventFilter(this);
+        connect(player_, &FFMpegPlayer::mouseMoved, this, &VideoPlayer::playerMouseMoved);
+        connect(player_, &FFMpegPlayer::mouseLeaveEvent, this, &VideoPlayer::playerMouseLeaved);
 
-        connect(controlPanel_, &VideoPlayerControlPanel::signalFullscreen, this, &VideoPlayer::fullScreen);
+        installEventFilter(this);
+        controlPanel_->installEventFilter(this);
+        header_->installEventFilter(this);
+
+        connect(controlPanel_.get(), &VideoPlayerControlPanel::signalFullscreen, this, &VideoPlayer::fullScreen);
 
         setMouseTracking(true);
 
         updateSize(QSize(getMinWidth(), getMinHeight()));
+
+        timerHide_ = new QTimer(this);
+        connect(timerHide_, &QTimer::timeout, this, &VideoPlayer::timerHide, Qt::QueuedConnection);
     }
 
     VideoPlayer::~VideoPlayer()
     {
-    }
 
-    void VideoPlayer::paintEvent(QPaintEvent* _e)
-    {
-        QStyleOption opt;
-        opt.init(this);
-        QPainter p(this);
-        style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
-
-        return QWidget::paintEvent(_e);
     }
 
     void VideoPlayer::changeEvent(QEvent* _e)
@@ -565,6 +571,8 @@ namespace Ui
 
     void VideoPlayer::mouseReleaseEvent(QMouseEvent* _event)
     {
+        moveToTop();
+
         if (!rect().contains(_event->pos()))
             return QWidget::mouseReleaseEvent(_event);
 
@@ -601,7 +609,6 @@ namespace Ui
 
         QSize outSize(_videoSize);
 
-
         if (_videoSize.width() < _videoSize.height())
         {
             if (_scaledVideoSize.height() > maxHeight)
@@ -616,7 +623,6 @@ namespace Ui
             {
                 outSize.setWidth(maxWidth);
                 outSize.setHeight(_scaledVideoSize.height()*(maxWidth/_scaledVideoSize.width()));
-
             }
         }
 
@@ -639,23 +645,11 @@ namespace Ui
         int cw = (rcParent.width()/2) - (_sz.width()/2);
         int ch = (rcParent.height()/2) - (_sz.height()/2);
 
+        player_->setFixedSize(_sz);
         move(rcParent.left() + cw, rcParent.top() + ch);
 
-        player_->setFixedSize(_sz);
-
-        controlPanel_->setGeometry(0, _sz.height() - getControlPanelMaxHeight(), _sz.width(), getControlPanelMaxHeight());
-        header_->setGeometry(0, 0, _sz.width(), getHeaderMaxHeight());
-
-        if (underMouse())
-        {
-            showControlPanel(true);
-            showHeader(true);
-        }
-        else
-        {
-            showControlPanel(false);
-            showHeader(false);
-        }
+        controlPanel_->setGeometry(rcParent.left() + cw, rcParent.top() + ch + _sz.height() - getControlPanelMaxHeight(), _sz.width(), getControlPanelMaxHeight());
+        header_->setGeometry(rcParent.left() + cw, rcParent.top() + ch, _sz.width(), getHeaderMaxHeight());
 
         emit sizeChanged(_sz);
     }
@@ -676,33 +670,44 @@ namespace Ui
         }
     }
 
-
-
     bool VideoPlayer::eventFilter(QObject* _obj, QEvent* _event)
     {
         switch (_event->type())
         {
             case QEvent::Enter:
             {
-                showControlPanel(true);
-                showHeader(true);
+                QObject* objectcontrolPanel = qobject_cast<QObject*>(controlPanel_.get());
+                QObject* objectHeader = qobject_cast<QObject*>(header_.get());
+                if (_obj == objectcontrolPanel || _obj == objectHeader)
+                {
+                    timerHide_->stop();
+                }
                 break;
             }
             case QEvent::Leave:
             {
-                showControlPanel(false);
-                showHeader(false);
+                QObject* objectcontrolPanel = qobject_cast<QObject*>(controlPanel_.get());
+                QObject* objectHeader = qobject_cast<QObject*>(header_.get());
+                if (_obj == objectcontrolPanel || _obj == objectHeader)
+                {
+                    if (!underMouse())
+                    {
+                        timerHide_->start(hideTimeoutShort);
+                    }
+                }
                 break;
             }
+            default:
+                break;
+                
         }
-
 
         return QObject::eventFilter(_obj, _event);
     }
 
     void VideoPlayer::setControlPanelHeight(int _val)
     {
-        controlPanel_->setGeometry(0, geometry().height() - _val, geometry().width(), getControlPanelMaxHeight());
+        QRect rcParent = geometry();
     }
 
     int VideoPlayer::getControlPanelHeight() const
@@ -712,7 +717,7 @@ namespace Ui
 
     void VideoPlayer::setHeaderHeight(int _val)
     {
-        header_->setGeometry(0, _val - getHeaderMaxHeight(), geometry().width(), _val);
+        QRect rcParent = geometry();
     }
 
     int VideoPlayer::getHeaderHeight() const
@@ -724,59 +729,106 @@ namespace Ui
 
     void VideoPlayer::showHeader(const bool _isShow)
     {
-        if (!animHeader_)
+        if (_isShow)
         {
-            animHeader_ = new QPropertyAnimation(this, "headerHeight");
+            header_->show();
+
+            QRect rcParent = geometry();
+
+            header_->setGeometry(rcParent.left(), rcParent.top(), geometry().width(), getHeaderMaxHeight());
         }
-
-        int startValue = _isShow ? 0 : getHeaderMaxHeight();
-        int endValue = _isShow ? getHeaderMaxHeight() : 0;
-
-        QEasingCurve easingCurve = QEasingCurve::InQuad;
-        int duration = 200;
-
-        animHeader_->stop();
-        animHeader_->setDuration(duration);
-        animHeader_->setStartValue(startValue);
-        animHeader_->setEndValue(endValue);
-        animHeader_->setEasingCurve(easingCurve);
-        animHeader_->start();
+        else
+        {
+            header_->hide();
+        }
     }
 
     void VideoPlayer::showControlPanel(const bool _isShow)
     {
-        if (!animControlPanel_)
+        QRect rcParent = geometry();
+        
+        if (_isShow)
         {
-            animControlPanel_ = new QPropertyAnimation(this, "controlPanelHeight");
+            controlPanel_->setGeometry(rcParent.left(), rcParent.bottom() - getControlPanelMaxHeight(), rcParent.width(), getControlPanelMaxHeight() + 1);
+            
+            controlPanel_->show();
+            
         }
-
-
-        int startValue = _isShow ? 0 : getControlPanelMaxHeight();
-        int endValue = _isShow ? getControlPanelMaxHeight() : 0;
-
-        QEasingCurve easingCurve = QEasingCurve::InQuad;
-        int duration = 200;
-
-        animControlPanel_->stop();
-        animControlPanel_->setDuration(duration);
-        animControlPanel_->setStartValue(startValue);
-        animControlPanel_->setEndValue(endValue);
-        animControlPanel_->setEasingCurve(easingCurve);
-        animControlPanel_->start();
+        else
+        {
+            controlPanel_->hide();
+        }
     }
 
     void VideoPlayer::fullScreen(bool _checked)
     {
         if (_checked)
         {
-            const auto rc = parent_->geometry();
+            const auto rcParent = parent_->geometry();
+            const auto videoSize = player_->getVideoSize();
 
-            updateSize(QSize(rc.width(), rc.height()));
+            QSize szOut;
+
+            if (videoSize.width() < videoSize.height())
+            {
+                szOut.setHeight(rcParent.height());
+                szOut.setWidth((int) double(szOut.height()) * (double(videoSize.width()) / double(videoSize.height())));
+            }
+            else
+            {
+                szOut.setWidth(rcParent.width());
+                szOut.setHeight((int) double(szOut.width()) * (double(videoSize.height()) / double(videoSize.width())));
+            }
+            
+
+            updateSize(szOut);
         }
         else
         {
             updateSize(playerSize_);
         }
+
+        moveToTop();
+    }
+
+    void VideoPlayer::moveToTop()
+    {
+        raise();
+
+        controlPanel_->raise();
+        header_->raise();
+    }
+
+    void VideoPlayer::playerMouseMoved()
+    {
+        timerHide_->stop();
+        timerHide_->start(hideTimeout);
+
+        if (controlsShowed_)
+            return;
         
+        controlsShowed_ = true;
+        
+        showControlPanel(true);
+        showHeader(true);
+        moveToTop();
+    }
+
+    void VideoPlayer::playerMouseLeaved()
+    {
+        timerHide_->stop();
+        timerHide_->start(hideTimeoutShort);
+    }
+
+    void VideoPlayer::timerHide()
+    {
+        showControlPanel(false);
+        showHeader(false);
+
+        timerHide_->stop();
+
+        moveToTop();
+        
+        controlsShowed_ = false;
     }
 }

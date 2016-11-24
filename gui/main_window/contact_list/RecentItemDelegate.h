@@ -6,16 +6,16 @@
 
 namespace Logic
 {
-	class RecentItemDelegate : public QItemDelegate
+	class RecentItemDelegate : public AbstractItemDelegateWithRegim
 	{
 	public:
 
 		RecentItemDelegate(QObject* parent);
 
-		void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+		void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 		void paint(QPainter *painter, const QStyleOptionViewItem &option, const Data::DlgState& dlgState, bool dragOverlay) const;
 
-		QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+		QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 		QSize sizeHintForAlert() const;
 
 		void blockState(bool value);
@@ -28,9 +28,9 @@ namespace Logic
         void setPictOnlyView(bool _pictOnlyView);
         bool getPictOnlyView() const;
 
-        void setFixedWidth(int _newWidth);
+        virtual void setFixedWidth(int _newWidth) override;
 
-        void setRegim(int _regim);
+        virtual void setRegim(int _regim) override;
 
 	private:
 

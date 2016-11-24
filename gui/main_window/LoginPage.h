@@ -84,8 +84,8 @@ namespace Ui
 		QPushButton*				switchButton;
 		QPushButton*				resendButton;
 		QFrame*						phoneWidget;
-		QLineEdit*					uinEdit;
-		QLineEdit*					passwordEdit;
+		LineEditEx*					uinEdit;
+		LineEditEx*					passwordEdit;
         QCheckBox*                  keepLogged;
 		QLineEdit*					codeEdit;
 		QLabel*						errorLabel;

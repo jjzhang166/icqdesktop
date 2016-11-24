@@ -19,6 +19,9 @@ namespace
 
 core::file_sharing_content_type extractContentTypeFromFileSharingId(const QString &id)
 {
+    if (id.isEmpty())
+        return core::file_sharing_content_type::undefined;
+    
     const auto id0 = id[0].toLatin1();
 
     const auto is_snap_image = (id0 == '1');
@@ -112,6 +115,10 @@ QString extractIdFromFileSharingUri(const QString &uri)
         return QString();
     }
 
+    QString normalizedUri = uri;
+    if (normalizedUri.endsWith(QChar::Space) || normalizedUri.endsWith(QChar::LineFeed))
+        normalizedUri.truncate(normalizedUri.length() - 1);
+
     static const QRegularExpression re(
         "^"
         "http(s?)://"
@@ -124,7 +131,7 @@ QString extractIdFromFileSharingUri(const QString &uri)
         "$"
     );
 
-    auto match = re.match(uri);
+    auto match = re.match(normalizedUri);
     if (!match.hasMatch())
     {
         return QString();

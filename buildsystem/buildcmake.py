@@ -38,6 +38,25 @@ def update_version(build_number):
 			elif file_version_macro in line:
 				line = file_version_macro + ' '+VERSION+'\n'
 			print(line, end='')
+
+final_build_string = "ICQ_FINAL_BUILD"
+development_build_string = "ICQ_DEVELOPMENT_BUILD"
+
+def print_usage():
+	print("usage: buildcmake.py [" + final_build_string + "|" + development_build_string + "]")
+	exit()
+
+is_final_build = False
+
+if len(sys.argv) == 2:
+	if sys.argv[1] == final_build_string:
+		is_final_build = True
+	elif sys.argv[1] == development_build_string:
+		is_final_build = False
+	else:
+		print_usage()
+elif len(sys.argv) > 2:
+	print_usage()
 	
 build_path = os.getenv('MSBUILD', 'C:/Program Files (x86)/MSBuild/14.0/Bin/')
 build_path = '"' + build_path + '/MSBuild.exe"'
@@ -46,7 +65,7 @@ build_number = os.getenv('BUILD_NUMBER', '1999')
 print(build_path)
 update_version(build_number)
 
-if os.system("buildcmake.bat") != 0:
+if os.system("buildcmake.bat " + (final_build_string if is_final_build else development_build_string)) != 0:
 	sys.exit(1)
 
 sign_file(os.path.abspath("../bin/Release/icq.exe"))
@@ -56,7 +75,16 @@ sign_file(os.path.abspath("../bin/Release/libvoip_x86.dll"))
 if os.system(build_path + " ../installer/installer.sln /t:Rebuild /p:Configuration=Release;Platform=Win32") != 0:
 	sys.exit(1)
 
+sign_file(os.path.abspath("../bin/Release/installer/installer.exe"))
+
+sign_file(os.path.abspath("../bin/Release/installer/installloader.exe"))
+
+if os.system(build_path + " ../installerpack/installerpack.sln /t:Rebuild /p:Configuration=Release;Platform=Win32") != 0:
+	sys.exit(1)
+
 sign_file(os.path.abspath("../bin/Release/installer/icqsetup.exe"))
+
+
 
 upload_folder = os.path.join(os.environ["STORAGE"], build_number).replace('\\', '/')
 

@@ -5,6 +5,7 @@
 namespace Ui
 {
     const int period_for_stats_settings_ms = 1e3 * 60 * 24;
+    const int period_for_start_stats_settings_ms = 1e3 * 60 * 1;
 
     class qt_gui_settings : public QObject
     {

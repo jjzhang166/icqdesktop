@@ -113,6 +113,7 @@ int launch::main(int _argc, char* _argv[])
         qRegisterMetaType<QSharedPointer<QMovie>>("QSharedPointer<QMovie>");
         qRegisterMetaType<Data::Quote>("Data::Quote");
         qRegisterMetaType<QList<Data::Quote>>("QList<Data::Quote>");
+        qRegisterMetaType<QList<Data::DlgState>>("QList<Data::DlgState>");
     }
     else
     {
@@ -128,6 +129,12 @@ int launch::main(int _argc, char* _argv[])
     QT_TRANSLATE_NOOP("QWidgetTextControl", "&Paste");
     QT_TRANSLATE_NOOP("QWidgetTextControl", "Delete");
     QT_TRANSLATE_NOOP("QWidgetTextControl", "Select All");
+
+#if defined(ICQ_FINAL_BUILD)
+    qDebug() << "Final build is now running";
+#elif defined(ICQ_DEVELOPMENT_BUILD)
+    qDebug() << "Development build is now running";
+#endif
 
     return app.exec();
 }

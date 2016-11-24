@@ -317,11 +317,13 @@ namespace Ui
             {
                 onResize(static_cast<QResizeEvent*>(event));
             }
+            break;
         case QEvent::MouseMove:
             fadeIn();
             break;
+        default:
+            ;
         }
-
         return QWidget::eventFilter( obj, event );
     }
 
@@ -507,12 +509,10 @@ namespace Ui
 
     bool MouseMoveEventFilterForTrScrollBar::eventFilter(QObject* _obj, QEvent* _event)
     {
-        switch (_event->type())
+        if (_event->type() == QEvent::MouseMove)
         {
-            case QEvent::MouseMove:
-                if (scrollbar_)
-                    scrollbar_->updatePos();
-                break;
+            if (scrollbar_)
+                scrollbar_->updatePos();
         }
         return QObject::eventFilter(_obj, _event);
     }
@@ -561,14 +561,11 @@ namespace Ui
 
     bool ScrollAreaWithTrScrollBar::eventFilter(QObject *obj, QEvent *event)
     {
-        switch (event->type())
+        if (event->type() == QEvent::Resize)
         {
-            case QEvent::Resize:
-                if (getScrollBar())
-                    getScrollBar()->updatePos();
-                break;
+            if (getScrollBar())
+                getScrollBar()->updatePos();
         }
-
         return QScrollArea::eventFilter( obj, event );
     }
 

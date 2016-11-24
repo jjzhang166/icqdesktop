@@ -40,6 +40,7 @@ int32_t fetch_event_dlg_state::parse(const rapidjson::Value& _node_event_data)
     }
 
     aimid_ = iter_sn->value.GetString();
+
     state_.set_last_msgid(iter_last_msg_id->value.GetInt64());
 
     auto iter_unread_count = _node_event_data.FindMember("unreadCnt");

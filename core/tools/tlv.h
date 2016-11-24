@@ -96,6 +96,7 @@ namespace core
 
             void serialize(binary_stream& _stream) const;
             bool unserialize(const binary_stream& _stream);
+            static bool try_get_field_with_type(const binary_stream& _stream, uint32_t _type, uint32_t& _length);
 
         };
 

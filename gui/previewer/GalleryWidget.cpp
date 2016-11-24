@@ -338,7 +338,7 @@ void Previewer::GalleryWidget::onSaveClicked()
     QString dir;
     QString name;
 
-    if (!Utils::saveAs(loader.getFileName(), name, dir))
+    if (!Utils::saveAs(loader.getFileName(), name, dir, false))
     {
         return;
     }

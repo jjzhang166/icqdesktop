@@ -17,6 +17,7 @@ normalize_phone::normalize_phone(const wim_packet_params& _params, const std::st
     phone_(_phone), 
     sms_enabled_(false)
 {
+    set_can_change_hosts_scheme(true);
 }
 
 
@@ -27,7 +28,7 @@ normalize_phone::~normalize_phone()
 int32_t normalize_phone::init_request(std::shared_ptr<core::http_request_simple> _request)
 {
     std::stringstream ss_url;
-    ss_url << "https://www.icq.com:443/smsreg/normalizePhoneNumber.php?" << 
+    ss_url << "https://www.icq.com/smsreg/normalizePhoneNumber.php?" << 
         "countryCode=" << escape_symbols(country_) <<
         "&phoneNumber=" << phone_ <<
         "&k=" << params_.dev_id_ <<

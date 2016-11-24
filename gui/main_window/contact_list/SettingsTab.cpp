@@ -36,7 +36,7 @@ namespace Ui
         CustomButton *aboutButton;
         CustomButton *contactUsButton;
         CustomButton *signoutButton;
-        
+
         friend class SettingsTab;
 
     public:
@@ -47,7 +47,7 @@ namespace Ui
             topicLabel->setObjectName(QStringLiteral("settings_topic_label"));
             topicLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
             _pl->addWidget(topicLabel);
-            
+
             myProfileButton = new CustomButton(settingsView, ":/resources/contr_profile_100.png");
             Testing::setAccessibleName(myProfileButton, "settings_my_profile_button");
 
@@ -61,7 +61,7 @@ namespace Ui
             myProfileButton->setFocusPolicy(Qt::NoFocus);
             myProfileButton->setCursor(QCursor(Qt::PointingHandCursor));
             _pl->addWidget(myProfileButton);
-            
+
             generalButton = new CustomButton(settingsView, ":/resources/tabs_settings_100.png");
             Utils::grabTouchWidget(generalButton);
             generalButton->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred));
@@ -96,7 +96,7 @@ namespace Ui
             notificationsButton->setFocusPolicy(Qt::NoFocus);
             notificationsButton->setCursor(QCursor(Qt::PointingHandCursor));
             _pl->addWidget(notificationsButton);
-            
+
             voipButton = new CustomButton(settingsView, ":/resources/contr_video_100.png");
             Utils::grabTouchWidget(voipButton);
             voipButton->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred));
@@ -108,7 +108,7 @@ namespace Ui
             voipButton->setFocusPolicy(Qt::NoFocus);
             voipButton->setCursor(QCursor(Qt::PointingHandCursor));
             _pl->addWidget(voipButton);
-            
+
             horLineWidget = new QWidget(settingsView);
             Utils::grabTouchWidget(horLineWidget);
             horLineLayout = new QHBoxLayout(horLineWidget);
@@ -118,7 +118,7 @@ namespace Ui
             line->setFrameShadow(QFrame::Sunken);
             horLineLayout->addWidget(line);
             _pl->addWidget(horLineWidget);
-            
+
             aboutButton = new CustomButton(settingsView, ":/resources/contr_about_100.png");
             Utils::grabTouchWidget(aboutButton);
             aboutButton->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred));
@@ -156,7 +156,7 @@ namespace Ui
             signoutButton->setCursor(QCursor(Qt::PointingHandCursor));
             _pl->addWidget(signoutButton);
             Testing::setAccessibleName(signoutButton, "settings_signout_button");
-            
+
             topicLabel->setText(QT_TRANSLATE_NOOP("settings_pages","Settings"));
             myProfileButton->setText(QT_TRANSLATE_NOOP("settings_pages", "My profile"));
             generalButton->setText(QT_TRANSLATE_NOOP("settings_pages", "General"));
@@ -167,7 +167,7 @@ namespace Ui
             contactUsButton->setText(QT_TRANSLATE_NOOP("settings_pages", "Contact Us"));
             signoutButton->setText(QT_TRANSLATE_NOOP("settings_pages", "Change account"));
         }
-        
+
         void retranslateUi(QWidget* _settingsPage)
         {
             _settingsPage->setWindowTitle("");
@@ -181,7 +181,7 @@ namespace Ui
             signoutButton->setText(QT_TRANSLATE_NOOP("settings_pages", "Change account"));
         }
     };
-    
+
     SettingsTab::SettingsTab(QWidget* _parent):
         QWidget(_parent),
         ui_(new UI()),
@@ -195,26 +195,26 @@ namespace Ui
         scrollArea->setWidgetResizable(true);
         scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         Utils::grabTouchWidget(scrollArea->viewport(), true);
-        
+
         auto scrollAreaContent = new QWidget(scrollArea);
         scrollAreaContent->setObjectName(QStringLiteral("settings_view"));
         scrollAreaContent->setGeometry(QRect(0, 0, Utils::scale_value(800), Utils::scale_value(600)));
         Utils::grabTouchWidget(scrollAreaContent);
-        
+
         auto scrollAreaContentLayout = new QVBoxLayout(scrollAreaContent);
         scrollAreaContentLayout->setSpacing(0);
         scrollAreaContentLayout->setAlignment(Qt::AlignTop);
         scrollAreaContentLayout->setContentsMargins(Utils::scale_value(0), 0, 0, Utils::scale_value(0));
-        
+
         scrollArea->setWidget(scrollAreaContent);
-        
+
         auto layout = new QVBoxLayout(this);
         layout->setSpacing(0);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->addWidget(scrollArea);
-        
+
         ui_->init(scrollAreaContent, scrollAreaContentLayout);
-                
+
         connect(ui_->myProfileButton, SIGNAL(toggled(bool)), this, SLOT(settingsProfileClicked()), Qt::QueuedConnection);
         connect(ui_->generalButton, SIGNAL(toggled(bool)), this, SLOT(settingsGeneralClicked()), Qt::QueuedConnection);
         connect(ui_->voipButton, SIGNAL(toggled(bool)), this, SLOT(settingsVoiceVideoClicked()), Qt::QueuedConnection);
@@ -228,12 +228,12 @@ namespace Ui
         ui_->voipButton->hide();
 #endif //STRIP_VOIP
     }
-    
+
     SettingsTab::~SettingsTab() throw()
     {
         //
     }
-    
+
     void SettingsTab::cleanSelection()
     {
         emit Utils::InterConnector::instance().popPagesToRoot();
@@ -241,7 +241,7 @@ namespace Ui
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_None;
         updateSettingsState();
     }
-    
+
     void SettingsTab::settingsProfileClicked()
     {
         if (currentSettingsItem_ != Utils::CommonSettingsType::CommonSettingsType_Profile
@@ -250,11 +250,11 @@ namespace Ui
 
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_Profile;
         updateSettingsState();
-        
+
         emit Utils::InterConnector::instance().profileSettingsShow("");
         GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::myprofile_open);
     }
-    
+
     void SettingsTab::settingsGeneralClicked()
     {
         if (currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
@@ -262,10 +262,10 @@ namespace Ui
 
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_General;
         updateSettingsState();
-        
+
         emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_General);
     }
-    
+
     void SettingsTab::settingsVoiceVideoClicked()
     {
         if (currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
@@ -273,10 +273,10 @@ namespace Ui
 
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_VoiceVideo;
         updateSettingsState();
-        
+
         emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_VoiceVideo);
     }
-    
+
     void SettingsTab::settingsNotificationsClicked()
     {
         if (currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
@@ -284,21 +284,21 @@ namespace Ui
 
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_Notifications;
         updateSettingsState();
-        
+
         emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_Notifications);
     }
-    
+
     void SettingsTab::settingsThemesClicked()
     {
         if (currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
             emit Utils::InterConnector::instance().profileSettingsBack();
-        
+
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_Themes;
         updateSettingsState();
 
         emit Utils::InterConnector::instance().themesSettingsShow(false, "");
     }
-    
+
     void SettingsTab::settingsAboutClicked()
     {
         if (currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
@@ -306,7 +306,7 @@ namespace Ui
 
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_About;
         updateSettingsState();
-        
+
         emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_About);
     }
 
@@ -314,10 +314,10 @@ namespace Ui
     {
         if (currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile)
             emit Utils::InterConnector::instance().profileSettingsBack();
-        
+
         currentSettingsItem_ = Utils::CommonSettingsType::CommonSettingsType_ContactUs;
         updateSettingsState();
-        
+
         emit Utils::InterConnector::instance().generalSettingsShow((int)Utils::CommonSettingsType::CommonSettingsType_ContactUs);
     }
 
@@ -349,7 +349,7 @@ namespace Ui
             updateSettingsState();
         }
     }
-    
+
     void SettingsTab::updateSettingsState()
     {
         ui_->myProfileButton->blockSignals(true);
@@ -360,7 +360,7 @@ namespace Ui
         ui_->aboutButton->blockSignals(true);
         ui_->contactUsButton->blockSignals(true);
         ui_->signoutButton->blockSignals(true);
-        
+
         ui_->myProfileButton->setChecked(currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_Profile);
         ui_->generalButton->setChecked(currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_General);
         ui_->voipButton->setChecked(currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_VoiceVideo);
@@ -369,7 +369,7 @@ namespace Ui
         ui_->aboutButton->setChecked(currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_About);
         ui_->contactUsButton->setChecked(currentSettingsItem_ == Utils::CommonSettingsType::CommonSettingsType_ContactUs);
         ui_->signoutButton->setChecked(false);
-        
+
         ui_->myProfileButton->blockSignals(false);
         ui_->generalButton->blockSignals(false);
         ui_->voipButton->blockSignals(false);

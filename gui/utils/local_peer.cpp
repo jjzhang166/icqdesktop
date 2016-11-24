@@ -65,7 +65,7 @@ unsigned int LocalPeer::get_hwnd_and_activate()
             }
         }
     }
-#endif _WIN32
+#endif //_WIN32
 
     return hwnd;
 }
@@ -99,7 +99,7 @@ void LocalPeer::send_url_command(const QString& _url_command)
     if (socket.waitForBytesWritten(timeout))
     {
     }
-#endif _WIN32
+#endif //_WIN32
 }
 
 void LocalPeer::set_main_window(Ui::MainWindow* _wnd)

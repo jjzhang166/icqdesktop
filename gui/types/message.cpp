@@ -277,7 +277,9 @@ namespace Data
     {
         if (_isMultichat)
         {
-            return (GetChatSender() != _prevBuddy.GetChatSender());
+            if (IsChatEvent() == _prevBuddy.IsChatEvent())
+                return (GetChatSender() != _prevBuddy.GetChatSender());
+            return true;
         }
 
         if (!isSameDirection(_prevBuddy))
@@ -631,7 +633,8 @@ namespace Data
         Out QString &aimId,
         Out bool &havePending,
         Out MessageBuddies& messages,
-        Out MessageBuddies& modifications)
+        Out MessageBuddies& modifications,
+        Out int64_t& last_msgid)
 	{
 		assert(!myAimid.isEmpty());
 
@@ -661,6 +664,11 @@ namespace Data
             auto modificationsArray = helper->get_value_as_array("modified");
             unserializeMessages(modificationsArray, aimId, myAimid, theirs_last_delivered, theirs_last_read, Out modifications);
         }
+
+        if (helper->is_value_exist("last_msg_in_index"))
+        {
+            last_msgid = helper->get_value_as_int64("last_msg_in_index");
+        }
 	}
 
 	void SerializeDlgState(core::coll_helper* helper, const DlgState& state)
@@ -674,7 +682,7 @@ namespace Data
 		helper->set_value_as_string("last_message_friendly", state.LastMessageFriendly_.toStdString());
 	}
 
-	void UnserializeDlgState(core::coll_helper* helper, const QString &myAimId, Out DlgState& state)
+	void UnserializeDlgState(core::coll_helper* helper, const QString &myAimId, bool _from_search, Out DlgState& state)
 	{
         state.AimId_ = helper->get<QString>("contact");
 		state.UnreadCount_ = helper->get<int64_t>("unreads");
@@ -691,6 +699,10 @@ namespace Data
         {
             state.FavoriteTime_ = helper->get<int64_t>("favorite_time");
         }
+        if (helper->is_value_exist("is_contact"))
+        {
+            state.IsContact_ = helper->get<bool>("is_contact");
+        }
 
         if (helper->is_value_exist("message"))
         {
@@ -701,8 +713,15 @@ namespace Data
             const auto serializeMessage = helper->get<bool>("serialize_message");
             if (serializeMessage)
             {
-		        auto text = Logic::GetMessagesModel()->formatRecentsText(*messageBuddy);
+                auto text = messageBuddy->GetText();
+                if (!_from_search || state.IsContact_)
+                {
+		            text = Logic::GetMessagesModel()->formatRecentsText(*messageBuddy);
+                }
 	            state.SetText(std::move(text));
+
+                if (!state.IsContact_)
+                    state.SearchedMsgId_ = messageBuddy->Id_;
             }
 
             state.senderNick_ = messageBuddy->ChatFriendly_;
@@ -731,6 +750,8 @@ namespace Data
         coll.set_value_as_int("time", time_);
         coll.set_value_as_int64("msg", msgId_);
         coll.set_value_as_bool("forward", isForward_);
+        coll.set_value_as_int("setId", setId_);
+        coll.set_value_as_int("stickerId", stickerId_);
     }
 
     void Quote::unserialize(core::icollection* _collection)
@@ -756,6 +777,12 @@ namespace Data
 
         if (coll->is_value_exist("forward"))
             isForward_ = coll.get_value_as_bool("forward");
+
+        if (coll->is_value_exist("setId"))
+            setId_ = coll.get_value_as_int("setId");
+
+        if (coll->is_value_exist("stickerId"))
+            stickerId_ = coll.get_value_as_int("stickerId");
 
         if (senderId_ == Ui::MyInfo()->aimId())
             senderFriendly_ = Ui::MyInfo()->friendlyName();
@@ -964,9 +991,9 @@ namespace
         for (const auto &part : parts)
         {
             const auto isUri = (
-                part.startsWith("http://") ||
-                part.startsWith("www.") ||
-                part.startsWith("https://"));
+                part.startsWith("http://", Qt::CaseInsensitive) ||
+                part.startsWith("www.", Qt::CaseInsensitive) ||
+                part.startsWith("https://", Qt::CaseInsensitive));
             if (!isUri)
             {
                 continue;
@@ -992,9 +1019,9 @@ namespace
         const auto parts = text.splitRef(QChar(' '), QString::SkipEmptyParts);
         for (const auto &part : parts)
         {
-            if (!part.startsWith("www.") &&
-                !part.startsWith("http://") &&
-                !part.startsWith("https://"))
+            if (!part.startsWith("www.", Qt::CaseInsensitive) &&
+                !part.startsWith("http://", Qt::CaseInsensitive) &&
+                !part.startsWith("https://", Qt::CaseInsensitive))
             {
                 continue;
             }
@@ -1006,12 +1033,26 @@ namespace
             }
 
             ++index;
+
+            auto isEos = (index >= part.length());
+            if (isEos)
+            {
+                continue;
+            }
+
             if (part.at(index) != 'I' && part.at(index) != 'J')
             {
                 continue;
             }
 
             ++index;
+
+            isEos = (index >= part.length());
+            if (isEos)
+            {
+                continue;
+            }
+
             QString durationStr = part.mid(index, 4).toString();
 
             duration = decodeSymbols(durationStr);
@@ -1027,9 +1068,9 @@ namespace
         const auto parts = text.splitRef(QChar(' '), QString::SkipEmptyParts);
         for (const auto &part : parts)
         {
-            if (!part.startsWith("www.") &&
-                !part.startsWith("http://") &&
-                !part.startsWith("https://"))
+            if (!part.startsWith("www.", Qt::CaseInsensitive) &&
+                !part.startsWith("http://", Qt::CaseInsensitive) &&
+                !part.startsWith("https://", Qt::CaseInsensitive))
             {
                 continue;
             }
@@ -1052,9 +1093,9 @@ namespace
         const auto parts = text.splitRef(QChar(' '), QString::SkipEmptyParts);
         for (const auto &part : parts)
         {
-            if (!part.startsWith("www.") &&
-                !part.startsWith("http://") &&
-                !part.startsWith("https://"))
+            if (!part.startsWith("www.", Qt::CaseInsensitive) &&
+                !part.startsWith("http://", Qt::CaseInsensitive) &&
+                !part.startsWith("https://", Qt::CaseInsensitive))
             {
                 continue;
             }

@@ -34,6 +34,8 @@ namespace HistoryControl
 
         virtual QString toLink() const = 0;
 
+        virtual bool haveOpenInBrowserMenu() { return false; }
+
 	public:
 		MessageContentWidget(QWidget *parent, const bool isOutgoing, QString _aimId);
 

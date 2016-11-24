@@ -29,8 +29,8 @@ You can build project with Xcode or with make
 
 XCode:
     cmake .. -G Xcode -DCMAKE_BUILD_TYPE=Debug (also you can set Release instead Debug)
-    Open build\icq.sln and build
+    Open build\icq.xcodeproj and build
 
 make:
     cmake .. -DCMAKE_BUILD_TYPE=Debug (also you can set Release instead Debug)
-    make -j2
+    make

@@ -109,7 +109,7 @@ Q_SIGNALS:
         void im_created();
         void loginComplete();
         void getImagesResult(Data::ImageListPtr images);
-        void messageBuddies(std::shared_ptr<Data::MessageBuddies>, QString, Ui::MessagesBuddiesOpt, bool, qint64);
+        void messageBuddies(std::shared_ptr<Data::MessageBuddies>, QString, Ui::MessagesBuddiesOpt, bool, qint64, int64_t last_msg_id);
         void getSmsResult(int64_t, int _errCode, int _codeLength);
         void loginResult(int64_t, int code);
         void loginResultAttachUin(int64_t, int _code);
@@ -119,6 +119,9 @@ Q_SIGNALS:
         void presense(Data::Buddy*);
         void searchResult(QStringList);
         void dlgState(Data::DlgState);
+        void searchedMessage(Data::DlgState);
+        void searchedContacts(QList<Data::DlgState>, qint64);
+        void emptySearchResults();
         void activeDialogHide(QString);
         void guiSettings();
         void themeSettings();
@@ -191,6 +194,14 @@ Q_SIGNALS:
         void phoneInfoResult(qint64, Data::PhoneInfo);
         void snapMetainfoDownloaded(int64_t _seq, bool _success, uint64_t _snapId, int64_t _expireUtc, QString _authorUin, QString _authorName);
 
+        // masks
+        void maskListLoaded(QList<QString> maskList);
+        void maskPreviewLoaded(int64_t _seq, const QString& _localPath);
+        void maskModelLoaded();
+        void maskLoaded(int64_t _seq, const QString& _localPath);
+        void maskLoadingProgress(int64_t _seq, unsigned _percent);
+        void maskRetryUpdate();
+
         void appConfig();
 
     public Q_SLOTS:
@@ -243,7 +254,7 @@ Q_SIGNALS:
 
         bool isImCreated() const;
 
-        qint64 raiseDownloadPriority(int64_t _procId);
+        qint64 raiseDownloadPriority(const QString &_contactAimid, int64_t _procId);
 
         qint64 raiseContactDownloadsPriority(const QString &_contactAimid);
 
@@ -274,7 +285,6 @@ Q_SIGNALS:
         void onContactPresence(const int64_t _seq, core::coll_helper _params);
         void onGuiSettings(const int64_t _seq, core::coll_helper _params);
         void onThemeSettings(const int64_t _seq, core::coll_helper _params);
-        void onSearchResult(const int64_t _seq, core::coll_helper _params);
         void onArchiveImagesGetResult(const int64_t _seq, core::coll_helper _params);
         void onArchiveMessagesGetResult(const int64_t _seq, core::coll_helper _params);
         void onMessagesReceivedDlgState(const int64_t _seq, core::coll_helper _params);
@@ -284,6 +294,11 @@ Q_SIGNALS:
         void onMessagesReceivedMessageStatus(const int64_t _seq, core::coll_helper _params);
         void onMessagesDelUpTo(const int64_t _seq, core::coll_helper _params);
         void onDlgState(const int64_t _seq, core::coll_helper _params);
+        void onHistorySearchResultMsg(const int64_t _seq, core::coll_helper _params);
+        void onHistorySearchResultContacts(const int64_t _seq, core::coll_helper _params);
+        void onEmptySearchResults(const int64_t _seq, core::coll_helper _params);
+        void onSearchNeedUpdate(const int64_t _seq, core::coll_helper _params);
+
         void onVoipSignal(const int64_t _seq, core::coll_helper _params);
         void onActiveDialogsAreEmpty(const int64_t _seq, core::coll_helper _params);
         void onActiveDialogsHide(const int64_t _seq, core::coll_helper _params);
@@ -331,6 +346,12 @@ Q_SIGNALS:
         void onPhoneinfoResult(const int64_t _seq, core::coll_helper _params);
         void onSnapGetMetainfoResult(const int64_t _seq, const core::coll_helper & _params);
         void onContactRemovedFromIgnore(const int64_t _seq, core::coll_helper _params);
+        void onMasksGetIdListResult(const int64_t _seq, core::coll_helper _params);
+        void onMasksPreviewResult(const int64_t _seq, core::coll_helper _params);
+        void onMasksModelResult(const int64_t _seq, core::coll_helper _params);
+        void onMasksGetResult(const int64_t _seq, core::coll_helper _params);
+        void onMasksProgress(const int64_t _seq, core::coll_helper _params);
+        void onMasksRetryUpdate(const int64_t _seq, core::coll_helper _params);
 
 
     private:

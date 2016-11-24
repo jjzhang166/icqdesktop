@@ -157,13 +157,21 @@ Q_SIGNALS:
         void restoreSidebar();
 
         void showMenuBarIcon(bool _show);
+        void setFocusOnInput();
+        void onSendMessage(const QString&);
 
     private:
         void initSizes();
         void initSettings();
+        void resize(int w, int h);
+        void showMaximized();
+        void showNormal();
+        bool isMaximized();
+        void updateState();
 
     protected:
         bool nativeEventFilter(const QByteArray &, void* _message, long* _result);
+        bool eventFilter(QObject *, QEvent *);
 
         virtual void enterEvent(QEvent* _event);
         virtual void leaveEvent(QEvent* _event);
@@ -202,6 +210,7 @@ Q_SIGNALS:
 
         bool SkipRead_;
         bool TaskBarIconHidden_;
+        bool IsMaximized_;
 
 #ifdef _WIN32
         HWND fake_parent_window_;

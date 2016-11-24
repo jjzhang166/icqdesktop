@@ -19,10 +19,6 @@ namespace
 
     void RenderRole(QPainter &painter, const int x, const int y, const QString& role, ContactListParams& _contactListPx);
 
-    int RenderDate(QPainter &painter, const QDateTime &date, const VisualDataBase &item, ContactListParams& _contactListPx, const ViewParams& viewParams_);
-
-    int RenderRemove(QPainter &painter, ContactListParams& _contactListPx, const ViewParams& viewParams_);
-
     void RenderApprove(QPainter &painter, int& rightBorder, ContactListParams& _contactListPxr);
 
     int RenderMore(QPainter &painter, ContactListParams& _contactListPx, const ViewParams& viewParams_);
@@ -51,12 +47,14 @@ namespace ContactList
             painter.fillRect(rect, QBrush(QColor("#dadada")));
         }
 
-        static const auto hoveredIcon = Themes::GetPixmap(Themes::PixmapResourceId::ContactListAddContactHovered);
-        static const auto plainIcon = Themes::GetPixmap(Themes::PixmapResourceId::ContactListAddContact);
-
-        const auto &icon = plainIcon;
         if (_type == Data::ContactType::ADD_CONTACT)
+        {
+            static const auto hoveredIcon = Themes::GetPixmap(Themes::PixmapResourceId::ContactListAddContactHovered);
+            static const auto plainIcon = Themes::GetPixmap(Themes::PixmapResourceId::ContactListAddContact);
+
+            const auto &icon = plainIcon;
             icon->Draw(painter, contactListPx.avatarX().px() + leftMargin, contactListPx.avatarY().px(), contactListPx.avatarW().px(), contactListPx.avatarH().px());
+        }
 
         if (_type == Data::EMPTY_IGNORE_LIST)
         {
@@ -69,8 +67,33 @@ namespace ContactList
             painter.setFont(contactListPx.addContactFont().font());
         }
 
-        painter.translate(contactListPx.GetAddContactX().px(), contactListPx.addContactY().px());
-        painter.drawText(0, 0, _name);
+        if (_type == Data::ContactType::SEARCH_IN_ALL_CHATS)
+        {
+            painter.setFont(contactListPx.findInAllChatsFont().font());
+            static QFontMetrics m(contactListPx.findInAllChatsFont().font());
+            const auto textWidth = m.tightBoundingRect(_name).width();
+
+            auto rightX = CorrectItemWidth(ItemWidth(viewParams_).px() - contactListPx.itemPadding().px(), viewParams_.fixedWidth_)
+                - viewParams_.rightMargin_;
+            
+            auto icon_height = Utils::scale_value(12);
+            auto icon_width = Utils::scale_value(8);
+            auto text_offset = Utils::scale_value(8);
+            auto findInAllChatsHeight = ContactList::SearchInAllChatsHeight();
+            auto timeXRight = rightX - icon_width;
+
+            painter.drawText(timeXRight - textWidth - text_offset, contactListPx.addContactY().px(), _name);
+
+            static const QPixmap icon(Utils::parse_image_name(":/resources/text_back_100.png"));
+
+            painter.drawPixmap(timeXRight, (findInAllChatsHeight - icon_height) / 2, icon_width, icon_height, icon);
+        }
+        else
+        {
+            painter.translate(contactListPx.GetAddContactX().px(), contactListPx.addContactY().px());
+            painter.drawText(0, 0, _name);
+        }
+
         painter.restore();
 
         contactListPx.resetParams();
@@ -134,7 +157,7 @@ namespace ContactList
 
         if (item.HasStatus())
         {
-            if (item.role_ == "admin" || item.role_ == "moder")
+            if (item.role_ == "admin" || item.role_ == "moder" || item.role_ == "readonly")
             {
                 RenderRole(painter, contactListPx.GetContactNameX().px(), contactListPx.contactNameTopY().px(), item.role_, contactListPx);
                 _viewParams.leftMargin_ += contactListPx.role_offset().px();
@@ -145,7 +168,7 @@ namespace ContactList
         }
         else
         {
-            if (item.role_ == "admin" || item.role_ == "moder")
+            if (item.role_ == "admin" || item.role_ == "moder" || item.role_ == "readonly")
             {
                 RenderRole(painter, contactListPx.GetContactNameX().px(), contactListPx.contactNameCenterY().px(), item.role_, contactListPx);
                 _viewParams.leftMargin_ += contactListPx.role_offset().px();
@@ -205,12 +228,6 @@ namespace ContactList
 
         painter.restore();
     }
-
-    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView, int width)
-    {
-        auto contactListPx = GetContactListParams();
-        return CorrectItemWidth(ItemWidth(false, _isWithCheckBox, _shortView).px(), width) - contactListPx.itemPadding().px() - DipPixels(contactListPx.onlineSignSize() + contactListPx.remove_size()).px();
-    }
 }
 
 namespace
@@ -234,70 +251,13 @@ namespace
             rolePixmap = QPixmap(Utils::parse_image_name(":/resources/user_ultraadmin_100.png"));
         else if (role == "moder")
             rolePixmap = QPixmap(Utils::parse_image_name(":/resources/user_king_100.png"));
+        else if (role == "readonly")
+            rolePixmap = QPixmap(Utils::parse_image_name(":/resources/user_onlyread_100.png"));
         else
             return;
         Utils::check_pixel_ratio(rolePixmap);
 
         painter.drawPixmap(x, y + _contactListPx.role_ver_offset().px(), rolePixmap);
-    }
-
-    int RenderDate(QPainter &painter, const QDateTime &ts, const VisualDataBase &item, ContactListParams& _contactListPx, const ViewParams& _viewParams)
-    {
-        const auto regim = _viewParams.regim_;
-        const auto isWithCheckBox = regim == Logic::MembersWidgetRegim::SELECT_MEMBERS;
-        const auto timeXRight = CorrectItemWidth(ItemWidth(_viewParams).px() - _contactListPx.itemPadding().px(), _viewParams.fixedWidth_)
-            - _viewParams.rightMargin_ - _contactListPx.itemPadding().px();
-
-        if (!ts.isValid())
-        {
-            return timeXRight;
-        }
-
-        const auto timeStr = FormatTime(ts);
-        if (timeStr.isEmpty())
-        {
-            return timeXRight;
-        }
-
-        static QFontMetrics m(_contactListPx.timeFont().font());
-        const auto leftBearing = m.leftBearing(timeStr[0]);
-        const auto rightBearing = m.rightBearing(timeStr[timeStr.length() - 1]);
-        const auto timeWidth = (m.tightBoundingRect(timeStr).width() + leftBearing + rightBearing);
-        const auto timeX = timeXRight - timeWidth;
-
-        if ((!isWithCheckBox && !Logic::is_delete_members_regim(regim) && !Logic::is_admin_members_regim(regim))
-            || (Logic::is_delete_members_regim(regim) && !item.IsHovered_)
-            || (!Logic::is_admin_members_regim(regim) && !item.IsHovered_))
-        {
-            painter.save();
-            painter.setFont(_contactListPx.timeFont().font());
-            painter.setPen(_contactListPx.timeFontColor());
-            painter.drawText(timeX, _contactListPx.timeY().px(), timeStr);
-            painter.restore();
-        }
-
-        return timeX;
-    }
-
-    int RenderRemove(QPainter &painter, ContactListParams& _contactListPx, const ViewParams& _viewParams)
-    {
-        const auto _shortView = _viewParams.shortView_;
-        const auto width = _viewParams.fixedWidth_;
-        const auto remove_img = Utils::parse_image_name(":/resources/contr_clear_100.png");
-        const auto isWithCheckBox = false;
-        painter.save();
-
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-        painter.drawPixmap(GetXOfRemoveImg(isWithCheckBox, _shortView, width), _contactListPx.onlineSignY().px() + _contactListPx.onlineSignSize().px() / 2 - _contactListPx.remove_size().px() / 2,
-            _contactListPx.remove_size().px(), _contactListPx.remove_size().px(), remove_img);
-
-        painter.restore();
-
-        const auto xPos = CorrectItemWidth(ItemWidth(_viewParams).px(), width) - _contactListPx.itemPadding().px() - _contactListPx.remove_size().px() - _contactListPx.onlineSignLeftPadding().px();
-        assert(xPos > _contactListPx.itemLeftBorder().px());
-        return xPos;
     }
 
     void RenderApprove(QPainter &painter, int& rightBorder, ContactListParams& _contactListPx)

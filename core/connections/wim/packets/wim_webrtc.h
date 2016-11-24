@@ -54,7 +54,7 @@ namespace core {
             wim_webrtc(const wim_packet_params& params, const voip_manager::VoipProtoMsg& internal_params);
             virtual ~wim_webrtc();
 
-            std::shared_ptr<core::tools::binary_stream> getRawData();
+            std::shared_ptr<core::tools::binary_stream> getRawData() override;
         };
 
 

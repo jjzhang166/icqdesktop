@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "VoipProxy.h"
 
+#include "MaskManager.h"
+
 #include "../core_dispatcher.h"
 #include "../fonts.h"
 #include "../gui_settings.h"
@@ -11,6 +13,7 @@
 #include "../../core/Voip/VoipManagerDefines.h"
 #include "../../core/Voip/VoipSerialization.h"
 #include "../cache/avatars/AvatarStorage.h"
+#include "../controls/TextEmojiWidget.h"
 
 #ifdef __APPLE__
     #include "macos/VideoFrameMacos.h"
@@ -45,6 +48,7 @@ voip_proxy::VoipController::VoipController(Ui::core_dispatcher& _dispatcher)
     , callTimeTimer_(this)
     , haveEstablishedConnection_(false)
     , iTunesWasPaused_(false)
+    , maskEngineEnable_(false)
 {
     cipherState_.state= voip_manager::CipherState::kCipherStateUnknown;
 
@@ -97,6 +101,11 @@ voip_proxy::VoipController::VoipController(Ui::core_dispatcher& _dispatcher)
 
 	connect(this, SIGNAL(onVoipCallConnected(const voip_manager::ContactEx&)),
 		this, SLOT(updateUserAvatar(const voip_manager::ContactEx&)));
+
+    connect(this, SIGNAL(onVoipMaskEngineEnable(bool)),
+        this, SLOT(updateVoipMaskEngineEnable(bool)));
+
+    maskManager_.reset(new voip_masks::MaskManager(_dispatcher, this));
 }
 
 voip_proxy::VoipController::~VoipController()
@@ -204,7 +213,7 @@ void voip_proxy::VoipController::_loadUserBitmaps(Ui::gui_coll_helper& _collecti
             const int avatarSize = Utils::scale_bitmap_with_value(voip_manager::kAvatarDefaultSize);
 
             QImage image(QSize(avatarSize, avatarSize), QImage::Format_ARGB32);
-            image.fill(Qt::white);
+            image.fill(Qt::transparent);
 
             QPainter painter(&image);
 
@@ -282,14 +291,14 @@ void voip_proxy::VoipController::_loadUserBitmaps(Ui::gui_coll_helper& _collecti
             painter.setPen(pen);
             painter.setFont(font);
 
-            if (textSz.width() > nickW)
-            {
-                painter.drawText(QRect(0, 0, nickW, nickH), Qt::TextSingleLine | Qt::AlignLeft | Qt::AlignVCenter, tmpContact);
-            }
-            else
-            {
-                painter.drawText(QRect(0, 0, nickW, nickH), Qt::TextSingleLine | Qt::AlignHCenter | Qt::AlignVCenter, tmpContact);
-            }
+            Ui::CompiledText compiledText;
+            Ui::CompiledText::compileText(tmpContact, compiledText, false);
+
+            // Align to center.
+            int xOffset = std::max((nickW - compiledText.width(painter)) / 2, 0);
+            int yOffset = std::max((nickH - compiledText.height(painter)) / 2, 0) + Utils::scale_bitmap_with_value(24);
+            compiledText.draw(painter, xOffset, yOffset, nickW);
+
             painter.end();
 
             packAvatar(pm.toImage(), "sign_normal_");
@@ -299,7 +308,7 @@ void voip_proxy::VoipController::_loadUserBitmaps(Ui::gui_coll_helper& _collecti
         {// header
             const QSize border = QSize(Utils::scale_bitmap_with_value(2), Utils::scale_bitmap_with_value(2));
 
-            QFont font = Fonts::appFont(Utils::scale_bitmap_with_value(12), Fonts::FontStyle::SEMIBOLD);
+            QFont font = Fonts::appFont(Utils::scale_bitmap_with_value(12), Fonts::FontWeight::Semibold);
             font.setStyleStrategy(QFont::PreferAntialias);
             const QPen pen(QColor(255, 255, 255, 230));
 
@@ -399,7 +408,11 @@ void voip_proxy::VoipController::handlePacket(core::coll_helper& _collParams)
     else if (sigType == "device_list_changed")
     {
         const int deviceCount = _collParams.get_value_as_int("count");
-        std::vector<device_desc> devices;
+        const voip2::DeviceType deviceType = (voip2::DeviceType)_collParams.get_value_as_int("type");
+
+        auto& devices = devices_[deviceType];
+
+        devices.clear();
         devices.reserve(deviceCount);
 
         if (deviceCount > 0)
@@ -436,7 +449,7 @@ void voip_proxy::VoipController::handlePacket(core::coll_helper& _collParams)
         }
 
         assert((deviceCount > 0 && !devices.empty()) || (!deviceCount && devices.empty()));
-        emit onVoipDeviceListUpdated(devices);
+        emit onVoipDeviceListUpdated((EvoipDevTypes)(deviceType + 1), devices);
     }
     else if (sigType == "media_loc_a_changed")
     {
@@ -546,6 +559,17 @@ void voip_proxy::VoipController::handlePacket(core::coll_helper& _collParams)
         const bool enabled = _collParams.get_value_as_bool("enable");
         emit onVoipMinimalBandwidthChanged(enabled);
     }
+	else if (sigType == "voip_mask_engine_enable")
+	{
+		const bool enabled = _collParams.get_value_as_bool("enable");
+		emit onVoipMaskEngineEnable(enabled);
+	}
+	else if (sigType == "voip_load_mask")
+	{
+		const bool result       = _collParams.get_value_as_bool("result");
+		const std::string name = _collParams.get_value_as_string("name");
+		emit onVoipLoadMaskResult(name, result);
+	}
 }
 
 void voip_proxy::VoipController::updateActivePeerList()
@@ -841,7 +865,7 @@ void voip_proxy::VoipController::setWindowAdd(quintptr _hwnd, bool _primaryWnd, 
             setWindowOffsets(_hwnd, Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(0), Utils::scale_value(_panelHeight) * Utils::scale_bitmap(1));
         }
 
-		setWindowBackground(_hwnd, 255, 255, 255, 255);
+		setWindowBackground(_hwnd, (char)255, (char)255, (char)255, (char)255);
     }
 }
 
@@ -907,7 +931,7 @@ void voip_proxy::VoipController::onStartCall(bool _bOutgoing)
     iTunesWasPaused_ = iTunesWasPaused_ || platform_macos::pauseiTunes();
 #endif
 
-    connect(Logic::getContactListModel(), SIGNAL(ignoreContact(QString)), this, SLOT(_checkIgnoreContact(QString)));
+    connect(Logic::getContactListModel(), SIGNAL(ignore_contact(QString)), this, SLOT(_checkIgnoreContact(QString)));
 }
 
 void voip_proxy::VoipController::onEndCall()
@@ -921,7 +945,7 @@ void voip_proxy::VoipController::onEndCall()
     }
 #endif
 
-    disconnect(Logic::getContactListModel(), SIGNAL(ignoreContact(QString)), this, SLOT(_checkIgnoreContact(QString)));
+    disconnect(Logic::getContactListModel(), SIGNAL(ignore_contact(QString)), this, SLOT(_checkIgnoreContact(QString)));
 }
 
 void voip_proxy::VoipController::switchMinimalBandwithMode()
@@ -954,11 +978,66 @@ void voip_proxy::VoipController::updateUserAvatar(const voip_manager::ContactEx&
 	setAvatars(360, _contactEx.contact.contact.c_str());
 }
 
-void voip_proxy::VoipController::updateUserAvatar(const std::string& _account, const std::string& _contact)
+void voip_proxy::VoipController::updateUserAvatar(const std::string& /*_account*/, const std::string& _contact)
 {
 	setAvatars(360, _contact.c_str());
 }
 
+void voip_proxy::VoipController::loadMask(const std::string& maskPath)
+{
+    Ui::gui_coll_helper collection(dispatcher_.create_collection(), true);
+    collection.set_value_as_string("type", "voip_load_mask");
+    collection.set_value_as_string("path", maskPath);
+    dispatcher_.post_message_to_core("voip_call", collection.get());
+}
+
+void voip_proxy::VoipController::setWindowSetPrimary(quintptr _hwnd, const char* _contact)
+{
+	Ui::gui_coll_helper collection(dispatcher_.create_collection(), true);
+	collection.set_value_as_string("type", "window_set_primary");
+	collection.set_value_as_int64("handle", _hwnd);
+	collection.set_value_as_string("contact", _contact);
+
+	dispatcher_.post_message_to_core("voip_call", collection.get());
+}
+
+voip_masks::MaskManager* voip_proxy::VoipController::getMaskManager() const
+{
+    return maskManager_.get();
+}
+
+void voip_proxy::VoipController::updateVoipMaskEngineEnable(bool _enable)
+{
+    maskEngineEnable_ = _enable;
+}
+
+bool voip_proxy::VoipController::isMaskEngineEnabled() const
+{
+    return maskEngineEnable_;
+}
+
+void voip_proxy::VoipController::initMaskEngine() const
+{
+    Ui::gui_coll_helper collection(dispatcher_.create_collection(), true);
+    collection.set_value_as_string("type", "voip_init_mask_engine");
+
+    dispatcher_.post_message_to_core("voip_call", collection.get());
+}
+
+const std::vector<voip_proxy::device_desc>& voip_proxy::VoipController::deviceList(EvoipDevTypes type)
+{
+    auto arrayIndex = type - 1;
+    if (arrayIndex >= 0 && arrayIndex < sizeof(devices_) / sizeof(devices_[0]))
+    {
+        return devices_[arrayIndex];
+    }
+
+    assert(false && "Wrong device type");
+
+    static std::vector<voip_proxy::device_desc> emptyList;
+
+    return emptyList;
+}
 
 
 voip_proxy::VoipEmojiManager::VoipEmojiManager()

@@ -145,7 +145,7 @@ namespace Ui
             }
             else if (state == AL_STOPPED)
             {
-                emit pttFinished(CurPlay_.Id_);
+                emit pttFinished(CurPlay_.Id_, true);
                 if (!PrevPlay_.isEmpty())
                 {
                     CurPlay_.stop();
@@ -222,7 +222,7 @@ namespace Ui
                 if (!PrevPlay_.isEmpty())
                 {
                     PrevPlay_.stop();
-                    emit pttFinished(PrevPlay_.Id_);
+                    emit pttFinished(PrevPlay_.Id_, false);
                     PrevPlay_.clear();
                 }
                 
@@ -242,7 +242,7 @@ namespace Ui
                 if (!PrevPlay_.isEmpty())
                 {
                     PrevPlay_.stop();
-                    emit pttFinished(PrevPlay_.Id_);
+                    emit pttFinished(PrevPlay_.Id_, false);
                     PrevPlay_.clear();
                 }
 
@@ -383,9 +383,9 @@ namespace Ui
     void SoundsManager::shutdownOpenAl()
     {
         emit pttPaused(CurPlay_.Id_);
-        emit pttFinished(CurPlay_.Id_);
+        emit pttFinished(CurPlay_.Id_, false);
         emit pttPaused(PrevPlay_.Id_);
-        emit pttFinished(PrevPlay_.Id_);
+        emit pttFinished(PrevPlay_.Id_, false);
 
         PrevPlay_.stop();
         PrevPlay_.free();

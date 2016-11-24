@@ -41,20 +41,17 @@ GenericBlockLayout::~GenericBlockLayout()
 
 }
 
-void GenericBlockLayout::addItem(QLayoutItem *item)
+void GenericBlockLayout::addItem(QLayoutItem* /*item*/)
 {
-    item;
 }
 
-QLayoutItem* GenericBlockLayout::itemAt(int index) const
+QLayoutItem* GenericBlockLayout::itemAt(int /*index*/) const
 {
-    index;
     return nullptr;
 }
 
-QLayoutItem* GenericBlockLayout::takeAt(int index)
+QLayoutItem* GenericBlockLayout::takeAt(int /*index*/)
 {
-    index;
     return nullptr;
 }
 

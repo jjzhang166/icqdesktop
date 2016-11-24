@@ -4,6 +4,8 @@
 
 #include "../../../controls/PictureWidget.h"
 
+#include "../../../controls/ContactAvatarWidget.h"
+
 #include "../MessageStyle.h"
 
 #include "QuoteBlock.h"
@@ -92,10 +94,13 @@ QRect QuoteBlockLayout::setTextControlGeometry(const QRect &contentLtr)
         textCtrl.setFixedWidth(textWidth);
     }
 
+    QRect avatarGeometry(QPoint(contentLtr.topLeft().x() + Style::getQuoteOffsetLeft() + Style::getForwardIconOffset(), contentLtr.topLeft().y() + Style::getQuoteLineTopMargin()),
+        QSize(Utils::unscale_value(20), Utils::unscale_value(20)));
+
     const QSize textSize(textWidth, textCtrl.height());
 
     QRect textCtrlGeometry(
-                                 QPoint(contentLtr.topLeft().x() + Style::getQuoteOffsetLeft() + Style::getForwardIconOffset(), contentLtr.topLeft().y() + Style::getQuoteLineTopMargin()),
+                                 QPoint(contentLtr.topLeft().x() + Style::getQuoteAvatarOffset() + Style::getQuoteOffsetLeft() + Style::getForwardIconOffset(), contentLtr.topLeft().y() + Style::getQuoteLineTopMargin() + Style::getQuoteAvatarOffsetTop()),
         textSize);
 
     if (block.needForwardBlock())
@@ -106,11 +111,13 @@ QRect QuoteBlockLayout::setTextControlGeometry(const QRect &contentLtr)
         block.ForwardIcon_->setGeometry(forwardIconRect);
 
         const QRect forwardLabelGeometry(
-            QPoint(contentLtr.topLeft().x() + Style::getQuoteOffsetLeft() + Style::getForwardIconOffset(), contentLtr.topLeft().y() + Style::getQuoteLineTopMargin()),
+            QPoint(contentLtr.topLeft().x() + Style::getQuoteOffsetLeft() + Style::getForwardLabelOffset(), contentLtr.topLeft().y() + Style::getQuoteLineTopMargin()),
             block.ForwardLabel_->size());
         block.ForwardLabel_->setGeometry(forwardLabelGeometry);
 
-        textCtrlGeometry.moveTopLeft(QPoint(forwardLabelGeometry.bottomLeft().x(), forwardLabelGeometry.bottomLeft().y() + Style::getForwardLabelBottomMargin()));
+        textCtrlGeometry.moveTop(forwardLabelGeometry.bottomLeft().y() + Style::getForwardLabelBottomMargin() + Style::getQuoteAvatarOffsetTop());
+
+        avatarGeometry.moveTop(forwardLabelGeometry.bottomLeft().y() + Style::getForwardLabelBottomMargin());
     }
 
     const auto geometryChanged = (textCtrlGeometry != CurrentTextCtrlGeometry_);
@@ -119,6 +126,8 @@ QRect QuoteBlockLayout::setTextControlGeometry(const QRect &contentLtr)
         assert(widthChanged);
 
         textCtrl.setGeometry(textCtrlGeometry);
+
+        block.Avatar_->setGeometry(avatarGeometry);
 
         CurrentTextCtrlGeometry_ = textCtrlGeometry;
     }

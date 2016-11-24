@@ -7,8 +7,8 @@ using namespace core;
 using namespace wim;
 
 
-join_chat_alpha::join_chat_alpha(const wim_packet_params& _params, const std::string& _stamp)
-    : robusto_packet(_params), stamp_(_stamp)
+join_chat_alpha::join_chat_alpha(const wim_packet_params& _params, const std::string& _stamp, const int _age)
+    : robusto_packet(_params), stamp_(_stamp), age_(_age)
 {
 }
 
@@ -33,6 +33,8 @@ int32_t join_chat_alpha::init_request(std::shared_ptr<core::http_request_simple>
 
     rapidjson::Value node_params(rapidjson::Type::kObjectType);
     node_params.AddMember("stamp", stamp_, a);
+    if (age_ > 0)
+        node_params.AddMember("age", age_, a);
     doc.AddMember("params", node_params, a);
 
     rapidjson::StringBuffer buffer;

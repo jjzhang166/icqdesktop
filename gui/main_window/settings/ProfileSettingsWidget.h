@@ -43,7 +43,6 @@ namespace Ui
 
         QString uin_;
         bool needRequestAgain_;
-        std::unique_ptr<Utils::SignalsDisconnector> disconnector_;
 
     public:
         ProfileSettingsWidget(QWidget* _parent);

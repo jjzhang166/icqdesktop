@@ -20,7 +20,8 @@ namespace Ui
         dts_playing = 1,
         dts_paused = 2,
         dts_end_of_media = 3,
-        dts_seeking = 4
+        dts_seeking = 4,
+        dts_failed = 5
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -119,6 +120,8 @@ namespace Ui
         openal::ALint iState_;
         openal::ALint iQueuedBuffers_;
 
+        int iloop_;
+
         uint64_t layout_;
         int32_t channels_;
         int32_t fmt_;
@@ -153,7 +156,8 @@ namespace Ui
                 dstRate_(audio::outFrequency),
                 audioCodecContext_(0),
                 state_(decode_thread_state::dts_playing),
-                queueInited_(false)
+                queueInited_(false),
+                iloop_(0)
         {
 
         }
@@ -196,13 +200,16 @@ namespace Ui
         int32_t height_;
         int32_t rotation_;
         int64_t duration_;
+        int64_t seek_position_;
 
         QSize scaledSize_;
         
         double frameTimer_;
 
-        bool startTimeSet_;
-        int64_t startTime_;
+        bool startTimeVideoSet_;
+        bool startTimeAudioSet_;
+        int64_t startTimeVideo_;
+        int64_t startTimeAudio_;
 
         double videoClock_;
         double audioClock_;
@@ -266,7 +273,7 @@ namespace Ui
         bool enableAudio() const;
         bool enableVideo() const;
         
-        QImage scale(const uint8_t* const _srcSlice[], const int _srcStride[]);
+        QImage scale(const uint8_t* const _srcSlice[], const int _srcStride[], int _height);
 
         double getVideoTimebase();
         double synchronizeVideo(ffmpeg::AVFrame* _frame, double _pts);
@@ -274,6 +281,7 @@ namespace Ui
 
         bool initDecodeAudioData();
         void freeDecodeAudioData();
+        bool readFrameAudio(ffmpeg::AVPacket* _packet, bool& _stream_finished, bool& _eof, openal::ALvoid** _frameData, openal::ALsizei& _frameDataSize);
         bool playNextAudioFrame(ffmpeg::AVPacket* _packet, /*in out*/ bool& _stream_finished, /*in out*/ bool& _eof);
         void cleanupAudioBuffers();
         void suspendAudio();
@@ -301,7 +309,7 @@ namespace Ui
 
         void resetFrameTimer();
         bool seekMs(int _tsms);
-        bool seekFrame(int64_t _frame);
+        bool seekFrame(int64_t _ts_video, int64_t _ts_audio);
 
         void flushVideoBuffers();
         void flushAudioBuffers();
@@ -309,8 +317,10 @@ namespace Ui
         void resetVideoClock();
         void resetAudioClock();
 
-        void setStartTime(const int64_t& _startTime);
-        const int64_t& getStartTime() const;
+        void setStartTimeVideo(const int64_t& _startTime);
+        const int64_t& getStartTimeVideo() const;
+        void setStartTimeAudio(const int64_t& _startTime);
+        const int64_t& getStartTimeAudio() const;
     };
 
 
@@ -366,6 +376,72 @@ namespace Ui
         AudioDecodeThread(VideoContext& _ctx);
     };
 
+    class FrameRenderer
+    {
+        QImage activeImage_;
+
+    protected:
+
+        void renderFrame(QPainter& _painter, const QRect& _clientRect);
+
+    public:
+
+        void updateFrame(QImage _image);
+
+        bool isActiveImageNull() const;
+
+        virtual QWidget* getWidget() = 0;
+
+        virtual void redraw() = 0;
+
+        virtual void filterEvents(QWidget* _parent) = 0;
+    };
+
+    class GDIRenderer : public QWidget, public FrameRenderer
+    {
+        virtual QWidget* getWidget() override;
+
+        virtual void redraw() override;
+
+        virtual void paintEvent(QPaintEvent* _e) override;
+
+        virtual void filterEvents(QWidget* _parent) override;
+
+    public:
+
+        GDIRenderer(QWidget* _parent);
+    };
+
+    class OpenGLRenderer : 
+#ifdef __linux__
+public QWidget, public FrameRenderer
+#else
+public QOpenGLWidget, public FrameRenderer
+#endif //__linux__
+    {
+        virtual QWidget* getWidget()
+#ifndef __linux__
+ override
+#endif __linux__
+;
+        virtual void redraw()
+#ifndef __linux__
+ override
+#endif __linux__
+;
+
+        virtual void paintEvent(QPaintEvent* _e) override;
+
+        virtual void filterEvents(QWidget* _parent)
+#ifndef __linux__
+ override
+#endif __linux__
+;
+
+    public:
+        OpenGLRenderer(QWidget* _parent);
+
+    };
 
 
 
@@ -384,9 +460,10 @@ namespace Ui
         AudioDecodeThread audioDecodeThread_;
 
         QTimer* timer_;
-        QImage activeImage_;
 
-        bool firstFrame_;
+        FrameRenderer* renderer_;
+
+        bool isFirstFrame_;
 
         struct DecodedFrame
         {
@@ -400,6 +477,8 @@ namespace Ui
             DecodedFrame(const bool& _eof) : eof_(_eof) {}
         };
 
+        std::unique_ptr<DecodedFrame> firstFrame_;
+
         std::list<DecodedFrame> decodedFrames_;
 
         double computeDelay();
@@ -407,10 +486,15 @@ namespace Ui
         decode_thread_state state_;
 
         qint64 lastVideoPosition_;
+        
+        void makeObject();
+
+        std::chrono::system_clock::time_point lastEmitMouseMove_;
 
     private:
 
         void updateVideoPosition(const DecodedFrame& _frame);
+        bool canPause() const;
 
     public:
 
@@ -419,6 +503,8 @@ namespace Ui
         void durationChanged(qint64 _duration);
         void positionChanged(qint64 _position);
         void mediaFinished();
+        void mouseMoved();
+        void mouseLeaveEvent();
 
         private Q_SLOTS:
 
@@ -429,7 +515,7 @@ namespace Ui
     public:
 
         FFMpegPlayer(QWidget* _parent);
-        ~FFMpegPlayer();
+        virtual ~FFMpegPlayer();
 
         bool openMedia(const QString& _mediaPath);
 
@@ -447,10 +533,7 @@ namespace Ui
 
     protected:
 
-        virtual void paintEvent(QPaintEvent* _e) override;
-        virtual void resizeEvent(QResizeEvent* _e) override;
-        virtual void mouseMoveEvent(QMouseEvent * _e) override;
-
+        virtual bool eventFilter(QObject* _obj, QEvent* _event) override;
     };
 
 }

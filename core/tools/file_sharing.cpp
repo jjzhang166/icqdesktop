@@ -131,6 +131,15 @@ bool get_content_type_from_file_sharing_id(const std::string& _file_id, Out core
         return true;
     }
 
+    const auto is_ptt = (
+        ((id0 >= 'G') && (id0 <= 'N')) ||
+        ((id0 >= 'I') && (id0 <= 'J')));
+    if (is_ptt)
+    {
+        Out _type = core::file_sharing_content_type::ptt;
+        return true;
+    }
+
     return false;
 }
 

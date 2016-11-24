@@ -63,7 +63,7 @@ namespace Ui
     {
         if (joinedLiveChat_ == _aimId)
         {
-            Logic::getContactListModel()->setCurrent(_aimId, true);
+            Logic::getContactListModel()->setCurrent(_aimId, -1, true);
 
             joinedLiveChat_.clear();
         }
@@ -78,7 +78,7 @@ namespace Ui
 
         if (Logic::getContactListModel()->getContactItem(_info->AimId_) && _info->YouMember_)
         {
-            Logic::getContactListModel()->setCurrent(_info->AimId_, true);
+            Logic::getContactListModel()->setCurrent(_info->AimId_, -1, true);
             return;
         }
 
@@ -88,7 +88,6 @@ namespace Ui
         liveChatProfileWidget->viewChat(_info);
 
         GeneralDialog containerDialog(liveChatProfileWidget, parent_);
-        Utils::setWidgetPopup(&containerDialog, true);
         activeDialog_ = &containerDialog;
 
         containerDialog.addHead();
@@ -125,7 +124,7 @@ namespace Ui
 
                     connect(button, &QPushButton::clicked, [id, this]()
                     {
-                        Logic::getContactListModel()->setCurrent(id, true, true);
+                        Logic::getContactListModel()->setCurrent(id, -1, true, true);
                         activeDialog_->reject();
                     });
                 }
@@ -179,7 +178,6 @@ namespace Ui
         errorWidget->show();
 
         GeneralDialog containerDialog(errorWidget, parent_);
-        Utils::setWidgetPopup(&containerDialog, true);
         activeDialog_ = &containerDialog;
 
         containerDialog.addHead();

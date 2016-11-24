@@ -45,6 +45,7 @@ namespace Data
 		QString InfoVersion_;
         QString Stamp_;
         QString Creator_;
+        QString DefaultRole_;
 
 		int32_t CreateTime_;
 		int32_t MembersCount_;
@@ -56,6 +57,7 @@ namespace Data
         bool YouPending_;
 		bool Public_;
         bool ApprovedJoin_;
+        bool AgeRestriction_;
 		bool Live_;
 		bool Controlled_;
         bool YouMember_;

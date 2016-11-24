@@ -1,10 +1,18 @@
-cmake_minimum_required(VERSION 3.5.2)
+cmake_minimum_required(VERSION 3.4)
 
 project(icq)
 
+if(NOT ICQ_FINAL_BUILD)
+    add_definitions(-DICQ_DEVELOPMENT_BUILD)
+    message(STATUS "Development build")
+else()
+    add_definitions(-DICQ_FINAL_BUILD)
+    message(STATUS "Final build")
+endif()
+
 get_filename_component(ICQ_ROOT "${CMAKE_SOURCE_DIR}" ABSOLUTE)
 
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     message(FATAL_ERROR "Need to specify CMAKE_BUILD_TYPE (-DCMAKE_BUILDTYPE=Debug|Release)")
 endif()
 
@@ -27,17 +35,24 @@ file(MAKE_DIRECTORY ${ICQ_BIN_DIR})
 message(STATUS "binaries output: " ${ICQ_BIN_DIR})
 message(STATUS "libraries output: " ${ICQ_LIB_DIR})
 
+set(ICQ_CORELIB_STATIC_LINKING ON)
+
 if(MSVC)
     set(ICQ_PLATFORM windows)
+    set(ICQ_CORELIB_STATIC_LINKING OFF)
     if(ICQ_DEBUG)
         add_definitions(/MTd)
     else()
         add_definitions(/MT)
+        add_definitions(/Oi /GL)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
     endif()
     add_definitions(-D_UNICODE)
     add_definitions(-D_VARIADIC_MAX=6)
     add_definitions(/Zm500)
     add_definitions(/Zi)
+    add_definitions(/W4)
+    add_definitions(/wd4100)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG /OPT:REF /OPT:ICF")
     set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
     set(WIN_SDK8_DIR "$ENV{ProgramFiles\(x86\)}/Windows Kits/8.0")
@@ -47,19 +62,34 @@ if(MSVC)
     link_directories("${WIN_SDK8_DIR}/Lib/win8/um/x86")
 elseif(APPLE)
     set(ICQ_PLATFORM mac)
+    set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym")
+    set(CMAKE_XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.8)
+    list(APPEND _build_flags "-fvisibility-inlines-hidden")
+    list(APPEND _build_flags "-fvisibility=hidden")
     list(APPEND _build_flags "-fasm-blocks")
+    list(APPEND _build_flags "-stdlib=libc++")
+    add_definitions(-fvisibility-inlines-hidden)
+    add_definitions(-fvisibility=hidden)
     add_definitions(-fasm-blocks)
+    add_definitions(-stdlib=libc++)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 elseif(UNIX)
     set(LINUX ON)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(LINUX_ARCH EQUAL 64)
         set(LINUX64 ON)
         set(ARCH_FLAGS "-m64")
         set(ICQ_PLATFORM linux/x64)
+        set(ICQ_BIN_DIR "${ICQ_ROOT}/bin/${CMAKE_CONFIGURATION_TYPES}64")
+        set(ICQ_LIB_DIR "${ICQ_ROOT}/bin/${CMAKE_CONFIGURATION_TYPES}64")
         message(STATUS "Linux x64")
     else()
         set(LINUX32 ON)
         set(ARCH_FLAGS "-m32")
         set(ICQ_PLATFORM linux)
+        set(ICQ_BIN_DIR "${ICQ_ROOT}/bin/${CMAKE_CONFIGURATION_TYPES}32")
+        set(ICQ_LIB_DIR "${ICQ_ROOT}/bin/${CMAKE_CONFIGURATION_TYPES}32")
         message(STATUS "Linux x32")
     endif()
     add_definitions(-fPIC)
@@ -71,13 +101,12 @@ else()
     message(FATAL_ERROR "Unknown platform")
 endif()
 
-
-# ------------------------- optimization -------------------------
-if(ICQ_RELEASE)
-    if(MSVC)
-        add_definitions(/Oi /GL)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
-    endif()
+message(STATUS "building on: ${ICQ_PLATFORM}")
+if(ICQ_CORELIB_STATIC_LINKING)
+    message(STATUS "corelib linking: static")
+    add_definitions(-DICQ_CORELIB_STATIC_LINKING)
+else()
+    message(STATUS "corelib linking: dynamic")
 endif()
 
 
@@ -221,6 +250,7 @@ if(MSVC)
         debug "${ICQ_VOIP}/debug/libvoip_x86.lib")
     set(VOIP_LIBRARY_1 "${ICQ_VOIP}/${CMAKE_BUILD_TYPE}/libvoip_x86.dll")
     set(VOIP_LIBRARY_2 "${ICQ_VOIP}/${CMAKE_BUILD_TYPE}/libvoip_x86.lib")
+    set(VOIP_DX_COMPILER_LIBRARY "${ICQ_VOIP}/${CMAKE_BUILD_TYPE}/D3DCompiler_43.dll")
 elseif(APPLE)
     set(ICQ_VOIP "${ICQ_ROOT}/core/Voip/libvoip/lib.mac")
     set(VOIP_LIBRARIES "${ICQ_VOIP}/libvoip_x64.a" "${ICQ_VOIP}/libippcore_l.a" "${ICQ_VOIP}/libippvc_l.a")
@@ -249,6 +279,7 @@ include_directories("${ICQ_QT_INCLUDE_DIR}")
 include_directories("${ICQ_QT_INCLUDE_DIR}/QtCore")
 include_directories("${ICQ_QT_INCLUDE_DIR}/QtGui")
 include_directories("${ICQ_QT_INCLUDE_DIR}/QtWidgets")
+include_directories("${ICQ_QT_INCLUDE_DIR}/QtOpenGL")
 if(MSVC)
     set(QT_LIBRARIES
         optimized ${ICQ_QT_LIB_DIR}/Qt5Gui.lib debug ${ICQ_QT_LIB_DIR}/Qt5Guid.lib
@@ -258,14 +289,17 @@ if(MSVC)
         optimized ${ICQ_QT_LIB_DIR}/Qt5Multimedia.lib debug ${ICQ_QT_LIB_DIR}/Qt5Multimediad.lib
         optimized ${ICQ_QT_LIB_DIR}/Qt5MultimediaWidgets.lib debug ${ICQ_QT_LIB_DIR}/Qt5MultimediaWidgetsd.lib
         optimized ${ICQ_QT_LIB_DIR}/Qt5Network.lib debug ${ICQ_QT_LIB_DIR}/Qt5Networkd.lib
-        optimized ${ICQ_QT_LIB_DIR}/translator.lib debug ${ICQ_QT_LIB_DIR}/translatord.lib
         optimized ${ICQ_QT_LIB_DIR}/qtharfbuzzng.lib debug ${ICQ_QT_LIB_DIR}/qtharfbuzzngd.lib
         optimized ${ICQ_QT_LIB_DIR}/qtmain.lib debug ${ICQ_QT_LIB_DIR}/qtmaind.lib
         optimized ${ICQ_QT_LIB_DIR}/qwindows.lib debug ${ICQ_QT_LIB_DIR}/qwindowsd.lib
         optimized ${ICQ_QT_LIB_DIR}/qico.lib debug ${ICQ_QT_LIB_DIR}/qicod.lib
         optimized ${ICQ_QT_LIB_DIR}/qtaudio_windows.lib debug ${ICQ_QT_LIB_DIR}/qtaudio_windowsd.lib
         optimized ${ICQ_QT_LIB_DIR}/qtiff.lib debug ${ICQ_QT_LIB_DIR}/qtiffd.lib
-        optimized ${ICQ_QT_LIB_DIR}/qjp2.lib debug ${ICQ_QT_LIB_DIR}/qjp2d.lib)
+        optimized ${ICQ_QT_LIB_DIR}/qjp2.lib debug ${ICQ_QT_LIB_DIR}/qjp2d.lib
+        optimized ${ICQ_QT_LIB_DIR}/Qt5OpenGL.lib debug ${ICQ_QT_LIB_DIR}/Qt5OpenGLd.lib
+        optimized ${ICQ_QT_LIB_DIR}/qtpcre.lib debug ${ICQ_QT_LIB_DIR}/qtpcred.lib
+        optimized ${ICQ_QT_LIB_DIR}/qtfreetype.lib debug ${ICQ_QT_LIB_DIR}/qtfreetyped.lib
+)
 elseif(APPLE)
     add_definitions(-DQT_GUI_LIB=1)
     set(QT_LIBRARIES
@@ -281,7 +315,9 @@ elseif(APPLE)
         ${ICQ_QT_LIB_DIR}/libqtfreetype.a
         ${ICQ_QT_LIB_DIR}/libqtharfbuzzng.a
         ${ICQ_QT_LIB_DIR}/libqtiff.a
-        ${ICQ_QT_LIB_DIR}/libqtpcre.a)
+        ${ICQ_QT_LIB_DIR}/libqtpcre.a
+        ${ICQ_QT_LIB_DIR}/libqcocoa.a 
+        )
 elseif(LINUX)
     set(QT_LIBRARIES
         ${ICQ_QT_LIB_DIR}/libQt5Widgets.a
@@ -290,8 +326,15 @@ elseif(LINUX)
         ${ICQ_QT_LIB_DIR}/libQt5Multimedia.a
         ${ICQ_QT_LIB_DIR}/libqxcb.a
         ${ICQ_QT_LIB_DIR}/libQt5XcbQpa.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libX11-xcb.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libXi.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libxcb.a
         ${ICQ_QT_LIB_DIR}/libxcb-static.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libxkbcommon-x11.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libxkbcommon.a
         ${ICQ_QT_LIB_DIR}/libQt5PlatformSupport.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libfontconfig.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libfreetype.a
         ${ICQ_QT_LIB_DIR}/libqico.a
         ${ICQ_QT_LIB_DIR}/libQt5Gui.a
         ${ICQ_QT_LIB_DIR}/libqconnmanbearer.a
@@ -299,16 +342,9 @@ elseif(LINUX)
         ${ICQ_QT_LIB_DIR}/libqnmbearer.a
         ${ICQ_QT_LIB_DIR}/libQt5Network.a
         ${ICQ_QT_LIB_DIR}/libQt5DBus.a
+        ${ICQ_EXTERNAL_PLATFORM}/system/libdbus-1.a
         ${ICQ_QT_LIB_DIR}/libQt5Core.a
         ${ICQ_QT_LIB_DIR}/libqtpcre.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libxkbcommon-x11.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libxkbcommon.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libX11-xcb.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libXi.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libxcb.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libfontconfig.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libfreetype.a
-        ${ICQ_EXTERNAL_PLATFORM}/system/libdbus-1.a
         ${ICQ_EXTERNAL_PLATFORM}/system/librt.a
         ${ICQ_EXTERNAL_PLATFORM}/system/libxcb-util.a
         ${ICQ_EXTERNAL_PLATFORM}/system/libffi.a
@@ -380,7 +416,7 @@ endfunction()
 
 
 function(use_precompiled_header_linux output pch_h ${ARGN})
-    set(_pch_bin "${PROJECT_BINARY_DIR}/${CMAKE_BUILD_TYPE}-${pch_h}.gch")
+    set(_pch_bin "${pch_h}.gch")
     get_property(_raw_includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
     foreach(_it IN ITEMS ${_raw_includes})
         list(APPEND _paths "-I${_it}")
@@ -453,6 +489,10 @@ function(generate_mocs output ${ARGN})
             add_custom_command(OUTPUT ${moc_file}
                 COMMAND ${ICQ_MOC_EXE} -f ${header} -o ${moc_file} ${header} 2> /dev/null
                 DEPENDS ${header} VERBATIM)
+	elseif(LINUX)
+            add_custom_command(OUTPUT ${moc_file}
+                COMMAND ${ICQ_MOC_EXE} -D__linux__ -f ${header} -o ${moc_file} ${header} 2> /dev/null
+                DEPENDS ${header} VERBATIM)
         else()
             add_custom_command(OUTPUT ${moc_file}
                 COMMAND ${ICQ_MOC_EXE} -f ${header} -o ${moc_file} ${header}
@@ -489,7 +529,9 @@ endfunction()
 add_subdirectory(core)
 add_subdirectory(corelib)
 add_subdirectory(gui)
+if(NOT LINUX)
 add_subdirectory(tests/unit_tests)
+endif()
 if(MSVC)
     add_subdirectory(coretest)
 endif()

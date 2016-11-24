@@ -10,6 +10,7 @@
 #include "proxy_settings.h"
 #include "network_log.h"
 #include "../corelib/enumerations.h"
+#include "configuration/hosts_config.h"
 
 using namespace core;
 
@@ -302,7 +303,7 @@ struct curl_context
 
     void set_form_filedata(const char* _field_name, const char* _file_name, tools::binary_stream& _data)
     {
-        const auto size = _data.available();
+        long size = _data.available();//it should be long
         const auto data = _data.read_available();
         _data.reset_out();
         curl_formadd(&post, &last,
@@ -317,8 +318,6 @@ struct curl_context
     bool execute_request()
     {
         CURLcode res = curl_easy_perform(curl_);
-
-        auto v = curl_version_info(CURLVERSION_NOW);
 
         std::stringstream error;
         error << "curl_easy_perform result is ";
@@ -368,7 +367,7 @@ static size_t write_memory_callback(void* _contents, size_t _size, size_t _nmemb
     return realsize;
 }
 
-static int32_t progress_callback(void* ptr, double TotalToDownload, double NowDownloaded, double TotalToUpload, double NowUploaded)
+static int32_t progress_callback(void* ptr, double TotalToDownload, double NowDownloaded, double TotalToUpload, double /*NowUploaded*/)
 {
     auto cntx = (curl_context*)ptr;
 
@@ -636,7 +635,7 @@ bool http_request_simple::send_request(bool _post, bool switch_proxy)
 {
     curl_context ctx(stop_func_, progress_func_, keep_alive_);
 
-    auto is_user_proxy = proxy_settings_.proxy_type_ != (int)core::proxy_types::auto_proxy;
+    auto is_user_proxy = proxy_settings_.proxy_type_ != (int32_t)core::proxy_types::auto_proxy;
 
     auto current_proxy = switch_proxy ? g_core->get_registry_proxy_settings() : g_core->get_auto_proxy_settings();
     if (is_user_proxy)
@@ -780,7 +779,7 @@ static unsigned long id_function(void)
 }
 
 
-static void locking_function( int mode, int n, const char *file, int line )
+static void locking_function( int32_t mode, int32_t n, const char *file, int32_t line )
 {
     if ( mode & CRYPTO_LOCK )
         http_request_simple::ssl_sync_objects[n]->lock();
@@ -793,7 +792,7 @@ void core::http_request_simple::init_global()
 {
     auto lock_count = CRYPTO_num_locks();
     http_request_simple::ssl_sync_objects.resize(lock_count);
-    for (int i = 0;  i < lock_count;  i++)
+    for (auto i = 0;  i < lock_count;  i++)
         http_request_simple::ssl_sync_objects[i] = new std::mutex();
 
     CRYPTO_set_id_callback(id_function);
@@ -814,7 +813,7 @@ void core::http_request_simple::shutdown_global()
     CRYPTO_set_id_callback(NULL);
     CRYPTO_set_locking_callback(NULL);
 
-    for (int i = 0;  i < CRYPTO_num_locks(  );  i++)
+    for (auto i = 0;  i < CRYPTO_num_locks(  );  i++)
         delete(http_request_simple::ssl_sync_objects[i]);
 
     http_request_simple::ssl_sync_objects.clear();
@@ -866,4 +865,37 @@ std::string core::http_request_simple::get_post_url()
 proxy_settings core::http_request_simple::get_user_proxy() const
 {
     return proxy_settings_;
+}
+
+void core::http_request_simple::replace_host(const hosts_map& _hosts)
+{
+    std::string::const_iterator it_prot = url_.begin();
+
+    size_t pos_start = 0;
+
+    auto pos_prot = url_.find("://");
+    if (pos_prot != std::string::npos)
+    {
+        pos_start = pos_prot + 3;
+    }
+
+    if (pos_prot >= url_.length())
+        return;
+
+    std::stringstream ss_host;
+
+    size_t pos_end = pos_start;
+
+    while (url_[pos_end] != '/' && url_[pos_end] != '?' && url_[pos_end] != ':' && pos_end < url_.length())
+    {
+        ss_host << url_[pos_end];
+        ++pos_end;
+    }
+
+    const auto host = ss_host.str();
+
+    if (host.empty())
+        return;
+
+    url_.replace(pos_start, pos_end - pos_start, _hosts.get_host_alt(host));
 }

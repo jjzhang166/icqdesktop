@@ -102,7 +102,7 @@ std::string generate_guid()
 
 std::string generate_internal_id()
 {
-    static int internal_id = 0;
+    static int32_t internal_id = 0;
     std::stringstream guid_string;
 
     guid_string << generate_guid() << "-" << ++internal_id; 
@@ -131,9 +131,14 @@ std::wstring get_user_downloads_dir()
 	return cached_path;
 }
 
-std::string to_upper(std::string str)
+std::string to_upper(const std::string& str)
 {
     return boost::locale::to_upper(str);
+}
+
+std::string to_lower(const std::string& str)
+{
+    return boost::locale::to_lower(str);
 }
 
 namespace
@@ -255,7 +260,7 @@ std::string get_os_version_string()
         std::string sp;
         char buf[128] = { 0 };
         sp = " Service Pack ";
-        sprintf_s(buf, sizeof(buf), "%hd", osver.wServicePackMajor);
+        sprintf_s(buf, sizeof(buf), "%d", osver.wServicePackMajor);
         sp.append(buf);
         winver += sp;
     }

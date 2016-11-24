@@ -18,6 +18,8 @@ namespace Ui
         void scrollToBottom();
         bool isAtBottom() const;
 
+        static int32_t getPreloadingDistance();
+
     private:
         QTimer *AutoscrollEnablerTimer_;
 

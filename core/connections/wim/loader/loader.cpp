@@ -134,8 +134,6 @@ bool loader::has_file_sharing_task(const std::string &_id)
 
 void loader::raise_task_priority(const int64_t _task_id)
 {
-    assert(!"obsolete method");
-
     assert(_task_id > 0);
     assert(g_core->is_core_thread());
 
@@ -173,6 +171,13 @@ void loader::raise_contact_tasks_priority(const std::string &_contact_aimid)
     assert(!_contact_aimid.empty());
     assert(g_core->is_core_thread());
 
+    __TRACE(
+        "prefetch",
+        "raising contact tasks priority\n"
+        "    prev_priority=<%1%>\n"
+        "    next_priority=<%2%>",
+        priority_contact_ % _contact_aimid);
+
     priority_contact_ = _contact_aimid;
 
     for (auto &p : tasks_runners_)
@@ -197,10 +202,24 @@ void loader::raise_contact_tasks_priority(const std::string &_contact_aimid)
                 continue;
             }
 
-            contact_tasks.emplace_back(std::move(*iter));
+            auto &task = *iter;
+
+            contact_tasks.emplace_back(std::move(task));
 
             iter = tasks.erase(iter);
         }
+
+        if (contact_tasks.empty())
+        {
+            continue;
+        }
+
+        __TRACE(
+            "prefetch",
+            "contact tasks priority raised\n"
+            "    count=<%1%>\n"
+            "    runner_slot=<%2%>",
+            contact_tasks.size() % p.first);
 
         tasks.insert(
             tasks.begin(),
@@ -335,7 +354,7 @@ void loader::send_task_ranges_async(std::weak_ptr<upload_task> _wr_task)
             else
             {
                 ptr_this->on_file_sharing_task_result(task, 0);
-			    g_core->insert_event(core::stats::stats_event_names::filesharing_sent_success);
+                g_core->insert_event(core::stats::stats_event_names::filesharing_sent_success);
             }
         };
 }
@@ -472,8 +491,8 @@ std::shared_ptr<upload_progress_handler> loader::upload_file_sharing(
                     ptr_this->on_file_sharing_task_progress(task);
 
                     ptr_this->send_task_ranges_async(task);
-		        };
-	    };
+                };
+        };
 
     return task->get_handler();
 }
@@ -664,16 +683,17 @@ std::shared_ptr<async_task_handlers> loader::download_file(
     const std::string& _file_url,
     const std::wstring& _file_name,
     const bool _keep_alive,
-    const wim_packet_params& _params)
+    const wim_packet_params& _params,
+    http_request_simple::progress_function _progress_func)
 {
     auto handler = std::make_shared<async_task_handlers>();
 
     auto user_proxy = g_core->get_user_proxy_settings();
 
     file_sharing_threads_->run_async_function(
-        [_params, _file_url, _file_name, _keep_alive, user_proxy]
+        [_params, _file_url, _file_name, _keep_alive, user_proxy, _progress_func]
         {
-            core::http_request_simple request(user_proxy, utils::get_user_agent(), _params.stop_handler_);
+            core::http_request_simple request(user_proxy, utils::get_user_agent(), _params.stop_handler_, _progress_func);
 
             request.set_url(_file_url);
             request.set_need_log(false);
@@ -761,6 +781,7 @@ void loader::add_task(loader_task_sptr _task)
         logutils::yn(runner.runner_active_));
 
     const auto is_priority_contact_task = (_task->get_contact_aimid() == priority_contact_);
+
     if (is_priority_contact_task)
     {
         auto insert_pos = runner.tasks_.begin();
@@ -843,35 +864,18 @@ void loader::run_next_task(const tasks_runner_slot _slot)
 
     auto error = std::make_shared<loader_errors>(loader_errors::undefined);
 
+    auto task = runner.current_task_;
+
     runner.runner_->run_async_function(
-        [error, wr_this, _slot]
+        [error, task]
         {
-            loader_task_sptr current_task;
-
-            {
-                auto ptr_this = wr_this.lock();
-                if (!ptr_this)
-                {
-                    return 0;
-                }
-
-                auto &runner = *ptr_this->tasks_runners_[_slot];
-
-                current_task = runner.current_task_;
-            }
-
-            if (!current_task)
-            {
-                return 0;
-            }
-
             assert(error);
-            *error = current_task->run();
+
+            *error = task->run();
 
             return 0;
         }
-    )->on_result_ =
-        [wr_this, error, _slot]
+    )->on_result_ = [wr_this, error, _slot]
         (int32_t)
         {
             auto ptr_this = wr_this.lock();

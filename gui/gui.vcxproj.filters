@@ -441,6 +441,14 @@
     <ClCompile Include="main_window\mplayer\moc_FFMpegPlayer.cpp" />
     <ClCompile Include="main_window\mplayer\moc_MultimediaViewer.cpp" />
     <ClCompile Include="main_window\mplayer\moc_VideoPlayer.cpp" />
+    <ClCompile Include="voip\MaskPanel.cpp" />
+    <ClCompile Include="voip\moc_MaskPanel.cpp" />
+    <ClCompile Include="voip\CommonUI.cpp" />
+    <ClCompile Include="voip\moc_CommonUI.cpp" />
+    <ClCompile Include="voip\Masks.cpp" />
+    <ClCompile Include="voip\moc_Masks.cpp" />
+    <ClCompile Include="voip\MaskManager.cpp" />
+    <ClCompile Include="voip\moc_MaskManager.cpp" />
     <ClCompile Include="main_window\history_control\complex_message\StickerBlock.cpp" />
     <ClCompile Include="main_window\history_control\complex_message\StickerBlockLayout.cpp" />
     <ClCompile Include="main_window\history_control\complex_message\moc_StickerBlock.cpp" />
@@ -726,6 +734,10 @@
     <ClInclude Include="main_window\mplayer\FFMpegPlayer.h" />
     <ClInclude Include="main_window\mplayer\MultimediaViewer.h" />
     <ClInclude Include="main_window\mplayer\VideoPlayer.h" />
+    <ClInclude Include="voip\MaskPanel.h" />
+    <ClInclude Include="voip\CommonUI.h" />
+    <ClInclude Include="voip\Masks.h" />
+    <ClInclude Include="voip\MaskManager.h" />
     <ClInclude Include="main_window\history_control\complex_message\StickerBlock.h" />
     <ClInclude Include="main_window\history_control\complex_message\StickerBlockLayout.h" />
     <ClInclude Include="voip\CommonUI.h" />
@@ -755,6 +767,7 @@
     <None Include="voip\video_panel.qss" />
     <None Include="utils\common_style.qss" />
     <None Include="voip\incoming_call.qss" />
+    <None Include="voip\mask_panel.qss" />
     <None Include="controls\controls_style.qss" />
   </ItemGroup>
 </Project>

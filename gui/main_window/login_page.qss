@@ -130,6 +130,8 @@ QWidget#mainWidget
 QLabel#enteredPhoneLabel
 {
 	font-size: 24dip;
+    font-family: "%FONT_FAMILY_LIGHT%";
+    font-weight: %FONT_WEIGHT_LIGHT%;
 }
 
 Qwidget#enteredPhone

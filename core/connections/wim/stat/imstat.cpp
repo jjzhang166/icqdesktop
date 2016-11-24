@@ -107,7 +107,7 @@ namespace core
             {
                 unsigned char buf8[BF_BLOCK];
                 memcpy(buf8, in, in_size);
-                for (int i = in_size; i < BF_BLOCK; i++)
+                for (auto i = in_size; i < BF_BLOCK; i++)
                 {
                     buf8[i] = rand();
                 }

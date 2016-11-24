@@ -330,6 +330,11 @@ namespace HistoryControl
         return FsInfo_->GetUri();
     }
 
+    bool FileSharingWidget::haveOpenInBrowserMenu()
+    {
+        return FsInfo_->getContentType() != core::file_sharing_content_type::undefined && FsInfo_->getContentType() != core::file_sharing_content_type::ptt;
+    }
+
     void FileSharingWidget::copyFile()
     {
         if (DownloadedFileLocalPath_.isEmpty())
@@ -720,7 +725,7 @@ namespace HistoryControl
             return;
         }
 
-        assert(Metainfo_.FileSize_ > 0);
+        assert(Metainfo_.FileSize_ >= 0);
 
         Metainfo_.FileSizeStr_ = formatFileSize(Metainfo_.FileSize_);
 
@@ -1013,10 +1018,8 @@ namespace HistoryControl
 		return true;
 	}
 
-	void FileSharingWidget::renderPreview(QPainter &p, const bool isAnimating)
+	void FileSharingWidget::renderPreview(QPainter &p, const bool /*isAnimating*/)
 	{
-        isAnimating;
-
         if (isImagePreview())
         {
             PreviewContentWidget::renderPreview(p, isDataTransferProgressVisible());
@@ -1065,10 +1068,8 @@ namespace HistoryControl
         return Utils::dragUrl(this, p, FsInfo_ ? FsInfo_->GetUri() : Metainfo_.DownloadUri_);
     }
 
-    void FileSharingWidget::onGifFrameUpdated(int frameNumber)
+    void FileSharingWidget::onGifFrameUpdated(int /*frameNumber*/)
     {
-        frameNumber;
-
         assert(GifImage_);
         const auto frame = GifImage_->currentPixmap();
 
@@ -1112,7 +1113,7 @@ namespace HistoryControl
         const auto contact = shareDialog.getSelectedContact();
         if (contact != "")
         {
-            Logic::getContactListModel()->setCurrent(contact, true);
+            Logic::getContactListModel()->setCurrent(contact, -1, true);
             Ui::GetDispatcher()->sendMessageToContact(contact, FsInfo_->GetUri());
         }
         else
@@ -2007,11 +2008,9 @@ namespace HistoryControl
 		update();
 	}
 
-	void FileSharingWidget::fileSharingError(qint64 seq, QString rawUri, qint32 errorCode)
+	void FileSharingWidget::fileSharingError(qint64 seq, QString rawUri, qint32 /*errorCode*/)
 	{
         assert(seq > 0);
-
-        errorCode;
 
         const auto isFileMetainfoRequestFailed = (seq == FileMetainfoDownloadId_);
         const auto isPreviewMetainfoRequestFailed = (seq == PreviewMetainfoDownloadId_);

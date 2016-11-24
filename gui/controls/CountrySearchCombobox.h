@@ -37,8 +37,8 @@ namespace Ui
 	public:
 		CountrySearchCombobox(QWidget* _parent);
 
-		void setComboboxViewClass(char* _className);
-		void setClass(char* _className);
+		void setComboboxViewClass(const char* _className);
+		void setClass(const char* _className);
 
 		void setSources(QMap<QString, QString>  _sources);
 		void setPlaceholder(QString _placeholder);

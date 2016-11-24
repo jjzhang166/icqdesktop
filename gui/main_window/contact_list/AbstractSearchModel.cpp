@@ -1,6 +1,9 @@
 #include "stdafx.h"
+
 #include "SearchMembersModel.h"
-#include "SearchModel.h"
+#include "SearchModelDLG.h"
+
+#include "ContactList.h"
 
 namespace Logic
 {
@@ -12,8 +15,10 @@ namespace Logic
     
     AbstractSearchModel* getCurrentSearchModel(int _regim)
     {
-        if (!Logic::is_delete_members_regim(_regim))
-            return getSearchModel();
+        if (_regim == Logic::MembersWidgetRegim::CONTACT_LIST)
+            return getSearchModelDLG();
+        else if (!Logic::is_delete_members_regim(_regim))
+            return getCustomSearchModelDLG(false, _regim != Logic::MembersWidgetRegim::SHARE_LINK && _regim != Logic::MembersWidgetRegim::SHARE_TEXT);
         else
             return getSearchMemberModel();
     }

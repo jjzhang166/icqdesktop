@@ -77,10 +77,10 @@
 # define QT_NO_FONTCONFIG
 #endif
 
-#if defined(QT_NO_HARFBUZZ) && defined(QT_HARFBUZZ)
-# undef QT_NO_HARFBUZZ
-#elif !defined(QT_NO_HARFBUZZ) && !defined(QT_HARFBUZZ)
-# define QT_NO_HARFBUZZ
+#if defined(QT_NO_GLIB) && defined(QT_GLIB)
+# undef QT_NO_GLIB
+#elif !defined(QT_NO_GLIB) && !defined(QT_GLIB)
+# define QT_NO_GLIB
 #endif
 
 #if defined(QT_NO_INOTIFY) && defined(QT_INOTIFY)
@@ -99,12 +99,6 @@
 # undef QT_NO_MREMAP
 #elif !defined(QT_NO_MREMAP) && !defined(QT_MREMAP)
 # define QT_NO_MREMAP
-#endif
-
-#if defined(QT_NO_OPENGL) && defined(QT_OPENGL)
-# undef QT_NO_OPENGL
-#elif !defined(QT_NO_OPENGL) && !defined(QT_OPENGL)
-# define QT_NO_OPENGL
 #endif
 
 #if defined(QT_NO_OPENSSL) && defined(QT_OPENSSL)

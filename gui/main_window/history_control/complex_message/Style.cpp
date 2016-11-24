@@ -103,14 +103,19 @@ namespace Style
         return Utils::scale_value(22);
     }
 
+    int32_t getQuoteAvatarOffset()
+    {
+        return Utils::scale_value(25);
+    }
+
     int32_t getQuoteOffsetLeft()
     {
-        return Utils::scale_value(8);
+        return Utils::scale_value(11);
     }
     
     int32_t getQuoteOffsetTop()
     {
-        return Utils::scale_value(10);
+        return Utils::scale_value(12);
     }
     
     int32_t getQuoteOffsetBottom()
@@ -130,7 +135,7 @@ namespace Style
     
     int32_t getTextQuoteOffset()
     {
-        return Utils::scale_value(12);
+        return Utils::scale_value(4);
     }
 
     int32_t getMaxImageWidthInQuote()
@@ -143,9 +148,14 @@ namespace Style
         return Utils::scale_value(5);
     }
 
+    int32_t getQuoteAvatarOffsetTop()
+    {
+        return Utils::scale_value(3);
+    }
+
     int32_t getQuoteLineBottomMargin()
     {
-        return Utils::scale_value(1);
+        return Utils::scale_value(4);
     }
 
     int32_t getForwardLabelBottomMargin()
@@ -155,7 +165,27 @@ namespace Style
 
     int32_t getForwardIconOffset()
     {
-        return Utils::scale_value(6);
+        return Utils::scale_value(5);
+    }
+
+    int32_t getLineOffset()
+    {
+        return Utils::scale_value(7);
+    }
+
+    int32_t getForwardLabelOffset()
+    {
+        return Utils::scale_value(4);
+    }
+
+    int32_t getQuoteBlockSpacing()
+    {
+        return Utils::scale_value(5);
+    }
+
+    int32_t getQuoteBottomSpace()
+    {
+        return Utils::scale_value(3);
     }
 
     QFont getYoutubeTitleFont()

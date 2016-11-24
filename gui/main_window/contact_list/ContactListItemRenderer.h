@@ -12,6 +12,4 @@ namespace ContactList
 	void RenderGroupItem(QPainter &painter, const QString &groupName, const ViewParams& viewParams_);
 
     void RenderContactsDragOverlay(QPainter& painter);
-
-    int GetXOfRemoveImg(bool _isWithCheckBox, bool _shortView, int width);
 }

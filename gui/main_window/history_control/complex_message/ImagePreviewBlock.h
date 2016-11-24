@@ -33,7 +33,7 @@ public:
 
     QSize getPreviewSize() const;
 
-    virtual QString getSelectedText() const override;
+    virtual QString getSelectedText(bool isFullSelect = false) const override;
 
     bool hasActionButton() const;
 
@@ -51,9 +51,11 @@ public:
 
     virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
 
-    void showActionButton(const QRect &pos);
+    virtual void setMaxPreviewWidth(int width) override;
 
-    virtual bool containsImage() const override { return true; }
+    virtual int getMaxPreviewWidth() const override;
+
+    void showActionButton(const QRect &pos);
 
 protected:
     virtual void drawBlock(QPainter &p) override;
@@ -73,6 +75,8 @@ protected:
     virtual void onMenuCopyLink() override;
 
     virtual void onMenuSaveFileAs() override;
+
+    virtual void onMenuOpenInBrowser() override;
 
     virtual void onRestoreResources() override;
 
@@ -178,6 +182,8 @@ private:
     uint64_t SnapId_;
 
     int64_t SnapMetainfoRequestId_;
+
+    int MaxPreviewWidth_;
 
 private Q_SLOTS:
     void onGifFrameUpdated(int frameNumber);

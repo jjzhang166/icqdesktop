@@ -135,16 +135,19 @@ namespace Ui
 #ifdef __APPLE__
         QString state = MyInfo()->state().toLower();
         
-        if (state.length() == 0 ||
-            state == "mobile")
+        if (state != "dnd" &&
+            state != "invisible" &&
+            state != "offline")
+            
         {
             state = "online";
         }
         
+        
         bool unreads = (Logic::getRecentsModel()->totalUnreads() + Logic::getUnknownsModel()->totalUnreads()) != 0;
-        QString iconResource(QString(":resources/main_window/mac_tray/icq_osxlogo_%1_%2%3_100.png").
+        QString iconResource(QString(":/resources/main_window/mac_tray/icq_osxlogo_%1_%2%3_100.png").
                              arg(state).arg(MacSupport::currentTheme()).
-                             arg(unreads?"_unread":""));
+                             arg(unreads && (state != "offline") ? "_unread" : ""));
 
         QIcon icon(Utils::parse_image_name(iconResource));
         Icon_->setIcon(icon);
@@ -284,7 +287,7 @@ namespace Ui
         {
             if (Logic::getContactListModel()->selectedContact() != aimId)
                 Utils::InterConnector::instance().getMainWindow()->skipRead();
-            Logic::getContactListModel()->setCurrent(aimId, true, true);
+            Logic::getContactListModel()->setCurrent(aimId, -1, true, true);
         }
         
         MainWindow_->activateFromEventLoop();
@@ -501,6 +504,7 @@ namespace Ui
 	bool TrayIcon::toastSupported()
 	{
 		return false;
+        /*
 		if (QSysInfo().windowsVersion() > QSysInfo::WV_WINDOWS8_1)
 		{
 			if (!ToastManager_.get())
@@ -511,6 +515,7 @@ namespace Ui
 			return true;
 		}
 		return false;
+        */
 	}
 #elif defined (__APPLE__)
     bool TrayIcon::ncSupported()

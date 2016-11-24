@@ -6,6 +6,7 @@
 #include "my_info.h"
 #include "theme_settings.h"
 #include "main_window/contact_list/SearchMembersModel.h"
+#include "main_window/contact_list/SearchModelDLG.h"
 #include "types/typing.h"
 #include "utils/gui_coll_helper.h"
 #include "utils/InterConnector.h"
@@ -346,13 +347,20 @@ qint64 core_dispatcher::deleteMessagesFrom(const QString& _contactAimId, const i
     return post_message_to_core("archive/messages/delete_from", collection.get());
 }
 
-qint64 core_dispatcher::raiseDownloadPriority(int64_t _procId)
+qint64 core_dispatcher::raiseDownloadPriority(const QString &_contactAimid, int64_t _procId)
 {
     assert(_procId > 0);
+    assert(!_contactAimid.isEmpty());
 
     core::coll_helper collection(create_collection(), true);
 
     collection.set<int64_t>("proc_id", _procId);
+
+    __TRACE(
+        "prefetch",
+        "requesting to raise download priority\n"
+        "    contact_aimid=<" << _contactAimid << ">\n"
+            "request_id=<" << _procId << ">");
 
     return post_message_to_core("download/raise_priority", collection.get());
 }
@@ -360,6 +368,11 @@ qint64 core_dispatcher::raiseDownloadPriority(int64_t _procId)
 qint64 core_dispatcher::raiseContactDownloadsPriority(const QString &_contactAimid)
 {
     assert(!_contactAimid.isEmpty());
+
+    __TRACE(
+        "prefetch",
+        "requesting to raise downloads priority\n"
+        "    contact=<" << _contactAimid << ">");
 
     core::coll_helper collection(create_collection(), true);
 
@@ -401,7 +414,7 @@ void core_dispatcher::read_snap(
 
 bool core_dispatcher::init()
 {
-#ifndef __linux__
+#ifndef ICQ_CORELIB_STATIC_LINKING
     QLibrary libcore(CORELIBRARY);
     if (!libcore.load())
     {
@@ -428,7 +441,7 @@ bool core_dispatcher::init()
         return false;
     }
     coreFace_ = coreFace;
-#endif //__linux__
+#endif //ICQ_CORELIB_STATIC_LINKING
     coreConnector_ = coreFace_->get_core_connector();
     if (!coreConnector_)
         return false;
@@ -460,7 +473,6 @@ void core_dispatcher::initMessageMap()
     REGISTER_IM_MESSAGE("contact_presence", onContactPresence);
     REGISTER_IM_MESSAGE("gui_settings", onGuiSettings);
     REGISTER_IM_MESSAGE("theme_settings", onThemeSettings);
-    REGISTER_IM_MESSAGE("search_result", onSearchResult);
     REGISTER_IM_MESSAGE("archive/images/get/result", onArchiveImagesGetResult);
     REGISTER_IM_MESSAGE("archive/messages/get/result", onArchiveMessagesGetResult);
     REGISTER_IM_MESSAGE("messages/received/dlg_state", onMessagesReceivedDlgState);
@@ -470,6 +482,12 @@ void core_dispatcher::initMessageMap()
     REGISTER_IM_MESSAGE("messages/received/message_status", onMessagesReceivedMessageStatus);
     REGISTER_IM_MESSAGE("messages/del_up_to", onMessagesDelUpTo);
     REGISTER_IM_MESSAGE("dlg_state", onDlgState);
+    
+    REGISTER_IM_MESSAGE("history_search_result_msg", onHistorySearchResultMsg);
+    REGISTER_IM_MESSAGE("history_search_result_contacts", onHistorySearchResultContacts);
+    REGISTER_IM_MESSAGE("empty_search_results", onEmptySearchResults);
+    REGISTER_IM_MESSAGE("search_need_update", onSearchNeedUpdate);
+
     REGISTER_IM_MESSAGE("voip_signal", onVoipSignal);
     REGISTER_IM_MESSAGE("active_dialogs_are_empty", onActiveDialogsAreEmpty);
     REGISTER_IM_MESSAGE("active_dialogs_hide", onActiveDialogsHide);
@@ -521,6 +539,12 @@ void core_dispatcher::initMessageMap()
     REGISTER_IM_MESSAGE("snap/get_metainfo/result", onSnapGetMetainfoResult);
     REGISTER_IM_MESSAGE("contacts/ignore/remove", onContactRemovedFromIgnore);
 
+    REGISTER_IM_MESSAGE("masks/get_id_list/result", onMasksGetIdListResult);
+    REGISTER_IM_MESSAGE("masks/preview/result", onMasksPreviewResult);
+    REGISTER_IM_MESSAGE("masks/model/result", onMasksModelResult);
+    REGISTER_IM_MESSAGE("masks/get/result", onMasksGetResult);
+    REGISTER_IM_MESSAGE("masks/progress", onMasksProgress);
+    REGISTER_IM_MESSAGE("masks/update/retry", onMasksRetryUpdate);
 }
 
 void core_dispatcher::uninit()
@@ -865,6 +889,42 @@ void core_dispatcher::onContactsRemoveResult(const int64_t _seq, core::coll_help
     emit contactRemoved(contact);
 }
 
+void core_dispatcher::onMasksGetIdListResult(const int64_t _seq, core::coll_helper _params)
+{
+    QList<QString> maskList;
+    auto array = _params.get_value_as_array("mask_id_list");
+    for (int i = 0, size = array->size(); i < size; ++i)
+    {
+        maskList.push_back(array->get_at(i)->get_as_string());
+    }
+    emit maskListLoaded(maskList);
+}
+
+void core_dispatcher::onMasksPreviewResult(const int64_t _seq, core::coll_helper _params)
+{
+    emit maskPreviewLoaded(_seq, _params.get_value_as_string("local_path"));
+}
+
+void core_dispatcher::onMasksModelResult(const int64_t _seq, core::coll_helper _params)
+{
+    emit maskModelLoaded();
+}
+
+void core_dispatcher::onMasksGetResult(const int64_t _seq, core::coll_helper _params)
+{
+    emit maskLoaded(_seq, _params.get_value_as_string("local_path"));
+}
+
+void core_dispatcher::onMasksProgress(const int64_t _seq, core::coll_helper _params)
+{
+    emit maskLoadingProgress(_seq, _params.get_value_as_uint("percent"));
+}
+
+void core_dispatcher::onMasksRetryUpdate(const int64_t _seq, core::coll_helper _params)
+{
+    emit maskRetryUpdate();
+}
+
 void core_dispatcher::onAppConfig(const int64_t _seq, core::coll_helper _params)
 {
     Ui::AppConfigUptr config(new AppConfig(_params));
@@ -1066,7 +1126,7 @@ void core_dispatcher::onEventTyping(core::coll_helper _params, bool _isTyping)
             ++iterFires->counter_;
         }
 
-        QTimer::singleShot(6000, [this, currentTypingStatus]()
+        QTimer::singleShot(8000, [this, currentTypingStatus]()
         {
             auto iterFires = std::find(typingFires.begin(), typingFires.end(), currentTypingStatus);
 
@@ -1085,12 +1145,15 @@ void core_dispatcher::onEventTyping(core::coll_helper _params, bool _isTyping)
     {
         if (iterFires != typingFires.end())
         {
+            typingFires.erase(iterFires);
+            /*
             --iterFires->counter_;
 
             if (iterFires->counter_ <= 0)
             {
                 typingFires.erase(iterFires);
             }
+            */
         }
     }
 
@@ -1215,15 +1278,6 @@ void core_dispatcher::onThemeSettings(const int64_t _seq, core::coll_helper _par
     emit themeSettings();
 }
 
-void core_dispatcher::onSearchResult(const int64_t _seq, core::coll_helper _params)
-{
-    QStringList contacts;
-
-    Data::UnserializeSearchResult(&_params, contacts);
-
-    emit searchResult(contacts);
-}
-
 void core_dispatcher::onArchiveImagesGetResult(const int64_t _seq, core::coll_helper _params)
 {
     emit getImagesResult(Data::UnserializeImages(_params));
@@ -1237,10 +1291,11 @@ void core_dispatcher::onArchiveMessages(Ui::MessagesBuddiesOpt _type, const int6
     bool havePending = false;
     auto msgs = std::make_shared<Data::MessageBuddies>();
     auto modifications = std::make_shared<Data::MessageBuddies>();
+    int64_t last_msg_id;
 
-    Data::UnserializeMessageBuddies(&_params, myAimid, Out aimId, Out havePending, Out *msgs, Out *modifications);
+    Data::UnserializeMessageBuddies(&_params, myAimid, Out aimId, Out havePending, Out *msgs, Out *modifications, Out last_msg_id);
 
-    emit messageBuddies(msgs, aimId, _type, havePending, _seq);
+    emit messageBuddies(msgs, aimId, _type, havePending, _seq, last_msg_id);
 
     if (_params.is_value_exist("deleted"))
     {
@@ -1309,10 +1364,91 @@ void core_dispatcher::onDlgState(const int64_t _seq, core::coll_helper _params)
     const auto myAimid = _params.get<QString>("my_aimid");
 
     Data::DlgState state;
-    Data::UnserializeDlgState(&_params, myAimid, Out state);
-
+    Data::UnserializeDlgState(&_params, myAimid, false /* from_search */, Out state);
     emit dlgState(state);
+}
 
+void core_dispatcher::onHistorySearchResultMsg(const int64_t _seq, core::coll_helper _params)
+{
+    const auto myAimid = _params.get<QString>("my_aimid");
+
+    Data::DlgState state;
+    Data::UnserializeDlgState(&_params, myAimid, true /* from_search */, Out state);
+
+    if (_params.is_value_exist("from_search"))
+    {
+        state.IsFromSearch_ = _params.get<bool>("from_search");
+    }
+
+    if (_params.is_value_exist("term"))
+    {
+        state.SearchTerm_ = _params.get<QString>("term");
+    }
+
+    if (_params.is_value_exist("request_id"))
+    {
+        state.RequestId_ = _params.get<int64_t>("request_id");
+    }
+    if (_params.is_value_exist("priority"))
+    {
+        state.SearchPriority_ = _params.get<int>("priority");
+    }
+
+    emit Utils::InterConnector::instance().hideNoSearchResults();
+    emit Utils::InterConnector::instance().hideSearchSpinner();
+    emit searchedMessage(state);
+}
+
+void core_dispatcher::onHistorySearchResultContacts(const int64_t _seq, core::coll_helper _params)
+{
+    QList<Data::DlgState> states;
+    auto msgArray = _params.get_value_as_array("results");
+    for (int i = 0; i < msgArray->size(); ++i)
+    {
+        Data::DlgState state;
+        auto val = msgArray->get_at(i);
+        core::coll_helper helper(val->get_as_collection(), false);
+        const auto myAimid = helper.get<QString>("my_aimid");
+        Data::UnserializeDlgState(&helper, myAimid, true /* from_search */, Out state);
+
+        if (helper.is_value_exist("from_search"))
+        {
+            state.IsFromSearch_ = helper.get<bool>("from_search");
+        }
+
+        if (helper.is_value_exist("term"))
+        {
+            state.SearchTerm_ = helper.get<QString>("term");
+        }
+
+        if (helper.is_value_exist("request_id"))
+        {
+            state.RequestId_ = helper.get<int64_t>("request_id");
+        }
+        if (helper.is_value_exist("priority"))
+        {
+            state.SearchPriority_ = helper.get<int>("priority");
+        }
+        states.push_back(state);
+    }
+
+    if (!states.isEmpty())
+    {
+        emit Utils::InterConnector::instance().hideNoSearchResults();
+        emit Utils::InterConnector::instance().hideSearchSpinner();
+    }
+    emit searchedContacts(states, _params.get_value_as_int64("reqId"));
+}
+
+void core_dispatcher::onEmptySearchResults(const int64_t _seq, core::coll_helper _params)
+{
+    emit Utils::InterConnector::instance().hideSearchSpinner();
+    emit Utils::InterConnector::instance().showNoSearchResults();
+}
+
+void core_dispatcher::onSearchNeedUpdate(const int64_t _seq, core::coll_helper _params)
+{
+    emit Utils::InterConnector::instance().repeatSearch();
 }
 
 void core_dispatcher::onVoipSignal(const int64_t _seq, core::coll_helper _params)
@@ -1483,6 +1619,7 @@ void core_dispatcher::onLoginNewUser(const int64_t _seq, core::coll_helper _para
 void core_dispatcher::onSetAvatarResult(const int64_t _seq, core::coll_helper _params)
 {
     emit Utils::InterConnector::instance().setAvatar(_params.get_value_as_int64("seq"), _params.get_value_as_int("error"));
+    emit Utils::InterConnector::instance().setAvatarId(_params.get_value_as_string("id"));
 }
 
 void core_dispatcher::onChatsRoleSetResult(const int64_t _seq, core::coll_helper _params)

@@ -124,6 +124,8 @@ namespace core
 
             const std::string& get_id() const { return id_; }
 
+            std::pair<int32_t, int32_t> get_ids();
+
             void serialize(icollection* _collection);
             void serialize(core::tools::tlvpack& _pack);
             int32_t unserialize(const rapidjson::Value& _node);
@@ -252,6 +254,8 @@ namespace core
 
             void serialize(Out tools::tlvpack& _pack) const;
 
+            bool is_type_deleted() const;
+
         private:
             chat_event_data(const chat_event_type _type);
 
@@ -355,6 +359,10 @@ namespace core
                 const std::string &_sender_aimid);
             int32_t unserialize(core::tools::binary_stream& _data);
 
+            static void jump_to_text_field(core::tools::binary_stream& _stream, uint32_t& length);
+            static int64_t get_id_field(core::tools::binary_stream& _stream);
+            static bool is_sticker(core::tools::binary_stream& _stream);
+
             void set_msgid(const int64_t _msgid) {msgid_ = _msgid; }
             const int64_t get_msgid() const { return msgid_; }
             bool has_msgid() const { return (msgid_ > 0); }
@@ -399,6 +407,7 @@ namespace core
             bool is_deleted() const;
             bool is_modified() const;
             bool is_patch() const;
+            bool is_chat_event_deleted() const;
 
             void apply_header_flags(const message_header &_header);
             void apply_modifications(const history_block &_modifications);
@@ -434,6 +443,8 @@ namespace core
             std::string chat_;
             std::string senderFriendly_;
             int32_t time_;
+            int32_t setId_;
+            int32_t stickerId_;
             int64_t msg_id_;
             bool is_forward_;
 
@@ -456,6 +467,7 @@ namespace core
             void set_time(const int32_t _time) { time_ = _time; }
             int64_t get_msg_id() const { return msg_id_; }
             std::string get_type() const { return is_forward_ ? "forward" : "quote"; }
+            std::string get_sticker() const;
         };
     }
 }

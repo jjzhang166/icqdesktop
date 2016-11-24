@@ -23,7 +23,7 @@ std::string get_filename_in_cache(const std::string& _uri)
 
     return core::tools::md5(
         _uri.c_str(),
-        (int)_uri.length());
+        (int32_t)_uri.length());
 }
 
 std::wstring get_path_in_cache(const std::wstring& _cache_dir, const std::string& _uri, const path_type _path_type)
@@ -56,12 +56,6 @@ std::wstring get_path_in_cache(const std::wstring& _cache_dir, const std::string
         filename += ".js";
     }
 
-    const auto append_error_extension = (_path_type == path_type::download_failed_sign);
-    if (append_error_extension)
-    {
-        filename += ".err";
-    }
-
     path /= filename;
 
     return path.wstring();
@@ -88,8 +82,7 @@ const std::string& get_path_suffix(const path_type _type)
         return SNAP_META_SUFFIX;
 
     case path_type::file:
-    case path_type::download_failed_sign:
-        // no suffix for these gentlemen please
+        // no suffix for the gentlemen please
         break;
 
     default:

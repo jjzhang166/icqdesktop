@@ -48,6 +48,7 @@ namespace Ui
         void showEvent  (QShowEvent* _e) override;
         void hideEvent  (QHideEvent* _e) override;
         void changeEvent(QEvent* _e)     override;
+        void resizeEvent(QResizeEvent * event) override;
 
         QLabel* createUniformLabel_(const QString& _text, const unsigned _fontSize, QSizePolicy _policy = QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         void updateMask();

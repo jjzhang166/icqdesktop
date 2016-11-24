@@ -4,6 +4,7 @@
 #include "main_thread.h"
 #include "network_log.h"
 #include "configuration/app_config.h"
+#include "configuration/hosts_config.h"
 
 #include "connections/im_container.h"
 #include "connections/base_im.h"
@@ -11,6 +12,7 @@
 #include "connections/im_login.h"
 
 #include "Voip/VoipManager.h"
+#include "Voip/libvoip/include/voip/voip2.h"
 
 #include "../corelib/collection_helper.h"
 #include "core_settings.h"
@@ -42,9 +44,10 @@ std::unique_ptr<core::core_dispatcher>	core::g_core;
 
 
 core_dispatcher::core_dispatcher()
-    :	gui_connector_(nullptr),
-    core_factory_(nullptr),
-    core_thread_(nullptr)
+    : gui_connector_(nullptr)
+    , core_factory_(nullptr)
+    , core_thread_(nullptr)
+    , delayed_stat_timer_id_(0)
 {
     http_request_simple::init_global();
 #ifdef _WIN32
@@ -143,9 +146,10 @@ void core::core_dispatcher::start(const common::core_gui_settings& _settings)
     // called from core thread
     network_log_.reset(new network_log(utils::get_logs_path()));
 
-    const boost::filesystem::wpath product_data_root = utils::get_product_data_path();
-
-    configuration::load_app_config(product_data_root / L"app.ini");
+    boost::system::error_code error_code;
+    const auto product_data_root = boost::filesystem::canonical(utils::get_product_data_path(), Out error_code);
+    const auto app_ini_path = boost::filesystem::canonical(product_data_root / L"app.ini", Out error_code);
+    configuration::load_app_config(app_ini_path);
 
     http_handles_.reset(http_request_simple::create_http_handlers());
 
@@ -162,10 +166,12 @@ void core::core_dispatcher::start(const common::core_gui_settings& _settings)
     load_gui_settings();
     load_theme_settings();
     load_proxy_settings();
+    load_hosts_config();
     post_theme_settings();
     post_gui_settings();
     post_app_config();
     g_core->post_user_proxy_to_gui();
+
 #ifndef STRIP_VOIP
     voip_manager_.reset(new(std::nothrow) voip_manager::VoipManager(*this));
     assert(!!voip_manager_);
@@ -195,6 +201,7 @@ void core::core_dispatcher::unlink_gui()
         im_container_.reset();
         gui_settings_.reset();
         scheduler_.reset();
+        hosts_config_.reset();
         if (is_stats_enabled())
             statistics_.reset();
         save_thread_.reset();
@@ -225,7 +232,7 @@ void core::core_dispatcher::post_message_to_gui(const char * _message, int64_t _
     bs.write<std::string>("\r\n");
 
 	// Added type of voip call to log.
-	if (_message == "voip_signal" && _message_data)
+	if (strcmp(_message, "voip_signal") == 0 && _message_data)
 	{
 		auto value = _message_data->get_value("sig_type");
 		if (value)
@@ -283,6 +290,14 @@ void core_dispatcher::load_proxy_settings()
     proxy_settings_manager_ = std::make_shared<core::proxy_settings_manager>();
 }
 
+void core_dispatcher::load_hosts_config()
+{
+    hosts_config_ = std::make_shared<core::hosts_config>();
+
+    hosts_config_->load();
+    hosts_config_->start_save();
+}
+
 bool core_dispatcher::is_stats_enabled() const
 {
     return true;
@@ -294,14 +309,27 @@ void core_dispatcher::load_statistics()
         return;
 
     statistics_ = std::make_shared<core::stats::statistics>(utils::get_product_data_path() + L"/stats/stats.stg");
-    g_core->excute_core_context([this]
+
+    auto wr_stats = std::weak_ptr<core::stats::statistics>(statistics_);
+    excute_core_context([this]
     {
         statistics_->init();
-        start_session_stats();
+        start_session_stats(false /* delayed */);
+
+        uint32_t timeout = (build::is_debug() ? (10 * 1000) : (5 * 60 * 1000));
+        delayed_stat_timer_id_ = add_timer([this]
+        {
+            if (statistics_)
+            {
+                start_session_stats(true /* delayed */);
+            }
+
+            stop_timer(delayed_stat_timer_id_);
+        }, timeout);
     });
 }
 
-void core_dispatcher::start_session_stats()
+void core_dispatcher::start_session_stats(bool _delayed)
 {
     core::stats::event_props_type props;
 
@@ -321,7 +349,11 @@ void core_dispatcher::start_session_stats()
     props.emplace_back(std::make_pair("Sys_Language", loc.name()));
     props.emplace_back(std::make_pair("Sys_OS_Version", core::tools::system::get_os_version_string()));
 
-    insert_event(core::stats::stats_event_names::start_session, props);
+    if (voip_manager_ && voip_manager_->get_device_manager())
+        props.emplace_back(std::make_pair("Sys_Video_Capture", std::to_string(voip_manager_->get_device_manager()->get_devices_number(voip2::DeviceType::VideoCapturing))));
+
+    insert_event(_delayed ? core::stats::stats_event_names::start_session_params_loaded
+        : core::stats::stats_event_names::start_session, props);
 }
 
 void core_dispatcher::insert_event(core::stats::stats_event_names _event)
@@ -388,7 +420,7 @@ void core::core_dispatcher::on_message_update_gui_settings_value(int64_t _seq, c
     istream* value_data = _params.get_value_as_stream("value");
 
     tools::binary_stream bs_data;
-    int size = value_data->size();
+    auto size = value_data->size();
     if (size)
         bs_data.write((const char*) value_data->read(size), size);
 
@@ -401,7 +433,7 @@ void core::core_dispatcher::on_message_update_theme_settings_value(int64_t _seq,
     istream* value_data = _params.get_value_as_stream("value");
 
     tools::binary_stream bs_data;
-    int size = value_data->size();
+    auto size = value_data->size();
     if (size)
         bs_data.write((const char*) value_data->read(size), size);
 
@@ -411,7 +443,7 @@ void core::core_dispatcher::on_message_update_theme_settings_value(int64_t _seq,
 
 void core::core_dispatcher::on_message_set_default_theme_id(int64_t _seq, coll_helper _params)
 {
-    const int theme_id = _params.get_value_as_int("id");
+    const auto theme_id = _params.get_value_as_int("id");
     auto im = im_container_->get_im_by_id(1);
     const themes::theme *theme = im->get_theme_from_cache(theme_id);
     if (theme)
@@ -500,8 +532,11 @@ void core::core_dispatcher::receive_message_from_gui(const char * _message, int6
     if (_message_data)
         _message_data->addref();
 
-    if (message_string == "search")
+    if (message_string == "history_search")
+    {
         begin_search();
+        begin_history_search();
+    }
 
     excute_core_context([this, message_string, _seq, _message_data]
     {
@@ -629,6 +664,21 @@ unsigned core::core_dispatcher::end_search()
     return --search_count_;
 }
 
+bool core::core_dispatcher::is_valid_history_search()
+{
+    return history_search_count_.load() == 1;
+}
+
+void core::core_dispatcher::begin_history_search()
+{
+    ++history_search_count_;
+}
+
+unsigned core::core_dispatcher::end_history_search()
+{
+    return --history_search_count_;
+}
+
 void core::core_dispatcher::update_login(im_login_id& _login)
 {
     // if created new login
@@ -637,7 +687,7 @@ void core::core_dispatcher::update_login(im_login_id& _login)
         g_core->post_message_to_gui("login_new_user", 0, nullptr);
     }
 
-    start_session_stats();
+    start_session_stats(false /* delayed */);
 }
 
 void core::core_dispatcher::replace_uin_in_login(im_login_id& old_login, im_login_id& new_login)
@@ -699,7 +749,7 @@ proxy_settings core_dispatcher::get_auto_proxy_settings()
 proxy_settings core_dispatcher::get_proxy_settings()
 {
     auto user_proxy_settings = get_user_proxy_settings();
-    auto is_user_proxy = user_proxy_settings.proxy_type_ != (int)core::proxy_types::auto_proxy;
+    auto is_user_proxy = user_proxy_settings.proxy_type_ != (int32_t)core::proxy_types::auto_proxy;
 
     auto current_proxy = g_core->get_auto_proxy_settings();
     if (is_user_proxy)
@@ -782,4 +832,11 @@ void core_dispatcher::set_voip_mute_fix_flag(bool bValue)
 bool core_dispatcher::get_voip_mute_fix_flag()
 {
 	return settings_->get_voip_mute_fix_flag();
+}
+
+hosts_config& core_dispatcher::get_hosts_config()
+{
+    assert(hosts_config_);
+
+    return *hosts_config_;
 }

@@ -70,6 +70,13 @@ loader_errors snap_metainfo_download_task::run()
     snap_metainfo_ = load_snap_meta_from_file(cached_meta_path, ttl_id_);
     if (snap_metainfo_)
     {
+        __TRACE(
+            "snaps",
+            "snap metainfo successfully loaded\n"
+            "    source=<cache>\n"
+            "    ttl_id=<%1%>",
+            ttl_id_);
+
         return loader_errors::success;
     }
 

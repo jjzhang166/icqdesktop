@@ -155,3 +155,15 @@ QLabel#noRecentsLabel
 	color: #696969; font-size: 15dip;
 	margin: 0; padding: 0;
 }
+
+QWidget#noSearchResults
+{
+	image: url(:/resources/placeholders/content_placeholder_emptysearch_100.png);
+	background-color: transparent;
+	margin: 0;
+}
+QLabel#noSearchResultsLabel
+{
+	color: #696969; font-size: 15dip;
+	margin: 0; padding: 0;
+}

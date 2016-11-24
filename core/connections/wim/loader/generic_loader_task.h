@@ -47,7 +47,7 @@ public:
 
     virtual void on_before_suspend() override;
 
-    virtual std::string to_log_str() const final override;
+    virtual std::string to_log_str() const override;
 
 protected:
     disk_cache::disk_cache_wptr get_cache() const;

@@ -32,6 +32,7 @@ start_session::start_session(const wim_packet_params& params, bool _is_ping, con
         uniq_device_id_(_uniq_device_id),
         locale_(_locale)
 {
+    set_can_change_hosts_scheme(true);
 }
 
 

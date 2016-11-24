@@ -4,8 +4,6 @@
 
 #include "../utils/utils.h"
 
-#include "exif.h"
-
 #include "LoadPixmapFromDataTask.h"
 
 namespace Utils
@@ -38,10 +36,6 @@ namespace Utils
             emit loadedSignal(QPixmap());
             return;
         }
-
-        const auto orientation = Exif::getExifOrientation((char*)data.data(), (size_t)size);
-
-        Exif::applyExifOrientation(orientation, preview);
 
         emit loadedSignal(preview);
     }

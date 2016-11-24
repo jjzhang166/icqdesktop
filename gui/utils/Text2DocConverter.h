@@ -34,6 +34,8 @@ namespace Logic
 		const Text2HtmlUriCallback _uriCallback = nullptr,
 		const Emoji::EmojiSizePx _emojiSize = Emoji::EmojiSizePx::Auto,
         const QTextCharFormat::VerticalAlignment _aligment = QTextCharFormat::AlignBaseline);
+    
+    void Text4EditEmoji(const QString& text, Ui::TextEditEx& _edit, Emoji::EmojiSizePx _emojiSize = Emoji::EmojiSizePx::Auto, const QTextCharFormat::VerticalAlignment _aligment = QTextCharFormat::AlignBaseline);
 
 	void Text2Doc(
 		const QString &text,
@@ -41,6 +43,20 @@ namespace Logic
 		const Text2DocHtmlMode htmlMode = Text2DocHtmlMode::Escape,
 		const bool convertLinks = true,
 		const Text2HtmlUriCallback uriCallback = nullptr);
+
+    void CutText(
+        const QString &text,
+        const QString &_term,
+        const int _width,
+        QFontMetrics _base_text_metrics,
+        QFontMetrics _term_metrics,
+		QTextCursor &cursor,
+		const Text2DocHtmlMode htmlMode,
+		const bool convertLinks,
+		const Text2HtmlUriCallback uriCallback,
+        QString& leftPart,
+        QString& rightPart,
+        QString& termPart);
 
 	ResourceMap InsertEmoji(int _main, int _ext, Ui::TextEditEx& _edit);
 }

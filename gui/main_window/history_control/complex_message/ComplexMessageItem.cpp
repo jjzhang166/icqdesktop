@@ -11,6 +11,7 @@
 #include "../../../utils/utils.h"
 #include "../../../utils/log/log.h"
 #include "../../../my_info.h"
+#include "../StickerInfo.h"
 
 #include "../../contact_list/ContactList.h"
 #include "../../contact_list/ContactListModel.h"
@@ -257,15 +258,6 @@ void ComplexMessageItem::replaceBlockWithSourceText(IItemBlock *block)
     assert(block);
     assert(!Blocks_.empty());
 
-    for (auto b : Blocks_)
-    {
-        if (b->replaceBlockWithSourceText(block))
-        {
-            Layout_->onBlockSizeChanged();
-            return;
-        }
-    }
-
     const auto isMenuBlockReplaced = (MenuBlock_ == block);
     if (isMenuBlockReplaced)
     {
@@ -276,6 +268,15 @@ void ComplexMessageItem::replaceBlockWithSourceText(IItemBlock *block)
     if (isHoveredBlockReplaced)
     {
         onHoveredBlockChanged(nullptr);
+    }
+
+    for (auto b : Blocks_)
+    {
+        if (b->replaceBlockWithSourceText(block))
+        {
+            Layout_->onBlockSizeChanged();
+            return;
+        }
     }
 
     auto iter = std::find(Blocks_.begin(), Blocks_.end(), block);
@@ -745,6 +746,12 @@ void ComplexMessageItem::addBlockMenuItems(const QPoint &pos)
 
     const auto flags = MenuBlock_->getMenuFlags();
 
+    const auto isOpenable = ((flags & IItemBlock::MenuFlagOpenInBrowser) != 0);
+    if (isOpenable)
+    {
+        Menu_->addActionWithIcon(QIcon(Utils::parse_image_name(":/resources/dialog_openbrowser_100.png")), QT_TRANSLATE_NOOP("context_menu", "Open in browser"), makeData("open_in_browser"));
+    }
+
     const auto isLinkCopyable = ((flags & IItemBlock::MenuFlagLinkCopyable) != 0);
     if (isLinkCopyable)
     {
@@ -781,7 +788,7 @@ void ComplexMessageItem::createSenderControl()
     Sender_ = new TextEmojiWidget(
         this,
         Fonts::defaultAppFontFamily(),
-        Fonts::defaultAppFontStyle(),
+        Fonts::defaultAppFontWeight(),
         Utils::scale_value(12),
         color);
 
@@ -921,11 +928,22 @@ QString ComplexMessageItem::getBlocksText(const IItemBlocksVec &items, const boo
     // to reduce the number of reallocations
     result.reserve(1024);
 
+    int selectedItemCount = 0;
+    if (isSelected)
+    {
+        for (auto item : items)
+        {
+            if (item->isSelected())
+                ++selectedItemCount;
+        }
+    }
+
+
     for (auto item : items)
     {
         const auto itemText = (
             isSelected ?
-                item->getSelectedText() :
+                item->getSelectedText(selectedItemCount > 1) :
                 item->getSourceText());
 
         if (itemText.isEmpty())
@@ -934,8 +952,10 @@ QString ComplexMessageItem::getBlocksText(const IItemBlocksVec &items, const boo
         }
 
         result += itemText;
-        result += QChar::LineFeed;
     }
+
+    if (result.endsWith(QChar::LineFeed))
+        result.truncate(result.length() - 1);
 
     return result;
 }
@@ -962,6 +982,10 @@ IItemBlock* ComplexMessageItem::findBlockUnder(const QPoint &pos) const
         {
             continue;
         }
+
+        auto b = block->findBlockUnder(pos);
+        if (b)
+            return b;
 
         const auto blockLayout = block->getBlockLayout();
         assert(blockLayout);
@@ -1019,18 +1043,20 @@ QList<Data::Quote> ComplexMessageItem::getQuotes(bool force) const
                     if (isOutgoing())
                         senderFriendly = MyInfo()->friendlyName();
                     quote.senderFriendly_ = senderFriendly;
+                    auto stickerInfo = b->getStickerInfo();
+                    if (stickerInfo)
+                    {
+                        quote.setId_ = stickerInfo->SetId_;
+                        quote.stickerId_ = stickerInfo->StickerId_;
+                    }
                 }
                 quote.text_ += selectedText;
-                quote.text_ += QChar::LineFeed;
             }
         }
     }
 
     if (!quote.isEmpty())
-    {
-        quote.text_ = quote.text_.left(quote.text_.length() - 1);
         quotes.push_back(quote);
-    }
 
     return quotes;
 }
@@ -1143,7 +1169,7 @@ void ComplexMessageItem::onCopyMenuItem(ComplexMessageItem::MenuItemType type)
     bool isCopy = (type == ComplexMessageItem::MenuItemType::Copy);
     bool isQuote = (type == ComplexMessageItem::MenuItemType::Quote);
     bool isForward = (type == ComplexMessageItem::MenuItemType::Forward);
-    
+
     if (isQuote || isForward)
     {
         itemText += getQuoteHeader();
@@ -1215,6 +1241,8 @@ void ComplexMessageItem::onShareButtonClicked()
         true);
     shareDialog.setSort(false /* isClSorting */);
 
+    emit Utils::InterConnector::instance().searchEnd();
+
     const auto action = shareDialog.show();
     if (action != QDialog::Accepted)
     {
@@ -1224,8 +1252,10 @@ void ComplexMessageItem::onShareButtonClicked()
 
     if (contact != "")
     {
-        Logic::getContactListModel()->setCurrent(contact, true);
+        Logic::getContactListModel()->setCurrent(contact, -1, true);
         Ui::GetDispatcher()->sendMessageToContact(contact, sourceText);
+        Ui::GetDispatcher()->post_stats_to_core(core::stats::stats_event_names::forward_send_preview);
+        Utils::InterConnector::instance().onSendMessage(contact);
     }
     else
     {

@@ -8,6 +8,7 @@ UI_NS_BEGIN
 
 class TextEmojiWidget;
 class PictureWidget;
+class ContactAvatarWidget;
 
 UI_NS_END
 
@@ -30,7 +31,7 @@ public:
 
     virtual IItemBlockLayout* getBlockLayout() const override;
 
-    virtual QString getSelectedText() const override;
+    virtual QString getSelectedText(bool isFullSelect = false) const override;
 
     virtual bool hasRightStatusPadding() const override;
 
@@ -58,9 +59,11 @@ public:
 
     virtual bool isSimple() const override { return false; }
 
-    virtual Data::Quote getQuote() const;
+    virtual Data::Quote getQuote() const override;
 
-    virtual bool needFormatQuote() const { return false; }
+    virtual bool needFormatQuote() const override { return false; }
+
+    virtual IItemBlock* findBlockUnder(const QPoint &pos) const;
 
     void addBlock(GenericBlock* block);
 
@@ -76,6 +79,9 @@ protected:
 private:
     bool quoteOnly() const;
 
+private Q_SLOTS:
+    void blockClicked();
+
 private:
 
     Data::Quote Quote_;
@@ -87,6 +93,8 @@ private:
     QLabel* ForwardLabel_;
 
     TextEmojiWidget *TextCtrl_;
+
+    ContactAvatarWidget* Avatar_;
     
     QRect Geometry_;
 

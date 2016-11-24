@@ -11,6 +11,8 @@
 
 #include "im_login.h"
 
+#include "../masks/masks.h"
+
 // stickers
 #include "../stickers/stickers.h"
 
@@ -108,6 +110,20 @@ std::wstring core::base_im::get_im_data_path()
 std::wstring base_im::get_file_name_by_url(const std::string& _url)
 {
     return (get_content_cache_path() + L"/" + core::tools::from_utf8(core::tools::md5(_url.c_str(), (int32_t)_url.length())));
+}
+
+void base_im::create_masks(std::weak_ptr<wim::im> _im)
+{
+#ifndef __linux__
+    const auto& path = get_masks_path();
+    const auto version = voip_manager_->get_mask_manager()->version();
+    masks_.reset(new masks(_im, path, version));
+#endif //__linux__
+}
+
+std::wstring base_im::get_masks_path()
+{
+    return (get_im_data_path() + L"/" + L"masks");
 }
 
 std::wstring base_im::get_stickers_path()
@@ -387,5 +403,37 @@ void core::base_im::on_voip_update() {
 void core::base_im::on_voip_minimal_bandwidth_switch() {
 #ifndef STRIP_VOIP
     voip_manager_->get_call_manager()->minimal_bandwidth_switch();
+#endif
+}
+
+void core::base_im::on_voip_load_mask(const std::string& path) {
+#ifndef STRIP_VOIP
+	voip_manager_->get_mask_manager()->load_mask(path);
+#endif
+}
+
+void core::base_im::voip_set_model_path(const std::string& _local_path) {
+#ifndef STRIP_VOIP
+    voip_manager_->get_mask_manager()->set_model_path(_local_path);
+#endif
+}
+
+bool core::base_im::has_created_call() {
+#ifndef STRIP_VOIP
+    return voip_manager_->get_call_manager()->has_created_call();
+#endif
+    return false;
+}
+
+void core::base_im::on_voip_window_set_primary(void* hwnd, const std::string& contact) {
+#ifndef STRIP_VOIP
+	voip_manager_->get_window_manager()->window_set_primary(hwnd, contact);
+#endif
+}
+
+void core::base_im::on_voip_init_mask_engine()
+{
+#ifndef STRIP_VOIP
+    voip_manager_->get_mask_manager()->init_mask_engine();
 #endif
 }

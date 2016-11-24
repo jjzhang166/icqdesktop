@@ -30,6 +30,7 @@ GenericBlock::GenericBlock(
     , ResourcesUnloadingTimer_(nullptr)
     , IsResourcesUnloadingEnabled_(isResourcesUnloadingEnabled)
     , IsBubbleRequired_(true)
+    , ClickHandled_(false)
 {
     assert(Parent_);
 }
@@ -160,6 +161,12 @@ bool GenericBlock::onMenuItemTriggered(const QString &command)
         return true;
     }
 
+    const auto isOpenInBrowser = (command == "open_in_browser");
+    if (isOpenInBrowser)
+    {
+        onMenuOpenInBrowser();
+    }
+
     return false;
 }
 
@@ -185,9 +192,8 @@ void GenericBlock::onActivityChanged(const bool isActive)
     initialize();
 }
 
-void GenericBlock::onVisibilityChanged(const bool isVisible)
+void GenericBlock::onVisibilityChanged(const bool /*isVisible*/)
 {
-    isVisible;
 }
 
 QRect GenericBlock::setBlockGeometry(const QRect &ltr)
@@ -282,6 +288,11 @@ void GenericBlock::onMenuSaveFileAs()
     assert(!"should be overriden in child class");
 }
 
+void GenericBlock::onMenuOpenInBrowser()
+{
+
+}
+
 void GenericBlock::onRestoreResources()
 {
 
@@ -343,6 +354,21 @@ void GenericBlock::mouseMoveEvent(QMouseEvent *e)
     }
 
     return QWidget::mouseMoveEvent(e);
+}
+
+void GenericBlock::mousePressEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::LeftButton)
+        mouseClickPos_ = e->pos();
+    return QWidget::mousePressEvent(e);
+}
+
+void GenericBlock::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (!ClickHandled_ && mouseClickPos_.x() == e->pos().x() && mouseClickPos_.y() == e->pos().y())
+        emit clicked();
+    ClickHandled_ = false;
+    return QWidget::mouseReleaseEvent(e);
 }
 
 void GenericBlock::startResourcesUnloadTimer()

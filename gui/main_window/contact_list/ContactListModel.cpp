@@ -108,7 +108,6 @@ namespace Logic
         connect(Ui::GetDispatcher(), SIGNAL(presense(Data::Buddy*)), this, SLOT(presense(Data::Buddy*)), Qt::QueuedConnection);
         connect(Ui::GetDispatcher(), SIGNAL(contactRemoved(QString)), this, SLOT(contactRemoved(QString)), Qt::QueuedConnection);
         connect(GetAvatarStorage(), SIGNAL(avatarChanged(QString)), this, SLOT(avatarLoaded(QString)), Qt::QueuedConnection);
-        connect(Ui::GetDispatcher(), SIGNAL(searchResult(QStringList)), this, SLOT(searchResult(QStringList)), Qt::QueuedConnection);
         connect(Ui::GetDispatcher(), SIGNAL(chatInfo(qint64, std::shared_ptr<Data::ChatInfo>)), this, SLOT(chatInfo(qint64, std::shared_ptr<Data::ChatInfo>)), Qt::QueuedConnection);
 
         timer_->setSingleShot(true);
@@ -223,15 +222,6 @@ namespace Logic
         return (Qt::ItemFlags)flags;
     }
 
-    void ContactListModel::searchResult(QStringList _result)
-    {
-        unsigned size = (unsigned)match_.size();
-        match_ = getContactListModel()->getSearchedContacts(_result.toStdList());
-        emit dataChanged(index(0), index(size));
-        if (!_result.isEmpty())
-            emit results();
-    }
-
     bool ContactListModel::isVisibleItem(const ContactItem& _item)
     {
         if (!isWithCheckedBox_)
@@ -296,43 +286,8 @@ namespace Logic
         return result;
     }
 
-    void ContactListModel::searchPatternChanged(QString _p)
-    {
-        searchPatterns_ = Utils::GetPossibleStrings(_p);
-        if (_p.isEmpty())
-        {
-            unsigned size = (unsigned)match_.size();
-            match_ = getContactListModel()->getSearchedContacts(true /* isClSorting */);
-            emit dataChanged(index(0), index(size));
-            return;
-        }
-
-        if (!searchRequested_)
-        {
-            QTimer::singleShot(200, [this]()
-            {
-                searchRequested_ = false;
-                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-                core::ifptr<core::iarray> patternsArray(collection->create_array());
-                patternsArray->reserve(searchPatterns_.size());
-                for (auto iter = searchPatterns_.begin(); iter != searchPatterns_.end(); ++iter)
-                {
-                    core::coll_helper coll(collection->create_collection(), true);
-                    coll.set_value_as_string("pattern", iter->toUtf8().data(), iter->toUtf8().size());
-                    core::ifptr<core::ivalue> val(collection->create_value());
-                    val->set_as_collection(coll.get());
-                    patternsArray->push_back(val.get());
-                }
-                collection.set_value_as_array("search_patterns", patternsArray.get());
-                Ui::GetDispatcher()->post_message_to_core("search", collection.get());
-            });
-            searchRequested_ = true;
-        }
-    }
-
     void ContactListModel::setFocus()
     {
-        match_.clear();
     }
 
     int ContactListModel::addItem(Data::Contact* _contact)
@@ -341,6 +296,7 @@ namespace Logic
         if (item != nullptr)
         {
             item->Get()->ApplyBuddy(_contact);
+            setContactVisible(_contact->AimId_, true);
             Logic::GetAvatarStorage()->UpdateDefaultAvatarIfNeed(_contact->AimId_);
         }
         else
@@ -574,7 +530,7 @@ namespace Logic
         updatedItems_.clear();
     }
 
-    void ContactListModel::setCurrent(QString _aimId, bool _sel, bool _needSwitchTab, std::function<void(Ui::HistoryControlPage*)> _gotPageCallback)
+    void ContactListModel::setCurrent(QString _aimId, qint64 id, bool _sel, bool _needSwitchTab, std::function<void(Ui::HistoryControlPage*)> _gotPageCallback)
     {
         if (!currentAimdId_.isEmpty())
         {
@@ -602,7 +558,7 @@ namespace Logic
 
         currentAimdId_ = _aimId;
         if (_sel && !currentAimdId_.isEmpty())
-            emit select(currentAimdId_);
+            emit select(currentAimdId_, id);
        // else
          //   emit selectedContactChanged(currentAimdId_);
 
@@ -973,15 +929,11 @@ namespace Logic
 
     void ContactListModel::removeContactsFromModel(const QVector<QString>& _vcontacts)
     {
-        bool exist = false;
-
         for (const auto _aimid : _vcontacts)
         {
             if (getContactItem(_aimid))
             {
-                exist = true;
-
-                emit Ui::GetDispatcher()->contactRemoved(_aimid);
+                contactRemoved(_aimid);
             }
         }
     }
@@ -1017,7 +969,7 @@ namespace Logic
 
 		if (_ignore)
 		{
-			emit ignoreContact(_aimId);
+			emit ignore_contact(_aimId);
 		}
     }
 
@@ -1041,9 +993,33 @@ namespace Logic
     {
         auto cont = getContactItem(_aimId);
         if (cont)
-            return cont->is_you_admin();
+        {
+            const auto role = cont->get_chat_role();
+            return role == "admin" || role == "moder";
+        }
 
         return false;
+    }
+
+    QString ContactListModel::getYourRole(const QString& _aimId)
+    {
+        auto cont = getContactItem(_aimId);
+        if (cont)
+        {
+            return cont->get_chat_role();
+        }
+
+        return QString();
+    }
+
+    void ContactListModel::setYourRole(const QString& _aimId, const QString& _role)
+    {
+        auto cont = getContactItem(_aimId);
+        if (cont)
+        {
+            emit youRoleChanged(_aimId);
+            return cont->set_chat_role(_role);
+        }
     }
 
     void ContactListModel::getIgnoreList()
@@ -1154,7 +1130,16 @@ namespace Logic
         if (idx >= (int) contacts_.size())
             return;
 
-        contacts_[getIndexByOrderedIndex(idx)].set_chat_admin(info->YourRole_ == "admin" || info->YourRole_ == "moder");
+        QString role = info->YourRole_;
+        if (info->YouPending_)
+            role = "pending";
+        else if (!info->YouMember_ || role.isEmpty())
+            role = "notamember";
+
+        if (contacts_[getIndexByOrderedIndex(idx)].get_chat_role() != role)
+            emit youRoleChanged(info->AimId_);
+
+        contacts_[getIndexByOrderedIndex(idx)].set_chat_role(role);
     }
 
 
@@ -1162,11 +1147,17 @@ namespace Logic
     {
         if (_silent)
         {
-            Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-
-            collection.set_value_as_qstring("stamp", _stamp);
-
-            Ui::GetDispatcher()->post_message_to_core("livechat/join", collection.get());
+            getContactProfile(Ui::MyInfo()->aimId(), [_stamp](profile_ptr profile, int32_t)
+            {
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_qstring("stamp", _stamp);
+                if (profile)
+                {
+                    int age = Utils::calcAge(QDateTime::fromMSecsSinceEpoch((qint64)profile->get_birthdate() * 1000, Qt::LocalTime));
+                    collection.set_value_as_int("age", age);
+                }
+                Ui::GetDispatcher()->post_message_to_core("livechat/join", collection.get());
+            });
         }
         else
         {
@@ -1190,7 +1181,7 @@ namespace Logic
         {
             if (iter.value() == current)
             {
-                setCurrent(iter.key(), true, false);
+                setCurrent(iter.key(), -1, true, false);
                 break;
             }
         }
@@ -1212,7 +1203,7 @@ namespace Logic
         {
             if (iter.value() == current)
             {
-                setCurrent(iter.key(), true, false);
+                setCurrent(iter.key(), -1, true, false);
                 break;
             }
         }

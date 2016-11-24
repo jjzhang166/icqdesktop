@@ -1,11 +1,7 @@
 #pragma once
 
 #include "../../../namespaces.h"
-
-namespace Data
-{
-    struct Quote;
-}
+#include "../../../types/message.h"
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
 
@@ -22,6 +18,7 @@ public:
 
         MenuFlagLinkCopyable    = (1 << 0),
         MenuFlagFileCopyable    = (1 << 1),
+        MenuFlagOpenInBrowser   = (1 << 2),
     };
 
     virtual ~IItemBlock() = 0;
@@ -58,7 +55,7 @@ public:
 
     virtual ComplexMessageItem* getParentComplexMessage() const = 0;
 
-    virtual QString getSelectedText() const = 0;
+    virtual QString getSelectedText(bool isFullSelect = false) const = 0;
 
     virtual QString getSourceText() const = 0;
 
@@ -70,13 +67,22 @@ public:
 
     virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) = 0;
     
-    virtual bool replaceBlockWithSourceText(IItemBlock *block) { block; return false; }
+    virtual bool replaceBlockWithSourceText(IItemBlock* /*block*/) { return false; }
 
     virtual bool isSimple() const { return true; }
 
     virtual Data::Quote getQuote() const;
 
+    virtual HistoryControl::StickerInfoSptr getStickerInfo() const;
+
     virtual bool needFormatQuote() const { return true; }
+
+    virtual void setFontSize(int size) { };
+
+    virtual void setTextOpacity(double opacity) { };
+
+    virtual IItemBlock* findBlockUnder(const QPoint &pos) const { return nullptr; }
+
 };
 
 typedef std::vector<IItemBlock*> IItemBlocksVec;

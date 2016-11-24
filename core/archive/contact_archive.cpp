@@ -39,7 +39,7 @@ bool contact_archive::repair_images() const
     return images_->build(*this);
 }
 
-void contact_archive::get_messages(int64_t _from, int64_t _count, history_block& _messages, get_message_policy policy) const
+void contact_archive::get_messages(int64_t _from, int64_t _count, history_block& _messages, get_message_policy policy, bool _to_older) const
 {
     _messages.clear();
 
@@ -48,7 +48,7 @@ void contact_archive::get_messages(int64_t _from, int64_t _count, history_block&
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        index_->serialize_from(_from, _count, headers);
+        index_->serialize_from(_from, _count, headers, _to_older);
         if (headers.empty())
             return;
 
@@ -66,9 +66,15 @@ void contact_archive::get_messages(int64_t _from, int64_t _count, history_block&
     }
 }
 
-void contact_archive::get_messages_index(int64_t _from, int64_t _count, headers_list& _headers) const
+void contact_archive::get_messages_index(int64_t _from, int64_t _count, headers_list& _headers, bool _to_older) const
 {
-    index_->serialize_from(_from, _count, _headers);
+    index_->serialize_from(_from, _count, _headers, _to_older);
+}
+
+bool contact_archive::get_history_file(const std::wstring& _file_name, core::tools::binary_stream& _data
+    , std::shared_ptr<int64_t> _offset, std::shared_ptr<int64_t> _remaining_size, int64_t& _cur_index, std::shared_ptr<int64_t> _mode)
+{
+    return messages_data::get_history_archive(_file_name, _data, _offset, _remaining_size, _cur_index, _mode);
 }
 
 bool contact_archive::get_messages_buddies(std::shared_ptr<archive::msgids_list> _ids, std::shared_ptr<history_block> _messages) const
@@ -296,7 +302,7 @@ void contact_archive::insert_history_block(
     }
 }
 
-int contact_archive::load_from_local()
+int32_t contact_archive::load_from_local()
 {
     if (local_loaded_)
         return 0;

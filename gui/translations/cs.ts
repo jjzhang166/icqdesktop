@@ -175,6 +175,10 @@ fotografii</translation>
         <source>Upload photo</source>
         <translation>Odeslat fotografii</translation>
     </message>
+    <message>
+        <source>Edit photo</source>
+        <translation>Upravit fotografii</translation>
+    </message>
 </context>
 <context>
     <name>chat_event</name>
@@ -552,10 +556,6 @@ fotografii</translation>
         <translation>píše...</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Vytvořit skupinu chatu</translation>
-    </message>
-    <message>
         <source>Video</source>
         <translation>Video</translation>
     </message>
@@ -574,6 +574,26 @@ fotografii</translation>
     <message>
         <source>Search</source>
         <translation>Hledat</translation>
+    </message>
+    <message>
+        <source>CONTACTS</source>
+        <translation>KONTAKTY</translation>
+    </message>
+    <message>
+        <source>ALL MESSAGES</source>
+        <translation>VŠECHNY ZPRÁVY</translation>
+    </message>
+    <message>
+        <source>MESSAGES</source>
+        <translation>ZPRÁVY</translation>
+    </message>
+    <message>
+        <source>Search in all chats</source>
+        <translation>Hledat ve všech chatech</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Vytvořit skupinu chatu</translation>
     </message>
 </context>
 <context>
@@ -728,6 +748,10 @@ fotografii</translation>
     <message>
         <source>Forward</source>
         <translation>Přeposlat</translation>
+    </message>
+    <message>
+        <source>Open in browser</source>
+        <translation>Otevřít v prohlížeči</translation>
     </message>
 </context>
 <context>
@@ -1662,26 +1686,54 @@ fotografii</translation>
     </message>
 </context>
 <context>
-    <name>groupchat_pages</name>
+    <name>groupchats</name>
     <message>
-        <source>Done</source>
-        <translation>Hotovo</translation>
+        <source>Public chat</source>
+        <translation>Veřejný chat</translation>
+    </message>
+    <message>
+        <source>Chat will be visible to everyone</source>
+        <translation>Chat bude vidět každý</translation>
+    </message>
+    <message>
+        <source>Join with Approval</source>
+        <translation>Připojení se schválením</translation>
+    </message>
+    <message>
+        <source>New members are waiting for admin approval</source>
+        <translation>Noví členové čekají na schválení správce</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Jen pro čtení</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Noví členové mohou jen číst, členové schválení správcem mohou odesílat</translation>
+    </message>
+    <message>
+        <source>Select members</source>
+        <translation>Vybrat členy</translation>
     </message>
     <message>
         <source>Next</source>
         <translation>Další</translation>
     </message>
     <message>
-        <source>You are not a member of this groupchat</source>
-        <translation>Nejsi účastníkem tohoto skupinového chatu</translation>
+        <source>Done</source>
+        <translation>Hotovo</translation>
     </message>
     <message>
         <source>Add to chat</source>
         <translation>Přidat do chatu</translation>
     </message>
     <message>
-        <source>Create Groupchat</source>
-        <translation>Vytvořit skupinu chatu</translation>
+        <source>You are not a member of this chat</source>
+        <translation>Nejsi účastníkem tohoto chatu</translation>
+    </message>
+    <message>
+        <source>Chat name</source>
+        <translation>Název chatu</translation>
     </message>
 </context>
 <context>
@@ -1749,6 +1801,18 @@ fotografii</translation>
     <message>
         <source>Send %1 %2 %3 %4</source>
         <translation>Odeslat %1 %2 %3 %4</translation>
+    </message>
+    <message>
+        <source>This chat is read-only</source>
+        <translation>Tento chat je pouze v režimu pro čtení</translation>
+    </message>
+    <message>
+        <source>Leave and delete</source>
+        <translation>Odejít a smazat</translation>
+    </message>
+    <message>
+        <source>You are not a member of this chat. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2050,6 +2114,10 @@ your phone number</source>
         <source>Your name</source>
         <translation>Tvé jméno</translation>
     </message>
+    <message>
+        <source>No messages found</source>
+        <translation>Nebyly nalezeny žádné zprávy</translation>
+    </message>
 </context>
 <context>
     <name>popup_window</name>
@@ -2163,10 +2231,22 @@ your phone number</source>
     </message>
     <message>
         <source>Are you sure you want to forward messages to &lt;USER&gt;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Opravdu chceš přeposlat zprávy uživateli &lt;USER&gt;?</translation>
     </message>
     <message>
         <source>Confirmation</source>
+        <translation>Potvrzení</translation>
+    </message>
+    <message>
+        <source>Chat settings</source>
+        <translation>Nastavení chatu</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to ban user to write in this chat?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to allow user to write in this chat?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2474,7 +2554,7 @@ your phone number</source>
     </message>
     <message>
         <source>Chat list compact mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompaktní režim seznamu chatů</translation>
     </message>
 </context>
 <context>
@@ -2768,6 +2848,50 @@ Uprav telefonní číslo a opakuj akci.</translation>
     <message>
         <source>Birthday</source>
         <translation>narozeniny</translation>
+    </message>
+    <message>
+        <source>Search for messages</source>
+        <translation>Hledat zprávy</translation>
+    </message>
+    <message>
+        <source>Link to chat</source>
+        <translation>Odkaz na chat</translation>
+    </message>
+    <message>
+        <source>Ability to join chat by link</source>
+        <translation>Možnost připojit se k chatu pomocí odkazu</translation>
+    </message>
+    <message>
+        <source>Read only</source>
+        <translation>Jen pro čtení</translation>
+    </message>
+    <message>
+        <source>New members can read, approved by admin members can send</source>
+        <translation>Noví členové mohou jen číst, členové schválení správcem mohou odesílat</translation>
+    </message>
+    <message>
+        <source>Age restriction</source>
+        <translation>Věkové omezení</translation>
+    </message>
+    <message>
+        <source>Members must be of legal age to join</source>
+        <translation>Členové musí být plnoletí, aby se mohli připojit</translation>
+    </message>
+    <message>
+        <source>Unfortunatelly, you have been deleted and cannot see the members of this chat or message them.</source>
+        <translation>Bohužel jsi byl/a vymazán/a a nemůžeš vidět členy tohoto chatu ani jim psát.</translation>
+    </message>
+    <message>
+        <source>Create groupchat</source>
+        <translation>Vytvořit skupinu chatu</translation>
+    </message>
+    <message>
+        <source>Ban to write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow to write</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

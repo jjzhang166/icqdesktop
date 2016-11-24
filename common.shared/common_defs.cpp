@@ -27,3 +27,11 @@ namespace common
     }
 }
 #endif // _WIN32
+
+namespace common
+{
+    uint32_t get_limit_search_results()
+    {
+        return 100;
+    }
+}

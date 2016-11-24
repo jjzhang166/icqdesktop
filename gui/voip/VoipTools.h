@@ -19,14 +19,32 @@ namespace voipTools
     template<typename __Base> class BoundBox : public __Base
     {
     public:
-        template<typename Param1> BoundBox(Param1 par1)
-            :__Base(par1) { }
+
+		// It is cool solution for this class, but i cannot compile it.
+		//template<typename... T2>
+		//	BoundBox(T2... params)	: __Base(params...) { }
+
+		template<typename Param1> BoundBox(Param1 par1)
+			:__Base(par1) { }
 
         template<typename Param1, typename Param2> BoundBox(
             Param1 par1,
             Param2 par2)
             :__Base(par1, par2) { }
 
+		template<typename Param1, typename Param2, typename Param3> BoundBox(
+			Param1 par1,
+			Param2 par2,
+			Param3 par3)
+			: __Base(par1, par2, par3) { }
+
+		template<typename Param1, typename Param2, typename Param3, typename Param4> BoundBox(
+			Param1 par1,
+			Param2 par2,
+			Param3 par3,
+			Param4 par4)
+			: __Base(par1, par2, par3, par4) { }
+		
         template<typename Param1, typename Param2, typename Param3, typename Param4, typename Param5> BoundBox(
             Param1 par1,
             Param2 par2,

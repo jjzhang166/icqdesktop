@@ -13,6 +13,7 @@
 
 #define COLOR_SECURE_BTN_ACTIVE   QColor(255, 255, 255, 255)
 #define COLOR_SECURE_BTN_INACTIVE QColor(255, 255, 255, 0)
+#define CLOSE_BUTTON_FIXED_SIZE SCALED_VALUE(32)
 
 #ifdef __APPLE__
     const QString minButtonStyle =
@@ -89,7 +90,7 @@ std::string Ui::getFotmatedTime(unsigned _ts)
 }
 
 Ui::MoveablePanel::MoveablePanel(QWidget* _parent)
-    : QWidget(_parent, Qt::Window | Qt::FramelessWindowHint)
+    : BaseTopVideoPanel(_parent)
     , parent_(_parent)
 {
     dragState_.isDraging = false;
@@ -103,7 +104,13 @@ Ui::MoveablePanel::~MoveablePanel()
 
 void Ui::MoveablePanel::mouseReleaseEvent(QMouseEvent* /*e*/)
 {
-    dragState_.isDraging = false;
+    // We check visible flag for drag&drop, because mouse events
+    // were be called when window is invisible by VideoWindow.
+    if (isVisible())
+    {
+        grabMouse = false;
+        dragState_.isDraging = false;
+    }
 }
 
 void Ui::MoveablePanel::resizeEvent(QResizeEvent* _e)
@@ -126,8 +133,9 @@ void Ui::MoveablePanel::resizeEvent(QResizeEvent* _e)
 
 void Ui::MoveablePanel::mousePressEvent(QMouseEvent* _e)
 {
-    if (parent_ && !parent_->isFullScreen())
+    if (isVisible() && parent_ && !parent_->isFullScreen() && (_e->buttons() & Qt::LeftButton))
     {
+        grabMouse = true;
         dragState_.isDraging = true;
         dragState_.posDragBegin = _e->pos();
     }
@@ -135,7 +143,7 @@ void Ui::MoveablePanel::mousePressEvent(QMouseEvent* _e)
 
 void Ui::MoveablePanel::mouseMoveEvent(QMouseEvent* _e)
 {
-    if ((_e->buttons() & Qt::LeftButton) && dragState_.isDraging)
+    if (isVisible() && (_e->buttons() & Qt::LeftButton) && dragState_.isDraging)
     {
         QPoint diff = _e->pos() - dragState_.posDragBegin;
         QPoint newpos = parent_->pos() + diff;
@@ -316,6 +324,11 @@ Ui::VideoPanelHeader::VideoPanelHeader(QWidget* _parent, int _items)
     if (itemsToShow_ & kVPH_ShowClose)
     {
         btnClose_ = addButton(Ui::CommonStyle::getCloseButtonStyle(), SLOT(_onClose()));
+        
+#ifdef __APPLE__
+        // Force set size for close button, becuase it should be square.
+        btnClose_->setFixedSize(CLOSE_BUTTON_FIXED_SIZE, CLOSE_BUTTON_FIXED_SIZE);
+#endif
     }
 }
 
@@ -404,6 +417,12 @@ void Ui::VideoPanelHeader::setSecureWndOpened(const bool _opened)
             callTime_->setColorForState(PushButton_t::pressed, secureCallEnabled_ ? COLOR_SECURE_BTN_ACTIVE: COLOR_SECURE_BTN_INACTIVE);
 
             callTime_->setCursor(secureCallEnabled_ ? QCursor(Qt::PointingHandCursor) : QCursor(Qt::ArrowCursor));
+            
+#ifdef __APPLE__
+            // On mac button does not recive mouse leave event.
+            // Reset state force.
+            callTime_->setState(PushButton_t::normal);
+#endif
         }
     }
 }
