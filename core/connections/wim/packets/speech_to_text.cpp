@@ -59,11 +59,6 @@ int32_t speech_to_text::init_request(std::shared_ptr<core::http_request_simple> 
     return 0;
 }
 
-int32_t speech_to_text::execute()
-{
-    return wim_packet::execute();
-}
-
 int32_t speech_to_text::execute_request(std::shared_ptr<core::http_request_simple> request)
 {
     if (!request->get())

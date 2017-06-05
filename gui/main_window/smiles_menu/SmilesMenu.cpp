@@ -2,6 +2,9 @@
 #include "SmilesMenu.h"
 
 #include "toolbar.h"
+#include "../ContactDialog.h"
+#include "../input_widget/InputWidget.h"
+#include "../MainWindow.h"
 #include "../../core_dispatcher.h"
 #include "../../gui_settings.h"
 #include "../../cache/emoji/Emoji.h"
@@ -11,6 +14,7 @@
 #include "../../themes/ResourceIds.h"
 #include "../../themes/ThemePixmap.h"
 #include "../../utils/gui_coll_helper.h"
+#include "../../utils/InterConnector.h"
 #include "../../utils/utils.h"
 
 namespace Ui
@@ -230,7 +234,7 @@ namespace Ui
     // TableView class
     //////////////////////////////////////////////////////////////////////////
     EmojiTableView::EmojiTableView(QWidget* _parent, EmojiViewItemModel* _model)
-        :	QTableView(_parent), model_(_model), itemDelegate_(new EmojiTableItemDelegate)
+        :	QTableView(_parent), model_(_model), itemDelegate_(new EmojiTableItemDelegate(this))
     {
         setModel(model_);
         setItemDelegate(itemDelegate_);
@@ -296,6 +300,22 @@ namespace Ui
     //////////////////////////////////////////////////////////////////////////
     // EmojiTableItemDelegate
     //////////////////////////////////////////////////////////////////////////
+    EmojiTableItemDelegate::EmojiTableItemDelegate(QObject* parent)
+        : QItemDelegate(parent)
+        , Prop_(0)
+    {
+        Animation_ = new QPropertyAnimation(this, "prop");
+    }
+
+    void EmojiTableItemDelegate::animate(const QModelIndex& index, int start, int end, int duration)
+    {
+        AnimateIndex_ = index;
+        Animation_->setStartValue(start);
+        Animation_->setEndValue(end);
+        Animation_->setDuration(duration);
+        Animation_->start();
+    }
+
     void EmojiTableItemDelegate::paint(QPainter* _painter, const QStyleOptionViewItem&, const QModelIndex& _index) const
     {
         const EmojiViewItemModel *itemModel = (EmojiViewItemModel *)_index.model();
@@ -304,7 +324,15 @@ namespace Ui
         int row = _index.row();
         int spacing = itemModel->spacing();
         int size = (int)getPickerEmojiSize() / Utils::scale_bitmap(1);
-        _painter->drawPixmap(col * (size + Utils::scale_value(spacing)), row * (size + Utils::scale_value(spacing)), size, size, data);
+        int smileSize = size;
+        int addSize = 0;
+        if (AnimateIndex_ == _index)
+        {
+            size = size * Prop_ / Animation_->endValue().toFloat();
+            addSize = (smileSize - size) / 2;
+        }
+
+        _painter->drawPixmap(col * (smileSize + Utils::scale_value(spacing)) + addSize, row * (smileSize + Utils::scale_value(spacing)) + addSize, size, size, data);
     }
 
     QSize EmojiTableItemDelegate::sizeHint(const QStyleOptionViewItem&, const QModelIndex&) const
@@ -313,14 +341,20 @@ namespace Ui
         return QSize(size, size);
     }
 
+    void EmojiTableItemDelegate::setProp(int val)
+    {
+        Prop_ = val;
+        if (AnimateIndex_.isValid())
+            emit ((QAbstractItemModel*)AnimateIndex_.model())->dataChanged(AnimateIndex_, AnimateIndex_);
+    }
+
     //////////////////////////////////////////////////////////////////////////
     // EmojiViewWidget
     //////////////////////////////////////////////////////////////////////////
     EmojisWidget::EmojisWidget(QWidget* _parent)
         :	QWidget(_parent)
     {
-        QVBoxLayout* vLayout = new QVBoxLayout();
-        vLayout->setContentsMargins(0, 0, 0, 0);
+        QVBoxLayout* vLayout = Utils::emptyVLayout();
         setLayout(vLayout);
 
         QLabel* setHeader = new QLabel(this);
@@ -840,8 +874,7 @@ namespace Ui
     {
         if (!initialized_)
         {
-            vLayout_ = new QVBoxLayout();
-            vLayout_->setContentsMargins(0, 0, 0, 0);
+            vLayout_ = Utils::emptyVLayout();
         }
         
         for (auto stickersSetId : Stickers::getStickersSets())
@@ -896,8 +929,7 @@ namespace Ui
         if (vLayout_)
             return;
 
-        vLayout_ = new QVBoxLayout();
-        vLayout_->setContentsMargins(0, 0, 0, 0);
+        vLayout_ = Utils::emptyVLayout();
 
         QLabel* setHeader = new QLabel(this);
         setHeader->setObjectName("set_header");
@@ -964,7 +996,7 @@ namespace Ui
         ++count;
 
         auto sticks = get_gui_settings()->get_value<std::vector<int32_t>>(settings_recents_stickers, std::vector<int32_t>());
-        if (sticks.size() == 0 || (sticks.size() % 2 != 0))
+        if (sticks.empty() || (sticks.size() % 2 != 0))
             return;
 
         init();
@@ -1018,7 +1050,7 @@ namespace Ui
     void RecentsWidget::initEmojisFromSettings()
     {
         auto emojis = get_gui_settings()->get_value<std::vector<int32_t>>(settings_recents_emojis, std::vector<int32_t>());
-        if (emojis.size() == 0 || (emojis.size() % 2 != 0))
+        if (emojis.empty() || (emojis.size() % 2 != 0))
             return;
 
         init();
@@ -1072,8 +1104,7 @@ namespace Ui
         , blockToolbarSwitch_(false)
         , stickerMetaRequested_(false)
     {
-        rootVerticalLayout_ = new QVBoxLayout(this);
-        rootVerticalLayout_->setContentsMargins(0, 0, 0, 0);
+        rootVerticalLayout_ = Utils::emptyVLayout(this);
         setLayout(rootVerticalLayout_);
 
         setStyleSheet(Utils::LoadStyle(":/main_window/smiles_menu/smiles_menu.qss"));
@@ -1170,8 +1201,16 @@ namespace Ui
     {
         isVisible_ = !isVisible_;
 
-        int start_value = isVisible_ ? 0 : Utils::scale_value(320);
-        int end_value = isVisible_ ? Utils::scale_value(320) : 0;
+        auto mainWindow = Utils::InterConnector::instance().getMainWindow();
+        int pickerDefaultHeight = Utils::scale_value(320);
+        int minTopMargin = Utils::scale_value(160);
+        InputWidget* input = Utils::InterConnector::instance().getContactDialog()->getInputWidget();
+        int inputWidgetHeight = input->get_current_height();
+        auto pickerHeight =
+            ((mainWindow->height() - pickerDefaultHeight - inputWidgetHeight) > minTopMargin) ?
+            pickerDefaultHeight : (mainWindow->height() - minTopMargin - inputWidgetHeight);
+        int start_value = isVisible_ ? 0 : pickerHeight;
+        int end_value = isVisible_ ? pickerHeight : 0;
 
         QEasingCurve easing_curve = QEasingCurve::InQuad;
         int duration = 200;

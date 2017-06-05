@@ -39,7 +39,7 @@ bool contact_archive::repair_images() const
     return images_->build(*this);
 }
 
-void contact_archive::get_messages(int64_t _from, int64_t _count, history_block& _messages, get_message_policy policy, bool _to_older) const
+void contact_archive::get_messages(int64_t _from, int64_t _count_early, int64_t _count_later, history_block& _messages, get_message_policy policy) const
 {
     _messages.clear();
 
@@ -48,7 +48,7 @@ void contact_archive::get_messages(int64_t _from, int64_t _count, history_block&
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        index_->serialize_from(_from, _count, headers, _to_older);
+        index_->serialize_from(_from, _count_early, _count_later, headers);
         if (headers.empty())
             return;
 
@@ -66,9 +66,9 @@ void contact_archive::get_messages(int64_t _from, int64_t _count, history_block&
     }
 }
 
-void contact_archive::get_messages_index(int64_t _from, int64_t _count, headers_list& _headers, bool _to_older) const
+void contact_archive::get_messages_index(int64_t _from, int64_t _count_early, int64_t _count_later, headers_list& _headers) const
 {
-    index_->serialize_from(_from, _count, _headers, _to_older);
+    index_->serialize_from(_from, _count_early, _count_later, _headers);
 }
 
 bool contact_archive::get_history_file(const std::wstring& _file_name, core::tools::binary_stream& _data
@@ -326,6 +326,11 @@ int32_t contact_archive::load_from_local()
 bool contact_archive::get_next_hole(int64_t _from, archive_hole& _hole, int64_t _depth)
 {
     return index_->get_next_hole(_from, _hole, _depth);
+}
+
+int64_t contact_archive::validate_hole_request(const archive_hole& _hole, const int32_t _count)
+{
+    return index_->validate_hole_request(_hole, _count);
 }
 
 bool contact_archive::need_optimize()

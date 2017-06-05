@@ -19,7 +19,7 @@
 namespace
 {
     const qreal backgroundOpacity = 0.8;
-    const QBrush backgroundColor = QColor::fromRgb(0, 0, 0);
+    const QBrush backgroundColor(QColor("#000000"));
     const int smallSpacing = 8;
     const int largeSpacing = 24;
     const int cacheSize = 5; // odd number only
@@ -40,12 +40,15 @@ Previewer::GalleryWidget::GalleryWidget(QWidget* _parent)
     , navigationKeyPressed_(false)
     , initComplete_(false)
     , cacheLoaded_(false)
+    , ref_(new bool(false))
 {
     assert(cacheSize % 2);
 
     setMouseTracking(true);
 
     QHBoxLayout* buttonWrapperLayout = new QHBoxLayout();
+    buttonWrapperLayout->addWidget(createZoomFrame());
+    buttonWrapperLayout->addSpacing(Utils::scale_value(smallSpacing));
     buttonWrapperLayout->addWidget(createButtonFrame());
     buttonWrapperLayout->addSpacing(Utils::scale_value(smallSpacing));
     buttonWrapperLayout->addWidget(createCloseFrame());
@@ -66,8 +69,7 @@ Previewer::GalleryWidget::GalleryWidget(QWidget* _parent)
     imageOrDownload_->addWidget(imageViewer_);
     imageOrDownload_->setCurrentIndex(ImageIndex);
 
-    QVBoxLayout* layout = new QVBoxLayout();
-    layout->setContentsMargins(0, 0, 0, 0);
+    QVBoxLayout* layout = Utils::emptyVLayout();
     layout->addSpacing(Utils::scale_value(largeSpacing));
     layout->addLayout(imageOrDownload_);
     layout->addSpacing(Utils::scale_value(largeSpacing));
@@ -77,7 +79,11 @@ Previewer::GalleryWidget::GalleryWidget(QWidget* _parent)
     setLayout(layout);
 
     setAttribute(Qt::WA_TranslucentBackground);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
+#ifdef __linux__
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
+#else
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+#endif //__linux__
 
     scrollTimer_ = new QTimer(this);
     connect(scrollTimer_, &QTimer::timeout, scrollTimer_, &QTimer::stop);
@@ -122,6 +128,7 @@ void Previewer::GalleryWidget::openGallery(const QString& _aimId, const Data::Im
     setFirstImage(_image, _localPath);
 
     grabKeyboard();
+    grabGesture(Qt::PinchGesture);
 }
 
 void Previewer::GalleryWidget::closeGallery()
@@ -134,6 +141,8 @@ void Previewer::GalleryWidget::closeGallery()
 
     releaseKeyboard();
     Ui::MainPage::instance()->getContactDialog()->setFocusOnInputWidget();
+
+    ungrabGesture(Qt::PinchGesture);
 
     for (auto& loader : loaders_)
         loader.reset();
@@ -157,21 +166,42 @@ void Previewer::GalleryWidget::moveToScreen()
     setGeometry(screenGeometry);
 }
 
+QFrame* Previewer::GalleryWidget::createZoomFrame()
+{
+    auto zoomFrame = new GalleryFrame(this);
+
+    zoomFrame->addSpace(GalleryFrame::SpaceSize::Small);
+
+    zoomOut_ = zoomFrame->addButton("zoom_minus", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
+    zoomOut_->setDisabled(false);
+    connect(zoomOut_, &QPushButton::clicked, this, &GalleryWidget::onZoomOut);
+
+    zoomFrame->addSpace(GalleryFrame::SpaceSize::Medium);
+
+    zoomIn_ = zoomFrame->addButton("zoom", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
+    zoomIn_->setDisabled(false);
+    connect(zoomIn_, &QPushButton::clicked, this, &GalleryWidget::onZoomIn);
+
+    zoomFrame->addSpace(GalleryFrame::SpaceSize::Small);
+
+    return zoomFrame;
+}
+
 QFrame* Previewer::GalleryWidget::createButtonFrame()
 {
     auto buttonsFrame = new GalleryFrame(this);
 
     buttonsFrame->addSpace(GalleryFrame::SpaceSize::Small);
 
-    next_ = buttonsFrame->addButton("prev", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
-    next_->setDisabled(true);
-    connect(next_, &QPushButton::clicked, this, &GalleryWidget::onNextClicked);
+    prev_ = buttonsFrame->addButton("prev", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
+    prev_->setDisabled(true);
+    connect(prev_, &QPushButton::clicked, this, &GalleryWidget::onPrevClicked);
 
     buttonsFrame->addSpace(GalleryFrame::SpaceSize::Medium);
 
-    prev_ = buttonsFrame->addButton("next", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
-    prev_->setDisabled(true);
-    connect(prev_, &QPushButton::clicked, this, &GalleryWidget::onPrevClicked);
+    next_ = buttonsFrame->addButton("next", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
+    next_->setDisabled(true);
+    connect(next_, &QPushButton::clicked, this, &GalleryWidget::onNextClicked);
 
     buttonsFrame->addSpace(GalleryFrame::SpaceSize::Large);
 
@@ -181,7 +211,7 @@ QFrame* Previewer::GalleryWidget::createButtonFrame()
 
     buttonsFrame->addSpace(GalleryFrame::SpaceSize::Large);
 
-    save_ = buttonsFrame->addButton("download", GalleryFrame::Disabled | GalleryFrame::Active | GalleryFrame::Hover | GalleryFrame::Pressed);
+    save_ = buttonsFrame->addButton("download", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
     save_->setEnabled(false);
     connect(save_, &QPushButton::clicked, this, &GalleryWidget::onSaveClicked);
 
@@ -225,12 +255,12 @@ void Previewer::GalleryWidget::keyPressEvent(QKeyEvent* _event)
     {
         closeGallery();
     }
-    else if (key == Qt::Key_Right && hasPrev())
+    else if (key == Qt::Key_Left && hasPrev())
     {
         navigationKeyPressed_ = true;
         prev();
     }
-    else if (key == Qt::Key_Left && hasNext())
+    else if (key == Qt::Key_Right && hasNext())
     {
         navigationKeyPressed_ = true;
         next();
@@ -244,6 +274,14 @@ void Previewer::GalleryWidget::keyReleaseEvent(QKeyEvent* _event)
     {
         navigationKeyPressed_ = false;
         startLoading();
+    }
+    else if (key == Qt::Key_Plus || key == Qt::Key_Equal)
+    {
+        onZoomIn();
+    }
+    else if (key == Qt::Key_Minus)
+    {
+        onZoomOut();
     }
 }
 
@@ -294,8 +332,8 @@ void Previewer::GalleryWidget::onIteratorUpdated()
 
 void Previewer::GalleryWidget::updateButtonFrame()
 {
-    next_->setEnabled(hasNext());
     prev_->setEnabled(hasPrev());
+    next_->setEnabled(hasNext());
 
     if (cacheLoaded_)
         info_->setText(getInfoText(imageIterator_->getNumber(), imageIterator_->getTotal()));
@@ -335,20 +373,28 @@ void Previewer::GalleryWidget::onSaveClicked()
 
     auto& loader = currentLoader();
 
-    QString dir;
-    QString name;
+#ifdef __linux__
+    releaseKeyboard();
+#endif
 
-    if (!Utils::saveAs(loader.getFileName(), name, dir, false))
+    std::weak_ptr<bool> wr_ref = ref_;
+    Utils::saveAs(loader.getFileName(), [this, wr_ref](const QString& name, const QString& dir)
     {
-        return;
-    }
+        auto ref = wr_ref.lock();
+        if (!ref)
+            return;
 
-    save_->setActive(true);
-    const bool success = QFile::copy(loader.getLocalFileName(), QFileInfo(dir, name).absoluteFilePath());
-    (void) success; // supress warning
-    save_->setActive(false);
+#ifdef __linux__
+        grabKeyboard();
+#endif
 
-    assert(success);
+        save_->setActive(true);
+        const bool success = QFile::copy(currentLoader().getLocalFileName(), QFileInfo(dir, name).absoluteFilePath());
+        (void) success; // supress warning
+        save_->setActive(false);
+
+        assert(success);
+    }, false);
 }
 
 void Previewer::GalleryWidget::onImageLoaded()
@@ -371,6 +417,26 @@ void Previewer::GalleryWidget::onCacheLoaded()
     updateButtonFrame();
 }
 
+void Previewer::GalleryWidget::onZoomIn()
+{
+    if (!imageViewer_->canZoomIn())
+        return;
+
+    imageViewer_->zoomIn();
+    zoomIn_->setEnabled(imageViewer_->canZoomIn());
+    zoomOut_->setEnabled(true);
+}
+
+void Previewer::GalleryWidget::onZoomOut()
+{
+    if (!imageViewer_->canZoomOut())
+        return;
+
+    imageViewer_->zoomOut();
+    zoomIn_->setEnabled(true);
+    zoomOut_->setEnabled(imageViewer_->canZoomOut());
+}
+
 void Previewer::GalleryWidget::showImage(const QPixmap& _preview, const QString& _fileName)
 {
     delayTimer_->stop();
@@ -378,6 +444,8 @@ void Previewer::GalleryWidget::showImage(const QPixmap& _preview, const QString&
     imageOrDownload_->setCurrentIndex(ImageIndex);
     imageViewer_->showImage(_preview, _fileName);
     updateButtonFrame();
+    zoomIn_->setEnabled(true);
+    zoomOut_->setEnabled(true);
 }
 
 void Previewer::GalleryWidget::showProgress()

@@ -33,7 +33,8 @@ namespace Ui
     class TrayIcon;
     class HistoryControlPage;
     class BackgroundWidget;
-    class MultimediaViewer;
+    class DialogPlayer;
+
 
     class ShadowWindow : public QWidget
     {
@@ -85,7 +86,7 @@ Q_SIGNALS:
     public Q_SLOTS:
         void showPromoPage();
         void closePromoPage();
-        void showLoginPage();
+        void showLoginPage(const bool _is_auth_error);
         void showMainPage();
         void showMigrateAccountPage(QString _accountId);
         void checkForUpdates();
@@ -128,14 +129,14 @@ Q_SIGNALS:
         void onAppConfig();
 
     public:
-        MainWindow(QApplication* _app);
+        MainWindow(QApplication* _app, const bool _has_valid_login);
         ~MainWindow();
 
         void openGallery(const QString& _aimId, const Data::Image& _image, const QString& _localPath);
         void closeGallery();
 
-        void playVideo(const QString& _path);
-        void closeVideo();
+        void openPlayerFullscreen(DialogPlayer* _parent);
+        void closePlayer();
 
         void activateFromEventLoop();
         bool isActive() const;
@@ -144,6 +145,7 @@ Q_SIGNALS:
 
         int getScreen() const;
         void skipRead(); //skip next sending last read by window activation
+        void hideMenu();
 
         HistoryControlPage* getHistoryPage(const QString& _aimId) const;
         MainPage* getMainPage() const;
@@ -159,6 +161,8 @@ Q_SIGNALS:
         void showMenuBarIcon(bool _show);
         void setFocusOnInput();
         void onSendMessage(const QString&);
+
+        int getTitleHeight() const;
 
     private:
         void initSizes();
@@ -206,7 +210,7 @@ Q_SIGNALS:
         BackgroundWidget *stackedWidget_;
         ShadowWindow* Shadow_;
         CallPanelMainEx* callPanelMainEx;
-        MultimediaViewer* mplayer_;
+        DialogPlayer* ffplayer_;
 
         bool SkipRead_;
         bool TaskBarIconHidden_;

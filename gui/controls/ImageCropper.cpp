@@ -181,7 +181,9 @@ namespace Ui
             QPainterPath p;
             p.addRect(pimpl->croppingRect);
             p.addRect(this->rect());
-            widgetPainter.setBrush(QBrush(QColor(0, 0, 0, 255 * 0.6)));
+            QColor foggingColor("#000000");
+            foggingColor.setAlphaF(0.6);
+            widgetPainter.setBrush(QBrush(foggingColor));
             widgetPainter.setPen(Qt::transparent);
             widgetPainter.drawPath(p);
 

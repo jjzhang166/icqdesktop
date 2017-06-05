@@ -51,8 +51,6 @@ public:
 
     bool hasActionButton() const;
 
-    virtual bool hasRightStatusPadding() const override;
-
     bool hasTitle() const;
 
     void hideActionButton();
@@ -62,6 +60,8 @@ public:
     virtual bool isSelected() const override;
 
     virtual void onVisibilityChanged(const bool isVisible) override;
+
+    virtual void onDistanceToViewportChanged(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect) override;
 
     virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
 
@@ -79,8 +79,14 @@ public:
 
     virtual void setTextOpacity(double opacity) override;
 
+    virtual ContentType getContentType() const { return IItemBlock::Link; }
+
+    virtual void connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover) override;
+
+    virtual void setQuoteSelection() override;
+
 protected:
-    virtual void drawBlock(QPainter &p) override;
+    virtual void drawBlock(QPainter &p, const QRect& _rect, const QColor& quate_color) override;
 
     virtual void initialize() override;
 
@@ -176,7 +182,13 @@ private:
 
     void connectSignals(const bool isConnected);
 
-    Ui::TextEditEx* createTextEditControl(const QString &text, const QFont &font);
+    enum class TextOptions
+    {
+        PlainText,
+        ClickableLinks
+    };
+
+    Ui::TextEditEx* createTextEditControl(const QString &text, const QFont &font, TextOptions options);
 
     void drawFavicon(QPainter &p);
 
@@ -197,7 +209,6 @@ private:
     QSize scalePreviewSize(const QSize &size) const;
 
     void updateRequestId();
-
 };
 
 UI_COMPLEX_MESSAGE_NS_END

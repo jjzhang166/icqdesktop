@@ -20,7 +20,8 @@ namespace ComplexMessageItemBuilder
         const QString &senderFriendly,
         const QList<Data::Quote>& quotes,
         HistoryControl::StickerInfoSptr sticker,
-        const bool isOutgoing);
+        const bool isOutgoing,
+        const bool isNotAuth);
 
 }
 

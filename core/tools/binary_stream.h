@@ -107,6 +107,8 @@ namespace core
                 write((const char*) &_val, sizeof(t_));
             }
 
+            void write_stream(std::istream& _source);
+
             void write(const char* _data, uint32_t _size)
             {
                 if (_size == 0)
@@ -114,7 +116,7 @@ namespace core
 
                 uint32_t size_need = input_cursor_ + _size;
                 if (size_need > buffer_.size())
-                    buffer_.resize(size_need*2);
+                    buffer_.resize(size_need + 1); // +1 it '\0' at the end of the buffer
 
                 memcpy(&buffer_[input_cursor_], _data, _size);
                 input_cursor_ += _size;

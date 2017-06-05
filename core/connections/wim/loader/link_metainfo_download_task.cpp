@@ -8,7 +8,7 @@
 #include "../../../disk_cache/disk_cache.h"
 #include "../../../disk_cache/cache_entity_type.h"
 
-#include "loader_errors.h"
+#include "../../../../common.shared/loader_errors.h"
 #include "loader_helpers.h"
 #include "preview_proxy.h"
 #include "tasks_runner_slot.h"
@@ -121,9 +121,10 @@ loader_errors link_metainfo_download_task::run()
     const auto signed_request_uri = sign_loader_uri(preview_proxy::uri::get_preview(), wim_params, ext_params);
     request.set_url(signed_request_uri);
 
-    request.set_need_log(false);
+    request.set_need_log(get_wim_params().full_log_);
     request.set_keep_alive();
     request.set_connect_timeout(1000);
+    request.replace_host(wim_params.hosts_);
 
     if (!request.get())
     {

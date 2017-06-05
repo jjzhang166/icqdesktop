@@ -4,7 +4,8 @@
 #include "../../../log/log.h"
 #include "../../../utils.h"
 
-#include "loader_errors.h"
+#include "../../../../common.shared/loader_errors.h"
+
 #include "loader_helpers.h"
 #include "snap_metainfo.h"
 #include "tasks_runner_slot.h"
@@ -92,9 +93,10 @@ loader_errors snap_metainfo_download_task::run()
     const auto signed_request_uri = sign_loader_uri(snaps::uri::get_metainfo(), wim_params, ext_params);
     request.set_url(signed_request_uri);
 
-    request.set_need_log(false);
+    request.set_need_log(wim_params.full_log_);
     request.set_keep_alive();
     request.set_connect_timeout(1000);
+    request.replace_host(wim_params.hosts_);
 
     if (!request.get())
     {
@@ -122,7 +124,7 @@ loader_errors snap_metainfo_download_task::run()
     json.assign(str, str + response_size);
     json.push_back('\0');
 
-    snap_metainfo_ = snaps::parse_json(json.data());
+    snap_metainfo_ = snaps::parse_json(json.data(), ttl_id_);
     if (!snap_metainfo_)
     {
         return loader_errors::invalid_json;

@@ -10,16 +10,26 @@ QFont getTextFont(int size = -1);
 QColor getTextColor(double opacity = 1.0);
 
 QColor getTimeColor();
+QColor getChatEventColor();
+QColor getTypingColor();
+
+QColor getSenderColor();
+QFont getSenderFont();
 
 QFont getTimeFont();
 
-QColor getIncomingBodyColorA(const double alpha);
+int32_t getTimeMarginX();
+int32_t getTimeMarginY();
 
-QColor getOutgoingBodyColorA(const double alpha);
+int32_t getTimeMaxWidth();
 
-QColor getIncomingBodyColorB(const double alpha);
+QColor getIncomingBodyColorA();
 
-QColor getOutgoingBodyColorB(const double alpha);
+QColor getOutgoingBodyColorA();
+
+QColor getIncomingBodyColorB();
+
+QColor getOutgoingBodyColorB();
 
 QBrush getBodyBrush(const bool isOutgoing, const bool isSelected, const int theme_id);
 
@@ -33,8 +43,6 @@ int32_t getLeftMargin(const bool isOutgoing);
 
 int32_t getRightMargin(const bool isOutgoing);
 
-int32_t getTimeMargin();
-
 int32_t getAvatarSize();
 
 int32_t getAvatarRightMargin();
@@ -46,16 +54,6 @@ int32_t getLastReadAvatarSize();
 int32_t getLastReadAvatarMargin();
 
 int32_t getHistoryWidgetMaxWidth();
-
-QSize getImagePlaceholderSize();
-
-QBrush getImagePlaceholderBrush();
-
-QBrush getImageShadeBrush();
-
-QSize getMinPreviewSize();
-
-QSizeF getMinPreviewSizeF();
 
 QFont getRotatingProgressBarTextFont();
 

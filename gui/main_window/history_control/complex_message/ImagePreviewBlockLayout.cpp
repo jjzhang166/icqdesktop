@@ -31,13 +31,13 @@ QSize ImagePreviewBlockLayout::blockSizeForMaxWidth(const int32_t maxWidth)
     auto previewSize = (
         block.hasPreview() ?
             Utils::scale_value(block.getPreviewSize()) :
-            MessageStyle::getImagePlaceholderSize());
+            Style::Preview::getImagePlaceholderSize());
 
-    const auto maxSizeWidth = std::min(maxWidth, Style::getImageWidthMax());
+    const auto maxSizeWidth = std::min(maxWidth, Style::Preview::getImageWidthMax());
 
     const QSize maxSize(
         maxSizeWidth,
-        Style::getImageHeightMax());
+        Style::Preview::getImageHeightMax());
 
     previewSize = limitSize(previewSize, maxSize);
 
@@ -96,15 +96,15 @@ void ImagePreviewBlockLayout::setPreviewGeometry(const QRect &blockLtr, ImagePre
     auto previewSize = (
         block.hasPreview() ?
             Utils::scale_value(block.getPreviewSize()) :
-            MessageStyle::getImagePlaceholderSize());
+            Style::Preview::getImagePlaceholderSize());
 
-    auto maxSizeWidth = std::min(blockLtr.width(), Style::getImageWidthMax());
+    auto maxSizeWidth = std::min(blockLtr.width(), Style::Preview::getImageWidthMax());
     if (block.getMaxPreviewWidth())
         maxSizeWidth = std::min(maxSizeWidth, block.getMaxPreviewWidth());
 
     const QSize maxSize(
         maxSizeWidth,
-        Style::getImageHeightMax());
+        Style::Preview::getImageHeightMax());
 
     previewSize = limitSize(previewSize, maxSize);
 

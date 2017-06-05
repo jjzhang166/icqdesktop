@@ -21,6 +21,7 @@
 #include "../../main_window/contact_list/ContactListModel.h"
 
 #include "../utils.h"
+#include "../launch.h"
 #include "../InterConnector.h"
 
 #import "mac_support.h"
@@ -29,6 +30,8 @@
 #include <objc/objc.h>
 #include <objc/message.h>
 #include <objc/runtime.h>
+
+#import <SystemConfiguration/SystemConfiguration.h>
 
 enum
 {
@@ -67,21 +70,33 @@ static NSString * fromQString(const QString & src)
     return (NSString *)CFBridgingRelease(src.toCFString());
 }
 
-@interface AppDelegate : NSObject
-- (void)handleURLEvent:(NSAppleEventDescriptor*)event
-        withReplyEvent:(NSAppleEventDescriptor*)replyEvent;
+@interface AppDelegate: NSObject<NSApplicationDelegate>
+- (void)handleURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent;
+//- (void)applicationDidFinishLaunching:(NSNotification *)notification;
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
 @end
 
 @implementation AppDelegate
-- (void)handleURLEvent:(NSAppleEventDescriptor*)event
-        withReplyEvent:(NSAppleEventDescriptor*)replyEvent
+
+- (void)handleURLEvent:(NSAppleEventDescriptor*)event withReplyEvent:(NSAppleEventDescriptor*)replyEvent
 {
     NSString* url = [[event paramDescriptorForKeyword:keyDirectObject]
                      stringValue];
     
     emit Utils::InterConnector::instance().schemeUrlClicked(QString::fromNSString(url));
 }
+
+//- (void)applicationDidFinishLaunching:(NSNotification *)notification
+//{
+//    auto args = [[NSProcessInfo processInfo] arguments];
+//    char *argv[(const int)args.count];
+//    int i = 0;
+//    for (NSString *arg: args)
+//    {
+//        argv[i++] = const_cast<char *>(arg.UTF8String);
+//    }
+//    launch::main((int)args.count, &argv[0]);
+//}
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
@@ -91,6 +106,7 @@ static NSString * fromQString(const QString & src)
     }
     return NSTerminateCancel;
 }
+
 @end
 
 
@@ -253,6 +269,20 @@ static NSString * fromQString(const QString & src)
 
 // Events catcher
 
+BOOL isNetworkAvailable()
+{
+    BOOL connected;
+    BOOL isConnected;
+    const char *host = "www.icq.com";
+    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, host);
+    SCNetworkReachabilityFlags flags;
+    connected = SCNetworkReachabilityGetFlags(reachability, &flags);
+    isConnected = NO;
+    isConnected = connected && (flags & kSCNetworkFlagsReachable) && !(flags & kSCNetworkFlagsConnectionRequired);
+    CFRelease(reachability);
+    return isConnected;
+}
+
 @interface EventsCatcher : NSObject
 
 @property (nonatomic, copy) void(^sleep)(void);
@@ -287,6 +317,14 @@ static NSString * fromQString(const QString & src)
                                                             selector:@selector(receiveWakeEvent:)
                                                                 name:@"com.apple.screenIsUnlocked"
                                                               object:nil];
+        [[NSDistributedNotificationCenter defaultCenter] addObserver:self
+                                                            selector:@selector(receiveSleepEvent:)
+                                                                name:@"com.apple.sessionDidMoveOffConsole"
+                                                              object:nil];
+        [[NSDistributedNotificationCenter defaultCenter] addObserver:self
+                                                            selector:@selector(receiveWakeEvent:)
+                                                                name:@"com.apple.sessionDidMoveOnConsole"
+                                                              object:nil];
     }
     return self;
 }
@@ -298,7 +336,19 @@ static NSString * fromQString(const QString & src)
 
 - (void)receiveWakeEvent:(NSNotification *)notification
 {
-    self.wake();
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        //
+        while (!isNetworkAvailable())
+        {
+            [NSThread sleepForTimeInterval:.5];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            //
+            self.wake();
+            //
+        });
+        //
+    });
 }
 
 @end
@@ -544,7 +594,7 @@ QString MacSupport::settingsPath()
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
     NSString *applicationSupportDirectory = [paths firstObject];
-    return toQString([applicationSupportDirectory stringByAppendingPathComponent:@"ICQ"]);
+    return toQString([applicationSupportDirectory stringByAppendingPathComponent:[NSString stringWithUTF8String:(build::is_icq() ? product_path_icq_a : product_path_agent_mac_a)]]);
 }
 
 QString MacSupport::bundleName()
@@ -556,7 +606,7 @@ QString MacSupport::defaultDownloadsPath()
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
     NSString *path = [paths objectAtIndex:0];
-    path = [path stringByAppendingPathComponent:@"ICQ"];
+    path = [path stringByAppendingPathComponent:[NSString stringWithUTF8String:(build::is_icq() ? product_path_icq_a : product_path_agent_mac_a)]];
     path = [path stringByAppendingPathComponent:@"Downloads"];
     return [path UTF8String];
 
@@ -626,7 +676,7 @@ void MacSupport::createMenuBar(bool simple)
 
         if (false)
         {
-            action = createAction(menu, Utils::Translations::Get("About..."), "", mainWindow_, SLOT(activateAbout()));
+            action = createAction(menu, Utils::Translations::Get("About app"), "", mainWindow_, SLOT(activateAbout()));
             action->setMenuRole(QAction::MenuRole::ApplicationSpecificRole);
             menuItems_.insert(global_about, action);
             extendedActions_.push_back(action);
@@ -648,7 +698,7 @@ void MacSupport::createMenuBar(bool simple)
         }
 
 #ifdef UPDATES
-        action = createAction(menu, Utils::Translations::Get("Check for updates..."), "", mainWindow_, SLOT(checkForUpdates()));
+        action = createAction(menu, Utils::Translations::Get("Check For Updates..."), "", mainWindow_, SLOT(checkForUpdates()));
         action->setMenuRole(QAction::MenuRole::ApplicationSpecificRole);
         menuItems_.insert(global_update, action);
         extendedActions_.push_back(action);
@@ -889,7 +939,7 @@ void MacSupport::getPossibleStrings(const QString& text, std::vector<QStringList
         result[i].push_back(text.at(i));
     }
     
-    if (layouts.size() == 0)
+    if (layouts.isEmpty())
     {
 		_count = 1;
         return;
@@ -1028,25 +1078,35 @@ void MacSupport::registerDelegate()
      andEventID:kAEGetURL];
 }
 
-QString MacSupport::saveFileName(const QString &caption, const QString &dir, const QString &filter)
+void MacSupport::saveFileName(const QString &caption, const QString &qdir, const QString &filter, std::function<void (QString& _filename, QString& _directory)> _callback, const QString& _ext, QString& lastDirectory)
 {
-    __block QString path;
+ 
+    auto dir = qdir.toNSString().stringByDeletingLastPathComponent;
+    auto filename = qdir.toNSString().lastPathComponent;
     
     NSSavePanel *panel = [NSSavePanel savePanel];
     [panel setTitle:caption.toNSString()];
-    [panel setDirectoryURL:[NSURL URLWithString:dir.toNSString()]];
+    [panel setDirectoryURL:[NSURL URLWithString:dir]];
     [panel setShowsTagField:NO];
-    [panel setNameFieldStringValue:dir.toNSString().lastPathComponent];
+    [panel setNameFieldStringValue:filename];
     
-    __block bool leave = false;
     [panel beginSheetModalForWindow:[NSApp mainWindow] completionHandler:^(NSInteger result) {
-        //
         if (result == NSFileHandlingPanelOKButton)
         {
-            path = QString::fromNSString([[panel URL] path]);
+            auto path = QString::fromNSString([[panel URL] path]);
+            if (!path.isEmpty())
+            {
+                QFileInfo info(path);
+                lastDirectory = info.dir().absolutePath();
+                QString directory = info.dir().absolutePath();
+                QString filename = info.fileName();
+                if (info.suffix().isEmpty() && !_ext.isEmpty())
+                {
+                    filename += _ext;
+                }
+                _callback(filename, directory);
+            }
         }
-        leave = true;
-        //
     }];
 
     if (auto editor = [panel fieldEditor:NO forObject:nil])
@@ -1062,15 +1122,7 @@ QString MacSupport::saveFileName(const QString &caption, const QString &dir, con
     {
         [NSApp endSheet:panel];
     });
-    
-    while (!leave)
-    {
-        qApp->processEvents();
-        [NSThread sleepForTimeInterval:0.01];
-    }
 
     QWidget::disconnect(connection);
-    
-    return path;
 }
 

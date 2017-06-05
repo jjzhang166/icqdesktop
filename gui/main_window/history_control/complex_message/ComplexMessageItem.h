@@ -10,7 +10,7 @@ UI_NS_BEGIN
 class ActionButtonWidget;
 class ContextMenu;
 class HistoryControlPage;
-class MessageStatusWidget;
+class MessageTimeWidget;
 class TextEmojiWidget;
 
 UI_NS_END
@@ -52,6 +52,10 @@ Q_SIGNALS:
     void forward(QList<Data::Quote>);
 
     void adminMenuRequest(QString);
+
+    void eventFilterRequest(QWidget*);
+
+    void selectionChanged();
 
 public:
     ComplexMessageItem(
@@ -100,11 +104,11 @@ public:
 
     virtual void onVisibilityChanged(const bool isVisible) override;
 
+    virtual void onDistanceToViewportChanged(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect) override;
+
     void replaceBlockWithSourceText(IItemBlock *block);
 
     void selectByPos(const QPoint& from, const QPoint& to);
-
-    void setChatAdminFlag(const bool isChatAdmin);
 
     virtual void setHasAvatar(const bool value) override;
 
@@ -127,9 +131,19 @@ public:
     QList<Data::Quote> getQuotes(bool force = false) const;
 
     void setSourceText(const QString& text);
+    
+    void forwardRoutine();
+
+	virtual void setQuoteSelection() override;
+
+    void setDeliveredToServer(const bool _isDeliveredToServer, const bool _init = false);
+
+    bool isQuoteAnimation() const;
+
+    /// observe to resize when replaced
+    bool isObserveToSize() const;
 
 protected:
-    bool isChatAdmin() const;
 
     virtual void leaveEvent(QEvent *event) override;
 
@@ -146,6 +160,16 @@ private Q_SLOTS:
 
     void onMenuItemTriggered(QAction *action);
 
+    void contextMenuShow();
+
+    void contextMenuHide();
+
+public Q_SLOTS:
+    void trackMenu(const QPoint &globalPos);
+
+    void setQuoteAnimation();
+    void onObserveToSize();
+
 private:
     void addBlockMenuItems(const QPoint &pos);
 
@@ -161,7 +185,7 @@ private:
 
     void drawBlocksSeparators(QPainter &p);
 
-    void drawBubble(QPainter &p);
+    void drawBubble(QPainter &p, const QColor& quote_color);
 
     QString getBlocksText(const IItemBlocksVec &items, const bool isSelected, const bool isQuote) const;
 
@@ -189,9 +213,8 @@ private:
 
     bool onDeveloperMenuItemTriggered(const QString &cmd);
 
+    void shareButtonRoutine(QString sourceText);
     void onShareButtonClicked();
-
-    void trackMenu(const QPoint &globalPos);
 
     void updateSenderControlColor();
 
@@ -217,11 +240,11 @@ private:
 
     bool Initialized_;
 
-    bool IsChatAdmin_;
-
     bool IsLastRead_;
 
     bool IsOutgoing_;
+
+    bool IsDeliveredToServer_;
 
     ComplexMessageItemLayout *Layout_;
 
@@ -243,9 +266,12 @@ private:
 
     QString SourceText_;
 
-    MessageStatusWidget *Status_;
+    MessageTimeWidget *TimeWidget_;
 
     int32_t Time_;
+
+    bool bQuoteAnimation_;
+    bool bObserveToSize_;
 
 };
 

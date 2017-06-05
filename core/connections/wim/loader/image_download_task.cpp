@@ -8,7 +8,7 @@
 #include "../../../tools/strings.h"
 #include "../../../utils.h"
 
-#include "loader_errors.h"
+#include "../../../../common.shared/loader_errors.h"
 #include "loader_helpers.h"
 #include "preview_proxy.h"
 #include "tasks_runner_slot.h"
@@ -89,7 +89,7 @@ loader_errors image_download_task::run()
             assert(_pct_tranferred >= 0);
             assert(_pct_tranferred <= 100);
 
-            g_core->excute_core_context(
+            g_core->execute_core_context(
                 [progress_seq, _bytes_total, _bytes_transferred, _pct_tranferred]
                 {
                     coll_helper coll(g_core->create_collection(), true);
@@ -116,8 +116,9 @@ loader_errors image_download_task::run()
     }
 
     request.set_url(request_uri);
-    request.set_need_log(false);
-    request.set_connect_timeout(1000);
+    request.set_need_log(get_wim_params().full_log_);
+    request.set_connect_timeout(5000);
+    request.replace_host(get_wim_params().hosts_);
 
     if (!request.get())
     {

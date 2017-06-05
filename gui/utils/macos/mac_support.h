@@ -73,7 +73,7 @@ public:
     
     static QPoint viewPosition(WId wid);
     
-    static QString saveFileName(const QString &caption, const QString &dir, const QString &filter);
+    static void saveFileName(const QString &caption, const QString &dir, const QString &filter, std::function<void (QString& _filename, QString& _directory)> _callback, const QString& _ext, QString& lastDirectory);
     
 private:
     void setupDockClickHandler();

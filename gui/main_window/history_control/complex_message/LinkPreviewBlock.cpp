@@ -9,6 +9,7 @@
 #include "../../../utils/profiling/auto_stop_watch.h"
 #include "../../../utils/Text.h"
 #include "../../../utils/Text2DocConverter.h"
+#include "../../../utils/UrlParser.h"
 
 #include "../ActionButtonWidget.h"
 #include "../MessageStyle.h"
@@ -16,13 +17,13 @@
 
 #include "ComplexMessageItem.h"
 #include "FileSharingUtils.h"
-#include "LinkPreviewBlockLayout.h"
 #include "LinkPreviewBlockBlankLayout.h"
 #include "Selection.h"
 #include "Style.h"
 #include "YoutubeLinkPreviewBlockLayout.h"
 
 #include "LinkPreviewBlock.h"
+#include "QuoteBlock.h"
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
 
@@ -31,15 +32,6 @@ namespace
     int getLinesNumber(const TextEditEx &textControl);
 
     int getLinesNumber(const TextEditEx &textControl);
-
-    QBrush getPreloaderBrush();
-
-    bool isKnownImageHost(const QString &uri);
-
-    std::unique_ptr<ILinkPreviewBlockLayout> makeInitialLayout(const QString &uri);
-
-    std::unique_ptr<ILinkPreviewBlockLayout> makeFinalLayout(const QString &uri, const QString &contentType);
-
 }
 
 LinkPreviewBlock::LinkPreviewBlock(ComplexMessageItem *parent, const QString &uri)
@@ -68,11 +60,11 @@ LinkPreviewBlock::LinkPreviewBlock(ComplexMessageItem *parent, const QString &ur
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     assert(!Uri_.isEmpty());
-    Layout_ = makeInitialLayout(Uri_);
+    Layout_ = std::unique_ptr<ILinkPreviewBlockLayout>(
+        new YoutubeLinkPreviewBlockLayout());;
     setLayout(Layout_->asQLayout());
 
-    if (Uri_.endsWith(QChar::Space) || Uri_.endsWith(QChar::LineFeed))
-        Uri_.truncate(Uri_.length() - 1);
+    Uri_ = Utils::normalizeLink(Uri_);
 }
 
 LinkPreviewBlock::~LinkPreviewBlock()
@@ -128,7 +120,7 @@ QSize LinkPreviewBlock::getFaviconSizeUnscaled() const
         return QSize(0, 0);
     }
 
-    return QSize(16, 16);
+    return Style::Snippet::getFaviconSizeUnscaled();
 }
 
 QSize LinkPreviewBlock::getPreviewImageSize() const
@@ -176,11 +168,6 @@ int32_t LinkPreviewBlock::getTitleTextHeight() const
 bool LinkPreviewBlock::hasActionButton() const
 {
     return ActionButton_;
-}
-
-bool LinkPreviewBlock::hasRightStatusPadding() const
-{
-    return false;
 }
 
 bool LinkPreviewBlock::hasTitle() const
@@ -235,6 +222,9 @@ void LinkPreviewBlock::onVisibilityChanged(const bool isVisible)
         }
     }
 }
+
+void LinkPreviewBlock::onDistanceToViewportChanged(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect)
+{}
 
 void LinkPreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType /*selection*/)
 {
@@ -405,7 +395,15 @@ void LinkPreviewBlock::mouseReleaseEvent(QMouseEvent *event)
         }
         else
         {
-            QDesktopServices::openUrl(Uri_);
+            Utils::UrlParser parser;
+            parser.process(QStringRef(&Uri_));
+
+            if (parser.hasUrl())
+            {
+                auto url = parser.getUrl().url_;
+                QDesktopServices::openUrl(QString::fromUtf8(url.c_str(), url.size()));
+            }
+
         }
 
         return;
@@ -452,7 +450,7 @@ bool LinkPreviewBlock::drag()
     return Utils::dragUrl(this, PreviewImage_, Uri_);
 }
 
-void LinkPreviewBlock::drawBlock(QPainter &p)
+void LinkPreviewBlock::drawBlock(QPainter &p, const QRect& _rect, const QColor& quate_color)
 {
     if (isInPreloadingState())
     {
@@ -473,7 +471,7 @@ void LinkPreviewBlock::drawBlock(QPainter &p)
         p.fillRect(rect(), brush);
     }
 
-    GenericBlock::drawBlock(p);
+    GenericBlock::drawBlock(p, _rect, quate_color);
 }
 
 void LinkPreviewBlock::onLinkMetainfoMetaDownloaded(int64_t seq, bool success, Data::LinkMetadata meta)
@@ -528,7 +526,8 @@ void LinkPreviewBlock::onLinkMetainfoMetaDownloaded(int64_t seq, bool success, D
     assert(Layout_);
     const auto existingGeometry = Layout_->asBlockLayout()->getBlockGeometry();
 
-    Layout_ = makeFinalLayout(Uri_, ContentType_);
+    Layout_ = std::unique_ptr<ILinkPreviewBlockLayout>(
+        new YoutubeLinkPreviewBlockLayout());;
     setLayout(Layout_->asQLayout());
 
     // 5. postpone text processing if geometry is not ready
@@ -628,7 +627,7 @@ bool LinkPreviewBlock::createDescriptionControl(const QString &description)
         annotationFont.setPixelSize(TextFontSize_);
 
     assert(!Annotation_);
-    Annotation_ = createTextEditControl(description, annotationFont);
+    Annotation_ = createTextEditControl(description, annotationFont, TextOptions::PlainText);
     Annotation_->show();
 
     return true;
@@ -705,7 +704,7 @@ bool LinkPreviewBlock::createTitleControl(const QString &title)
         titleFont.setPixelSize(TextFontSize_);
 
     assert(!Title_);
-    Title_ = createTextEditControl(title, titleFont);
+    Title_ = createTextEditControl(title, titleFont, TextOptions::PlainText);
     Title_->show();
 
     return true;
@@ -811,7 +810,7 @@ void LinkPreviewBlock::connectSignals(const bool isConnected)
     assert(disconnected);
 }
 
-TextEditEx* LinkPreviewBlock::createTextEditControl(const QString &text, const QFont &font)
+TextEditEx* LinkPreviewBlock::createTextEditControl(const QString &text, const QFont &font, TextOptions options)
 {
     assert(!text.isEmpty());
 
@@ -840,7 +839,8 @@ TextEditEx* LinkPreviewBlock::createTextEditControl(const QString &text, const Q
 
     textControl->verticalScrollBar()->blockSignals(true);
 
-    Logic::Text4Edit(text, *textControl, Logic::Text2DocHtmlMode::Escape, true, true);
+    const bool makeClickableLinks = (options == TextOptions::ClickableLinks);
+    Logic::Text4Edit(text, *textControl, Logic::Text2DocHtmlMode::Escape, makeClickableLinks, true);
 
     textControl->document()->setDocumentMargin(0);
 
@@ -871,7 +871,7 @@ void LinkPreviewBlock::drawPreloader(QPainter &p)
     assert(isInPreloadingState());
     assert(Layout_);
 
-    const auto &preloaderBrush = getPreloaderBrush();
+    const auto &preloaderBrush = Style::Snippet::getPreloaderBrush();
     p.setBrush(preloaderBrush);
 
     const auto width = getBlockLayout()->getBlockGeometry().width();
@@ -925,7 +925,7 @@ void LinkPreviewBlock::drawSiteName(QPainter &p)
 
     p.save();
 
-    p.setPen(QColor(0x69, 0x69, 0x69));
+    p.setPen(Style::Snippet::getSiteNameColor());
     p.setFont(getSiteNameFont());
 
     const auto &siteNamePos = Layout_->getSiteNamePos();
@@ -948,7 +948,7 @@ void LinkPreviewBlock::initialize()
         0,
         0);
 
-    SiteNameFont_ = Fonts::appFontScaled(14);
+    SiteNameFont_ = Style::Snippet::getSiteNameFont();
 
     assert(!PreloadingTickerAnimation_);
     PreloadingTickerAnimation_ = new QPropertyAnimation(this, "PreloadingTicker");
@@ -1096,108 +1096,29 @@ void LinkPreviewBlock::updateRequestId()
     connectSignals(false);
 }
 
-namespace
+void LinkPreviewBlock::connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover)
 {
-
-    QBrush getPreloaderBrush()
+    if (Annotation_ && hover)
     {
-        QLinearGradient grad(0, 0, 0.5, 0);
-        grad.setCoordinateMode(QGradient::StretchToDeviceMode);
-        grad.setSpread(QGradient::ReflectSpread);
-
-        const QColor colorEdge(0x00, 0x00, 0x00, (255 * 7 / 100));
-        grad.setColorAt(0, colorEdge);
-
-        const QColor colorCenter(0x00, 0x00, 0x00, (255 * 12 / 100));
-        grad.setColorAt(0.5, colorCenter);
-
-        grad.setColorAt(1, colorEdge);
-
-        QBrush result(grad);
-        result.setColor(QColor(0, 0, 0, 0));
-
-        return result;
+        Annotation_->installEventFilter(Annotation_);
+        Annotation_->setMouseTracking(true);
     }
-
-    bool isKnownImageHost(const QString &uri)
+    if (Title_ && hover)
     {
-        assert(!uri.isEmpty());
-
-        static std::vector<QString> knownImageHosts;
-
-        if (knownImageHosts.empty())
-        {
-            knownImageHosts.reserve(32);
-
-            knownImageHosts.emplace_back("instagram.com/p/");
-            knownImageHosts.emplace_back("instagr.am/p/");
-            knownImageHosts.emplace_back("i.imgur.com/");
-            knownImageHosts.emplace_back("pinterest.com/pin/");
-            knownImageHosts.emplace_back("pin.it/");
-            knownImageHosts.emplace_back("flickr.com/photos/");
-            knownImageHosts.emplace_back("flic.kr/p/");
-            knownImageHosts.emplace_back("tumblr.com/post/");
-            knownImageHosts.emplace_back("tumblr.co/");
-            knownImageHosts.emplace_back("youtu.be/");
-            knownImageHosts.emplace_back("youtube.com/watch");
-            knownImageHosts.emplace_back("coub.com/view/");
-        }
-
-        // wow! so slow! much sluggish!
-        const auto isKnown = std::any_of(
-            knownImageHosts.begin(),
-            knownImageHosts.end(),
-            [&uri](const QString &known)
-            {
-                return uri.contains(known);
-            });
-
-        return isKnown;
+        Title_->installEventFilter(Annotation_);
+        Title_->setMouseTracking(true);
     }
-
-    std::unique_ptr<ILinkPreviewBlockLayout> makeInitialLayout(const QString &uri)
+    if (hover)
     {
-        assert(!uri.isEmpty());
-
-        if (isKnownImageHost(uri))
-        {
-            return std::unique_ptr<ILinkPreviewBlockLayout>(
-                new YoutubeLinkPreviewBlockLayout());
-        }
-
-        return std::unique_ptr<ILinkPreviewBlockLayout>(
-            new YoutubeLinkPreviewBlockLayout());
+        installEventFilter(hover);
+        raise();
     }
+}
 
-    std::unique_ptr<ILinkPreviewBlockLayout> makeFinalLayout(const QString &uri, const QString &contentType)
-    {
-        assert(!uri.isEmpty());
-
-        const auto isGif =
-            [&contentType]
-            {
-                static const QString gifContentType = "article-gif";
-                return (gifContentType.compare(contentType, Qt::CaseInsensitive) == 0);
-            };
-
-        const auto isVideo =
-            [&contentType]
-            {
-                static const QString videoContentType = "article-video";
-                return (videoContentType.compare(contentType, Qt::CaseInsensitive) == 0);
-            };
-
-        const auto useYoutubeLayout = (isGif() || isVideo() || isKnownImageHost(uri));
-        if (useYoutubeLayout)
-        {
-            return std::unique_ptr<ILinkPreviewBlockLayout>(
-                new YoutubeLinkPreviewBlockLayout());
-        }
-
-        return std::unique_ptr<ILinkPreviewBlockLayout>(
-            new YoutubeLinkPreviewBlockLayout());
-    }
-
+void LinkPreviewBlock::setQuoteSelection()
+{
+    GenericBlock::setQuoteSelection();
+    emit setQuoteAnimation();
 }
 
 UI_COMPLEX_MESSAGE_NS_END

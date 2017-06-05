@@ -8,7 +8,7 @@
 
 #include "image_download_task.h"
 #include "link_metainfo_download_task.h"
-#include "loader_errors.h"
+#include "../../../../common.shared/loader_errors.h"
 #include "loader_helpers.h"
 #include "preview_proxy.h"
 #include "tasks_runner_slot.h"
@@ -47,6 +47,7 @@ image_preview_download_task::~image_preview_download_task()
 
 loader_errors image_preview_download_task::run()
 {
+    return loader_errors::network_error;
     __INFO(
         "snippets",
         "runnning task\n"
@@ -207,7 +208,7 @@ void image_preview_download_task::send_metainfo(const preview_proxy::link_meta &
 
     const auto task_id = get_id();
 
-    g_core->excute_core_context(
+    g_core->execute_core_context(
         [on_meta_result, preview_width, preview_height, download_uri, task_id, file_size]
         {
             __INFO(

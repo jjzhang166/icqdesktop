@@ -78,8 +78,25 @@ namespace Ui
 
         class EmojiTableItemDelegate : public QItemDelegate
         {
+            Q_OBJECT
+
+        public:
+            EmojiTableItemDelegate(QObject* parent);
+
+            void animate(const QModelIndex& index, int start, int end, int duration);
+
             void paint(QPainter* _painter, const QStyleOptionViewItem& _option, const QModelIndex& _index) const;
             QSize sizeHint(const QStyleOptionViewItem& _option, const QModelIndex& _index) const;
+
+            Q_PROPERTY(int prop READ getProp WRITE setProp);
+
+            int getProp() const { return Prop_; }
+            void setProp(int val);
+
+        private:
+            int Prop_;
+            QPropertyAnimation* Animation_;
+            QModelIndex AnimateIndex_;
         };
 
         class EmojiTableView : public QTableView

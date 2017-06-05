@@ -42,7 +42,8 @@ namespace Logic
 		QTextCursor &cursor,
 		const Text2DocHtmlMode htmlMode = Text2DocHtmlMode::Escape,
 		const bool convertLinks = true,
-		const Text2HtmlUriCallback uriCallback = nullptr);
+		const Text2HtmlUriCallback uriCallback = nullptr,
+        const Emoji::EmojiSizePx _emojiSize = Emoji::EmojiSizePx::Auto);
 
     void CutText(
         const QString &text,

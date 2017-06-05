@@ -21,6 +21,15 @@ public:
         MenuFlagOpenInBrowser   = (1 << 2),
     };
 
+    enum ContentType
+    {
+        Other = 0,
+        Text = 1,
+        FileSharing = 2,
+        Link = 3,
+        Quote = 4,
+    };
+
     virtual ~IItemBlock() = 0;
 
     virtual QSize blockSizeForMaxWidth(const int32_t maxWidth) = 0;
@@ -41,11 +50,11 @@ public:
     
     virtual bool standaloneText() const = 0;
 
-    virtual bool hasRightStatusPadding() const = 0;
-
     virtual void onActivityChanged(const bool isActive) = 0;
 
     virtual void onVisibilityChanged(const bool isVisible) = 0;
+
+    virtual void onDistanceToViewportChanged(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect) = 0;
 
     virtual QRect setBlockGeometry(const QRect &ltr) = 0;
 
@@ -83,6 +92,11 @@ public:
 
     virtual IItemBlock* findBlockUnder(const QPoint &pos) const { return nullptr; }
 
+    virtual ContentType getContentType() const { return Other; }
+
+    virtual QString getTrimmedText() const { return QString(); }
+
+	virtual void setQuoteSelection() = 0;
 };
 
 typedef std::vector<IItemBlock*> IItemBlocksVec;

@@ -9,6 +9,8 @@
 #include "Style.h"
 
 #include "GenericBlock.h"
+#include "../ActionButtonWidget.h"
+#include "QuoteBlock.h"
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
 
@@ -23,6 +25,7 @@ GenericBlock::GenericBlock(
     const MenuFlags menuFlags,
     const bool isResourcesUnloadingEnabled)
     : QWidget(parent)
+    , QuoteAnimation_(parent)
     , Initialized_(false)
     , Parent_(parent)
     , SourceText_(sourceText)
@@ -33,9 +36,11 @@ GenericBlock::GenericBlock(
     , ClickHandled_(false)
 {
     assert(Parent_);
+    connect(this, SIGNAL(setQuoteAnimation()), parent, SLOT(setQuoteAnimation()));
 }
 
 GenericBlock::GenericBlock()
+    : QuoteAnimation_(this)
 {
     assert(!"program isn't supposed to reach this point");
 }
@@ -196,6 +201,9 @@ void GenericBlock::onVisibilityChanged(const bool /*isVisible*/)
 {
 }
 
+void GenericBlock::onDistanceToViewportChanged(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect)
+{}
+
 QRect GenericBlock::setBlockGeometry(const QRect &ltr)
 {
     auto blockLayout = getBlockLayout();
@@ -223,7 +231,7 @@ QSize GenericBlock::sizeHint() const
     return QSize(-1, 0);
 }
 
-void GenericBlock::drawBlock(QPainter &p)
+void GenericBlock::drawBlock(QPainter &p, const QRect& _rect, const QColor& quate_color)
 {
     (void)p;
 
@@ -319,7 +327,7 @@ void GenericBlock::paintEvent(QPaintEvent *e)
     p.setPen(Qt::NoPen);
     p.setBrush(Qt::NoBrush);
 
-    drawBlock(p);
+    drawBlock(p, e->rect(), QuoteAnimation_.quoteColor());
 
     if (Style::isBlocksGridEnabled())
     {
@@ -341,7 +349,7 @@ void GenericBlock::mouseMoveEvent(QMouseEvent *e)
         {
             mousePos_ = pos;
         }
-        else if (!mousePos_.isNull() && (abs(mousePos_.x() - pos.x()) > Utils::GetDragDistance() || abs(mousePos_.y() - pos.y()) > Utils::GetDragDistance()))
+        else if (!mousePos_.isNull() && (abs(mousePos_.x() - pos.x()) > Style::getDragDistance() || abs(mousePos_.y() - pos.y()) > Style::getDragDistance()))
         {
             mousePos_ = QPoint();
             drag();
@@ -367,8 +375,18 @@ void GenericBlock::mouseReleaseEvent(QMouseEvent *e)
 {
     if (!ClickHandled_ && mouseClickPos_.x() == e->pos().x() && mouseClickPos_.y() == e->pos().y())
         emit clicked();
+
     ClickHandled_ = false;
     return QWidget::mouseReleaseEvent(e);
+}
+
+void Ui::ComplexMessage::GenericBlock::connectButtonToHover(ActionButtonWidget* btn, Ui::ComplexMessage::QuoteBlockHover* hover)
+{
+    if (btn && hover)
+    {
+        btn->installEventFilter(hover);
+        btn->setMouseTracking(true);
+    }
 }
 
 void GenericBlock::startResourcesUnloadTimer()
@@ -411,6 +429,20 @@ void GenericBlock::stopResourcesUnloadTimer()
 void GenericBlock::onResourceUnloadingTimeout()
 {
     onUnloadResources();
+}
+
+void GenericBlock::setQuoteSelection()
+{
+	QuoteAnimation_.startQuoteAnimation();
+}
+
+void GenericBlock::connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover)
+{
+    if (hover)
+    {
+        installEventFilter(hover);
+        raise();
+    }
 }
 
 namespace

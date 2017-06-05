@@ -58,8 +58,6 @@ class loader : public std::enable_shared_from_this<loader>
 
     std::unique_ptr<async_executer> file_sharing_threads_;
 
-    std::unordered_map<tasks_runner_slot, tasks_runner_uptr> tasks_runners_;
-
     disk_cache::disk_cache_sptr cache_;
 
     std::string priority_contact_;
@@ -103,11 +101,13 @@ public:
         const std::wstring& _files_folder,
         const std::wstring& _previews_folder,
         const std::wstring& _filename,
+        const bool _force_request_metainfo,
         const wim_packet_params& _params);
 
     std::shared_ptr<get_file_direct_uri_handler>  get_file_direct_uri(
         const int64_t _seq,
         const std::string& _file_url,
+        const std::wstring& _cache_dir,
         const wim_packet_params& _params);
 
     std::shared_ptr<async_task_handlers> download_file(
@@ -156,13 +156,7 @@ public:
 
     bool has_file_sharing_task(const std::string &_id);
 
-    void raise_task_priority(const int64_t _task_id);
-
-    void raise_contact_tasks_priority(const std::string &_contact_aimid);
-
     void resume_file_sharing_tasks();
-
-    void resume_suspended_tasks(const wim_packet_params& _params);
 
     void set_played(const std::string& _file_url, const std::wstring& _previews_folder, bool _played, const wim_packet_params& _params);
 

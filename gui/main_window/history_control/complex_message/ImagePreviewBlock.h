@@ -3,6 +3,8 @@
 #include "../../../types/link_metadata.h"
 
 #include "GenericBlock.h"
+#include "../../mplayer/VideoPlayer.h"
+#include "../../../utils/LoadMovieFromFileTask.h"
 
 UI_NS_BEGIN
 
@@ -41,13 +43,13 @@ public:
 
     bool hasPreview() const;
 
-    virtual bool hasRightStatusPadding() const override;
-
     virtual bool isBubbleRequired() const override;
 
     virtual bool isSelected() const override;
 
     virtual void onVisibilityChanged(const bool isVisible) override;
+
+    virtual void onDistanceToViewportChanged(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect) override;
 
     virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
 
@@ -57,8 +59,14 @@ public:
 
     void showActionButton(const QRect &pos);
 
+    virtual ContentType getContentType() const { return IItemBlock::Link; }
+
+    virtual void connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover) override;
+
+    virtual void setQuoteSelection() override;
+
 protected:
-    virtual void drawBlock(QPainter &p) override;
+    virtual void drawBlock(QPainter &p, const QRect& _rect, const QColor& quate_color) override;
 
     void drawEmptyBubble(QPainter &p, const QRect &bubbleRect);
 
@@ -86,6 +94,8 @@ protected:
 
     virtual bool drag() override;
 
+    virtual void resizeEvent(QResizeEvent * event) override;
+
 private:
     void connectSignals();
 
@@ -100,6 +110,10 @@ private:
     bool isFullImageDownloading() const;
 
     bool isGifPlaying() const;
+
+    void setGifPlaying(const bool _playing);
+
+    bool isVideoPlaying() const;
 
     bool isGifPreview() const;
 
@@ -121,7 +135,7 @@ private:
 
     void openPreviewer(QPixmap image, const QString &localPath);
 
-    void playGif(const QString &localPath);
+    void playGif(const QString &localPath, const bool _byUser);
 
     void preloadFullImageIfNeeded();
 
@@ -133,7 +147,11 @@ private:
 
     void stopDownloadingAnimation();
 
-    void pauseGif();
+    void pauseGif(const bool _byUser);
+
+    void onChangeLoadState(const bool isVisible);
+
+    bool isInPreloadRange(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect);
 
     ImagePreviewBlockLayout *Layout_;
 
@@ -151,6 +169,8 @@ private:
 
     QPainterPath PreviewClippingPath_;
 
+    QPainterPath RelativePreviewClippingPath_;
+
     QRect PreviewClippingPathRect_;
 
     QString PreviewLocalPath_;
@@ -159,13 +179,11 @@ private:
 
     int64_t FullImageDownloadSeq_;
 
-    QSharedPointer<QMovie> GifImage_;
+    QSharedPointer<Ui::DialogPlayer> videoPlayer_;
 
     bool IsGifPlaying_;
 
     bool IsSelected_;
-
-    bool IsPausedByUser_;
 
     ActionButtonWidget *ActionButton_;
 
@@ -185,6 +203,14 @@ private:
 
     int MaxPreviewWidth_;
 
+    std::unique_ptr<Utils::LoadMovieToFFMpegPlayerFromFileTask> load_task_;
+
+    bool IsVisible_;
+
+    bool IsInPreloadDistance_;
+
+    std::shared_ptr<bool> ref_;
+
 private Q_SLOTS:
     void onGifFrameUpdated(int frameNumber);
 
@@ -198,6 +224,7 @@ private Q_SLOTS:
 
     void onSnapMetainfoDownloaded(int64_t _seq, bool _success, uint64_t _snap_id);
 
+    void onPaused();
 };
 
 UI_COMPLEX_MESSAGE_NS_END

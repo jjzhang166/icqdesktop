@@ -8,10 +8,12 @@
 
 #include "../MessageStyle.h"
 
+#include "ComplexMessageItem.h"
 #include "TextBlockLayout.h"
 #include "Selection.h"
 
 #include "TextBlock.h"
+#include "QuoteBlock.h"
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
 
@@ -61,7 +63,7 @@ namespace
     }
 }
 
-TextBlock::TextBlock(ComplexMessageItem *parent, const QString &text)
+TextBlock::TextBlock(ComplexMessageItem *parent, const QString &text, const bool _hideLinks)
     : GenericBlock(parent, text, MenuFlagNone, false)
     , Text_(text)
     , Layout_(nullptr)
@@ -69,6 +71,8 @@ TextBlock::TextBlock(ComplexMessageItem *parent, const QString &text)
     , Selection_(BlockSelectionType::None)
     , TextFontSize_(-1)
     , TextOpacity_(1.0)
+    , hideLinks_(_hideLinks)
+    
 {
     assert(!Text_.isEmpty());
 
@@ -77,11 +81,12 @@ TextBlock::TextBlock(ComplexMessageItem *parent, const QString &text)
 
     Layout_ = new TextBlockLayout();
     setLayout(Layout_);
+
+    connect(this, &TextBlock::selectionChanged, parent, &ComplexMessageItem::selectionChanged);
 }
 
 TextBlock::~TextBlock()
 {
-
 }
 
 void TextBlock::clearSelection()
@@ -118,11 +123,6 @@ QString TextBlock::getSelectedText(bool isFullSelect) const
     return TextCtrl_->selection();
 }
 
-bool TextBlock::hasRightStatusPadding() const
-{
-    return true;
-}
-
 bool TextBlock::isDraggable() const
 {
     return false;
@@ -133,7 +133,8 @@ bool TextBlock::isSelected() const
     assert(Selection_ > BlockSelectionType::Min);
     assert(Selection_ < BlockSelectionType::Max);
 
-    return (Selection_ != BlockSelectionType::None);
+    auto selected = TextCtrl_ && !TextCtrl_->selection().isEmpty();
+    return (Selection_ != BlockSelectionType::None || selected);
 }
 
 bool TextBlock::isSharingEnabled() const
@@ -200,7 +201,7 @@ void TextBlock::setTextOpacity(double opacity)
     }
 }
 
-void TextBlock::drawBlock(QPainter &)
+void TextBlock::drawBlock(QPainter & p, const QRect& _rect, const QColor& quote_color)
 {
 }
 
@@ -212,12 +213,19 @@ void TextBlock::initialize()
     assert(!Text_.isEmpty());
     TextCtrl_ = createTextEditControl(Text_);
     TextCtrl_->setVisible(true);
+    TextCtrl_->raise();
 
     QObject::connect(
         TextCtrl_,
         &QTextBrowser::anchorClicked,
         this,
         &TextBlock::onAnchorClicked);
+
+    QObject::connect(
+        TextCtrl_,
+        &QTextBrowser::selectionChanged,
+        this,
+        &TextBlock::selectionChanged);
 }
 
 TextEditEx* TextBlock::createTextEditControl(const QString &text)
@@ -252,7 +260,7 @@ TextEditEx* TextBlock::createTextEditControl(const QString &text)
 
     textControl->verticalScrollBar()->blockSignals(true);
 
-    Logic::Text4Edit(TrimmedText_, *textControl, Logic::Text2DocHtmlMode::Escape, true, true);
+    Logic::Text4Edit(TrimmedText_, *textControl, Logic::Text2DocHtmlMode::Escape, !hideLinks_, true);
 
     textControl->document()->setDocumentMargin(0);
 
@@ -270,17 +278,7 @@ void TextBlock::setTextEditTheme(TextEditEx *textControl)
 
     Utils::ApplyStyle(textControl, SELECTION_STYLE);
     auto textColor = MessageStyle::getTextColor(TextOpacity_);
-
-    const auto theme = getTheme();
-    if (theme)
-    {
-        textColor = (
-            isOutgoing() ?
-                theme->outgoing_bubble_.text_color_ :
-                theme->incoming_bubble_.text_color_);
-
-        textColor.setAlpha(TextOpacity_ * 255);
-    }
+    textColor.setAlpha(TextOpacity_ * 255);
 
     QPalette palette = textControl->palette();
     palette.setColor(QPalette::Text, textColor);
@@ -301,6 +299,15 @@ void TextBlock::onAnchorClicked(const QUrl &_url)
     clickHandled();
 
     QDesktopServices::openUrl(_url);
+}
+
+void TextBlock::connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover)
+{
+    if (hover && TextCtrl_)
+    {
+        TextCtrl_->installEventFilter(hover);
+        installEventFilter(hover);
+    }
 }
 
 UI_COMPLEX_MESSAGE_NS_END
