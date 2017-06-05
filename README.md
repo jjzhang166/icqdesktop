@@ -1,5 +1,7 @@
 ### Windows
 
+Download external libraries here https://files.icq.net/get/s66y7gIKtiejxAxSFxWPIn5935227e1ac and extract it to ./external folder
+
 From the root of project directory:
     mkdir build
     cd build
@@ -17,6 +19,8 @@ NMake:
 
 ### MacOS
 
+Download external libraries here https://files.icq.net/get/s66y7gIKtiejxAxSFxWPIn5935227e1ac and extract it to ./external folder
+
 From the root of project directory:
     mkdir build
     cd build
@@ -33,6 +37,8 @@ make:
 
 
 ### Linux
+
+Download external libraries here https://files.icq.net/get/s66y7gIKtiejxAxSFxWPIn5935227e1ac and extract it to ./external folder
 
 cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DLINUX_ARCH=64|32
 make
