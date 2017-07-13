@@ -1,6 +1,6 @@
 ### Windows
 
-Download external libraries here https://files.icq.net/get/s66y7gIKtiejxAxSFxWPIn5935227e1ac and extract it to ./external folder
+Download external libraries here https://icq.com/files/X6ik0E9FUlKb2W5BSpA3g059674c591bb and extract it to ./external folder
 
 From the root of project directory:
     mkdir build
@@ -19,7 +19,7 @@ NMake:
 
 ### MacOS
 
-Download external libraries here https://files.icq.net/get/s66y7gIKtiejxAxSFxWPIn5935227e1ac and extract it to ./external folder
+Download external libraries here https://icq.com/files/X6ik0E9FUlKb2W5BSpA3g059674c591bb and extract it to ./external folder
 
 From the root of project directory:
     mkdir build
@@ -38,7 +38,7 @@ make:
 
 ### Linux
 
-Download external libraries here https://files.icq.net/get/s66y7gIKtiejxAxSFxWPIn5935227e1ac and extract it to ./external folder
+Download external libraries here https://icq.com/files/X6ik0E9FUlKb2W5BSpA3g059674c591bb and extract it to ./external folder
 
 In order to build ICQ execute the following command line (change -DLINUX_ARCH=32 to -DLINUX_ARCH=64 for 64bit binaries):
 
