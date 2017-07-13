@@ -9,6 +9,7 @@
 #include "../../themes/ThemePixmap.h"
 #include "../../themes/ResourceIds.h"
 #include "../../utils/Text2DocConverter.h"
+#include "../../controls/TextEditEx.h"
 #include "../../utils/utils.h"
 
 namespace ContactList
@@ -170,16 +171,9 @@ namespace ContactList
         auto recentParams = GetRecentsParams(_viewParams.regim_);
         double ratio = Utils::scale_bitmap(1);
 
-        auto text = _text;
-        auto unreads = _isFavorites ? Logic::getRecentsModel()->favoritesUnreads() : Logic::getRecentsModel()->recentsUnreads();
-        if (unreads != 0)
-        {
-            text += QString(" (%1)").arg(QVariant(unreads).toString());
-        }
-
         if (!_viewParams.pictOnly_)
         {
-            Utils::drawText(_painter, QPointF(recentParams.itemHorPadding(), recentParams.serviceItemHeight() / 2), Qt::AlignVCenter, text);
+            Utils::drawText(_painter, QPointF(recentParams.itemHorPadding(), recentParams.serviceItemHeight() / 2), Qt::AlignVCenter, _text);
         }
         else
         {
@@ -203,7 +197,7 @@ namespace ContactList
             QPixmap p(Utils::parse_image_name(Logic::getRecentsModel()->isFavoritesVisible() ? ":/resources/basic_elements/arrow_small_green_100.png" : ":/resources/basic_elements/arrow_small_up_green_100.png"));
             Utils::check_pixel_ratio(p);
             QFontMetrics m(font);
-            int x = recentParams.itemHorPadding() + m.width(text) + recentParams.favoritesStatusPadding();
+            int x = recentParams.itemHorPadding() + m.width(_text) + recentParams.favoritesStatusPadding();
             int y = recentParams.serviceItemHeight() / 2 - (p.height() / 2. / ratio);
             _painter.drawPixmap(x, y, p);
         }
@@ -263,6 +257,22 @@ namespace ContactList
 
 namespace ContactList
 {
+    Emoji::EmojiSizePx GetEmojiSize()
+    {
+        static std::unordered_map<int32_t, Emoji::EmojiSizePx> info;
+
+        if (info.empty())
+        {
+            info.emplace(100, Emoji::EmojiSizePx::_16);
+            info.emplace(125, Emoji::EmojiSizePx::_22);
+            info.emplace(150, Emoji::EmojiSizePx::_27);
+            info.emplace(200, Emoji::EmojiSizePx::_32);
+        }
+
+        return info[(int32_t)(Utils::getScaleCoefficient() * 100)];
+    }
+
+
     int RenderContactMessage(QPainter &_painter, const RecentItemVisualData &_visData, const int _rightMargin, const ViewParams& _viewParams, ContactListParams& _recentParams)
     {
         if (!_visData.HasStatus())
@@ -312,16 +322,11 @@ namespace ContactList
 
             auto boldCharFormat = charFormat;
 
-            const auto boldFontSize = 15;
-            boldCharFormat.setFont(Fonts::appFontScaled(boldFontSize, Fonts::FontWeight::Normal));
+            boldCharFormat.setFont(Fonts::appFont(_recentParams.messageFontSize(), Fonts::FontWeight::Normal));
 
             cursor.setCharFormat(boldCharFormat);
 
-            Logic::Text2Doc(
-                fixedNick,
-                cursor,
-                Logic::Text2DocHtmlMode::Pass,
-                false);
+            Logic::Text4Edit(fixedNick, *textControl, cursor, false, GetEmojiSize());
 
             cursor.setCharFormat(charFormat);
 
@@ -330,9 +335,8 @@ namespace ContactList
 
         const auto text = _visData.GetStatus().trimmed().simplified();
 
-        const auto boldFontSize = 15;
-        auto base_font = Fonts::appFontScaled(boldFontSize, Fonts::FontWeight::Medium);
-        auto term_font = Fonts::appFontScaled(boldFontSize, Fonts::FontWeight::Medium);
+        auto base_font = Fonts::appFont(_recentParams.messageFontSize(), Fonts::FontWeight::Medium);
+        auto term_font = Fonts::appFont(_recentParams.messageFontSize(), Fonts::FontWeight::Medium);
 
         QFontMetrics m(font);
         QFontMetrics term_m(term_font);
@@ -397,13 +401,13 @@ namespace ContactList
             boldCharFormat.setFont(hasUnreads ? base_font : term_font);
             boldCharFormat.setForeground(QBrush(QColor("#579e1c")));
 
-            Logic::Text2Doc(left_part, cursor, Logic::Text2DocHtmlMode::Pass, false);
-
+            Logic::Text4Edit(left_part, *textControl, cursor, false, GetEmojiSize());
+            
             cursor.setCharFormat(boldCharFormat);
-            Logic::Text2Doc(term_visible_part, cursor, Logic::Text2DocHtmlMode::Pass, false);
-
+            Logic::Text4Edit(term_visible_part, *textControl, cursor, false, GetEmojiSize());
+            
             cursor.setCharFormat(hasUnreads ? boldCharFormat : charFormat);
-            Logic::Text2Doc(right_part, cursor, Logic::Text2DocHtmlMode::Pass, false);
+            Logic::Text4Edit(right_part, *textControl, cursor, false, GetEmojiSize());
         }
 
         Logic::FormatDocument(doc, _recentParams.messageHeight());
@@ -414,6 +418,7 @@ namespace ContactList
 
     void RenderLastReadAvatar(QPainter &_painter, const QPixmap& _avatar, const int _xOffset, ContactListParams& _recentParams)
     {
+        _painter.setOpacity(0.7);
         _painter.drawPixmap(_xOffset, _recentParams.lastReadY(), _recentParams.getLastReadAvatarSize(), _recentParams.getLastReadAvatarSize(), _avatar);
     }
 
@@ -469,10 +474,9 @@ namespace ContactList
             return width - _recentParams.itemHorPadding();
         }
 
-        const auto text = (_unreads > 99) ? QString("99+") : QVariant(_unreads).toString();
-
         static QFontMetrics m(_recentParams.unreadsFont());
 
+        const auto text = Utils::getUnreadsBadgeStr(_unreads);
         const auto unreadsRect = m.tightBoundingRect(text);
         const auto firstChar = text[0];
         const auto lastChar = text[text.size() - 1];

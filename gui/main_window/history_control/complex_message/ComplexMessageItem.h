@@ -12,6 +12,7 @@ class ContextMenu;
 class HistoryControlPage;
 class MessageTimeWidget;
 class TextEmojiWidget;
+class TextEditEx;
 
 UI_NS_END
 
@@ -56,6 +57,8 @@ Q_SIGNALS:
     void eventFilterRequest(QWidget*);
 
     void selectionChanged();
+    void setTextEditEx(Ui::TextEditEx*);
+    void leave();
 
 public:
     ComplexMessageItem(
@@ -108,6 +111,8 @@ public:
 
     void replaceBlockWithSourceText(IItemBlock *block);
 
+    void removeBlock(IItemBlock *block);
+
     void selectByPos(const QPoint& from, const QPoint& to);
 
     virtual void setHasAvatar(const bool value) override;
@@ -143,6 +148,8 @@ public:
     /// observe to resize when replaced
     bool isObserveToSize() const;
 
+    virtual int getMaxWidth() const;
+
 protected:
 
     virtual void leaveEvent(QEvent *event) override;
@@ -164,6 +171,7 @@ private Q_SLOTS:
 
     void contextMenuHide();
 
+
 public Q_SLOTS:
     void trackMenu(const QPoint &globalPos);
 
@@ -183,8 +191,6 @@ private:
 
     void drawAvatar(QPainter &p);
 
-    void drawBlocksSeparators(QPainter &p);
-
     void drawBubble(QPainter &p, const QColor& quote_color);
 
     QString getBlocksText(const IItemBlocksVec &items, const bool isSelected, const bool isQuote) const;
@@ -194,8 +200,6 @@ private:
     void drawLastRead(QPainter &p);
 
     IItemBlock* findBlockUnder(const QPoint &pos) const;
-
-    bool hasSeparator(const IItemBlock *block) const;
 
     void initialize();
 
@@ -272,7 +276,6 @@ private:
 
     bool bQuoteAnimation_;
     bool bObserveToSize_;
-
 };
 
 UI_COMPLEX_MESSAGE_NS_END

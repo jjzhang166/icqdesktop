@@ -122,6 +122,11 @@ Ui::ShadowWindowParent::ShadowWindowParent(QWidget* parent) : shadow_(nullptr)
 	}
 }
 
+Ui::ShadowWindowParent::~ShadowWindowParent()
+{
+    delete shadow_;
+}
+
 void Ui::ShadowWindowParent::showShadow()
 {
 	if (shadow_)
@@ -1197,24 +1202,33 @@ void Ui::FullVideoWindowPanel::updatePosition(const QWidget& parent)
 #endif
 }
 
+void Ui::FullVideoWindowPanel::resizeEvent(QResizeEvent *event)
+{
+    emit(onResize());
+}
 
-void Ui::showAddUserToVideoConverenceDialog(QObject* parent, QWidget* parentWindow)
+
+void showAddUserToVideoConverenceDialog(QObject* parent, QWidget* parentWindow, 
+    std::function< void(Ui::SelectionContactsForConference*) > connectSignal,
+    std::function< void() > disconnectSignal)
 {
     emit Utils::InterConnector::instance().searchEnd();
     Logic::getContactListModel()->clearChecked();
 
     Logic::ChatMembersModel model(parent);
-	ContactsForVideoConference modelAll(parent, model);
+    Ui::ContactsForVideoConference modelAll(parent, model);
 
-	ConferenceSearchMember usersSearchModel;
-	usersSearchModel.setChatMembersModel(&modelAll);
+    Ui::ConferenceSearchMember usersSearchModel;
+    usersSearchModel.setChatMembersModel(&modelAll);
 
-    SelectionContactsForConference contactsWidget(
-		&model,
-		&modelAll,        
+    Ui::SelectionContactsForConference contactsWidget(
+        &model,
+        &modelAll,
         QT_TRANSLATE_NOOP("voip_pages", "Add to call"),
         parentWindow,
-		usersSearchModel);
+        usersSearchModel);
+
+    connectSignal(&contactsWidget);
 
     contactsWidget.setMaximumSelectedCount(4);
 
@@ -1229,7 +1243,27 @@ void Ui::showAddUserToVideoConverenceDialog(QObject* parent, QWidget* parentWind
         }
     }
 
+    disconnectSignal();
+
     Logic::getContactListModel()->clearChecked();
+}
+
+void Ui::showAddUserToVideoConverenceDialogVideoWindow(QObject* parent, FullVideoWindowPanel* parentWindow)
+{
+    showAddUserToVideoConverenceDialog(parent, parentWindow, [parentWindow](Ui::SelectionContactsForConference* dialog)
+        {
+            QObject::connect(parentWindow, &FullVideoWindowPanel::onResize, dialog, &Ui::SelectionContactsForConference::updateSize);
+        },
+        [parentWindow]()
+        {
+            parentWindow->disconnect();
+        }
+    );
+}
+
+void Ui::showAddUserToVideoConverenceDialogMainWindow(QObject* parent, QWidget* parentWindow)
+{
+    showAddUserToVideoConverenceDialog(parent, parentWindow, [](Ui::SelectionContactsForConference* dialog) {}, []() {});
 }
 
 

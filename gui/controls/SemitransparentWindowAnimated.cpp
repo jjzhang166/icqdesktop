@@ -20,17 +20,7 @@ namespace Ui
         Animation_ = new QPropertyAnimation(this, "step");
         Animation_->setDuration(_duration);
 
-        const auto rect = _parent->rect();
-        auto width = rect.width();
-        auto height = rect.height();
-
-        isMainWindow_ = (qobject_cast<MainWindow*>(_parent) != 0);
-
-        auto titleHeight = isMainWindow_ ? Utils::InterConnector::instance().getMainWindow()->getTitleHeight() : 0;
-        setFixedHeight(height - titleHeight);
-        setFixedWidth(width);
-
-        move(0, titleHeight);
+        updateSize();
 
         connect(Animation_, SIGNAL(finished()), this, SLOT(finished()), Qt::QueuedConnection);
     }
@@ -105,5 +95,23 @@ namespace Ui
     bool SemitransparentWindowAnimated::isMainWindow() const
     {
         return isMainWindow_;
+    }
+
+    void SemitransparentWindowAnimated::updateSize()
+    {
+        if (parentWidget())
+        {
+            const auto rect = parentWidget()->rect();
+            auto width = rect.width();
+            auto height = rect.height();
+
+            isMainWindow_ = (qobject_cast<MainWindow*>(parentWidget()) != 0);
+
+            auto titleHeight = isMainWindow_ ? Utils::InterConnector::instance().getMainWindow()->getTitleHeight() : 0;
+            setFixedHeight(height - titleHeight);
+            setFixedWidth(width);
+
+            move(0, titleHeight);
+        }
     }
 }

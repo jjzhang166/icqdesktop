@@ -12,9 +12,14 @@ enum class FontWeight;
 
 FONTS_NS_END
 
+namespace Ui
+{
+    class TextEditEx;
+}
+
 namespace ContactList
 {
-	typedef std::unique_ptr<QTextBrowser> QTextBrowserUptr;
+	typedef std::unique_ptr<Ui::TextEditEx> TextEditExUptr;
 
 	struct VisualDataBase
 	{
@@ -85,7 +90,7 @@ namespace ContactList
 
 	QString FormatTime(const QDateTime &_time);
 
-	QTextBrowserUptr CreateTextBrowser(const QString& _name, const QString& _stylesheet, const int _textHeight);
+	TextEditExUptr CreateTextBrowser(const QString& _name, const QString& _stylesheet, const int _textHeight);
 
     QLineEdit *CreateTextBrowser2(const QString& _name, const QString& _stylesheet, const int _textHeight);
     
@@ -131,7 +136,7 @@ namespace ContactList
     public:
 
         //Common
-        const int itemHeight() const { return isCl_ ? Utils::scale_value(44) : Utils::scale_value(68); }
+        const int itemHeight() const { return isCl_ ? Utils::scale_value(44) : Utils::scale_value(64); }
         const int itemWidth() const { return Utils::scale_value(320); }
         const int itemHorPadding() const { return  Utils::scale_value(16); }
         const int itemContentPadding() const { return Utils::scale_value(16); }
@@ -154,7 +159,7 @@ namespace ContactList
         }
         const int avatarSize() const
         {
-            if (!isCl_) return Utils::scale_value(52);
+            if (!isCl_) return Utils::scale_value(48);
             return Utils::scale_value(32);
         }
 
@@ -164,10 +169,10 @@ namespace ContactList
             if (!isCl_) return  avatarX() + avatarSize() + itemContentPadding();
             return (avatarX() + avatarSize() + Utils::scale_value(12) + leftMargin_);
         }
-        const int nameY() { return  Utils::scale_value(8); }
+        const int nameY() { return  Utils::scale_value(10); }
         const int nameYForMailStatus() { return  Utils::scale_value(20); }
-        const int contactNameFontSize() { return isCl_ ? Utils::scale_value(16) : Utils::scale_value(17); }
-        const int contactNameHeight() { return  Utils::scale_value(24); }
+        const int contactNameFontSize() { return Utils::scale_value(16); }
+        const int contactNameHeight() { return  Utils::scale_value(22); }
         const int contactNameCenterY() { return  Utils::scale_value(10); }
         const int contactNameTopY() { return  Utils::scale_value(2); }
         QString getContactNameStylesheet(const QString& _fontColor, const Fonts::FontWeight _fontWeight)
@@ -188,10 +193,10 @@ namespace ContactList
         }
 
         //Message
-        const int messageFontSize() { return  Utils::scale_value(15); }
+        const int messageFontSize() { return  Utils::scale_value(14); }
         const int messageHeight() { return  Utils::scale_value(24); }
         const int messageX() { return  GetContactNameX(); }
-        const int messageY() const { return  Utils::scale_value(32); }
+        const int messageY() const { return  Utils::scale_value(30); }
         const QString getRecentsMessageFontColor(const bool _isUnread)
         {
             const auto color = Utils::rgbaStringFromColor(_isUnread ? "#000000" : "#767676");
@@ -257,8 +262,8 @@ namespace ContactList
         const int unreadsPadding() { return  Utils::scale_value(8); }
 
         //Last seen
-        int lastReadY() const { return  Utils::scale_value(36); }
-        int getLastReadAvatarSize() const { return Utils::scale_value(16); }
+        int lastReadY() const { return  Utils::scale_value(38); }
+        int getLastReadAvatarSize() const { return Utils::scale_value(12); }
         const int getlastReadLeftMargin() const { return Utils::scale_value(4); }
         const int getlastReadRightMargin() const { return Utils::scale_value(4); }
 
@@ -342,14 +347,13 @@ namespace ContactList
 
         //snaps
         const int snapItemHeight() const { return Utils::scale_value(116); }
-        const int snapItemWidth() const { return Utils::scale_value(74); }
+        const int snapItemWidth() const { return Utils::scale_value(68); }
         const int snapGradientHeight() const { return Utils::scale_value(40); }
         const int snapPreviewHeight() const { return Utils::scale_value(100); }
-        const int snapPreviewWidth() const { return Utils::scale_value(68); }
+        const int snapPreviewWidth() const { return Utils::scale_value(60); }
         const int snapLeftPadding() const { return Utils::scale_value(4); }
-        const int snapTopPadding() const { return Utils::scale_value(8); }
-        const int snapNameBottomPadding() const { return Utils::scale_value(8); }
-
+        const int snapTopPadding() const { return Utils::scale_value(4); }
+        const int snapNameBottomPadding() const { return Utils::scale_value(12); }
 
     private:
         bool isCl_;

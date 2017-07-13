@@ -128,9 +128,7 @@ namespace core
         std::priority_queue<job, std::vector<job>, job_priority_comparer> pending_jobs_;
         std::mutex jobs_mutex_;
 
-        std::atomic_flag keep_working_;
-
-        std::atomic<bool> can_add_requests_;
+        std::atomic<bool> keep_working_;
 
         struct completion_visitor
              : public boost::static_visitor<void>

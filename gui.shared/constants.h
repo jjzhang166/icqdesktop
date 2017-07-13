@@ -12,7 +12,8 @@ const QString product_name_icq = "icq.desktop";
 const QString product_name_agent = "agent.desktop";
 
 const QString updates_folder_short = "updates";
-const QString installer_exe_name = (build::is_icq() ? "icqsetup.exe" : "magentsetup.exe");
+const QString installer_exe_name_agent = "magentsetup.exe";
+const QString installer_exe_name_icq = "icqsetup.exe";
 const QString update_final_command = "-update_final";
 const QString delete_updates_command = "-delete_updates";
 const QString autoupdate_from_8x = "-autoupdate";
@@ -41,7 +42,9 @@ const QString send_dump_arg = "-send_dump";
 #define url_command_show_public_livechats "show_public_livechats"
 
 
-const std::wstring updater_singlton_mutex_name = build::is_icq() ? L"{D7364340-9348-4397-9F56-73CE62AAAEA8}" : L"{E9B7BB24-D200-401E-B797-E9A85796D506}";
+const std::wstring updater_singlton_mutex_name_icq = L"{D7364340-9348-4397-9F56-73CE62AAAEA8}";
+const std::wstring updater_singlton_mutex_name_agent = L"{E9B7BB24-D200-401E-B797-E9A85796D506}";
+
 
 namespace Ui
 {

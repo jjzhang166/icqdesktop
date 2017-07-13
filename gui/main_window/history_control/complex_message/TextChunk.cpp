@@ -33,7 +33,7 @@ Ui::ComplexMessage::TextChunk Ui::ComplexMessage::ChunkIterator::current() const
     assert(token.type_ == common::tools::message_token::type::url);
 
     const auto& url = boost::get<common::tools::url>(token.data_);
-    const auto text = QString::fromUtf8(url.url_.data(), url.url_.length());
+    const auto text = QString::fromUtf8(url.original_.data(), url.original_.length());
 
     const bool previewsEnabled = Ui::get_gui_settings()->get_value<bool>(settings_show_video_and_images, true);
     if (url.type_ != common::tools::url::type::email && !previewsEnabled)
@@ -82,7 +82,12 @@ Ui::ComplexMessage::TextChunk Ui::ComplexMessage::ChunkIterator::current() const
         return TextChunk(Type, text, QString(), durationSec);
     }
     case common::tools::url::type::site:
-        return TextChunk(TextChunk::Type::GenericLink, text, QString(), -1);
+        {
+            if (url.has_prtocol())
+                return TextChunk(TextChunk::Type::GenericLink, text, QString(), -1);
+            else
+                return TextChunk(TextChunk::Type::Text, text, QString(), -1);
+        }
     case common::tools::url::type::email:
         return TextChunk(TextChunk::Type::Text, text, QString(), -1);
     case common::tools::url::type::ftp:
@@ -121,12 +126,12 @@ int32_t Ui::ComplexMessage::TextChunk::length() const
 
 Ui::ComplexMessage::TextChunk Ui::ComplexMessage::TextChunk::mergeWith(const TextChunk &chunk) const
 {
-    if (Type_ != Type::Text)
+    if (Type_ != Type::Text && Type_ != TextChunk::Type::GenericLink)
     {
         return TextChunk::Empty;
     }
 
-    if (chunk.Type_ != Type::Text)
+    if (chunk.Type_ != Type::Text && chunk.Type_ != TextChunk::Type::GenericLink)
     {
         return TextChunk::Empty;
     }

@@ -8,7 +8,6 @@ class ComplexMessageItem;
 
 namespace ComplexMessageItemBuilder
 {
-
     ComplexMessageItem* makeComplexItem(
         QWidget *parent,
         const int64_t id,

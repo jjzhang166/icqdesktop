@@ -23,18 +23,6 @@ QPushButton#callButton:hover
 	border-image: url(:/resources/contr_call_100_hover.png);
 }
 
-QPushButton#favoriteStar
-{
-	margin-top: 10dip;
-	min-width: 12dip;
-	max-width: 12dip;
-	min-height: 12dip;
-	max-height: 12dip;
-	margin-left: 8dip;
-	margin-right: 8dip;
-	border-image: url(:/resources/user_favorites_100.png);
-}
-
 QPushButton#officialMark
 {
 	margin-left: -2dip;
@@ -42,7 +30,7 @@ QPushButton#officialMark
 	max-width: 20dip;
 	min-height: 20dip;
 	max-height: 20dip;
-	border-image: url(:/resources/badge_official_100.png);
+	border-image: url(:/resources/official_badge_blue_100.png);
 }
 
 QPushButton#videoCallButton

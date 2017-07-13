@@ -64,7 +64,7 @@ QSize YoutubeLinkPreviewBlockLayout::getMaxPreviewSize() const
 {
     return QSize(
         Style::Preview::getImageWidthMax(),
-        Style::Preview::getImageHeightMax());
+        Style::Snippet::getLinkPreviewHeightMax());
 }
 
 QRect YoutubeLinkPreviewBlockLayout::getFaviconImageRect() const
@@ -239,7 +239,7 @@ QRect YoutubeLinkPreviewBlockLayout::evaluatePreviewImageRect(const LinkPreviewB
 
     const QSize maxSize(
         previewContentLtr.width(),
-        Style::Preview::getImageHeightMax());
+        Style::Snippet::getLinkPreviewHeightMax());
 
     previewImageSize = limitSize(previewImageSize, maxSize);
 

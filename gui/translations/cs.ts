@@ -156,10 +156,6 @@
         <translation>Vybrat soubor</translation>
     </message>
     <message>
-        <source>Image should be at least 600x600 px</source>
-        <translation>Obrázek by měl mít nejméně 600x600 px</translation>
-    </message>
-    <message>
         <source>Change</source>
         <translation>Změnit</translation>
     </message>
@@ -186,6 +182,10 @@ fotografii</translation>
     <message>
         <source>Edit photo</source>
         <translation>Upravit fotografii</translation>
+    </message>
+    <message>
+        <source>Image should be at least 200x200 px</source>
+        <translation>Obrázek by měl mít nejméně 200x200 px</translation>
     </message>
 </context>
 <context>
@@ -542,10 +542,6 @@ fotografii</translation>
     <message>
         <source>MESSAGES</source>
         <translation>ZPRÁVY</translation>
-    </message>
-    <message>
-        <source>EMOJI</source>
-        <translation>EMODŽI</translation>
     </message>
     <message>
         <source>SEARCH IN ALL CHATS</source>
@@ -2634,15 +2630,15 @@ fotografii</translation>
         <translation>(Je vyžadová restart aplikace)</translation>
     </message>
     <message>
-        <source>Auto-scroll to new messages</source>
-        <translation>Automatické posouvání na nové zprávy</translation>
-    </message>
-    <message>
         <source>Auto play videos</source>
         <translation>Automatické přehrávání videí</translation>
     </message>
     <message>
         <source>Preview images and links</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show snaps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2900,13 +2896,6 @@ Uprav telefonní číslo a opakuj akci.</translation>
     </message>
 </context>
 <context>
-    <name>snaps</name>
-    <message>
-        <source>views</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>snaps_page</name>
     <message>
         <source>Cancel</source>
@@ -2927,6 +2916,26 @@ Uprav telefonní číslo a opakuj akci.</translation>
     <message>
         <source>Unfortunately, this file is not supported on your device.</source>
         <translation>Tento soubor bohužel není ve vašem zařízení podporován.</translation>
+    </message>
+    <message>
+        <source>view</source>
+        <comment>1</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>2</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>5</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>21</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

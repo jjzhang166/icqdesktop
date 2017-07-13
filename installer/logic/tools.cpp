@@ -79,7 +79,7 @@ namespace installer
 
         QString get_installer_exe_short()
         {
-            return installer_exe_name;
+            return (build::is_icq() ? installer_exe_name_icq : installer_exe_name_agent);
         }
 
         QString get_installer_exe()

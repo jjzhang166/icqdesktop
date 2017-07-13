@@ -16,11 +16,6 @@
 
 #include "../../gui_settings.h"
 
-namespace
-{
-    const int SNAPS_HEIGHT = 124;
-}
-
 namespace Logic
 {
 	RecentItemDelegate::RecentItemDelegate(QObject* parent)
@@ -211,7 +206,7 @@ namespace Logic
         else
         {
             if (Logic::getRecentsModel()->isSnapsVisible() && i.row() == 0)
-                return QSize(width, Utils::scale_value(SNAPS_HEIGHT));
+                return QSize(width, ContactList::GetRecentsParams(viewParams_.regim_).snapItemHeight());
 
             if (Logic::getRecentsModel()->isServiceItem(i))
             {

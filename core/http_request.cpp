@@ -49,6 +49,11 @@ http_request_simple::~http_request_simple()
     clear_post_data();
 }
 
+void http_request_simple::set_output_stream(std::shared_ptr<tools::stream> _output)
+{
+    output_ = _output;
+}
+
 void http_request_simple::set_need_log(bool _need)
 {
     need_log_ = _need;
@@ -185,7 +190,7 @@ void http_request_simple::set_post_params(curl_context* _ctx)
 
 bool http_request_simple::send_request(bool _post)
 {
-    curl_context ctx(stop_func_, progress_func_, keep_alive_);
+    curl_context ctx(output_, stop_func_, progress_func_, keep_alive_);
 
     const auto& proxy_settings = g_core->get_proxy_settings();
 
@@ -217,7 +222,6 @@ bool http_request_simple::send_request(bool _post)
         return false;
 
     response_code_ = ctx.get_response_code();
-    output_ = ctx.get_response();
     header_ = ctx.get_header();
 
     return true;
@@ -227,7 +231,7 @@ void* http_request_simple::send_request_async(bool _post, completion_function _c
 {
     const auto& proxy_settings = g_core->get_proxy_settings();
 
-    auto ctx = std::make_shared<curl_context>(stop_func_, progress_func_, keep_alive_);
+    auto ctx = std::make_shared<curl_context>(output_, stop_func_, progress_func_, keep_alive_);
     if (!ctx->init(connect_timeout_, timeout_, proxy_settings, user_agent_))
     {
         if (_completion_function)
@@ -256,7 +260,6 @@ void* http_request_simple::send_request_async(bool _post, completion_function _c
         if (_success)
         {
             response_code_ = ctx->get_response_code();
-            output_ = ctx->get_response();
             header_ = ctx->get_header();
         }
 
@@ -293,7 +296,7 @@ void http_request_simple::set_range(int64_t _from, int64_t _to)
     range_to_ = _to;
 }
 
-std::shared_ptr<tools::binary_stream> http_request_simple::get_response()
+std::shared_ptr<tools::stream> http_request_simple::get_response()
 {
     return output_;
 }

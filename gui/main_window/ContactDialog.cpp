@@ -13,10 +13,6 @@
 #include "../utils/gui_coll_helper.h"
 #include "../utils/InterConnector.h"
 
-#ifdef __APPLE__
-#   include "../utils/macos/mac_support.h"
-#endif
-
 namespace
 {
     const int sidebar_default_width = 320;
@@ -31,7 +27,7 @@ namespace Ui
         : QWidget(_parent)
         , Parent_(_parent)
     {
-        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowSystemMenuHint);
+        setWindowFlags(Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowSystemMenuHint);
         setAttribute(Qt::WA_TranslucentBackground);
         setAcceptDrops(true);
     }
@@ -213,6 +209,9 @@ namespace Ui
 
         sidebarUpdateTimer_->setInterval(500);
         sidebarUpdateTimer_->setSingleShot(true);
+        
+        dragOverlayWindow_->move(0,0);
+        dragOverlayWindow_->hide();
 	}
 
 
@@ -266,6 +265,8 @@ namespace Ui
         {
             sidebarWidth = showSingle ? width() : Utils::scale_value(sidebar_default_width);
         }
+
+        dragOverlayWindow_->resize((!showSingle && _show) ? width() - sidebarWidth : width(), height());
 
         if (showSingle)
         {
@@ -391,7 +392,9 @@ namespace Ui
     void ContactDialog::updateDragOverlay()
     {
         if (!rect().contains(mapFromGlobal(QCursor::pos())))
+        {
             hideDragOverlay();
+        }
     }
 
     void ContactDialog::historyControlClicked()
@@ -424,14 +427,6 @@ namespace Ui
 
     void ContactDialog::showDragOverlay()
     {
-#ifdef __APPLE__
-        auto pos = MacSupport::viewPosition(winId());
-#else
-        QPoint pos = QPoint(rect().x(), rect().y());
-        pos = mapToGlobal(pos);
-#endif
-        dragOverlayWindow_->move(pos.x(),pos.y());
-        dragOverlayWindow_->resize(width(), height());
         dragOverlayWindow_->show();
         overlayUpdateTimer_->start();
         Utils::InterConnector::instance().setDragOverlay(true);
@@ -504,6 +499,8 @@ namespace Ui
 
     void ContactDialog::resizeEvent(QResizeEvent* _e)
     {
+        dragOverlayWindow_->resize(width(), height());
+        
         if (isSidebarVisible())
         {
             int width = _e->size().width();

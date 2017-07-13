@@ -16,8 +16,10 @@ namespace core
             bool is_changed() const { return changed_; }
             bool is_empty() const { return snaps_.empty(); }
 
+            void remove_user(const std::string& _aimId);
+
             bool is_user_exist(const std::string& _aimId) const;
-            void update_snap_state(const std::string& _aimId, const snap_history_state& _state, bool& needUpdateState, bool& needUpdateSnaps, icollection* _coll);
+            void update_snap_state(const std::string& _aimId, const snap_history_state& _state, bool& needUpdateSnaps, icollection* _coll);
             void update_snap_state(const std::string& _aimId, const snap_history_state& _state, icollection* _coll);
 
             void update_user_snaps(const std::string& _aimId, user_snaps_info _info, icollection* _coll);

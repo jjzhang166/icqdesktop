@@ -21,7 +21,7 @@
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
 
-namespace ComplexMessageItemBuilder
+    namespace ComplexMessageItemBuilder
 {
     ComplexMessageItem* makeComplexItem(
         QWidget *parent,
@@ -44,16 +44,20 @@ namespace ComplexMessageItemBuilder
 
         std::unique_ptr<ComplexMessage::ComplexMessageItem> complexItem(
             new ComplexMessage::ComplexMessageItem(
-                parent,
-                id,
-                date,
-                chatAimid,
-                senderAimid,
-                senderFriendly,
-                sticker ? QT_TRANSLATE_NOOP("contact_list", "Sticker") : text,
-                isOutgoing));
+            parent,
+            id,
+            date,
+            chatAimid,
+            senderAimid,
+            senderFriendly,
+            sticker ? QT_TRANSLATE_NOOP("contact_list", "Sticker") : text,
+            isOutgoing));
 
         std::list<TextChunk> chunks;
+
+        std::unique_ptr<TextChunk> snippet;
+        int snippetsCount = 0;
+        bool removeSnippetOnFail = false;
 
         int i = 0;
         for (auto quote : quotes)
@@ -109,7 +113,28 @@ namespace ComplexMessageItemBuilder
             while (it.hasNext())
             {
                 auto chunk = it.current();
-                chunks.emplace_back(std::move(chunk));
+
+                if (chunk.Type_ == TextChunk::Type::GenericLink)
+                {
+                    ++snippetsCount;
+                    if (snippetsCount == 1)
+                        snippet.reset(new TextChunk(chunk));
+
+                    // if snippet is single in message or if it last, don't append link
+                    it.next();
+                    if (it.hasNext() || snippetsCount > 1)
+                    {
+                        removeSnippetOnFail = true;
+                        chunks.emplace_back(std::move(chunk));
+                    }
+
+                    continue;
+                }
+                else
+                {
+                    chunks.emplace_back(std::move(chunk));
+                }
+
                 it.next();
             }
         }
@@ -146,8 +171,9 @@ namespace ComplexMessageItemBuilder
         const bool hide_links = (isNotAuth && !isOutgoing);
 
         int count = 0;
-        for (const auto &chunk : chunks)
+        for (auto iterChunk = chunks.begin(); iterChunk != chunks.end(); ++iterChunk)
         {
+            const auto& chunk = *iterChunk;
             ++count;
 
             const auto& chunkText = chunk.text_;
@@ -155,95 +181,86 @@ namespace ComplexMessageItemBuilder
             GenericBlock *block = nullptr;
             switch(chunk.Type_)
             {
-                case TextChunk::Type::Text:
+            case TextChunk::Type::Text:
+                block = new TextBlock(
+                    complexItem.get(),
+                    chunkText);
+                break;
+
+            case TextChunk::Type::GenericLink:
+                block = new TextBlock(
+                    complexItem.get(),
+                    chunkText,
+                    hide_links);
+                break;
+
+            case TextChunk::Type::ImageLink:
+                if (hide_links)
+                {
                     block = new TextBlock(
-                                complexItem.get(),
-                                chunkText);
-                    break;
+                        complexItem.get(),
+                        chunkText,
+                        true);
+                }
+                else
+                {
+                    block =  new ImagePreviewBlock(
+                        complexItem.get(), 
+                        chatAimid, 
+                        chunkText, 
+                        chunk.ImageType_);
+                }
+                break;
 
-                case TextChunk::Type::GenericLink:
-                    if (hide_links)
-                    {
-                        block = new TextBlock(
-                            complexItem.get(),
-                            chunkText,
-                            true);
-                    }
-                    else
-                    {
-                        block = new LinkPreviewBlock(
-                            complexItem.get(), 
-                            chunkText);
-                    }
-                    break;
+            case TextChunk::Type::FileSharingImage:
+                block = new FileSharingBlock(
+                    complexItem.get(), chunkText, core::file_sharing_content_type::image);
+                break;
 
-                case TextChunk::Type::ImageLink:
-                    if (hide_links)
-                    {
-                        block = new TextBlock(
-                            complexItem.get(),
-                            chunkText,
-                            true);
-                    }
-                    else
-                    {
-                        block =  new ImagePreviewBlock(
-                            complexItem.get(), 
-                            chatAimid, 
-                            chunkText, 
-                            chunk.ImageType_);
-                    }
-                    break;
+            case TextChunk::Type::FileSharingGif:
+                block = new FileSharingBlock(
+                    complexItem.get(), chunkText, core::file_sharing_content_type::gif);
+                break;
 
-                case TextChunk::Type::FileSharingImage:
-                    block = new FileSharingBlock(
-                                complexItem.get(), chunkText, core::file_sharing_content_type::image);
-                    break;
+            case TextChunk::Type::FileSharingVideo:
+                block = new FileSharingBlock(
+                    complexItem.get(), chunkText, core::file_sharing_content_type::video);
+                break;
 
-                case TextChunk::Type::FileSharingGif:
-                    block = new FileSharingBlock(
-                                complexItem.get(), chunkText, core::file_sharing_content_type::gif);
-                    break;
+            case TextChunk::Type::FileSharingImageSnap:
+                block = new FileSharingBlock(
+                    complexItem.get(), chunkText, core::file_sharing_content_type::snap_image);
+                break;
 
-                case TextChunk::Type::FileSharingVideo:
-                    block = new FileSharingBlock(
-                                complexItem.get(), chunkText, core::file_sharing_content_type::video);
-                    break;
+            case TextChunk::Type::FileSharingGifSnap:
+                block = new FileSharingBlock(
+                    complexItem.get(), chunkText, core::file_sharing_content_type::snap_gif);
+                break;
 
-                case TextChunk::Type::FileSharingImageSnap:
-                    block = new FileSharingBlock(
-                                complexItem.get(), chunkText, core::file_sharing_content_type::snap_image);
-                    break;
+            case TextChunk::Type::FileSharingVideoSnap:
+                block = new FileSharingBlock(
+                    complexItem.get(), chunkText, core::file_sharing_content_type::snap_video);
+                break;
 
-                case TextChunk::Type::FileSharingGifSnap:
-                    block = new FileSharingBlock(
-                                complexItem.get(), chunkText, core::file_sharing_content_type::snap_gif);
-                    break;
+            case TextChunk::Type::FileSharingPtt:
+                block = new PttBlock(complexItem.get(), chunkText, chunk.DurationSec_, id, prev);
+                break;
 
-                case TextChunk::Type::FileSharingVideoSnap:
-                    block = new FileSharingBlock(
-                                complexItem.get(), chunkText, core::file_sharing_content_type::snap_video);
-                    break;
+            case TextChunk::Type::FileSharingGeneral:
+                block = new FileSharingBlock(
+                    complexItem.get(), chunkText, core::file_sharing_content_type::undefined);
+                break;
 
-                case TextChunk::Type::FileSharingPtt:
-                    block = new PttBlock(complexItem.get(), chunkText, chunk.DurationSec_, id, prev);
-                    break;
+            case  TextChunk::Type::Sticker:
+                block = new StickerBlock(complexItem.get(), chunk.Sticker_);
+                break;
 
-                case TextChunk::Type::FileSharingGeneral:
-                    block = new FileSharingBlock(
-                                complexItem.get(), chunkText, core::file_sharing_content_type::undefined);
-                    break;
+            case TextChunk::Type::Junk:
+                break;
 
-                case  TextChunk::Type::Sticker:
-                    block = new StickerBlock(complexItem.get(), chunk.Sticker_);
-                    break;
-
-                case TextChunk::Type::Junk:
-                    break;
-
-                default:
-                    assert(!"unexpected chunk type");
-                    break;
+            default:
+                assert(!"unexpected chunk type");
+                break;
             }
 
             if (block)
@@ -263,7 +280,7 @@ namespace ComplexMessageItemBuilder
                         prevQuote = quoteBlock;
 
                         if (!chunk.Quote_.isForward_)
-						    quoteBlock->createQuoteHover(complexItem.get());
+                            quoteBlock->createQuoteHover(complexItem.get());
                     }
                 }
                 else
@@ -277,6 +294,17 @@ namespace ComplexMessageItemBuilder
             }
         }
 
+        // create snippet
+        if (snippetsCount == 1)
+        {
+            items.emplace_back(
+                new LinkPreviewBlock(
+                complexItem.get(), 
+                snippet->text_,
+                removeSnippetOnFail));
+        }
+
+
         if (!quoteBlocks.empty())
         {
             QString sourceText;
@@ -287,11 +315,11 @@ namespace ComplexMessageItemBuilder
             complexItem->setSourceText(sourceText);
         }
 
-		int index = 0;
-		for (auto& val : quoteBlocks)
-		{
-			val->setMessagesCountAndIndex(count, index++);
-		}
+        int index = 0;
+        for (auto& val : quoteBlocks)
+        {
+            val->setMessagesCountAndIndex(count, index++);
+        }
 
         complexItem->setItems(std::move(items));
 

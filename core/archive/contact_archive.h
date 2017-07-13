@@ -80,8 +80,11 @@ namespace core
 
         };
 
-        std::wstring version_db_filename(const std::wstring &filename);
-
+        std::wstring db_filename();
+        std::wstring index_filename();
+        std::wstring dlg_state_filename();
+        std::wstring image_cache_filename();
+        std::wstring cache_filename();
     }
 }
 

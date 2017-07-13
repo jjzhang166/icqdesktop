@@ -21,11 +21,11 @@ namespace Ui
         const auto minOpacity = 0;
         const auto maxOpacity = 1;
 
-        const auto minScrollButtonWidth_dip = 6;
-        const auto maxScrollButtonWidth_dip = 6;
+        const auto minScrollButtonWidth_dip = 4;
+        const auto maxScrollButtonWidth_dip = 4;
         const auto minScrollButtonHeight_dip = 50;
 
-        const auto backgroundWidth_dip = 6;
+        const auto backgroundWidth_dip = 4;
         const auto backgroundRightMargin_dip = 4;
         const auto backgroundUpMargin_dip = 4;
         const auto backgroundDownMargin_dip = 4;

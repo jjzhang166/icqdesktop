@@ -14,6 +14,7 @@ namespace
 Previewer::ImageViewerWidget::ImageViewerWidget(QWidget* _parent)
     : QLabel(_parent)
     , zoomStep_(0)
+    , parent_(_parent)
 {
     setAlignment(Qt::AlignCenter);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -45,11 +46,7 @@ void Previewer::ImageViewerWidget::showImage(const QPixmap& _preview, const QStr
 
     setCursor(Qt::ArrowCursor);
 
-    if (type == "gif")
-    {
-        viewer_ = GifViewer::create(_fileName, size(), this);
-    }
-    else if (type == "jpeg" || type == "png" || type == "bmp")
+    if (type == "jpeg" || type == "png" || type == "bmp")
     {
         if (_preview.isNull())
         {
@@ -62,17 +59,45 @@ void Previewer::ImageViewerWidget::showImage(const QPixmap& _preview, const QStr
     }
     else
     {
-        assert(!"unknown format");
-        return;
+        viewer_ = FFMpegViewer::create(_fileName, size(), this, _preview);
     }
 
     repaint();
+}
+
+bool Previewer::ImageViewerWidget::isZoomSupport() const
+{
+    assert(viewer_);
+    if (!viewer_)
+        return false;
+
+    return viewer_->isZoomSupport();
 }
 
 void Previewer::ImageViewerWidget::reset()
 {
     viewer_.reset();
     clear();
+}
+
+void Previewer::ImageViewerWidget::connectExternalWheelEvent(std::function<void(const int)> _func)
+{
+    assert(viewer_);
+    if (!viewer_)
+        return;
+
+    connect(viewer_.get(), &AbstractViewer::mouseWheelEvent, this, [_func](const int _delta)
+    {
+        _func(_delta);
+    });
+}
+
+bool Previewer::ImageViewerWidget::closeFullscreen()
+{
+    if (!viewer_)
+        return false;
+
+    return viewer_->closeFullscreen();
 }
 
 void Previewer::ImageViewerWidget::mousePressEvent(QMouseEvent* _event)
@@ -222,7 +247,7 @@ double Previewer::ImageViewerWidget::getZoomInValue(int _zoomStep) const
     if (_zoomStep < 0)
         return getZoomOutValue(_zoomStep);
 
-    auto scaleValue = viewer_->getPrefferedScaleFactor();
+    auto scaleValue = viewer_->getPreferredScaleFactor();
     for (int i = 0; i != _zoomStep; ++i)
         scaleValue *= getScaleStep();
     return scaleValue;
@@ -233,7 +258,7 @@ double Previewer::ImageViewerWidget::getZoomOutValue(int _zoomStep) const
     if (_zoomStep > 0)
         return getZoomInValue(_zoomStep);
 
-    auto scaleValue = viewer_->getPrefferedScaleFactor();
+    auto scaleValue = viewer_->getPreferredScaleFactor();
     for (int i = 0; i != -_zoomStep; ++i)
         scaleValue /= getScaleStep();
     return scaleValue;

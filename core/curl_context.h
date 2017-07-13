@@ -9,7 +9,7 @@ namespace core
     struct curl_context
     {
         CURL* curl_;
-        std::shared_ptr<tools::binary_stream> output_;
+        std::shared_ptr<tools::stream> output_;
         std::shared_ptr<tools::binary_stream> header_;
 
         http_request_simple::stop_function stop_func_;
@@ -33,7 +33,7 @@ namespace core
 
         milliseconds_t timeout_;
 
-        curl_context(http_request_simple::stop_function _stop_func, http_request_simple::progress_function _progress_func, bool _keep_alive);
+        curl_context(std::shared_ptr<tools::stream> _output, http_request_simple::stop_function _stop_func, http_request_simple::progress_function _progress_func, bool _keep_alive);
         ~curl_context();
 
         bool init(milliseconds_t _connect_timeout, milliseconds_t _timeout, core::proxy_settings _proxy_settings, const std::string &_user_agent);
@@ -58,7 +58,6 @@ namespace core
         void set_priority(priority_t _priority);
 
         long get_response_code();
-        std::shared_ptr<tools::binary_stream> get_response();
         std::shared_ptr<tools::binary_stream> get_header();
 
         bool execute_request();

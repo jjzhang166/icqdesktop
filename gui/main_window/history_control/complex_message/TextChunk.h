@@ -36,7 +36,11 @@ namespace Ui
 
             static const TextChunk Empty;
 
-            TextChunk(const Type type, const QString& _text, const QString &imageType, const int32_t durationSec);
+            TextChunk(
+                const Type type, 
+                const QString& _text, 
+                const QString &imageType, 
+                const int32_t durationSec);
 
             int32_t length() const;
 

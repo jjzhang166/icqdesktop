@@ -255,6 +255,15 @@ namespace Ui
 		updateConferenceListSize();
 	}
 
+    void SelectionContactsForConference::updateSize()
+    {
+        if (parentWidget())
+        {
+            mainDialog_->updateSize();
+            UpdateView();
+        }
+    }
+
 
 	ContactsForVideoConference::ContactsForVideoConference(QObject* parent, const Logic::ChatMembersModel& videoConferenceModel) :
 		Logic::ChatMembersModel(parent), videoConferenceModel_(videoConferenceModel)

@@ -66,6 +66,8 @@ public:
 
     virtual QString getSourceText() const override;
 
+    virtual QString getTextForCopy() const override;
+
     std::shared_ptr<const themes::theme> getTheme() const;
 
     int getThemeId() const;
@@ -103,6 +105,10 @@ public:
 	virtual void setQuoteSelection();
 
     virtual void connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover);
+
+    virtual void hideBlock() final override;
+
+    virtual bool isHasLinkInMessage() const override;
 
 protected:
     virtual bool drag() override;

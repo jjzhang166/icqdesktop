@@ -279,6 +279,7 @@ namespace Ui
     private:
 
         bool quit_;
+        uint32_t curr_id_;
 
         mutable std::unordered_map<uint32_t, std::shared_ptr<MediaData>> mediaData_;
         mutable std::mutex mediaDataMutex_;
@@ -303,6 +304,7 @@ namespace Ui
         void init(MediaData& _media);
         uint32_t addVideo(uint32_t id = 0);
         void deleteVideo(uint32_t _videoId);
+        uint32_t reserveId();
 
         int32_t getVideoStreamIndex(MediaData& _media) const;
         int32_t getAudioStreamIndex(MediaData& _media) const;
@@ -710,13 +712,13 @@ namespace Ui
         void mediaFinished();
         void mouseMoved();
         void mouseLeaveEvent();
-        void frameChanged(int frameNumber);
         void fileLoaded();
         void mediaChanged(qint32);
         void dataReady();
         void streamsOpenFailed(uint32_t _videoId);
         void paused();
         void played();
+        void firstFrameReady();
 
     private Q_SLOTS:
 
@@ -781,6 +783,7 @@ namespace Ui
         void setStarted(bool _started);
 
         void loadFromQueue();
+        void removeFromQueue(uint32_t _media);
         void clearQueue();
         bool queueIsEmpty() const;
         int queueSize() const;
@@ -795,10 +798,14 @@ namespace Ui
         uint32_t getLastMedia() const;
         uint32_t getMedia() const;
 
+        uint32_t reserveId();
+
         void setReplay(bool _replay);
 
         void setRestoreVolume(const int32_t _volume);
         int32_t getRestoreVolume() const;
+
+        void resetRenderer();
 
     protected:
 

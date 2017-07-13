@@ -314,13 +314,11 @@ Q_SIGNALS:
         LabelEx*                                contactStatus_;
         MessagesScrollArea*						messagesArea_;
         MessagesWidgetEventFilter*				eventFilter_;
-        /// NewMessagesPlate*						newMessagesPlate_;
         qint32									nextLocalPosition_;
         qint64									newPlatePosition_;
         qint64									chatInfoSequence_;
         QPushButton*                            addMemberButton_;
         QPushButton*                            callButton_;
-        QPushButton*                            favoriteStar_;
         QPushButton*                            moreButton_;
         QPushButton*                            officialMark_;
         QPushButton*                            videoCallButton_;

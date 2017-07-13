@@ -30,9 +30,10 @@ namespace Ui
 
 		virtual int draw(QPainter& _painter, int _x, int _y) override
 		{
-			_painter.fillRect(_x, _y - height(_painter.fontMetrics()) + 1, width(_painter.fontMetrics()) + 1, height(_painter.fontMetrics()) + 1, _painter.brush());
+            auto fm = _painter.fontMetrics();
+			_painter.fillRect(_x, _y - height(fm) + 1, width(fm) + 1, height(fm) + 1, _painter.brush());
 			_painter.drawText(_x, _y, text_);
-			return width(_painter.fontMetrics());
+			return width(fm);
 		}
 
 		virtual int width(const QFontMetrics& _fontMetrics) override

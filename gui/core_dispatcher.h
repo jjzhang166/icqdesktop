@@ -196,7 +196,7 @@ Q_SIGNALS:
 
         void phoneInfoResult(qint64, Data::PhoneInfo);
         void snapMetainfoDownloaded(int64_t _seq, bool _success, uint64_t _snapId, int64_t _expireUtc, QString _authorUin, QString _authorName);
-        void snapPreviewInfoDownloaded(qint64 _snapId, QString _mini_preview, QString _ttl_id);
+        void snapPreviewInfoDownloaded(qint64 _snapId, QString _mini_preview, QString _ttl_id, bool _found);
 
         // masks
         void maskListLoaded(QList<QString> maskList);
@@ -236,7 +236,7 @@ Q_SIGNALS:
 
         qint64 getFileSharingPreviewSize(const QString& _url);
         qint64 downloadFileSharingMetainfo(const QString& _url);
-        qint64 downloadSharedFile(const QString& _url, bool _forceRequestMetainfo, const QString& _fileName = QString());
+        qint64 downloadSharedFile(const QString& _contactAimid, const QString& _url, bool _forceRequestMetainfo, const QString& _fileName = QString(), bool _raise_priority = false);
 
         qint64 abortSharedFileDownloading(const QString& _url);
 
@@ -253,9 +253,10 @@ Q_SIGNALS:
             const QString& _destination,
             const bool _isPreview,
             const int32_t _maxPreviewWidth,
-            const int32_t _maxPreviewHeight);
+            const int32_t _maxPreviewHeight,
+            bool _raisePriority = false);
 
-        void cancelImageDownloading(const int64_t _downloadSeq);
+        void cancelImageDownloading(const QString& _url);
 
         int64_t downloadLinkMetainfo(
             const QString& _contactAimid,
@@ -270,13 +271,13 @@ Q_SIGNALS:
 
         qint64 raiseDownloadPriority(const QString &_contactAimid, int64_t _procId);
 
-        qint64 raiseContactDownloadsPriority(const QString &_contactAimid);
+        qint64 contactSwitched(const QString &_contactAimid);
 
         void sendMessageToContact(const QString& _contact, const QString& _text);
 
         void read_snap(const QString& _contact, const uint64_t _snapId, const bool _markPrevSnapsRead, bool _refreshStorage = false);
 
-        int64_t download_snap_metainfo(const QString& _contact, const QString& _ttlId);
+        int64_t download_snap_metainfo(const QString& _contact, const QString& _ttlId, bool _raise = false);
 
         int64_t pttToText(const QString& _pttLink, const QString& _locale);
 

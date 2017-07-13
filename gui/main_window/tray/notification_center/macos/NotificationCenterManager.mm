@@ -199,7 +199,6 @@ namespace Ui
 	void NotificationCenterManager::Activated(const QString& aimId, const QString& mailId)
 	{
         Utils::InterConnector::instance().getMainWindow()->closeGallery();
-        Utils::InterConnector::instance().getMainWindow()->closePlayer();
 		emit messageClicked(aimId, mailId);
         HideNotifications(aimId);
 	}

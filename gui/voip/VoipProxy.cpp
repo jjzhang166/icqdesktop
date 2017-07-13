@@ -21,7 +21,7 @@
 #endif
 
 #define INCLUDE_USER_NAME         1
-#define INCLUDE_USER_NAME_IN_CONF 0
+#define INCLUDE_USER_NAME_IN_CONF 1
 #define INCLUDE_REMOTE_CAMERA_OFF 0
 #define INCLUDE_AVATAR            1
 #define INCLUDE_BLUR_BACKGROUND   1
@@ -44,11 +44,26 @@ namespace
     }
 }
 
-void addImageToCollection(Ui::gui_coll_helper& collection, const std::string& dir, const std::string& name, const std::string& filenamePrefix, const std::string& filenamePostfix)
+void addImageToCollection(Ui::gui_coll_helper& collection, const std::string& dir, const std::string& name, const std::string& filenamePrefix, const std::string& filenamePostfix, int outputWidth = 0, int outputHeight = 0)
 {
     std::stringstream resourceStr;
     resourceStr << ":/resources/" + (!dir.empty() ? dir + "/" : "") << filenamePrefix << Utils::scale_bitmap_with_value(100) << filenamePostfix << ".png";
     QImage image(resourceStr.str().c_str());
+
+    if (outputHeight > 0 && outputWidth > 0)
+    {
+        QImage bigImage(outputWidth, outputHeight, QImage::Format_ARGB32);
+        bigImage.fill(Qt::transparent);
+
+        {
+            QPainter painter(&bigImage);
+
+            QSize position = (bigImage.size() - image.size()) / 2;
+            painter.drawImage(QPoint(position.width(), position.height()), image);
+        }
+
+        image = bigImage.copy();
+    }
 
     auto dataSize = image.byteCount();
     auto dataPtr = image.bits();
@@ -382,12 +397,6 @@ void voip_proxy::VoipController::_loadUserBitmaps(Ui::gui_coll_helper& _collecti
     }
 
     {// signs
-        QPainter painter;
-
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setRenderHint(QPainter::TextAntialiasing);
-        painter.setRenderHint(QPainter::SmoothPixmapTransform);
-		
 		QString tmpContact;
 
 		if (Ui::MyInfo()->aimId() == QString::fromStdString(_contact))
@@ -405,6 +414,12 @@ void voip_proxy::VoipController::_loadUserBitmaps(Ui::gui_coll_helper& _collecti
 
         if (INCLUDE_USER_NAME)
         {// normal
+            QPainter painter;
+
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setRenderHint(QPainter::TextAntialiasing);
+            painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
             const auto fontSize = 15;
             QFont font = Fonts::appFont(Utils::scale_bitmap_with_value(fontSize));
             font.setStyleStrategy(QFont::PreferAntialias);
@@ -438,12 +453,17 @@ void voip_proxy::VoipController::_loadUserBitmaps(Ui::gui_coll_helper& _collecti
 
         if (INCLUDE_USER_NAME_IN_CONF)
         {// header
-            const QSize border = QSize(Utils::scale_bitmap_with_value(2), Utils::scale_bitmap_with_value(2));
+            QPainter painter;
 
-            QFont font = Fonts::appFont(Utils::scale_bitmap_with_value(12), Fonts::FontWeight::Medium);
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setRenderHint(QPainter::TextAntialiasing);
+            painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
+            const QSize border = QSize(Utils::scale_bitmap_with_value(10), 0);
+
+            QFont font = Fonts::appFont(Utils::scale_bitmap_with_value(15));
             font.setStyleStrategy(QFont::PreferAntialias);
-            QColor confUserName("#ffffff");
-            confUserName.setAlphaF(0.5);
+            QColor confUserName("#000000");
             const QPen pen(confUserName);
 
             QSize textSz;
@@ -459,17 +479,29 @@ void voip_proxy::VoipController::_loadUserBitmaps(Ui::gui_coll_helper& _collecti
             }
 
             { // draw
-                QPixmap pm(textSz.width() + border.width() * 2, textSz.height() + border.height() * 2);
-                pm.fill(Qt::transparent);
+                // Make too long header.
+                QImage image(textSz.width() + border.width() * 2 + Utils::scale_bitmap(1920), Utils::scale_bitmap_with_value(32), QImage::Format_ARGB32);
+                
+                //pm.fill(QColor(255, 255, 255, 255));
 
-                painter.begin(&pm);
+                QColor headerBackground("#ffffff");
+                headerBackground.setAlphaF(0.7);
+
+                //pm.fill(headerBackground);
+                painter.begin(&image);
+
+                painter.setCompositionMode(QPainter::CompositionMode_Clear);
+                painter.fillRect(image.rect(), Qt::black);
+                painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+                painter.fillRect(image.rect(), headerBackground);
+                
                 painter.setPen(pen);
                 painter.setFont(font);
 
-                painter.drawText(QRect(border.width(), border.height(), textSz.width(), textSz.height()), Qt::TextSingleLine | Qt::AlignLeft | Qt::AlignVCenter, tmpContact);
+                painter.drawText(QRect(border.width(), border.height(), textSz.width(), image.height()), Qt::TextSingleLine | Qt::AlignLeft | Qt::AlignVCenter, tmpContact);
                 painter.end();
 
-                packAvatar(pm.toImage(), "sign_header_");
+                packAvatar(image, "sign_header_");
             }
         }
     }
@@ -972,10 +1004,12 @@ void voip_proxy::VoipController::setWindowAdd(quintptr _hwnd, bool _primaryWnd, 
 
         // Added buttons.
         {
-            addImageToCollection(collection, "main_window", "normalButton", "contr_close_", "");
-            addImageToCollection(collection, "main_window", "highlightedButton", "contr_close_" , "_hover");
-            addImageToCollection(collection, "main_window", "pressedButton", "contr_close_", "_hover"); // TODO
-            addImageToCollection(collection, "main_window", "disabledButton", "contr_close_", "");
+            int w = Utils::scale_bitmap_with_value(32);
+            int h = Utils::scale_bitmap_with_value(32);
+            addImageToCollection(collection, "basic_elements", "normalButton", "close_a_", "",       w, h);
+            addImageToCollection(collection, "basic_elements", "highlightedButton", "close_b_" , "", w, h);
+            addImageToCollection(collection, "basic_elements", "pressedButton", "close_b_", "",      w, h); // TODO
+            addImageToCollection(collection, "basic_elements", "disabledButton", "close_b_", "",     w, h);
         }
 
         dispatcher_.post_message_to_core("voip_call", collection.get());
@@ -1209,6 +1243,11 @@ const std::vector<voip_manager::Contact>& voip_proxy::VoipController::currentCal
 bool voip_proxy::VoipController::isVoipKilled()
 {
 	return voipIsKilled_;
+}
+
+bool voip_proxy::VoipController::hasEstablishCall()
+{
+    return !connectedPeerList_.empty();
 }
 
 

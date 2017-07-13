@@ -1,11 +1,21 @@
 #pragma once
 
+namespace Ui
+{
+    class DialogPlayer;
+}
+
 namespace Previewer
 {
     class AbstractViewer
         : public QObject
     {
         Q_OBJECT
+
+        public:
+Q_SIGNALS:
+        void mouseWheelEvent(const int _delta);
+
     public:
         virtual ~AbstractViewer();
 
@@ -18,8 +28,11 @@ namespace Previewer
 
         void paint(QPainter& _painter);
 
-        double getPrefferedScaleFactor() const;
+        double getPreferredScaleFactor() const;
         double getScaleFactor() const;
+
+        virtual bool isZoomSupport() const;
+        virtual bool closeFullscreen();
 
     protected:
         explicit AbstractViewer(const QSize& _viewportSize, QWidget* _parent);
@@ -31,8 +44,9 @@ namespace Previewer
 
     private:
         virtual void doPaint(QPainter& _painter, const QRect& _source, const QRect& _target) = 0;
-
-        double getPrefferedScaleFactor(const QSize& _imageSize) const;
+        virtual void doResize(const QRect& _source, const QRect& _target);
+        
+        double getPreferredScaleFactor(const QSize& _imageSize) const;
 
         void fixBounds(const QSize& _bounds, QRect& _child);
 
@@ -55,8 +69,8 @@ namespace Previewer
         double scaleFactor_;
     };
 
-    class GifViewer
-        : public AbstractViewer
+
+    class GifViewer : public AbstractViewer
     {
         Q_OBJECT
     public:
@@ -71,8 +85,8 @@ namespace Previewer
         std::unique_ptr<QMovie> gif_;
     };
 
-    class JpegPngViewer
-        : public AbstractViewer
+
+    class JpegPngViewer : public AbstractViewer
     {
     public:
         static std::unique_ptr<AbstractViewer> create(const QPixmap& _image, const QSize& _viewportSize, QWidget* _parent);
@@ -84,5 +98,40 @@ namespace Previewer
 
     private:
         QPixmap originalImage_;
+    };
+
+    class FFMpegViewer : public AbstractViewer
+    {
+        Q_OBJECT
+
+    public:
+
+        static std::unique_ptr<AbstractViewer> create(
+            const QString& _fileName, 
+            const QSize& _viewportSize, 
+            QWidget* _parent,
+            QPixmap _preview);
+
+    private:
+
+        QWidget* parent_;
+
+        bool fullscreen_;
+        QRect normalSize_;
+
+        QPixmap preview_;
+
+        FFMpegViewer(const QString& _fileName, const QSize& _viewportSize, QWidget* _parent, QPixmap _preview);
+        virtual ~FFMpegViewer();
+
+        QSize calculateInitialSize() const;
+
+        void doPaint(QPainter& _painter, const QRect& _source, const QRect& _target) override;
+        void doResize(const QRect& _source, const QRect& _target) override;
+        bool closeFullscreen() override;
+        bool isZoomSupport() const override;
+    private:
+
+        std::unique_ptr<Ui::DialogPlayer> ffplayer_;
     };
 }

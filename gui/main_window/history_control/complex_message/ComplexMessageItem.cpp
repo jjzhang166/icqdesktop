@@ -305,6 +305,7 @@ void ComplexMessageItem::onDistanceToViewportChanged(const QRect& _widgetAbsGeom
     }
 }
 
+
 void ComplexMessageItem::replaceBlockWithSourceText(IItemBlock *block)
 {
     assert(block);
@@ -339,7 +340,7 @@ void ComplexMessageItem::replaceBlockWithSourceText(IItemBlock *block)
         return;
     }
 
-    auto &existingBlock = *iter;
+    auto& existingBlock = *iter;
     assert(existingBlock);
 
     auto textBlock = new TextBlock(
@@ -353,6 +354,38 @@ void ComplexMessageItem::replaceBlockWithSourceText(IItemBlock *block)
 
     existingBlock->deleteLater();
     existingBlock = textBlock;
+
+    Layout_->onBlockSizeChanged();
+}
+
+void ComplexMessageItem::removeBlock(IItemBlock *block)
+{
+    assert(block);
+    assert(!Blocks_.empty());
+
+    const auto isMenuBlockReplaced = (MenuBlock_ == block);
+    if (isMenuBlockReplaced)
+    {
+        cleanupMenu();
+    }
+
+    const auto isHoveredBlockReplaced = (HoveredBlock_ == block);
+    if (isHoveredBlockReplaced)
+    {
+        onHoveredBlockChanged(nullptr);
+    }
+
+    auto iter = std::find(Blocks_.begin(), Blocks_.end(), block);
+
+    if (iter == Blocks_.end())
+    {
+        assert(!"block is missing");
+        return;
+    }
+
+    Blocks_.erase(iter);
+
+    block->deleteLater();
 
     Layout_->onBlockSizeChanged();
 }
@@ -558,6 +591,7 @@ void ComplexMessageItem::leaveEvent(QEvent *event)
     MouseLeftPressedOverAvatar_ = false;
 
     onHoveredBlockChanged(nullptr);
+    emit leave();
 }
 
 void ComplexMessageItem::mouseMoveEvent(QMouseEvent *event)
@@ -653,8 +687,6 @@ void ComplexMessageItem::paintEvent(QPaintEvent *event)
     drawAvatar(p);
 
     drawBubble(p, QuoteAnimation_.quoteColor());
-
-    drawBlocksSeparators(p);
 
     if (Style::isBlocksGridEnabled())
     {
@@ -883,50 +915,6 @@ void ComplexMessageItem::drawAvatar(QPainter &p)
     p.drawPixmap(avatarRect, *Avatar_);
 }
 
-void ComplexMessageItem::drawBlocksSeparators(QPainter &p)
-{
-    const auto nothingToSeparate = (Blocks_.size() < 2);
-    if (nothingToSeparate)
-    {
-        return;
-    }
-
-    p.save();
-
-    auto iter = Blocks_.begin();
-    auto prevIter = iter++;
-
-    const auto &pen = Style::getBlocksSeparatorPen();
-    p.setPen(pen);
-
-    for (; iter != Blocks_.end(); prevIter = iter++)
-    {
-        const auto block = *iter;
-        assert(block);
-
-        const auto separatorRect = Layout_->getBlockSeparatorRect(block);
-
-        if (separatorRect.isEmpty())
-        {
-            continue;
-        }
-
-        const auto separatorRectCenterY = separatorRect.center().y();
-
-        const QPoint lineFrom(
-            separatorRect.left(),
-            separatorRectCenterY);
-
-        const QPoint lineTo(
-            separatorRect.right(),
-            separatorRectCenterY);
-
-        p.drawLine(lineFrom, lineTo);
-    }
-
-    p.restore();
-}
-
 void ComplexMessageItem::drawBubble(QPainter &p, const QColor& quote_color)
 {
     const auto &bubbleRect = Layout_->getBubbleRect();
@@ -987,7 +975,7 @@ QString ComplexMessageItem::getBlocksText(const IItemBlocksVec &items, const boo
         const auto itemText = (
             isSelected ?
                 item->getSelectedText(selectedItemCount > 1) :
-                item->getSourceText());
+                item->getTextForCopy());
 
         if (itemText.isEmpty())
         {
@@ -1066,7 +1054,7 @@ QList<Data::Quote> ComplexMessageItem::getQuotes(bool force) const
     Data::Quote quote;
     for (auto b : Blocks_)
     {
-        auto selectedText = force ? b->getSourceText() : b->getSelectedText();
+        auto selectedText = force ? b->getTextForCopy() : b->getSelectedText();
         if (!selectedText.isEmpty())
         {
             auto q = b->getQuote();
@@ -1177,6 +1165,24 @@ bool ComplexMessageItem::isBubbleRequired() const
       }
 
       return false;
+}
+
+int ComplexMessageItem::getMaxWidth() const
+{
+    int maxWidth = -1;
+
+    for (const auto block : Blocks_)
+    {
+        int blockMaxWidth = block->getMaxWidth();
+
+        if (blockMaxWidth > 0)
+        {
+            if (maxWidth == -1 || maxWidth > blockMaxWidth)
+                maxWidth = blockMaxWidth;
+        }
+    }
+
+    return maxWidth;
 }
 
 bool ComplexMessageItem::isOverAvatar(const QPoint &pos) const

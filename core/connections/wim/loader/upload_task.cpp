@@ -5,7 +5,6 @@
 #include "../packets/get_gateway.h"
 #include "../packets/send_file.h"
 #include "../../../tools/system.h"
-#include "tasks_runner_slot.h"
 #include "loader.h"
 
 #include "../../../../common.shared/loader_errors.h"

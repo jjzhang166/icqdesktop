@@ -7,33 +7,7 @@ namespace Ui
 {
     class CustomButton;
     class SearchWidget;
-
-    class MyMailWidget : public QWidget
-    {
-        Q_OBJECT
-
-    public:
-        MyMailWidget(QWidget* parent);
-
-    protected:
-        virtual void paintEvent(QPaintEvent *);
-        virtual void mouseReleaseEvent(QMouseEvent *);
-        virtual void enterEvent(QEvent *);
-        virtual void leaveEvent(QEvent *);
-
-    private Q_SLOTS:
-        void mailStatus(QString, unsigned, bool);
-        void mrimKey(qint64, QString);
-
-    private:
-        void updateSize();
-
-    private:
-        bool Hovered_;
-        unsigned Unreads_;
-        QString Email_;
-        int64_t LastSeq_;
-    };
+    class UnreadMailWidget;
 
     class BurgerWidget : public QWidget
     {
@@ -82,12 +56,8 @@ namespace Ui
     protected:
         virtual void paintEvent(QPaintEvent* _e) override;
 
-    private Q_SLOTS:
-        void infoUpdated();
-
     private:
         BurgerWidget* Burger_;
-        MyMailWidget* Mail_;
         QWidget* LeftSpacer_;
         QWidget* RightSpacer_;
         QHBoxLayout* mainLayout;

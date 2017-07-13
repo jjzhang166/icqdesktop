@@ -8,7 +8,6 @@
 
 #include "../packets/get_file_meta_info.h"
 #include "../packets/load_file.h"
-#include "tasks_runner_slot.h"
 #include "loader.h"
 
 #include "download_task.h"

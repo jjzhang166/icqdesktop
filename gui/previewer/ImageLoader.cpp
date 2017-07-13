@@ -113,7 +113,7 @@ void Previewer::ImageLoader::start()
 
     if (image_.is_filesharing_)
     {
-        seq_ = Ui::GetDispatcher()->downloadSharedFile(image_.url_, false);
+        seq_ = Ui::GetDispatcher()->downloadSharedFile(aimId_, image_.url_, false, QString(), true);
     }
     else
     {

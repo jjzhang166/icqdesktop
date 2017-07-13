@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TopPanel.h"
+#include "../TitleBar.h"
 #include "../../my_info.h"
 #include "../../utils/utils.h"
 #include "../../utils/InterConnector.h"
@@ -17,13 +18,7 @@ namespace
 {
     const int left_margin = 16;
     const int right_margin = 13;
-    const int left_margin_compact = 14;
     const int icon_size = 28;
-
-    const int mail_icon_size = 24;
-
-    const int balloon_size = 16;
-    const int unreads_padding = 12;
 
     const int burger_width = 20;
     const int burger_width_compact = 30;
@@ -35,95 +30,6 @@ namespace
 
 namespace Ui
 {
-    MyMailWidget::MyMailWidget(QWidget* parent)
-        : QWidget(parent)
-        , Unreads_(0)
-        , LastSeq_(-1)
-        , Hovered_(false)
-    {
-        updateSize();
-        connect(Ui::GetDispatcher(), SIGNAL(mailStatus(QString, unsigned, bool)), this, SLOT(mailStatus(QString, unsigned, bool)), Qt::QueuedConnection);
-        connect(Ui::GetDispatcher(), SIGNAL(mrimKey(qint64, QString)), this, SLOT(mrimKey(qint64, QString)), Qt::QueuedConnection);
-    }
-
-
-    void MyMailWidget::paintEvent(QPaintEvent *e)
-    {
-        QPainter p(this);
-        p.setRenderHint(QPainter::Antialiasing);
-        auto icon = QPixmap(Utils::parse_image_name(Hovered_ ? ":/resources/magent_100_hover.png" : ":/resources/magent_100.png"));
-        Utils::check_pixel_ratio(icon);
-        p.drawPixmap(0, Utils::scale_value(balloon_size / 2), icon);
-
-        if (Unreads_ > 0)
-        {
-            const auto borderColor = Ui::CommonStyle::getTopPanelColor();
-            const auto bgColor = QColor("#579e1c");
-            const auto textColor = QColor("#ffffff");
-            Utils::drawUnreads(
-                &p,
-                Fonts::appFontScaled(11, Fonts::FontWeight::Medium),
-                &bgColor,
-                &textColor,
-                &borderColor,
-                Unreads_,
-                Utils::scale_value(balloon_size),
-                Utils::scale_value(mail_icon_size) / 2,
-                Utils::scale_value(mail_icon_size) / 2 - Utils::scale_value(balloon_size / 2)
-            );
-        }
-    }
-
-    void MyMailWidget::mouseReleaseEvent(QMouseEvent *e)
-    {
-        Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
-        collection.set_value_as_qstring("email", Email_.isEmpty() ? MyInfo()->aimId() : Email_);
-        LastSeq_ = Ui::GetDispatcher()->post_message_to_core("mrim/get_key", collection.get());
-
-        QWidget::mouseReleaseEvent(e);
-    }
-
-    void MyMailWidget::enterEvent(QEvent * e)
-    {
-        Hovered_ = true;
-        update();
-        return QWidget::enterEvent(e);
-    }
-
-    void MyMailWidget::leaveEvent(QEvent * e)
-    {
-        Hovered_ = false;
-        update();
-        return QWidget::leaveEvent(e);
-    }
-
-    void MyMailWidget::mrimKey(qint64 _seq, QString key)
-    {
-        if (_seq == LastSeq_)
-        {
-            Utils::openMailBox(Email_, key, QString());
-        }
-    }
-
-    void MyMailWidget::updateSize()
-    {
-        auto width = Utils::scale_value(mail_icon_size);
-        width += Utils::scale_value(unreads_padding / 2 + 3);
-        if (Unreads_ > 9)
-            width += Utils::scale_value(unreads_padding / 2 + balloon_size / 2);
-        if (Unreads_ > 99)
-            width += Utils::scale_value(balloon_size / 2);
-        setFixedSize(width, Utils::scale_value(mail_icon_size + balloon_size));
-    }
-
-    void MyMailWidget::mailStatus(QString email, unsigned unreads, bool)
-    {
-        Email_ = email;
-        Unreads_ = unreads;
-        updateSize();
-        update();
-    }
-
     BurgerWidget::BurgerWidget(QWidget* parent)
         : QWidget(parent)
         , Back_(false)
@@ -181,7 +87,7 @@ namespace Ui
     {
         mainLayout = Utils::emptyHLayout();
         LeftSpacer_ = new QWidget(this);
-        LeftSpacer_->setFixedWidth(Utils::scale_value(left_margin_compact));
+        LeftSpacer_->setFixedWidth(Utils::scale_value(left_margin));
         LeftSpacer_->setStyleSheet(
             QString("border-style: none; border-bottom-style:solid; background: %1;")
             .arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getTopPanelColor()))
@@ -194,15 +100,9 @@ namespace Ui
         searchWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         mainLayout->addWidget(searchWidget);
         Search_ = searchWidget;
-        Mail_ = new MyMailWidget(this);
-        Mail_->setCursor(Qt::PointingHandCursor);
-        Mail_->stackUnder(Burger_);
-        Mail_->stackUnder(LeftSpacer_);
-        mainLayout->addWidget(Mail_);
-        Mail_->setVisible(MyInfo()->haveConnectedEmail());
         Discover_ = new CustomButton(this, ":/resources/explore_100.png");
         Discover_->setFillColor(Qt::white);
-        Discover_->setHoverImage(":/resources/explore_100_hover.png");
+        Discover_->setHoverImage(":/resources/explore_100_active.png");
         Discover_->setFixedSize(Utils::scale_value(button_width), Utils::scale_value(button_height));
         Discover_->setCursor(Qt::PointingHandCursor);
         mainLayout->addWidget(Discover_);
@@ -222,9 +122,9 @@ namespace Ui
                 "border-width: 1dip;"
                 "border-top: none;"
                 "border-left: none;"
+                "border-bottom: none;"
             ).arg(Utils::rgbaStringFromColor(Ui::CommonStyle::getTopPanelColor())));
 
-        connect(MyInfo(), SIGNAL(received()), this, SLOT(infoUpdated()), Qt::QueuedConnection);
         connect(Burger_, SIGNAL(back()), this, SIGNAL(back()), Qt::QueuedConnection);
         connect(Burger_, SIGNAL(clicked()), this, SIGNAL(burgerClicked()), Qt::QueuedConnection);
         connect(Discover_, SIGNAL(clicked()), this, SIGNAL(discoverClicked()), Qt::QueuedConnection);
@@ -233,10 +133,6 @@ namespace Ui
     void TopPanelWidget::setMode(Mode _mode)
     {
         const auto isCompact = (_mode == Ui::TopPanelWidget::COMPACT);
-        if (isCompact)
-            Mail_->hide();
-        else
-            Mail_->setVisible(MyInfo()->haveConnectedEmail() && _mode != SPREADED);
 
         Burger_->setFixedWidth(Utils::scale_value(isCompact ? burger_width_compact : burger_width));
         Burger_->setVisible(_mode != SPREADED);
@@ -272,7 +168,6 @@ namespace Ui
     void TopPanelWidget::searchActivityChanged(bool _active)
     {
         Discover_->setVisible(!_active && Mode_ == Ui::TopPanelWidget::NORMAL);
-        Mail_->setVisible(MyInfo()->haveConnectedEmail() && !_active && Mode_ == Ui::TopPanelWidget::NORMAL);
         Burger_->setVisible(Mode_ != Ui::TopPanelWidget::SPREADED);
         RightSpacer_->setVisible(!_active);
     }
@@ -285,11 +180,5 @@ namespace Ui
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
         return QWidget::paintEvent(_e);
-    }
-
-    void TopPanelWidget::infoUpdated()
-    {
-        if (Mode_ != COMPACT)
-            Mail_->setVisible(MyInfo()->haveConnectedEmail());
     }
 }

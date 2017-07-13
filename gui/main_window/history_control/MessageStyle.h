@@ -31,6 +31,12 @@ QColor getIncomingBodyColorB();
 
 QColor getOutgoingBodyColorB();
 
+QString getLinkColorS();
+
+QColor getLinkColor();
+
+QString getMessageStyle();
+
 QBrush getBodyBrush(const bool isOutgoing, const bool isSelected, const int theme_id);
 
 int32_t getMinBubbleHeight();
@@ -72,5 +78,7 @@ int32_t getSenderHeight();
 int32_t getTextWidthStep();
 
 int32_t roundTextWidthDown(const int32_t width);
+
+int32_t getSnippetMaxWidth();
 
 UI_MESSAGE_STYLE_NS_END

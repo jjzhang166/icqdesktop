@@ -59,7 +59,7 @@ finish:
     if (hasUrl())
     {
         const auto& url = parser_.get_url();
-        charsProcessed_ = QString::fromUtf8(url.url_.c_str(), url.url_.size()).length();
+        charsProcessed_ = QString::fromUtf8(url.original_.c_str(), url.original_.size()).length();
     }
     else
     {

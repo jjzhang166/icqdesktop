@@ -6,10 +6,7 @@ QPushButton#send_button
 	min-height: 32dip;
 	max-height: 32dip;
 	border-image: url(:/resources/input_widget/send_100.png);
-	margin-left: 0;
-	margin-top: 12dip;
-	margin-right: 20dip;
-	margin-bottom: 0;
+	margin-right: 4dip;
 	padding: 0dip;
 }
 
@@ -31,16 +28,10 @@ QPushButton#send_button:disabled
 QPushButton#smiles_button
 {
 	border: none;
-	min-width: 32dip;
-	max-width: 32dip;
-	min-height: 32dip;
-	max-height: 32dip;
-	border-image: url(:/resources/videoplayer/reply_snap_button_100_hover.png);
-	margin-left: 12dip;
-	margin-top: 12dip;
-	margin-right: 0;
-	margin-bottom: 0;
-	padding: 0dip;
+	min-width: 0dip;
+	max-width: 0dip;
+	min-height: 0dip;
+	max-height: 0dip;
 }
 
 Ui--InputWidget#input_edit_control
@@ -53,8 +44,6 @@ Ui--TextEditEx#input_edit_control
 {
 	background: transparent;
 	border-style: none;
-	margin-top: 8dip;
-	margin-bottom: 8dip;
 	margin-left: 16dip;
 	margin-right: 16dip;
 		
@@ -62,12 +51,13 @@ Ui--TextEditEx#input_edit_control
 	padding-bottom: 6dip;
 }
 
-QPushButton#close_button
+Ui--TextEditEx#input_edit_control_mac
 {
-	border-image: url(:/resources/basic_elements/close_c_100.png);
-}
-
-QPushButton#close_button:hover
-{
-	border-image: url(:/resources/basic_elements/close_b_100.png);
+	background: transparent;
+	border-style: none;
+	margin-left: 16dip;
+	margin-right: 16dip;
+		
+	padding-top: 4dip;
+	padding-bottom: 4dip;
 }

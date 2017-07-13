@@ -14,7 +14,7 @@
 
 namespace
 {
-    const auto MIN_AVATAR_SIZE = 600;
+    const auto MIN_AVATAR_SIZE = 200;
     const int ADD_PHOTO_FONTSIZE = 24;
     const QColor STROKE_COLOR("#579e1c");
 }
@@ -336,7 +336,7 @@ this
                         QT_TRANSLATE_NOOP("avatar_upload", "Choose file"),
                         NULL,
                         QT_TRANSLATE_NOOP("avatar_upload", "Upload photo"),
-                        QT_TRANSLATE_NOOP("avatar_upload", "Image should be at least 600x600 px"),
+                        QT_TRANSLATE_NOOP("avatar_upload", "Image should be at least 200x200 px"),
                         NULL))
                     {
                         isContinue = true;

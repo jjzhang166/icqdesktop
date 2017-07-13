@@ -7,7 +7,7 @@ namespace Ui
 {
     namespace {
         static QSize WIDGET_MINIMUM_SIZE;
-        static const auto MIN_SIZE = 600;
+        static const auto MIN_SIZE = 200;
     }
 
     ImageCropper::ImageCropper(QWidget* parent, const QSize &minimumSize)
@@ -43,7 +43,7 @@ namespace Ui
         this->setFixedSize(width_, height_);
 
         // NOTE : not need scale min_size here, before it will be scaled with image
-        minScaledSize_ = 1.0 * MIN_SIZE / pimpl->imageForCropping.width() * pimpl->scaledImage.width();
+        minScaledSize_ = Utils::scale_value(MIN_SIZE);
         update();
     }
 

@@ -152,7 +152,6 @@ namespace Ui
         void snapsChanged();
         void showSnapsChanged();
         void snapClicked(const QModelIndex& index);
-        void infoUpdated();
         void headerBack();
         void showHeader(QString);
 
@@ -178,6 +177,9 @@ namespace Ui
         void prevChat();
         void leftTab();
         void rightTab();
+        void nextSnap();
+        void nextUserSnap();
+        void prevUserSnap();
 
         ContactDialog* getContactDialog() const;
         HistoryControlPage* getHistoryPage(const QString& _aimId) const;
@@ -217,6 +219,7 @@ namespace Ui
 
         void hideMenu();
         bool isMenuVisible() const;
+        bool isMenuVisibleOrOpening() const;
 
         static QString getMainWindowQss();
 
@@ -266,7 +269,6 @@ namespace Ui
         SemitransparentWindowAnimated*  semiWindow_;
         HorScrollableView*              snapsView_;
         CustomButton*                   searchButton_;
-        QWidget*                        mailWidget_;
         QWidget*                        headerWidget_;
         HeaderBack*                    headerBack_;
         UnreadsCounter*                 counter_;

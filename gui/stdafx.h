@@ -386,6 +386,7 @@
 #import <QtGui/QOpenGLBuffer.h>
 #import <QtWidgets/qgraphicsscene.h>
 #import <QtWidgets/qgraphicsitem.h>
+#import <QtMacExtras/qmacfunctions.h>
 
 
 #endif // _WIN32

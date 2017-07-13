@@ -152,6 +152,36 @@ namespace Logic
 
         emit (_edit.document()->contentsChanged());
 	}
+
+    void Text4Edit(const QString& _text, Ui::TextEditEx& _edit, const bool _convertLinks, Emoji::EmojiSizePx _emojiSize)
+    {
+        auto cur = _edit.textCursor();
+        Text4Edit(_text, _edit, cur, _convertLinks, _emojiSize);
+    }
+
+    void Text4Edit(const QString& _text, Ui::TextEditEx& _edit, QTextCursor& _cursor, const bool _convertLinks, Emoji::EmojiSizePx _emojiSize)
+    {
+        _edit.blockSignals(true);
+        _edit.document()->blockSignals(true);
+        _edit.setUpdatesEnabled(false);
+
+        Text2DocConverter converter;
+        converter.MakeUniqueResources(true);
+
+        _cursor.beginEditBlock();
+
+        converter.Convert(_text, _cursor, Text2DocHtmlMode::Escape, _convertLinks, false, nullptr, _emojiSize, QTextCharFormat::AlignBaseline);
+
+        _cursor.endEditBlock();
+
+        _edit.mergeResources(converter.GetResources());
+
+        _edit.setUpdatesEnabled(true);
+        _edit.document()->blockSignals(false);
+        _edit.blockSignals(false);
+
+        emit (_edit.document()->contentsChanged());
+    }
     
     void Text4EditEmoji(const QString& text, Ui::TextEditEx& _edit, Emoji::EmojiSizePx _emojiSize, const QTextCharFormat::VerticalAlignment _aligment)
     {
@@ -476,21 +506,44 @@ namespace
 
         QString buf;
 
-        auto onUrlFound = [&buf, isWordWrapEnabled, this]() {
+        auto onUrlFound = [isWordWrapEnabled, this]()
+        {
             PopInputCursor();
             const auto& url = parser_.get_url();
-            const auto charsProcessed = QString::fromUtf8(url.url_.c_str(), url.url_.size()).size();
+            const auto urlAsString = QString::fromUtf8(url.original_.c_str(), url.original_.size());
+            const auto charsProcessed = urlAsString.size();
             if (!Input_.seek(Input_.pos() + charsProcessed))
             {
                 Input_.readAll(); // end of stream
             }
-            SaveAsHtml(buf, parser_.get_url(), isWordWrapEnabled);
+            SaveAsHtml(urlAsString, url, isWordWrapEnabled);
+        };
+
+        auto getChar = [this, &onUrlFound]()
+        {
+            QString buf;
+
+            QChar c1;
+            Input_ >> c1;
+            buf.append(c1);
+
+            if (c1.isHighSurrogate())
+            {
+                assert(!Input_.atEnd());
+                if (!Input_.atEnd())
+                {
+                    QChar c2;
+                    Input_ >> c2;
+                    buf.append(c2);
+                }
+            }
+
+            return buf;
         };
 
         while (true)
         {
-            const auto& charAsStr = Input_.read(1);
-            if (charAsStr.isEmpty())
+            if (Input_.atEnd())
             {
                 parser_.finish();
 
@@ -506,6 +559,7 @@ namespace
                 }
             }
 
+            const auto charAsStr = getChar();
             for (char c : charAsStr.toUtf8())
                 parser_.process(c);
 
@@ -838,7 +892,7 @@ namespace
 					break;
 			}
 
-            if (isWordWrapEnabled)
+            if (isWordWrapEnabled && !ch.isHighSurrogate())
             {
                 Text2DocConverter::AddSoftHyphenIfNeed(out, out, isWordWrapEnabled);
             }

@@ -2093,7 +2093,7 @@ namespace Logic
             return;
         }
 
-        Ui::GetDispatcher()->raiseContactDownloadsPriority(contact);
+        Ui::GetDispatcher()->contactSwitched(contact);
 
         const ContactDialog* dialog = getContactDialogConst(contact);
 

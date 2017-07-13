@@ -29,7 +29,6 @@
 #include "../../controls/ContextMenu.h"
 #include "../../controls/LabelEx.h"
 #include "../../controls/TextEmojiWidget.h"
-#include "../../controls/TextEmojiWidget.h"
 #include "../../utils/gui_coll_helper.h"
 #include "../../utils/InterConnector.h"
 #include "../../utils/Text2DocConverter.h"
@@ -54,7 +53,6 @@ namespace
 {
 	bool isRemovableWidget(QWidget *w);
     bool isUpdateableWidget(QWidget *w);
-    int favorite_star_size = 28;
     int name_fixed_height = 48;
     int name_padding = 1;
     int scroll_by_key_delta = 20;
@@ -362,7 +360,6 @@ namespace Ui
 
 		auto contactNameMaxWidth = Utils::InterConnector::instance().getContactDialog()->width();
 		contactNameMaxWidth -= ButtonsWidget_->width();
-        contactNameMaxWidth -= Utils::scale_value(favorite_star_size);
 
         int diff = ContactNameWidget_->rect().width() - ContactNameWidget_->contentsRect().width();
         contactNameMaxWidth -= diff;
@@ -489,35 +486,23 @@ namespace Ui
         nameWidget_ = new ClickWidget(contactWidget_);
         auto v = Utils::emptyVLayout(nameWidget_);
 
-        contactName_ = new TextEmojiWidget(contactWidget_, Fonts::appFontScaled(18), Ui::CommonStyle::getTextCommonColor());
+        contactName_ = new TextEmojiWidget(contactWidget_, Fonts::appFontScaled(16), Ui::CommonStyle::getTextCommonColor(), Utils::scale_value(24));
         contactName_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        contactName_->setFixedHeight(Utils::scale_value(24));
         contactName_->setAttribute(Qt::WA_TransparentForMouseEvents);
-        v->addSpacerItem(new QSpacerItem(0, Utils::scale_value(8), QSizePolicy::Preferred, QSizePolicy::Fixed));
         v->addWidget(contactName_);
-        nameLayout->addSpacerItem(new QSpacerItem(Utils::scale_value(19), 0, QSizePolicy::Fixed));
+        nameLayout->addSpacerItem(new QSpacerItem(Utils::scale_value(16), 0, QSizePolicy::Fixed));
         nameLayout->addWidget(nameWidget_);
         nameWidget_->setCursor(Qt::PointingHandCursor);
 
         connect(nameWidget_, SIGNAL(clicked()), this, SLOT(nameClicked()), Qt::UniqueConnection);
-
-        favoriteStar_ = new QPushButton(contactWidget_);
-        favoriteStar_->setObjectName("favoriteStar");
-        favoriteStar_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        if (platform::is_apple())
-        {
-            Utils::ApplyStyle(favoriteStar_, "* { margin-top: 5dip; }");
-        }
-        nameLayout->addWidget(favoriteStar_);
-        favoriteStar_->setVisible(Logic::getRecentsModel()->isFavorite(aimId_));
 
         nameLayout->addSpacerItem(new QSpacerItem(QWIDGETSIZE_MAX, 0, QSizePolicy::Expanding, QSizePolicy::Preferred));
         nameStatusVerLayout->addLayout(nameLayout);
 
         auto statusHorLayout = Utils::emptyHLayout();
         auto contactStatusLayout = new QHBoxLayout();
+        contactStatusLayout->setContentsMargins(Utils::scale_value(16), 0, 0, Utils::scale_value(4));
         contactStatusWidget_ = new QWidget(this);
-        statusHorLayout->addItem(new QSpacerItem(Utils::scale_value(15), Utils::scale_value(40), QSizePolicy::Fixed, QSizePolicy::Fixed));
         statusHorLayout->addWidget(contactStatusWidget_);
 
         setContactStatusClickable(false);
@@ -529,7 +514,8 @@ namespace Ui
 
         auto buttonsWidget = new QWidget(mainTopWidget);
         auto buttonsLayout = Utils::emptyHLayout(buttonsWidget);
-        buttonsLayout->setSpacing(Utils::scale_value(24));
+        buttonsLayout->setContentsMargins(0, 0, Utils::scale_value(8), 0);
+        buttonsLayout->setSpacing(Utils::scale_value(16));
         callButton_ = new QPushButton(buttonsWidget);
         callButton_->setObjectName("callButton");
         buttonsLayout->addWidget(callButton_, 0, Qt::AlignRight);
@@ -615,7 +601,7 @@ namespace Ui
 
         messagesArea_->setFocusPolicy(Qt::StrongFocus);
 
-        QString contact_status_style = "font-size: 15dip; color: #767676; background-color: transparent;";
+        QString contact_status_style = "font-size: 14dip; color: #767676; background-color: transparent;";
         Utils::ApplyStyle(contactStatus_, contact_status_style);
 
         officialMark_ = new QPushButton(contactWidget_);
@@ -625,8 +611,6 @@ namespace Ui
         officialMark_->setVisible(Logic::getContactListModel()->isOfficial(_aimId) && !Logic::getContactListModel()->isChat(_aimId));
 
         contactStatusLayout->addWidget(contactStatus_);
-        contactStatusLayout->setMargin(Utils::scale_value(5));
-        contactStatusLayout->setSpacing(Utils::scale_value(5));
 
         contactStatusWidget_->setLayout(contactStatusLayout);
 
@@ -660,8 +644,6 @@ namespace Ui
             this,
             &HistoryControlPage::contactChanged,
             Qt::QueuedConnection);
-
-        QObject::connect(Logic::getRecentsModel(), SIGNAL(favoriteChanged(QString)), this, SLOT(contactChanged(QString)), Qt::QueuedConnection);
 
 		QObject::connect(Logic::GetMessagesModel(), &Logic::MessagesModel::ready, this, &HistoryControlPage::sourceReady, Qt::QueuedConnection);
         QObject::connect(Logic::GetMessagesModel(), SIGNAL(canFetchMore(QString)), this, SLOT(fetchMore(QString)), Qt::QueuedConnection);
@@ -1472,7 +1454,6 @@ namespace Ui
 
             officialMark_->setVisible(Logic::getContactListModel()->isOfficial(aimId_));
 		}
-        favoriteStar_->setVisible(Logic::getRecentsModel()->isFavorite(aimId_));
 	}
 
     void HistoryControlPage::updateName()

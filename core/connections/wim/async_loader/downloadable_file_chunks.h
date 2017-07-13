@@ -10,8 +10,9 @@ namespace core
         struct downloadable_file_chunks
         {
             downloadable_file_chunks();
-            downloadable_file_chunks(priority_t _priority, const std::string& _url, const std::wstring& _file_name, int64_t _total_size);
+            downloadable_file_chunks(priority_t _priority, const std::string& _contact, const std::string& _url, const std::wstring& _file_name, int64_t _total_size);
 
+            priority_t priority_on_start_;
             priority_t priority_;
 
             std::string url_;
@@ -24,7 +25,10 @@ namespace core
 
             bool cancel_;
 
-            std::vector<async_handler<downloaded_file_info>> handlers_;
+            typedef std::vector<async_handler<downloaded_file_info>> handler_list_t;
+            handler_list_t handlers_;
+
+            std::vector<hash_t> contacts_;
         };
 
         typedef std::shared_ptr<downloadable_file_chunks> downloadable_file_chunks_ptr;

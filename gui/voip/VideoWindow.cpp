@@ -123,6 +123,7 @@ Ui::VideoWindow::VideoWindow()
     , lastBottomOffset_(0)
     , lastTopOffset_(0)
     , startTalking(false)
+    , isLoadSizeFromSettings_(false)
 {
     callDescription.time = 0;
 
@@ -303,6 +304,10 @@ Ui::VideoWindow::~VideoWindow()
 {
     checkOverlappedTimer_.stop();
 
+#ifndef __linux__
+    rootWidget_->clearPanels();
+#endif //__linux__
+    
     removeEventFilter(eventFilter_);
     delete eventFilter_;
 }
@@ -598,6 +603,10 @@ void Ui::VideoWindow::showFrame()
 
     offsetWindow(videoPanel_->geometry().height() + Utils::scale_value(kPreviewBorderOffset),
         topPanelSimple_->geometry().height() + Utils::scale_value(kPreviewBorderOffset));
+    
+#ifdef __APPLE__
+    isLoadSizeFromSettings_ = false;
+#endif
 }
 
 void Ui::VideoWindow::onVoipWindowRemoveComplete(quintptr _winId)
@@ -679,16 +688,20 @@ void Ui::VideoWindow::showEvent(QShowEvent* _ev)
     }
 
     // If ICQ is in normal mode, we reload window size from settings.
-    if (!isInFullscreen())
+    if (!isInFullscreen() && !isLoadSizeFromSettings_)
     {
         int savedW = 0;
         int savedH = 0;
         if (getWindowSizeFromSettings(savedW, savedH))
         {
             resize(savedW, savedH);
+#ifdef __APPLE__
+            isLoadSizeFromSettings_ = true;
+#endif
         }
     }
 
+    
     showNormal();
     activateWindow();
     videoPanel_->setFullscreenMode(isInFullscreen());
@@ -762,7 +775,7 @@ void Ui::VideoWindow::onVoipCallCreated(const voip_manager::ContactEx& _contactE
         {
             startTalking = false;
             rootWidget_->createdTalk();
-            videoPanel_->talkStarted();
+            videoPanel_->talkCreated();
         }
     }
 }
@@ -1374,7 +1387,9 @@ void Ui::VideoWindow::tryRunPanelsHideTimer()
     // 1. Has remove video or now is conference.
     // 2. Security window is not opened.
     // 3. Mask panel is closed.
-    if ((hasRemoteVideoInCall() || currentContacts_.size() > 1) && !haveSecurityWnd && (maskPanel_ == nullptr || !maskPanel_->isOpened()))
+    // 4. Have at least one established connection.
+    if ((hasRemoteVideoInCall() || currentContacts_.size() > 1) && !haveSecurityWnd && (maskPanel_ == nullptr || !maskPanel_->isOpened())
+        && Ui::GetDispatcher()->getVoipController().hasEstablishCall())
     {
         showPanelTimer_.start();
     }
@@ -1468,7 +1483,8 @@ void Ui::VideoWindow::onVoipCallConnected(const voip_manager::ContactEx& _contac
     {
         startTalking = true;
         rootWidget_->startedTalk();
-    }
+        videoPanel_->talkStarted();
+    }    
 }
     
 void Ui::VideoWindow::onAddUserClicked()
@@ -1483,7 +1499,7 @@ void Ui::VideoWindow::onAddUserClicked()
 	dialogParent.updatePosition(*this);
 	dialogParent.show();
     
-    showAddUserToVideoConverenceDialog(this, &dialogParent);
+    showAddUserToVideoConverenceDialogVideoWindow(this, &dialogParent);
 
     // Remove panel from video window.
 	eventFilter_->removePanel(&dialogParent);

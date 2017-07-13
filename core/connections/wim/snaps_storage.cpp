@@ -19,9 +19,14 @@ namespace wim
         return snaps_.find(_aimId) != snaps_.end();
     }
 
-    void snaps_storage::update_snap_state(const std::string& _aimId, const snap_history_state& _state, bool& needUpdateState, bool& needUpdateSnaps, icollection* _coll)
+    void snaps_storage::remove_user(const std::string& _aimId)
     {
-        needUpdateState = false;
+        snaps_.erase(_aimId);
+        changed_ = true;
+    }
+
+    void snaps_storage::update_snap_state(const std::string& _aimId, const snap_history_state& _state, bool& needUpdateSnaps, icollection* _coll)
+    {
         needUpdateSnaps = false;
 
         if (snaps_[_aimId].state_.patchVersion_ == _state.patchVersion_ && snaps_[_aimId].state_.latestSnapId_ == _state.latestSnapId_)
@@ -29,20 +34,22 @@ namespace wim
             update_snap_state(_aimId, _state, _coll);
         }
 
-        if (snaps_[_aimId].state_.latestSnapId_ != _state.latestSnapId_)
+        if (snaps_[_aimId].state_.latestSnapId_ != _state.latestSnapId_ || snaps_[_aimId].state_.patchVersion_ != _state.patchVersion_)
             needUpdateSnaps = true;
-        else if (snaps_[_aimId].state_.patchVersion_ != _state.patchVersion_)
-            needUpdateState = true;
     }
 
     void snaps_storage::update_snap_state(const std::string& _aimId, const snap_history_state& _state, icollection* _coll)
     {
-        snaps_[_aimId].state_ = _state;
+        auto& state = snaps_[_aimId].state_;
+        auto lastViewed = state.lastViewedSnapId_;
+        state = _state;
+        if (state.lastViewedSnapId_ == -1 && lastViewed != -1)
+            state.lastViewedSnapId_ = lastViewed;
         changed_ = true;
 
         coll_helper cl(_coll, false);
         cl.set_value_as_string("aimId", _aimId);
-        snaps_[_aimId].state_.serialize(cl.get());
+        state.serialize(cl.get());
     }
 
     void snaps_storage::update_user_snaps(const std::string& _aimId, user_snaps_info _info, icollection* _coll)

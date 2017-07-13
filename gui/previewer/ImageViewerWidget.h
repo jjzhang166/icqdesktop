@@ -13,6 +13,7 @@ namespace Previewer
         ~ImageViewerWidget();
 
         void showImage(const QPixmap& _preview, const QString& _fileName);
+        bool isZoomSupport() const;
 
         void zoomIn();
         void zoomOut();
@@ -21,6 +22,9 @@ namespace Previewer
         bool canZoomOut() const;
 
         void reset();
+
+        void connectExternalWheelEvent(std::function<void(const int)> _func);
+        bool closeFullscreen();
 
     signals:
         void imageClicked();
@@ -43,6 +47,8 @@ namespace Previewer
         QPoint mousePos_;
 
         int zoomStep_;
+
+        QWidget* parent_;
 
     private:
         std::unique_ptr<AbstractViewer> viewer_;

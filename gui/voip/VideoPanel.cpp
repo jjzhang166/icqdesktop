@@ -374,7 +374,14 @@ void Ui::VideoPanel::resizeEvent(QResizeEvent* _e)
     {
         if (button)
         {
-            button->setVisible(bVisibleButton && (isTakling || button != minimalBandwidthMode_));
+            if (button != minimalBandwidthMode_)
+            {
+                button->setVisible(bVisibleButton);
+            }
+            else
+            {
+                updateBandwidthButtonState();
+            }
         }
     }
 
@@ -536,17 +543,20 @@ void Ui::VideoPanel::hideBandwidthTooltip()
     hideBandwidthTooltipTimer->stop();
 }
 
+void Ui::VideoPanel::talkCreated()
+{
+    conferenceModeButton_->hide();
+    minimalBandwidthMode_->hide();
+}
+
 void Ui::VideoPanel::talkStarted()
 {
-    conferenceModeButton_->setVisible(false);
-    minimalBandwidthMode_->setVisible(isNormalPanelMode());
-    isTakling = true;
+    updateBandwidthButtonState();
 }
 
 void Ui::VideoPanel::talkFinished()
 {
     minimalBandwidthMode_->hide();
-    isTakling = false;
 }
 
 void Ui::VideoPanel::startToolTipHideTimer()
@@ -589,7 +599,7 @@ void Ui::VideoPanel::updateConferenceModeButton()
 
 void Ui::VideoPanel::updateBandwidthButtonState()
 {
-    minimalBandwidthMode_->setVisible(activeContact_.size() == 1 && isNormalPanelMode());
+    minimalBandwidthMode_->setVisible(Ui::GetDispatcher()->getVoipController().hasEstablishCall() && isNormalPanelMode());
 }
 
 void Ui::VideoPanel::onChangeConferenceMode()

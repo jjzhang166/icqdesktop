@@ -22,12 +22,6 @@
 #include "../../../../common.shared/loader_errors.h"
 
 
-#include "image_download_task.h"
-#include "image_preview_download_task.h"
-#include "link_metainfo_download_task.h"
-#include "snap_metainfo_download_task.h"
-#include "tasks_runner_slot.h"
-
 #include "loader.h"
 
 using namespace core;
@@ -36,27 +30,6 @@ using namespace wim;
 namespace
 {
     bool is_suspendable_error(const loader_errors _error);
-}
-
-struct loader::tasks_runner : boost::noncopyable
-{
-    tasks_runner(const int32_t _threads_num);
-
-    async_executer_uptr runner_;
-
-    atomic_bool runner_active_;
-
-    std::list<loader_task_sptr> tasks_;
-
-    std::list<loader_task_sptr> suspended_tasks_;
-
-    loader_task_sptr current_task_;
-};
-
-loader::tasks_runner::tasks_runner(const int32_t _threads_num)
-    : runner_(new async_executer(_threads_num))
-    , runner_active_(false)
-{
 }
 
 loader::loader(const std::wstring &_cache_dir)
@@ -646,86 +619,6 @@ std::shared_ptr<get_file_direct_uri_handler> loader::get_file_direct_uri(
     return handler;
 }
 
-
-
-std::shared_ptr<async_task_handlers> loader::download_file(
-    const std::string& _file_url,
-    const std::wstring& _file_name,
-    const bool _keep_alive,
-    const wim_packet_params& _params,
-    http_request_simple::progress_function _progress_func)
-{
-    auto handler = std::make_shared<async_task_handlers>();
-
-    auto user_proxy = g_core->get_proxy_settings();
-
-    file_sharing_threads_->run_async_function(
-        [_params, _file_url, _file_name, _keep_alive, user_proxy, _progress_func]
-        {
-            core::http_request_simple request(user_proxy, utils::get_user_agent(), _params.stop_handler_, _progress_func);
-
-            request.set_url(_file_url);
-            request.set_need_log(_params.full_log_);
-            if (_keep_alive)
-                request.set_keep_alive();
-
-            if (!request.get() || request.get_response_code() != 200)
-                return (int32_t)loader_errors::network_error;
-
-            if (!request.get_response()->save_2_file(_file_name))
-                return (int32_t)loader_errors::save_2_file;
-
-            return (int32_t)loader_errors::success;
-        }
-    )->on_result_ =
-        [handler](int32_t _error)
-        {
-            if (handler->on_result_)
-                handler->on_result_(_error);
-        };
-
-    return handler;
-}
-
-std::shared_ptr<download_image_handler> loader::download_image(
-    const int64_t _seq,
-    const std::string& _contact_aimid,
-    const std::string& _image_uri,
-    const std::wstring& _cache_dir,
-    const std::wstring& _forced_local_path,
-    const bool _sign_uri,
-    const wim_packet_params& _params)
-{
-    assert(_seq > 0);
-    assert(!_contact_aimid.empty());
-    assert(!_image_uri.empty());
-
-    auto handler = std::make_shared<download_image_handler>();
-    auto user_proxy = g_core->get_proxy_settings();
-
-    const auto &image_local_path =
-        _forced_local_path.empty() ?
-            get_path_in_cache(_cache_dir, _image_uri, path_type::file) :
-            _forced_local_path;
-    assert(!image_local_path.empty());
-
-    std::unique_ptr<image_download_task> task(new image_download_task(
-        _seq,
-        _contact_aimid,
-        _params,
-        g_core->get_proxy_settings(),
-        _image_uri,
-        image_local_path,
-        _cache_dir,
-        cache_,
-        _sign_uri,
-        handler));
-
-    add_task(std::move(task));
-
-    return handler;
-}
-
 void loader::add_task(loader_task_sptr _task)
 {
 }
@@ -741,147 +634,6 @@ void loader::run_next_task(const tasks_runner_slot _slot)
 void loader::resume_task(
     const int64_t _id,
     const wim_packet_params &_wim_params)
-{
-}
-
-bool loader::cancel_task(
-    const int64_t _id,
-    tasks_runner &_runner)
-{
-    assert(_id > 0);
-
-    auto task_cancelled = false;
-
-    auto &current_task = _runner.current_task_;
-    const auto cancel_current_task = (current_task && (current_task->get_id() == _id));
-    if (cancel_current_task)
-    {
-        current_task->cancel();
-
-        task_cancelled = true;
-    }
-
-    auto &tasks = _runner.tasks_;
-
-    auto iter = tasks.begin();
-    while (iter != tasks.end())
-    {
-        const auto &task = **iter;
-
-        const auto is_same_id = (task.get_id() == _id);
-        if (is_same_id)
-        {
-            iter = tasks.erase(iter);
-
-            task_cancelled = true;
-        }
-        else
-        {
-            ++iter;
-        }
-    }
-
-    return task_cancelled;
-}
-
-std::shared_ptr<download_image_handler> loader::download_image_preview(
-    const int64_t _seq,
-    const std::string& _contact_aimid,
-    const std::string& _image_uri,
-    const int32_t _preview_width_max,
-    const int32_t _preview_height_max,
-    const std::wstring& _cache_dir,
-    const wim_packet_params& _params)
-{
-    assert(_seq > 0);
-    assert(!_contact_aimid.empty());
-    assert(!_image_uri.empty());
-    assert(!_cache_dir.empty());
-    assert(_preview_height_max >= 0);
-    assert(_preview_height_max < 1000);
-    assert(_preview_width_max >= 0);
-    assert(_preview_width_max < 1000);
-
-    auto handler = std::make_shared<download_image_handler>();
-
-    std::unique_ptr<image_preview_download_task> task(
-        new image_preview_download_task(
-            _seq,
-            _contact_aimid,
-            _params,
-            g_core->get_proxy_settings(),
-            _image_uri,
-            _cache_dir,
-            cache_,
-            _preview_width_max,
-            _preview_height_max,
-            handler));
-
-    add_task(std::move(task));
-
-    return handler;
-}
-
-std::shared_ptr<download_link_metainfo_handler> loader::download_link_metainfo(
-    const int64_t _seq,
-    const std::string& _contact_aimid,
-    const std::string& _url,
-    const std::wstring& _cache_dir,
-    const bool _sign_url,
-    const wim_packet_params& _params)
-{
-    assert(!_contact_aimid.empty());
-
-    auto handler = std::make_shared<download_link_metainfo_handler>();
-
-    std::unique_ptr<link_metainfo_download_task> task(
-        new link_metainfo_download_task(
-            _seq,
-            _contact_aimid,
-            _params,
-            g_core->get_proxy_settings(),
-            _url,
-            _cache_dir,
-            cache_,
-            _sign_url,
-            handler));
-
-    add_task(std::move(task));
-
-    return handler;
-}
-
-std::shared_ptr<download_snap_metainfo_handler> loader::download_snap_metainfo(
-    const int64_t _seq,
-    const std::string& _contact_aimid,
-    const std::string &_ttl_id,
-    const std::wstring& _cache_dir,
-    const wim_packet_params& _params)
-{
-    assert(_seq > 0);
-    assert(!_contact_aimid.empty());
-    assert(!_ttl_id.empty());
-    assert(!_cache_dir.empty());
-
-    auto handler = std::make_shared<download_snap_metainfo_handler>();
-
-    std::unique_ptr<snap_metainfo_download_task> task(
-        new snap_metainfo_download_task(
-            _seq,
-            _contact_aimid,
-            _params,
-            g_core->get_proxy_settings(),
-            _ttl_id,
-            _cache_dir,
-            cache_,
-            handler));
-
-    add_task(std::move(task));
-
-    return handler;
-}
-
-void loader::cancel_task(const int64_t _seq)
 {
 }
 

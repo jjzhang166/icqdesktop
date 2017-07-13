@@ -5,6 +5,7 @@
 #include "../contact_list/Common.h"
 #include "../../controls/CommonStyle.h"
 #include "../../controls/ContactAvatarWidget.h"
+#include "../../controls/TextEditEx.h"
 #include "../../types/chat.h"
 #include "../../utils/utils.h"
 #include "../../utils/Text2DocConverter.h"

@@ -9,7 +9,6 @@ namespace Style
 
     int32_t getBlocksSeparatorVertMargins();
     int32_t getBlockMaxWidth();
-    const QPen& getBlocksSeparatorPen();
     int getDragDistance();
     const QMargins& getDefaultBlockBubbleMargins();
     bool isBlocksGridEnabled();
@@ -30,6 +29,7 @@ namespace Style
     {
         QSize getFaviconPlaceholderSize();
         QSize getFaviconSizeUnscaled();
+        int32_t getLinkPreviewHeightMax();
         QSize getImagePreloaderSizeDip();
         QColor getSiteNameColor();
         QFont getSiteNameFont();
@@ -50,6 +50,7 @@ namespace Style
         int32_t getQuoteOffsetLeft();
         int32_t getQuoteAvatarOffset();
         QSize getQuoteAvatarSize();
+        QFont getQuoteFont();
         int32_t getQuoteOffsetTop();
         int32_t getQuoteOffsetBottom();
         int32_t getQuoteSpacing();

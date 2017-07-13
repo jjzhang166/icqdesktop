@@ -48,7 +48,9 @@ int32_t wim_packet::execute()
     if (err != 0)
         return err;
 
-    err = parse_response(request->get_response());
+    auto response = std::static_pointer_cast<tools::binary_stream>(request->get_response());
+    assert(response);
+    err = parse_response(response);
     return err;
 }
 
@@ -81,7 +83,9 @@ void wim_packet::execute_async(handler_t _handler)
             return;
         }
 
-        const auto err = ptr_this->parse_response(request->get_response());
+        auto response = std::static_pointer_cast<tools::binary_stream>(request->get_response());
+        assert(response);
+        const auto err = ptr_this->parse_response(response);
         _handler(err);
     });
 }

@@ -18,10 +18,17 @@ namespace
 namespace Logic
 {
 SnapStorage::SnapStorage()
+    : expiredId_(-1)
 {
+    expiredTimer_ = new QTimer(this);
+    expiredTimer_->setSingleShot(true);
+
+    connect(expiredTimer_, SIGNAL(timeout()), this, SLOT(expired()), Qt::QueuedConnection);
+
     connect(Ui::GetDispatcher(), SIGNAL(userSnaps(Logic::UserSnapsInfo, bool)), this, SLOT(userSnaps(Logic::UserSnapsInfo, bool)), Qt::QueuedConnection);
     connect(Ui::GetDispatcher(), SIGNAL(userSnapsStorage(QList<Logic::UserSnapsInfo>, bool)), this, SLOT(userSnapsStorage(QList<Logic::UserSnapsInfo>, bool)), Qt::QueuedConnection);
-    connect(Ui::GetDispatcher(), SIGNAL(snapPreviewInfoDownloaded(qint64, QString, QString)), this, SLOT(snapPreviewInfoDownloaded(qint64, QString, QString)), Qt::QueuedConnection);
+    connect(Ui::GetDispatcher(), SIGNAL(userSnapsState(Logic::SnapState)), this, SLOT(userSnapsState(Logic::SnapState)), Qt::QueuedConnection);
+    connect(Ui::GetDispatcher(), SIGNAL(snapPreviewInfoDownloaded(qint64, QString, QString, bool)), this, SLOT(snapPreviewInfoDownloaded(qint64, QString, QString, bool)), Qt::QueuedConnection);
     connect(Ui::GetDispatcher(), SIGNAL(imageDownloaded(qint64, QString, QPixmap, QString)), this, SLOT(imageDownloaded(qint64, QString, QPixmap, QString)), Qt::QueuedConnection);
     connect(Ui::GetDispatcher(), SIGNAL(fileSharingFileDownloaded(qint64, QString, QString)), this, SLOT(fileDownloaded(qint64, QString, QString)), Qt::QueuedConnection);
     connect(Ui::GetDispatcher(), SIGNAL(fileSharingFileDownloading(qint64, QString, qint64, qint64)), this, SLOT(fileDownloading(qint64, QString, qint64, qint64)), Qt::QueuedConnection);
@@ -66,6 +73,8 @@ void SnapStorage::startTv(int row, int col)
     if (col > index.size())
         return;
 
+    QList<Logic::PreviewItem> result;
+
     for (auto i = col; i < index.size(); ++i)
     {
         auto u = index[i];
@@ -83,6 +92,11 @@ void SnapStorage::startTv(int row, int col)
                     snap.LocalPath_ = s.LocalPath_;
                     snap.First_ = PlayList_.isEmpty();
                     PlayList_.push_back(snap);
+                    PreviewItem item;
+                    item.AimId_ = u.AimId_;
+                    item.Id_ = s.SnapId_;
+                    if (!result.contains(item))
+                        result.push_back(item);
                 }
             }
         }
@@ -105,13 +119,18 @@ void SnapStorage::startTv(int row, int col)
                     snap.LocalPath_ = s.LocalPath_;
                     snap.First_ = PlayList_.isEmpty();
                     PlayList_.push_back(snap);
+                    PreviewItem item;
+                    item.AimId_ = u.AimId_;
+                    item.Id_ = s.SnapId_;
+                    if (!result.contains(item))
+                        result.push_back(item);
                 }
             }
         }
     }
     
-    if (!PlayList_.isEmpty() && PlayList_.front().LocalPath_.isEmpty())
-        emit tvStarted();
+    if (!PlayList_.isEmpty())
+        emit tvStarted(result, PlayList_.front().LocalPath_.isEmpty());
 
     processPlaylist();
 }
@@ -171,6 +190,20 @@ QPixmap SnapStorage::getSnapPreviewFull(qint64 _id)
     return QPixmap();
 }
 
+QString SnapStorage::getSnapUrl(qint64 _id)
+{
+    for (auto u : Snaps_)
+    {
+        for (auto s : u.Snaps_)
+        {
+            if (s.SnapId_ == _id)
+                return s.Url_;
+        }
+    }
+
+    return QString();
+}
+
 int SnapStorage::getSnapsCount(const QString& _aimId) const
 {
     auto u = Snaps_.find(_aimId);
@@ -218,6 +251,14 @@ QString SnapStorage::getFriednly(const QString& _aimId) const
         return result;
 
     return Snaps_[_aimId].Friendly_;
+}
+
+bool SnapStorage::isOfficial(const QString& _aimId) const
+{
+    if (!Snaps_.contains(_aimId))
+        return false;
+
+    return Snaps_[_aimId].IsOfficial_;
 }
 
 int SnapStorage::getViews(qint64 id) const
@@ -269,6 +310,28 @@ int SnapStorage::getFriendsSnapsCount() const
 int SnapStorage::getFeaturedSnapsCount() const
 {
     return FeaturedIndex_.size();
+}
+
+void SnapStorage::readSnap(const QString& aimId, qint64 id)
+{
+    for (QMap<QString, Logic::UserSnapsInfo>::iterator i = Snaps_.begin(); i != Snaps_.end(); ++i)
+    {
+        if (i->AimId_ == aimId)
+        {
+            if (i->State_.LastViewedSnapId_ < id)
+            {
+                i->State_.LastViewedSnapId_ = id;
+                calcUserLastSnaps(aimId);
+            }
+        }
+    }
+    rebuildIndex(false);
+    Ui::GetDispatcher()->read_snap(aimId, id, true);
+}
+
+void SnapStorage::clearPlaylist()
+{
+    PlayList_.clear();
 }
 
 void SnapStorage::refresh()
@@ -339,6 +402,68 @@ void SnapStorage::fileSharingError(qint64 _seq, QString _url, qint32 _err)
     processPlaylist();
 }
 
+void SnapStorage::userSnapsState(Logic::SnapState _state)
+{
+    for (QMap<QString, Logic::UserSnapsInfo>::iterator i = Snaps_.begin(); i != Snaps_.end(); ++i)
+    {
+        if (i->AimId_ == _state.AimId_)
+        {
+            i->State_ = _state;
+            calcUserLastSnaps(_state.AimId_);
+        }
+    }
+
+    rebuildIndex(false);
+}
+
+void SnapStorage::expired()
+{
+    if (expiredId_ != -1)
+    {
+        bool found = false;
+        for (QMap<QString, Logic::UserSnapsInfo>::iterator u = Snaps_.begin(); u != Snaps_.end();)
+        {
+            for (QList<SnapInfo>::iterator iter = u->Snaps_.begin(); iter != u->Snaps_.end();)
+            {
+                if (iter->SnapId_ == expiredId_)
+                {
+                    found = true;
+                    iter = u->Snaps_.erase(iter);
+                }
+                else
+                {
+                    ++iter;
+                }
+            }
+
+            if (u->Snaps_.isEmpty())
+            {
+                Ui::gui_coll_helper collection(Ui::GetDispatcher()->create_collection(), true);
+                collection.set_value_as_qstring("aimid", u->AimId_);
+                Ui::GetDispatcher()->post_message_to_core("snaps/remove_from_cache", collection.get());
+                u = Snaps_.erase(u);
+            }
+            else
+            {
+                ++u;
+            }
+
+            if (found)
+                break;
+        }
+    }
+
+    rebuildIndex(false);
+}
+
+void SnapStorage::clearStorage()
+{
+    DownloadingUrls_.clear();
+    Seq_.clear();
+    Snaps_.clear();
+    rebuildIndex(false);
+}
+
 void SnapStorage::userSnaps(Logic::UserSnapsInfo _info, bool _fromRefresh)
 {
     if (!updateSnaps(_info) && !_fromRefresh)
@@ -360,23 +485,43 @@ void SnapStorage::userSnapsStorage(QList<Logic::UserSnapsInfo> _snaps, bool _fro
         refresh();
 }
 
-void SnapStorage::snapPreviewInfoDownloaded(qint64 _snapId, QString _preview, QString _ttl_id)
+void SnapStorage::snapPreviewInfoDownloaded(qint64 _snapId, QString _preview, QString _ttl_id, bool _found)
 {
-    for (QMap<QString, Logic::UserSnapsInfo>::iterator i = Snaps_.begin(); i != Snaps_.end(); ++i)
+    for (QMap<QString, Logic::UserSnapsInfo>::iterator i = Snaps_.begin(); i != Snaps_.end(); )
     {
-        for (QList<SnapInfo>::iterator is = i->Snaps_.begin(); is != i->Snaps_.end(); ++is)
+        for (QList<SnapInfo>::iterator is = i->Snaps_.begin(); is != i->Snaps_.end();)
         {
             if (is->getId() == _snapId || is->TtlId_ == _ttl_id)
             {
+                if (!_found)
+                {
+                    DownloadingUrls_.removeAll(is->Url_);
+                    is = i->Snaps_.erase(is);
+                    continue;
+                }
+
                 is->PreviewUri_ = _preview;
                 if (!_preview.isEmpty())
                 {
-                    is->PreviewSeq_ = Ui::GetDispatcher()->downloadImage(_preview, i->AimId_, QString(), false, 0, 0);
+                    auto raise = Ui::get_gui_settings()->get_value<bool>(settings_show_snaps, false);
+                    is->PreviewSeq_ = Ui::GetDispatcher()->downloadImage(_preview, i->AimId_, QString(), false, 0, 0, raise);
                     Seq_.push_back(is->PreviewSeq_);
                 }
             }
+            ++is;
         }
+
+        if (!_found && i->Snaps_.isEmpty())
+        {
+            i = Snaps_.erase(i);
+            continue;
+        }
+
+        ++i;
     }
+
+    if (!_found)
+        rebuildIndex(false);
 }
 
 void SnapStorage::imageDownloaded(qint64 _seq, QString _rawUri, QPixmap _image, QString _localPath)
@@ -405,11 +550,23 @@ void SnapStorage::imageDownloaded(qint64 _seq, QString _rawUri, QPixmap _image, 
 
 bool SnapStorage::updateSnaps(Logic::UserSnapsInfo _info)
 {
+    auto cur = QDateTime::currentDateTimeUtc();
+    for (QList<SnapInfo>::iterator iter = _info.Snaps_.begin(); iter != _info.Snaps_.end();)
+    {
+        auto ts = QDateTime::fromTime_t(iter->Timestamp_);
+        if (ts.secsTo(cur) > iter->Ttl_)
+            iter = _info.Snaps_.erase(iter);
+        else
+            ++iter;
+    }
+
     const auto haveSnaps = !_info.Snaps_.empty();
     QStringList snapsUrls;
     if (!haveSnaps)
     {
         Snaps_.remove(_info.AimId_);
+        emit removed(_info.AimId_);
+        return true;
     }
     else
     {
@@ -427,6 +584,15 @@ bool SnapStorage::updateSnaps(Logic::UserSnapsInfo _info)
             }
             else
             {
+                for (int i = 0; i < Snaps_[_info.AimId_].Snaps_.size(); ++i)
+                {
+                    auto s = Snaps_[_info.AimId_].Snaps_[i];
+                    if (!_info.Snaps_.contains(s))
+                    {
+                        emit snapRemoved(_info.AimId_, s.SnapId_, s.LocalPath_);
+                    }
+                }
+
                 for (auto s : _info.Snaps_)
                 {
                     snapsUrls << s.Url_;
@@ -472,7 +638,9 @@ QPixmap SnapStorage::preparePreview(const QPixmap& _preview)
 {
     auto previewSize = Logic::SnapItemDelegate::getSnapPreviewItemSize();
     QPixmap p;
-    if (_preview.height() > _preview.width())
+    auto originalFactor = (double)_preview.height() / (double)_preview.width();
+    auto previewFactor = (double)previewSize.height() / (double)previewSize.width();
+    if (_preview.height() > _preview.width() && (originalFactor >= previewFactor))
     {
         p = _preview.scaledToWidth(previewSize.width(), Qt::SmoothTransformation);
     }
@@ -481,7 +649,7 @@ QPixmap SnapStorage::preparePreview(const QPixmap& _preview)
         p = _preview.scaledToHeight(previewSize.height(), Qt::SmoothTransformation);
     }
 
-    auto r = QRect(0, 0, previewSize.width(), previewSize.height());
+    auto r = QRect(p.width() / 2 - previewSize.width() / 2, p.height() / 2 - previewSize.height() / 2, previewSize.width(), previewSize.height());
 
     QPixmap result = p.copy(r);
     
@@ -539,19 +707,47 @@ void SnapStorage::rebuildIndex(bool fromCache)
 
     std::sort(FeaturedIndex_.begin(), FeaturedIndex_.end(), [](const Logic::UserSnapsInfo& first, Logic::UserSnapsInfo& second)
     {
-        return first.LastNewSnapTimestamp_  > second.LastNewSnapTimestamp_;
+        if (first.LastNewSnapTimestamp_ != 0 && second.LastNewSnapTimestamp_ != 0)
+            return first.LastNewSnapTimestamp_ > second.LastNewSnapTimestamp_;
+
+        if (first.LastNewSnapTimestamp_ != 0)
+            return true;
+
+        if (second.LastNewSnapTimestamp_ != 0)
+            return false;
+
+        return first.LastSnapTimestamp_ > second.LastSnapTimestamp_;
     });
 
     std::sort(Index_.begin(), Index_.end(), [myAimId](const Logic::UserSnapsInfo& first, Logic::UserSnapsInfo& second)
     {
+        if (first.LastNewSnapTimestamp_ != 0 && second.LastNewSnapTimestamp_ != 0)
+            return first.LastNewSnapTimestamp_ > second.LastNewSnapTimestamp_;
+
+        if (first.LastNewSnapTimestamp_ != 0)
+            return true;
+
+        if (second.LastNewSnapTimestamp_ != 0)
+            return false;
+
         return first.LastSnapTimestamp_ > second.LastSnapTimestamp_;
     });
 
+    int32_t firstExpiredTime = -1;
+    int32_t firstExpiredTtl = -1;
+    qint64 firstExpiredId = -1;
     for (auto u : Snaps_)
     {
         int32_t timestamp = -1;
         for (auto s : u.Snaps_)
         {
+            if (firstExpiredTime == -1 || (s.Timestamp_ + s.Ttl_) < (firstExpiredTime + firstExpiredTtl))
+            {
+                firstExpiredTime = s.Timestamp_;
+                firstExpiredTtl = s.Ttl_;
+                firstExpiredId = s.SnapId_;
+            }
+
             if (s.Timestamp_ > timestamp)
             {
                 timestamp = s.Timestamp_;
@@ -559,14 +755,30 @@ void SnapStorage::rebuildIndex(bool fromCache)
 
             if (!s.Url_.isEmpty() && !DownloadingUrls_.contains(s.Url_))
             {
-                Ui::GetDispatcher()->download_snap_metainfo(u.AimId_, Ui::ComplexMessage::extractIdFromFileSharingUri(s.Url_));
+                auto raise = Ui::get_gui_settings()->get_value<bool>(settings_show_snaps, false);
+                Ui::GetDispatcher()->download_snap_metainfo(u.AimId_, Ui::ComplexMessage::extractIdFromFileSharingUri(s.Url_), raise);
                 DownloadingUrls_ << s.Url_;
             }
         }
     }
 
+    expiredTimer_->stop();
+    expiredId_ = -1;
+    if (firstExpiredTime != -1)
+    {
+        expiredId_ = firstExpiredId;
+        auto expired = QDateTime::fromTime_t(firstExpiredTime + firstExpiredTtl);
+        auto cur = QDateTime::currentDateTimeUtc();
+        auto interval = cur.msecsTo(expired);
+        expiredTimer_->setInterval(interval);
+        expiredTimer_->start();
+    }
+    else
+    {
+        int i = 1;
+    }
+
     emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
-    emit indexChanged();
 
     int rows = 0;
     if (!Index_.empty())
@@ -576,6 +788,8 @@ void SnapStorage::rebuildIndex(bool fromCache)
 
     setRowCount(rows);
     setColumnCount(std::max(Index_.size(), FeaturedIndex_.size()));
+
+    emit indexChanged();
 }
 
 Logic::SnapItem SnapStorage::getData(int row, int col) const
@@ -595,6 +809,7 @@ Logic::SnapItem SnapStorage::getData(int row, int col) const
     item.AimId_ = u.AimId_;
     item.Friendly_ = u.Friendly_;
     item.Views_ = u.State_.Views_;
+    item.IsOfficial_ = u.IsOfficial_;
 
     int timestamp = 0;
     for (auto s : u.Snaps_)
@@ -641,6 +856,7 @@ void SnapStorage::updateSnapImage(qint64 _snapId, QPixmap _image)
                 is->MiniPreview_ = preparePreview(_image);
                 is->FullPreview_ = prepareFull(_image);
                 emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
+                emit previewChanged(Index_[i].AimId_);
             }
         }
     }
@@ -655,6 +871,7 @@ void SnapStorage::updateSnapImage(qint64 _snapId, QPixmap _image)
                 is->MiniPreview_ = preparePreview(_image);
                 is->FullPreview_ = prepareFull(_image);
                 emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
+                emit previewChanged(FeaturedIndex_[i].AimId_);
             }
         }
     }
@@ -687,8 +904,7 @@ void SnapStorage::updateSnapLocalPath(const QString& _url, const QString& _local
 
 void SnapStorage::downloadSnap(const QString& _aimId, const QString& _url)
 {
-    Seq_.push_back(Ui::GetDispatcher()->downloadSharedFile(_url, false));
-    Seq_.push_back(Ui::GetDispatcher()->downloadSharedFile(_url, false));
+    Seq_.push_back(Ui::GetDispatcher()->downloadSharedFile(_aimId, _url, false, QString(), true));
 }
 
 void SnapStorage::processPlaylist()

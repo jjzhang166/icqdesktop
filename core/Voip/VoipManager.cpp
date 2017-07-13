@@ -167,21 +167,21 @@ namespace {
         ws.normal_color_bgra[2] = 0;
         ws.normal_color_bgra[3] = 0;
 
-        ws.header_height_pix = 45 * scale;
+        ws.header_height_pix = 32 * scale;
         //ws.gap_width_pix = 30 * scale;
         ws.conference.blocksGap = 30 * scale;
         ws.conference.trayHeight = 200 * scale;//m_fullscreenPanel.GetHeight() + int(BORD_CONTROLS - BORD_UPPER);
-        ws.conference.trayMaxHeight = 0.2f; // 20% of view height.
+        ws.conference.trayMaxHeight = 0.4f; // 40% of view height.
         //ws.desired_aspect_ration_in_videoconf = 4.f/3;
         ws.conference.aspectRatio = 4.f / 3;
         //ws.lentaBetweenChannelOffset = 20 * scale;
         //ws.blocksBetweenChannelOffset = 60 * scale;
         ws.conference.useGridAdvance    = false;
-        ws.conference.trayChannelsGap   = 20 * scale;
-        ws.conference.blocksChannelsGap = 60 * scale;
+        ws.conference.trayChannelsGap   = 8 * scale;
+        ws.conference.blocksChannelsGap = 8 * scale;
         ws.conference.forcePrimaryVideoCrop = false;
         ws.conference.alignPrimaryVideoTop  = false;
-        ws.conference.useHeaders = false;
+        ws.conference.useHeaders = true;
         ws.usePreviewBackground = true;
 
         ws.oldverBackroundHeightPer = 50 * scale;
@@ -892,7 +892,7 @@ namespace voip_manager {
 		void MaskModelInitStatusChanged(bool res) override;
 
 		void StillImageReady(const char *data, unsigned len, unsigned width, unsigned height) override {}
-		void SnapRecordingStatusChanged(const char* filename, const char* chunkname, voip2::SnapRecordingStatus snapRecordingStatus, unsigned width_or_progress, unsigned height) override {}
+		void SnapRecordingStatusChanged(const char* filename, voip2::SnapRecordingStatus snapRecordingStatus, unsigned width, unsigned height, const char *data, unsigned size) override {}
 		void FirstFramePreviewForSnapReady(const char *rgb565, unsigned len, unsigned width, unsigned height) override {}
 
 
@@ -1358,6 +1358,10 @@ namespace voip_manager {
         {
             std::lock_guard<std::recursive_mutex> __vdlock(_voipDescMx);
             _voip_desc.local_cam_en = false;
+#ifdef __APPLE__
+            // Under mac microfone state is reseted on new call.
+            _voip_desc.local_aud_en = true;
+#endif
             _needToRunMask = false;
             loadMask(""); // reset mask
         }
@@ -1579,11 +1583,7 @@ namespace voip_manager {
         auto engine = _get_engine();
         VOIP_ASSERT_RETURN(!!engine);
 
-        bool haveCall;
-        {
-            std::lock_guard<std::recursive_mutex> __lock(_callsMx);
-            haveCall = !_calls.empty();
-        }
+        bool haveCall = get_outgoing_call() != nullptr || get_current_call() != nullptr;// !_calls.empty();
 
         if (haveCall && !add) {
             bool localVideoEnabled;

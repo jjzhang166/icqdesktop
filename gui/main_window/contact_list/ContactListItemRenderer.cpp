@@ -6,6 +6,7 @@
 #include "../../themes/ResourceIds.h"
 #include "../../utils/utils.h"
 #include "../../utils/Text2DocConverter.h"
+#include "../../controls/TextEditEx.h"
 
 #include "Common.h"
 #include "ContactListItemRenderer.h"
@@ -15,7 +16,7 @@ namespace
 {
     using namespace ContactList;
 
-    void RenderRole(QPainter &_painter, const int x, const int y, const QString& _role, ContactListParams& _contactList);
+    void RenderRole(QPainter &_painter, const int x, const QString& _role, ContactListParams& _contactList);
 
     int RenderMore(QPainter &_painter, ContactListParams& _contactList, const ViewParams& _viewParams);
 
@@ -127,7 +128,7 @@ namespace ContactList
         {
             if (_item.role_ == "admin" || _item.role_ == "moder" || _item.role_ == "readonly")
             {
-                RenderRole(_painter, contactList.GetContactNameX(), contactList.contactNameTopY(), _item.role_, contactList);
+                RenderRole(_painter, contactList.GetContactNameX(), _item.role_, contactList);
                 _viewParams.leftMargin_ += contactList.role_offset();
             }
 
@@ -138,7 +139,7 @@ namespace ContactList
         {
             if (_item.role_ == "admin" || _item.role_ == "moder" || _item.role_ == "readonly")
             {
-                RenderRole(_painter, contactList.GetContactNameX(), contactList.contactNameCenterY(), _item.role_, contactList);
+                RenderRole(_painter, contactList.GetContactNameX(), _item.role_, contactList);
                 _viewParams.leftMargin_ += contactList.role_offset();
             }
 
@@ -202,7 +203,7 @@ namespace ContactList
 
 namespace
 {
-    void RenderRole(QPainter &_painter, const int _x, const int y, const QString& _role, ContactListParams& _contactList)
+    void RenderRole(QPainter &_painter, const int _x, const QString& _role, ContactListParams& _contactList)
     {
         QPixmap rolePixmap;
         if (_role == "admin")
@@ -214,8 +215,9 @@ namespace
         else
             return;
         Utils::check_pixel_ratio(rolePixmap);
+        double ratio = Utils::scale_bitmap(1);
 
-        _painter.drawPixmap(_x, y + _contactList.role_ver_offset(), rolePixmap);
+        _painter.drawPixmap(_x, (_contactList.itemHeight() - rolePixmap.height() / ratio) / 2, rolePixmap);
     }
 
     int RenderMore(QPainter &_painter, ContactListParams& _contactList, const ViewParams& _viewParams)
@@ -263,7 +265,7 @@ namespace
         auto &doc = *control->document();
         doc.clear();
         QTextCursor cursor = control->textCursor();
-        Logic::Text2Doc(elidedString, cursor, Logic::Text2DocHtmlMode::Pass, false);
+        Logic::Text4Edit(elidedString, *control, cursor, false, Emoji::EmojiSizePx::Auto);
         Logic::FormatDocument(doc, _contactList.statusHeight());
 
         control->render(&_painter, QPoint(_contactList.GetStatusX(), _contactList.statusY()));

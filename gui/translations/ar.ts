@@ -146,10 +146,6 @@ photo</source>
         <translation>رفع صورة</translation>
     </message>
     <message>
-        <source>Image should be at least 600x600 px</source>
-        <translation>يجب ألا يقل مقاس الصورة عن 600x600 بكسل</translation>
-    </message>
-    <message>
         <source>Back</source>
         <translation>رجوع</translation>
     </message>
@@ -186,6 +182,10 @@ photo</source>
     <message>
         <source>Edit photo</source>
         <translation>تعديل صورة</translation>
+    </message>
+    <message>
+        <source>Image should be at least 200x200 px</source>
+        <translation>يجب ألا يقل مقاس الصورة عن 200x200 بكسل</translation>
     </message>
 </context>
 <context>
@@ -537,10 +537,6 @@ photo</source>
     <message>
         <source>MESSAGES</source>
         <translation>الرسائل</translation>
-    </message>
-    <message>
-        <source>EMOJI</source>
-        <translation>إيموجي</translation>
     </message>
     <message>
         <source>SEARCH IN ALL CHATS</source>
@@ -2629,15 +2625,15 @@ photo</source>
         <translation>(تلزم إعادة تشغيل التطبيق)</translation>
     </message>
     <message>
-        <source>Auto-scroll to new messages</source>
-        <translation>انتقال تلقائي إلى الرسائل الجديدة</translation>
-    </message>
-    <message>
         <source>Auto play videos</source>
         <translation>تشغيل مقاطع الفيديو تلقائيًا</translation>
     </message>
     <message>
         <source>Preview images and links</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show snaps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2895,13 +2891,6 @@ Please edit phone number and try again.</source>
     </message>
 </context>
 <context>
-    <name>snaps</name>
-    <message>
-        <source>views</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>snaps_page</name>
     <message>
         <source>Cancel</source>
@@ -2922,6 +2911,26 @@ Please edit phone number and try again.</source>
     <message>
         <source>Unfortunately, this file is not supported on your device.</source>
         <translation>المعذرة، هذا الملف ليس مدعومًا على جهازك.</translation>
+    </message>
+    <message>
+        <source>view</source>
+        <comment>1</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>2</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>5</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>21</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

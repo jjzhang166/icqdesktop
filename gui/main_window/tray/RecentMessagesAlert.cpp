@@ -204,7 +204,6 @@ namespace Ui
     {
         closeAlert();
         Utils::InterConnector::instance().getMainWindow()->closeGallery();
-        Utils::InterConnector::instance().getMainWindow()->closePlayer();
 
         emit messageClicked(aimId, mailId);
     }

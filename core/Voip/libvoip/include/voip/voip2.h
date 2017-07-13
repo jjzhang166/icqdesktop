@@ -417,10 +417,10 @@ enum SnapRecordingStatus {      // Started -> Started_Reencoding -> Ready
     SnapRecording_DELIM_STARTED,
         SnapRecording_Started = SnapRecording_DELIM_STARTED,
     SnapRecording_DELIM_INFO,
-        SnapRecording_Started_Reencoding = SnapRecording_DELIM_INFO, // stop offline recording w/o delete_output flag set
-        SnapRecording_Competion_Forced,
-        SnapRecording_Progress,
-        SnapRecording_ChunkReady,
+//      SnapRecording_Started_Reencoding = SnapRecording_DELIM_INFO, // stop offline recording w/o delete_output flag set
+//      SnapRecording_Competion_Forced,
+//      SnapRecording_Progress,
+        SnapRecording_ChunkReady = SnapRecording_DELIM_INFO,  // <- empty buffer signals end-of-chunk
     SnapRecording_DELIM_COMPLETE,
         SnapRecording_Ready = SnapRecording_DELIM_COMPLETE,
     SnapRecording_DELIM_COMPLETE_NOFILE,
@@ -463,7 +463,8 @@ public:
     
     // TODO: For now it is used only for Maskarad.
     virtual void StillImageReady(const char *data, unsigned len, unsigned width, unsigned height) = 0;
-    virtual void SnapRecordingStatusChanged(const char* filename, const char* chunkname, SnapRecordingStatus snapRecordingStatus, unsigned width_or_progress, unsigned height) = 0;
+    // end-of-chunk <=> no_data <=> data = NULL, size == 0
+    virtual void SnapRecordingStatusChanged(const char* filename, voip2::SnapRecordingStatus snapRecordingStatus, unsigned width, unsigned height, const char *data, unsigned size) = 0;
     virtual void FirstFramePreviewForSnapReady(const char *rgb565, unsigned len, unsigned width, unsigned height) = 0;
 
     // @return res = true on success.
@@ -516,7 +517,6 @@ public:
 
     virtual void EnableMinimalBandwithMode(bool enable) = 0;
     virtual void EnableRtpDump(bool enable) = 0;
-    virtual void EnableObjTracking(bool enable) = 0;
 
     virtual unsigned GetDevicesNumber(DeviceType deviceType) = 0;
     virtual bool     GetDevice       (DeviceType deviceType, unsigned index, char deviceName[MAX_DEVICE_NAME_LEN], char deviceUid[MAX_DEVICE_GUID_LEN]) = 0;

@@ -1,7 +1,7 @@
 QScrollBar:vertical
 {
 	background-color: #7fd9dddd;
-	width: 10dip;
+	width: 8dip;
 	margin-top: 4dip;
 	margin-bottom: 4dip;
 	margin-right: 4dip;
@@ -10,10 +10,10 @@ QScrollBar:vertical
 QScrollBar:horizontal
 {
     background-color: #7fd9dddd;
-    height: 10dip;
+    height: 8dip;
     margin-bottom: 4dip;
-    margin-right: 4dip;
-    margin-left: 4dip;
+    margin-right: 16dip;
+    margin-left: 16dip;
 }
 
 QScrollBar:hover:vertical
@@ -125,4 +125,9 @@ QCheckBox#greenSwitcher::indicator::disabled
     height: 20dip;
     image: url(":/resources/basic_elements/content_switch_dis_100.png");
 
+}
+
+QWidget
+{
+	text-decoration: none;
 }

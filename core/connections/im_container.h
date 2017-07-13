@@ -89,7 +89,7 @@ namespace core
         void on_cancel_image_downloading(int64_t _seq, coll_helper& _params);
         void on_download_link_preview(int64_t _seq, coll_helper& _params);
         void on_download_raise_priority(int64_t _seq, coll_helper& _params);
-        void on_download_raise_contact_tasks_priority(int64_t _seq, coll_helper& _params);
+        void on_contact_switched(int64_t _seq, coll_helper& _params);
         void on_abort_file_downloading(int64_t _seq, coll_helper& _params);
         void on_get_stickers_meta(int64_t _seq, coll_helper& _params);
         void on_get_themes_meta(int64_t _seq, coll_helper& _params);
@@ -153,6 +153,7 @@ namespace core
         //snaps
         void on_snaps_refresh(int64_t _seq, coll_helper& _params);
         void on_refresh_user_snaps(int64_t _seq, coll_helper& _params);
+        void on_remove_from_snaps_storage(int64_t _seq, coll_helper& _params);
 
         std::shared_ptr<base_im> get_im(coll_helper& _params) const;
         void on_get_flags(int64_t _seq, coll_helper& _params);

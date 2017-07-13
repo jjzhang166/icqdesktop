@@ -12,10 +12,10 @@ using namespace core;
 using namespace archive;
 
 contact_archive::contact_archive(const std::wstring& _archive_path, const std::string& _contact_id)
-    : index_(new archive_index(_archive_path + L"/" + version_db_filename(L"_idx")))
-    , data_(new messages_data(_archive_path + L"/" + version_db_filename(L"_db")))
-    , state_(new archive_state(_archive_path + L"/" + version_db_filename(L"_ste"), _contact_id))
-    , images_(new image_cache(_archive_path + L"/" + version_db_filename(L"_img")))
+    : index_(new archive_index(_archive_path + L"/" + index_filename()))
+    , data_(new messages_data(_archive_path + L"/" + db_filename()))
+    , state_(new archive_state(_archive_path + L"/" + dlg_state_filename(), _contact_id))
+    , images_(new image_cache(_archive_path + L"/" + image_cache_filename()))
     , path_(_archive_path)
     , local_loaded_(false)
 {
@@ -375,18 +375,27 @@ void contact_archive::delete_messages_up_to(const int64_t _up_to)
     images_->synchronize(*index_);
 }
 
-std::wstring archive::version_db_filename(const std::wstring &filename)
+std::wstring archive::db_filename()
 {
-    assert(!std::any_of(
-        filename.begin(),
-        filename.end(),
-        [](const wchar_t _ch)
-        {
-            return ::iswdigit(_ch);
-        }
-    ));
+    return L"_db2";
+}
 
-    const auto DB_VERSION = 2;
+std::wstring archive::index_filename()
+{
+    return L"_idx2";
+}
 
-    return (filename + std::to_wstring(DB_VERSION));
+std::wstring archive::dlg_state_filename()
+{
+    return L"_ste2";
+}
+
+std::wstring archive::image_cache_filename()
+{
+    return L"_img3";
+}
+
+std::wstring archive::cache_filename()
+{
+    return L"cache2";
 }

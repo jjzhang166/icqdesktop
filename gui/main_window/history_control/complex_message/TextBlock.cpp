@@ -83,6 +83,7 @@ TextBlock::TextBlock(ComplexMessageItem *parent, const QString &text, const bool
     setLayout(Layout_);
 
     connect(this, &TextBlock::selectionChanged, parent, &ComplexMessageItem::selectionChanged);
+    connect(this, &TextBlock::setTextEditEx, parent, &ComplexMessageItem::setTextEditEx);
 }
 
 TextBlock::~TextBlock()
@@ -235,12 +236,17 @@ TextEditEx* TextBlock::createTextEditControl(const QString &text)
     blockSignals(true);
     setUpdatesEnabled(false);
 
+    QPalette p;
+    p.setColor(QPalette::Text, MessageStyle::getTextColor(TextOpacity_));
+
     auto textControl = new Ui::TextEditEx(
         this,
         MessageStyle::getTextFont(TextFontSize_),
-        MessageStyle::getTextColor(TextOpacity_),
+        p,
         false,
         false);
+
+    textControl->document()->setDefaultStyleSheet(MessageStyle::getMessageStyle());
 
     textControl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     textControl->setStyle(QApplication::style());
@@ -269,6 +275,7 @@ TextEditEx* TextBlock::createTextEditControl(const QString &text)
     setUpdatesEnabled(true);
     blockSignals(false);
 
+    emit setTextEditEx(textControl);
     return textControl;
 }
 
@@ -282,6 +289,7 @@ void TextBlock::setTextEditTheme(TextEditEx *textControl)
 
     QPalette palette = textControl->palette();
     palette.setColor(QPalette::Text, textColor);
+    textControl->document()->setDefaultStyleSheet(MessageStyle::getMessageStyle());
     textControl->setPalette(palette);
 }
 
@@ -308,6 +316,11 @@ void TextBlock::connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover)
         TextCtrl_->installEventFilter(hover);
         installEventFilter(hover);
     }
+}
+
+bool TextBlock::isBubbleRequired() const
+{
+    return true;
 }
 
 UI_COMPLEX_MESSAGE_NS_END

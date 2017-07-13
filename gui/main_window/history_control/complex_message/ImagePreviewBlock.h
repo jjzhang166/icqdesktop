@@ -7,9 +7,8 @@
 #include "../../../utils/LoadMovieFromFileTask.h"
 
 UI_NS_BEGIN
-
 class ActionButtonWidget;
-
+class TextEditEx;
 UI_NS_END
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
@@ -18,6 +17,8 @@ class ImagePreviewBlockLayout;
 
 class ImagePreviewBlock final : public GenericBlock
 {
+    friend class ImagePreviewBlockLayout;
+
     Q_OBJECT
 
 public:
@@ -50,8 +51,6 @@ public:
     virtual void onVisibilityChanged(const bool isVisible) override;
 
     virtual void onDistanceToViewportChanged(const QRect& _widgetAbsGeometry, const QRect& _viewportVisibilityAbsRect) override;
-
-    virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
 
     virtual void setMaxPreviewWidth(int width) override;
 
@@ -96,7 +95,14 @@ protected:
 
     virtual void resizeEvent(QResizeEvent * event) override;
 
+    virtual void selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection) override;
+
 private:
+
+    TextEditEx* createTextEditControl(const QString& _text);
+
+    void setTextEditTheme(TextEditEx *textControl);
+
     void connectSignals();
 
     void downloadFullImage(const QString &destination);
@@ -145,6 +151,8 @@ private:
 
     bool shouldDisplayProgressAnimation() const;
 
+    bool isSingle() const;
+
     void stopDownloadingAnimation();
 
     void pauseGif(const bool _byUser);
@@ -167,6 +175,8 @@ private:
 
     QPixmap Preview_;
 
+    Ui::TextEditEx* link_;
+
     QPainterPath PreviewClippingPath_;
 
     QPainterPath RelativePreviewClippingPath_;
@@ -184,6 +194,8 @@ private:
     bool IsGifPlaying_;
 
     bool IsSelected_;
+
+    BlockSelectionType Selection_;
 
     ActionButtonWidget *ActionButton_;
 
@@ -210,6 +222,10 @@ private:
     bool IsInPreloadDistance_;
 
     std::shared_ptr<bool> ref_;
+
+    double TextOpacity_;
+
+    int TextFontSize_;
 
 private Q_SLOTS:
     void onGifFrameUpdated(int frameNumber);

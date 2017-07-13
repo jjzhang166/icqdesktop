@@ -142,6 +142,8 @@ BOOST_AUTO_TEST_CASE(test_message_tokenizer)
 {
     using namespace common::tools;
 
+    BOOST_CHECK(check("текст 8.8.8@ya.ru.", "текст ", url("8.8.8@ya.ru", url::type::email, url::protocol::undefined, url::extension::undefined), "."));
+    BOOST_CHECK(check("http://mail.ru? текст", url("http://mail.ru", url::type::site, url::protocol::http, url::extension::undefined), "? текст"));
     BOOST_CHECK(check("O.life", url("http://O.life", url::type::site, url::protocol::http, url::extension::undefined)));
     BOOST_CHECK(check("O.life!", url("http://O.life", url::type::site, url::protocol::http, url::extension::undefined), "!"));
     BOOST_CHECK(check("O.life 18", url("http://O.life", url::type::site, url::protocol::http, url::extension::undefined), " 18"));

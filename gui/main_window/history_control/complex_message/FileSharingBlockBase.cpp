@@ -382,7 +382,7 @@ void FileSharingBlockBase::setSelected(const bool isSelected)
     update();
 }
 
-void FileSharingBlockBase::startDownloading(const bool sendStats, const bool _forceRequestMetainfo)
+void FileSharingBlockBase::startDownloading(const bool sendStats, const bool _forceRequestMetainfo, bool _highPriority)
 {
     assert(!isFileDownloading());
 
@@ -393,9 +393,11 @@ void FileSharingBlockBase::startDownloading(const bool sendStats, const bool _fo
 
     assert(DownloadRequestId_ == -1);
     DownloadRequestId_ = GetDispatcher()->downloadSharedFile(
+        getChatAimid(),
         getLink(),
         _forceRequestMetainfo,
-        SaveAs_); //QString(), // don't loose user's 'save as' path
+        SaveAs_, //QString(), // don't loose user's 'save as' path
+        _highPriority);
 
     onDownloadingStarted();
 }

@@ -120,7 +120,7 @@ namespace voip_proxy
         unsigned             callTimeElapsed_;
         VoipEmojiManager     voipEmojiManager_;
         voip_manager::ContactsList activePeerList_;
-        // It is currenlty connected contacts, contacts< which do not accept call, are not contained in this list.
+        // It is currenlty connected contacts, contacts, which do not accept call, are not contained in this list.
         std::list<voip_manager::Contact> connectedPeerList_;
         bool haveEstablishedConnection_;
         bool                 iTunesWasPaused_;
@@ -200,6 +200,9 @@ namespace voip_proxy
 
         const std::vector<device_desc>& deviceList(EvoipDevTypes type);
         const std::vector<voip_manager::Contact>& currentCallContacts();
+
+        // @return true is any of users are accepted call.
+        bool hasEstablishCall();
     };
 }
 

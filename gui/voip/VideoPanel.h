@@ -70,6 +70,8 @@ namespace Ui
         void fadeOut(unsigned int  kAnimationDefDuration) override;
         bool isFadedIn() override;
 
+
+        void talkCreated();
         // Calls when your companion accept the call.
         void talkStarted();
         void talkFinished();

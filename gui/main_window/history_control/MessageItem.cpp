@@ -520,6 +520,7 @@ namespace Ui
         QString styleSheet = QString("background: transparent; selection-background-color: %1;")
             .arg(Utils::rgbaStringFromColor(Utils::getSelectionColor()));
 
+        MessageBody_->document()->setDefaultStyleSheet(MessageStyle::getMessageStyle());
         MessageBody_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         MessageBody_->setFrameStyle(QFrame::NoFrame);
         MessageBody_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

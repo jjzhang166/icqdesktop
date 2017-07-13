@@ -577,6 +577,16 @@ namespace Ui
         return height;
     }
 
+    void TextEditEx::mousePress(QMouseEvent* ev)
+    {
+        mousePressEvent(ev);
+    }
+
+    void TextEditEx::mouseRelease(QMouseEvent* ev)
+    {
+        mouseReleaseEvent(ev);
+    }
+
     void TextEditEx::contextMenuEvent(QContextMenuEvent *e)
     {
         auto menu = createStandardContextMenu();

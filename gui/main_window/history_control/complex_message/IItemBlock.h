@@ -68,6 +68,8 @@ public:
 
     virtual QString getSourceText() const = 0;
 
+    virtual QString getTextForCopy() const = 0;
+
     virtual bool isBubbleRequired() const = 0;
 
     virtual bool isSelected() const = 0;
@@ -97,6 +99,13 @@ public:
     virtual QString getTrimmedText() const { return QString(); }
 
 	virtual void setQuoteSelection() = 0;
+
+    virtual void hideBlock() = 0;
+
+    virtual bool isHasLinkInMessage() const = 0;
+
+    virtual int getMaxWidth() const { return -1; }
+
 };
 
 typedef std::vector<IItemBlock*> IItemBlocksVec;

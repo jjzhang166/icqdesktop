@@ -38,7 +38,7 @@ QPushButton#smiles_button
 	width: 32dip;
 	height: 32dip;
 	border-image: url(:/resources/input_widget/smile_100.png);
-	margin-left: 18dip;
+	margin-left: 16dip;
 	margin-top: 0;
 	margin-right: 0;
 	margin-bottom: 0;
@@ -67,7 +67,7 @@ QPushButton#cancel_files
 	width: 20dip;
 	height: 20dip;
 	border-image: url(:/resources/i_history_100.png);
-	margin-left: 24dip;
+	margin-left: 16dip;
 	margin-top: 0;
 	margin-right: 0;
 	margin-bottom: 0;
@@ -129,7 +129,7 @@ QPushButton#file_button:focus
 
 Ui--InputWidget#input_edit_control
 {
-	background: #ebebeb;
+	background: #ffffff;
 	padding: 0;
 	margin: 0;
 	border-top-color: #d7d7d7;
@@ -144,16 +144,13 @@ Ui--TextEditEx#input_edit_control
 	border-color: #d7d7d7;
 	border-width: 1dip;
 	border-style: solid;
-	margin-top: 8dip;
-	margin-bottom: 8dip;
+	margin-top: 12dip;
+	margin-bottom: 12dip;
 	margin-left: 16dip;
 	margin-right: 16dip;
 		
-	padding-left: 15dip;
-	padding-left: 15dip;
-	padding-top: 12dip;
-	padding-bottom: 10dip;
-
+	padding-left: 16dip;
+    padding-top: 6dip;
 }
 
 Ui--TextEditEx#input_edit_control:focus

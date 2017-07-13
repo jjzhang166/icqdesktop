@@ -57,6 +57,9 @@ namespace Previewer
         void onZoomIn();
         void onZoomOut();
 
+        void onWheelEvent(const int _delta);
+        void onEscapeClick();
+
     private:
         void moveToScreen();
 
@@ -81,6 +84,8 @@ namespace Previewer
 
         void connectLoader();
         void disconnectLoader();
+
+        void connectContainerEvents();
 
         bool hasPrev() const;
         void prev();

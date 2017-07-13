@@ -21,9 +21,11 @@ namespace Ui
 {
     const int32_t max_stickers_count = 20;
 
+    const int SNAPS_EMOJI_SIZE = 26;
+
     namespace
     {
-        qint32 getEmojiItemSize();
+        qint32 getEmojiItemSize(bool);
 
         qint32 getStickerItemSize();
 
@@ -58,16 +60,43 @@ namespace Ui
         return emojiSize;
     }
 
+    Emoji::EmojiSizePx getSnapsEmojiSize()
+    {
+        Emoji::EmojiSizePx emojiSize = Emoji::EmojiSizePx::_27;
+        int scale = (int) (Utils::getScaleCoefficient() * 100.0);
+        scale = Utils::scale_bitmap(scale);
+        switch (scale)
+        {
+        case 100:
+            emojiSize = Emoji::EmojiSizePx::_27;
+            break;
+        case 125:
+            emojiSize = Emoji::EmojiSizePx::_32;
+            break;
+        case 150:
+            emojiSize = Emoji::EmojiSizePx::_40;
+            break;
+        case 200:
+            emojiSize = Emoji::EmojiSizePx::_64;
+            break;
+        default:
+            assert(!"invalid scale");
+        }
+
+        return emojiSize;
+    }
+
 
     //////////////////////////////////////////////////////////////////////////
     // class ViewItemModel
     //////////////////////////////////////////////////////////////////////////
-    EmojiViewItemModel::EmojiViewItemModel(QWidget* _parent, bool _singleLine)
+    EmojiViewItemModel::EmojiViewItemModel(QWidget* _parent, bool _singleLine, bool _snaps)
         :	QStandardItemModel(_parent),
         emojisCount_(0),
         needHeight_(0),
         singleLine_(_singleLine),
-        spacing_(12)
+        spacing_(_snaps ? 4 : 12),
+        snaps_(_snaps)
     {
         emojiCategories_.reserve(10);
     }
@@ -124,8 +153,10 @@ namespace Ui
                 auto emoji = getEmoji(_idx.column(), _idx.row());
                 if (emoji)
                 {
-                    auto emoji_ = Emoji::GetEmoji(emoji->Codepoint_, emoji->ExtendedCodepoint_, getPickerEmojiSize());
+                    auto emoji_ = Emoji::GetEmoji(emoji->Codepoint_, emoji->ExtendedCodepoint_, snaps_ ? getSnapsEmojiSize() : getPickerEmojiSize());
                     QPixmap emojiPixmap = QPixmap::fromImage(emoji_);
+                    if (snaps_)
+                        emojiPixmap = emojiPixmap.scaled(QSize(Utils::scale_value(SNAPS_EMOJI_SIZE), Utils::scale_value(SNAPS_EMOJI_SIZE)), Qt::KeepAspectRatio, Qt::SmoothTransformation);
                     Utils::check_pixel_ratio(emojiPixmap);
                     return emojiPixmap;
                 }
@@ -168,7 +199,7 @@ namespace Ui
 
     int EmojiViewItemModel::getCategoryPos(int _index)
     {
-        const int columnWidth = getEmojiItemSize();
+        const int columnWidth = getEmojiItemSize(snaps_);
         int columnCount = prevSize_.width() / columnWidth;
 
         int emojiCountBefore = 0;
@@ -181,7 +212,7 @@ namespace Ui
 
         int rowCount = (emojiCountBefore / columnCount) + (((emojiCountBefore % columnCount) > 0) ? 1 : 0);
 
-        return (((rowCount == 0) ? 0 : (rowCount - 1)) * getEmojiItemSize());
+        return (((rowCount == 0) ? 0 : (rowCount - 1)) * getEmojiItemSize(snaps_));
     }
 
     const std::vector<emoji_category>& EmojiViewItemModel::getCategories() const
@@ -191,7 +222,7 @@ namespace Ui
 
     bool EmojiViewItemModel::resize(const QSize& _size, bool _force)
     {
-        const int columnWidth = getEmojiItemSize();
+        const int columnWidth = getEmojiItemSize(snaps_);
         int emojiCount = getEmojisCount();
 
         bool resized = false;
@@ -213,7 +244,7 @@ namespace Ui
             setColumnCount(columnCount);
             setRowCount(rowCount);
 
-            needHeight_ = getEmojiItemSize() * rowCount;
+            needHeight_ = getEmojiItemSize(snaps_) * rowCount;
 
             resized = true;
         }
@@ -242,8 +273,8 @@ namespace Ui
         verticalHeader()->hide();
         horizontalHeader()->hide();
         setEditTriggers(QAbstractItemView::NoEditTriggers);
-        verticalHeader()->setDefaultSectionSize(getEmojiItemSize());
-        horizontalHeader()->setDefaultSectionSize(getEmojiItemSize());
+        verticalHeader()->setDefaultSectionSize(getEmojiItemSize(false));
+        horizontalHeader()->setDefaultSectionSize(getEmojiItemSize(false));
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         setFocusPolicy(Qt::NoFocus);
         setSelectionMode(QAbstractItemView::NoSelection);
@@ -300,9 +331,10 @@ namespace Ui
     //////////////////////////////////////////////////////////////////////////
     // EmojiTableItemDelegate
     //////////////////////////////////////////////////////////////////////////
-    EmojiTableItemDelegate::EmojiTableItemDelegate(QObject* parent)
+    EmojiTableItemDelegate::EmojiTableItemDelegate(QObject* parent, bool snaps)
         : QItemDelegate(parent)
         , Prop_(0)
+        , Snaps_(snaps)
     {
         Animation_ = new QPropertyAnimation(this, "prop");
     }
@@ -323,7 +355,7 @@ namespace Ui
         int col = _index.column();
         int row = _index.row();
         int spacing = itemModel->spacing();
-        int size = (int)getPickerEmojiSize() / Utils::scale_bitmap(1);
+        int size = Snaps_ ? Utils::scale_value(SNAPS_EMOJI_SIZE) : (int)getPickerEmojiSize() / Utils::scale_bitmap(1);
         int smileSize = size;
         int addSize = 0;
         if (AnimateIndex_ == _index)
@@ -337,7 +369,7 @@ namespace Ui
 
     QSize EmojiTableItemDelegate::sizeHint(const QStyleOptionViewItem&, const QModelIndex&) const
     {
-        int size = (int)getPickerEmojiSize() / Utils::scale_bitmap(1);
+        int size = Snaps_ ? Utils::scale_value(SNAPS_EMOJI_SIZE) : (int)getPickerEmojiSize() / Utils::scale_bitmap(1);
         return QSize(size, size);
     }
 
@@ -1454,10 +1486,11 @@ namespace Ui
 
     namespace
     {
-        qint32 getEmojiItemSize()
+        qint32 getEmojiItemSize(bool snaps)
         {
             const auto EMOJI_ITEM_SIZE = 44;
-            return Utils::scale_value(EMOJI_ITEM_SIZE);
+            const auto EMOJI_ITEM_SIZE_SNAPS = 30;
+            return Utils::scale_value(snaps ? EMOJI_ITEM_SIZE_SNAPS : EMOJI_ITEM_SIZE);
         }
 
         qint32 getStickerItemSize()

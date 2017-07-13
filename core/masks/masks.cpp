@@ -12,7 +12,6 @@
 #include "../connections/wim/async_loader/async_loader.h"
 #include "../connections/wim/wim_im.h"
 #include "../connections/wim/wim_packet.h"
-#include "../connections/wim/loader/tasks_runner_slot.h"
 #include "../connections/wim/loader/loader.h"
 
 #include "masks.h"

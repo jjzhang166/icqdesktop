@@ -22,6 +22,7 @@ namespace Ui
         void forceHide();
 
         bool isMainWindow() const;
+        void updateSize();
 
     private Q_SLOTS:
         void finished();

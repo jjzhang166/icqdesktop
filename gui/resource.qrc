@@ -76,10 +76,14 @@
     <file>resources/settings/settings_signout_125_active.png</file>
     <file>resources/settings/settings_signout_150_active.png</file>
     <file>resources/settings/settings_signout_200_active.png</file>
-    <file>resources/badge_official_100.png</file>
-    <file>resources/badge_official_125.png</file>
-    <file>resources/badge_official_150.png</file>
-    <file>resources/badge_official_200.png</file>
+    <file>resources/official_badge_blue_100.png</file>
+    <file>resources/official_badge_blue_125.png</file>
+    <file>resources/official_badge_blue_150.png</file>
+    <file>resources/official_badge_blue_200.png</file>
+    <file>resources/badge_official_small_100.png</file>
+    <file>resources/badge_official_small_125.png</file>
+    <file>resources/badge_official_small_150.png</file>
+    <file>resources/badge_official_small_200.png</file>
     <file>utils/common_style.qss</file>
     <file>main_window/main_menu.qss</file>
     <file>main_window/accounts_page.qss</file>
@@ -130,10 +134,10 @@
     <file>resources/explore_125.png</file>
     <file>resources/explore_150.png</file>
     <file>resources/explore_200.png</file>
-    <file>resources/explore_100_hover.png</file>
-    <file>resources/explore_125_hover.png</file>
-    <file>resources/explore_150_hover.png</file>
-    <file>resources/explore_200_hover.png</file>
+    <file>resources/explore_100_active.png</file>
+    <file>resources/explore_125_active.png</file>
+    <file>resources/explore_150_active.png</file>
+    <file>resources/explore_200_active.png</file>
     
     <file>resources/magent_100.png</file>
     <file>resources/magent_125.png</file>
@@ -278,6 +282,24 @@
     <file>resources/main_window/content_logo_agent_125.png</file>
     <file>resources/main_window/content_logo_agent_150.png</file>
     <file>resources/main_window/content_logo_agent_200.png</file>
+	
+	  <file>resources/main_window/capture/i_magent_100.png</file>
+    <file>resources/main_window/capture/i_magent_125.png</file>
+    <file>resources/main_window/capture/i_magent_150.png</file>
+    <file>resources/main_window/capture/i_magent_200.png</file>
+    <file>resources/main_window/capture/i_magent_100_active.png</file>
+    <file>resources/main_window/capture/i_magent_125_active.png</file>
+    <file>resources/main_window/capture/i_magent_150_active.png</file>
+    <file>resources/main_window/capture/i_magent_200_active.png</file>
+    
+	  <file>resources/main_window/capture/i_recents_100.png</file>
+    <file>resources/main_window/capture/i_recents_125.png</file>
+    <file>resources/main_window/capture/i_recents_150.png</file>
+    <file>resources/main_window/capture/i_recents_200.png</file>
+    <file>resources/main_window/capture/i_recents_100_active.png</file>
+    <file>resources/main_window/capture/i_recents_125_active.png</file>
+    <file>resources/main_window/capture/i_recents_150_active.png</file>
+    <file>resources/main_window/capture/i_recents_200_active.png</file>
 
     <file>resources/statuses/status_online_100.png</file>
     <file>resources/statuses/status_online_125.png</file>
@@ -331,11 +353,6 @@
     <file>resources/gifs/r_spiner125.gif</file>
     <file>resources/gifs/r_spiner150.gif</file>
     <file>resources/gifs/r_spiner200.gif</file>
-
-    <file>resources/user_favorites_100.png</file>
-    <file>resources/user_favorites_125.png</file>
-    <file>resources/user_favorites_150.png</file>
-    <file>resources/user_favorites_200.png</file>
 
     <file>resources/basic_elements/arrow_small_green_100.png</file>
     <file>resources/basic_elements/arrow_small_green_125.png</file>
@@ -1263,15 +1280,6 @@
     <file>resources/i_wallpaper_125.png</file>
     <file>resources/i_wallpaper_150.png</file>
     <file>resources/i_wallpaper_200.png</file>
-
-    <file>resources/search_100.png</file>
-    <file>resources/search_125.png</file>
-    <file>resources/search_150.png</file>
-    <file>resources/search_200.png</file>
-    <file>resources/search_100_active.png</file>
-    <file>resources/search_125_active.png</file>
-    <file>resources/search_150_active.png</file>
-    <file>resources/search_200_active.png</file>
     
     <file>resources/search_big_100.png</file>
     <file>resources/search_big_125.png</file>

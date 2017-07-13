@@ -94,17 +94,17 @@ std::wstring core::base_im::get_my_info_file_name()
 
 std::wstring base_im::get_active_dilaogs_file_name()
 {
-    return (get_im_data_path() + L"/" + L"dialogs" + L"/" + archive::version_db_filename(L"cache"));
+    return (get_im_data_path() + L"/" + L"dialogs" + L"/" + archive::cache_filename());
 }
 
 std::wstring base_im::get_favorites_file_name()
 {
-    return (get_im_data_path() + L"/" + L"favorites" + L"/" + archive::version_db_filename(L"cache"));
+    return (get_im_data_path() + L"/" + L"favorites" + L"/" + archive::cache_filename());
 }
 
 std::wstring base_im::get_mailboxes_file_name()
 {
-    return (get_im_data_path() + L"/" + L"mailboxes" + L"/" + archive::version_db_filename(L"cache"));
+    return (get_im_data_path() + L"/" + L"mailboxes" + L"/" + archive::cache_filename());
 }
 
 std::wstring core::base_im::get_im_data_path()

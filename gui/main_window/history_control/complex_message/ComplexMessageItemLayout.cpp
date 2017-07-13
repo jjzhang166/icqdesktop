@@ -246,7 +246,7 @@ QRect ComplexMessageItemLayout::evaluateWidgetContentLtr(const int32_t widgetWid
 {
     assert(widgetWidth > 0);
 
-    const auto widgetContentLeftMargin = MessageStyle::getLeftMargin(isOutgoing());
+    auto widgetContentLeftMargin = MessageStyle::getLeftMargin(isOutgoing());
     assert(widgetContentLeftMargin > 0);
 
     const auto widgetContentRightMargin = MessageStyle::getRightMargin(isOutgoing());
@@ -257,11 +257,27 @@ QRect ComplexMessageItemLayout::evaluateWidgetContentLtr(const int32_t widgetWid
     widgetContentWidth -= widgetContentRightMargin;
     widgetContentWidth -= MessageStyle::getTimeMaxWidth();
 
-    const QRect result(
+    if (Item_->getMaxWidth() > 0 )
+    {
+        int maxWidth = Item_->getMaxWidth();
+        if (!isOutgoing())
+            maxWidth += MessageStyle::getAvatarSize() + MessageStyle::getAvatarRightMargin();
+
+        if (maxWidth < widgetContentWidth)
+        {
+            if (isOutgoing())
+                widgetContentLeftMargin += (widgetContentWidth - maxWidth);
+
+            widgetContentWidth = maxWidth;
+        }
+    }
+
+    QRect result(
         widgetContentLeftMargin,
         MessageStyle::getTopMargin(Item_->hasTopMargin()),
         widgetContentWidth,
         0);
+
 
     return result;
 }
@@ -339,11 +355,6 @@ QRect ComplexMessageItemLayout::getBlockSeparatorRect(const IItemBlock *block) c
     }
 
     auto separatorRectHeight = Style::getBlocksSeparatorVertMargins();
-
-    const auto &pen = Style::getBlocksSeparatorPen();
-    separatorRectHeight += pen.width();
-
-    separatorRectHeight *= 2;
 
     const auto separatorRectWidth = blockGeometry.width();
 
@@ -486,7 +497,7 @@ QRect ComplexMessageItemLayout::setBlocksGeometry(
         const auto blockSeparatorHeight = (
             addSeparator ?
             getBlockSeparatorRect(block).height() :
-            (isBubbleRequired ? Utils::scale_value(4) : 0));
+            (isBubbleRequired ? Utils::scale_value(0) : 0));
 
         const auto blockY = (
             topY +
@@ -524,7 +535,7 @@ void ComplexMessageItemLayout::setGeometryInternal(const int32_t widgetWidth)
 {
     assert(widgetWidth > 0);
 
-    const auto widgetContentLtr = evaluateWidgetContentLtr(widgetWidth);
+    auto widgetContentLtr = evaluateWidgetContentLtr(widgetWidth);
 
     const auto enoughSpace = (widgetContentLtr.width() > 0);
     if (!enoughSpace)
@@ -610,7 +621,7 @@ void ComplexMessageItemLayout::setTimeGeometry(
 
     auto timeX = 0;
 
-    assert(!blocksGeometry.isEmpty());
+    //assert(!blocksGeometry.isEmpty());
     timeX = (
         bubbleGeometry.right() + 1 +
         MessageStyle::getTimeMarginX());

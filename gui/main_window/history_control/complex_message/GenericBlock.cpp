@@ -56,6 +56,7 @@ QSize GenericBlock::blockSizeForMaxWidth(const int32_t maxWidth)
     return getBlockLayout()->blockSizeForMaxWidth(maxWidth);
 }
 
+
 void GenericBlock::deleteLater()
 {
     QWidget::deleteLater();
@@ -96,6 +97,11 @@ QString GenericBlock::getSourceText() const
 {
     assert(!SourceText_.isEmpty());
     return SourceText_;
+}
+
+QString GenericBlock::getTextForCopy() const
+{
+    return getSourceText();
 }
 
 std::shared_ptr<const themes::theme> GenericBlock::getTheme() const
@@ -360,7 +366,6 @@ void GenericBlock::mouseMoveEvent(QMouseEvent *e)
     {
         mousePos_ = QPoint();
     }
-
     return QWidget::mouseMoveEvent(e);
 }
 
@@ -368,6 +373,7 @@ void GenericBlock::mousePressEvent(QMouseEvent *e)
 {
     if (e->button() == Qt::LeftButton)
         mouseClickPos_ = e->pos();
+
     return QWidget::mousePressEvent(e);
 }
 
@@ -443,6 +449,16 @@ void GenericBlock::connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover)
         installEventFilter(hover);
         raise();
     }
+}
+
+void GenericBlock::hideBlock()
+{
+    hide();
+}
+
+bool GenericBlock::isHasLinkInMessage() const
+{
+    return false;
 }
 
 namespace

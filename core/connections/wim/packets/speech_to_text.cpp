@@ -73,7 +73,8 @@ int32_t speech_to_text::execute_request(std::shared_ptr<core::http_request_simpl
 
         if (http_code_ == 202)
         {
-            auto response = request->get_response();
+            auto response = dynamic_cast<tools::binary_stream*>(request->get_response().get());
+            assert(response);
             if (!response->available())
                 return wpie_http_empty_response;
 

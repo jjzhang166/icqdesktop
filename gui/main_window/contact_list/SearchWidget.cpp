@@ -23,18 +23,12 @@ namespace Ui
         hSearchLayout_ = Utils::emptyHLayout(searchWidget_);
         hSearchLayout_->setContentsMargins(Utils::scale_value(2), 0, Utils::scale_value(2), 0);
 
-        glassIcon_ = new Ui::CustomButton(this, ":/resources/search_100.png");
-        glassIcon_->setActiveImage(":/resources/search_100_active.png");
-        glassIcon_->setFixedSize(Utils::scale_value(28), Utils::scale_value(24));
-        glassIcon_->setStyleSheet("QPushButton:focus { border: none; outline: none; } QPushButton:flat { border: none; outline: none; }");
-        hSearchLayout_->addWidget(glassIcon_);
-
         searchEdit_ = new LineEditEx(this);
         searchEdit_->setFixedHeight(Utils::scale_value(24));
         searchEdit_->setFont(Fonts::appFontScaled(15));
         searchEdit_->setFrame(QFrame::NoFrame);
         searchEdit_->setPlaceholderText(QT_TRANSLATE_NOOP("search_widget", "Search"));
-        searchEdit_->setContentsMargins(0, 0, 0, 0);
+        searchEdit_->setContentsMargins(Utils::scale_value(8), 0, 0, 0);
         searchEdit_->setAttribute(Qt::WA_MacShowFocusRect, false);
         Testing::setAccessibleName(searchEdit_, "search_edit");
         hSearchLayout_->addSpacing(0);
@@ -67,8 +61,6 @@ namespace Ui
         connect(searchEdit_, SIGNAL(focusOut()), this, SLOT(focusedOut()), Qt::QueuedConnection);
         connect(closeIcon_, SIGNAL(clicked()), this, SLOT(searchCompleted()), Qt::QueuedConnection);
 
-        connect(glassIcon_, &CustomButton::clicked, this, &SearchWidget::searchIconClicked, Qt::QueuedConnection);
-
         setActive(false);
     }
 
@@ -97,7 +89,6 @@ namespace Ui
         Utils::ApplyStyle(this, style);
         
         active_ = _active;
-        glassIcon_->setActive(_active);
         closeIcon_->setVisible(_active);
         emit activeChanged(_active);
     }
@@ -170,6 +161,6 @@ namespace Ui
 
     void SearchWidget::focusedOut()
     {
-        setActive(false);
+        //setActive(false);
     }
 }

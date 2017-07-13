@@ -9,7 +9,11 @@
 #include "../../../utils/log/log.h"
 #include "../../../utils/PainterPath.h"
 #include "../../../utils/utils.h"
+#include "../../../utils/Text2DocConverter.h"
 #include "../../../gui_settings.h"
+#include "../../../controls/TextEditEx.h"
+#include "../../../theme_settings.h"
+#include "../../../cache/themes/themes.h"
 
 #include "../ActionButtonWidget.h"
 #include "../FileSizeFormatter.h"
@@ -25,6 +29,8 @@
 #include "ImagePreviewBlock.h"
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
+
+const QString SELECTION_STYLE = QString("background: transparent; selection-background-color: %1;").arg(Utils::rgbaStringFromColor(Utils::getSelectionColor()));
 
 ImagePreviewBlock::ImagePreviewBlock(ComplexMessageItem *parent, const QString& aimId, const QString &imageUri, const QString &imageType)
     : GenericBlock(
@@ -50,6 +56,9 @@ ImagePreviewBlock::ImagePreviewBlock(ComplexMessageItem *parent, const QString& 
     , IsVisible_(false)
     , IsInPreloadDistance_(true)
     , ref_(new bool(false))
+    , TextOpacity_(1.0)
+    , TextFontSize_(-1)
+    , Selection_(BlockSelectionType::None)
 {
     assert(!ImageUri_.isEmpty());
     assert(!ImageType_.isEmpty());
@@ -60,22 +69,131 @@ ImagePreviewBlock::ImagePreviewBlock(ComplexMessageItem *parent, const QString& 
     setLayout(Layout_);
 
     QuoteAnimation_.setSemiTransparent();
+
+    link_ = createTextEditControl(imageUri);
+    link_->show();
 }
 
 ImagePreviewBlock::~ImagePreviewBlock()
 {
 }
 
-void ImagePreviewBlock::clearSelection()
+TextEditEx* ImagePreviewBlock::createTextEditControl(const QString& _text)
 {
-    if (!IsSelected_)
+    assert(!_text.isEmpty());
+
+    blockSignals(true);
+    setUpdatesEnabled(false);
+
+    QPalette p;
+    p.setColor(QPalette::Text, MessageStyle::getTextColor(TextOpacity_));
+
+    auto textControl = new Ui::TextEditEx(
+        this,
+        MessageStyle::getTextFont(TextFontSize_),
+        p,
+        false,
+        false);
+
+    textControl->document()->setDefaultStyleSheet(MessageStyle::getMessageStyle());
+
+    textControl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    textControl->setStyle(QApplication::style());
+    textControl->setFrameStyle(QFrame::NoFrame);
+    textControl->setFocusPolicy(Qt::NoFocus);
+    textControl->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    textControl->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    textControl->setOpenLinks(true);
+    textControl->setOpenExternalLinks(true);
+    textControl->setWordWrapMode(QTextOption::WordWrap);
+    textControl->setStyleSheet("background: transparent");
+    textControl->setContextMenuPolicy(Qt::NoContextMenu);
+    textControl->setReadOnly(true);
+    textControl->setUndoRedoEnabled(false);
+
+    setTextEditTheme(textControl);
+
+    textControl->verticalScrollBar()->blockSignals(true);
+
+    Logic::Text4Edit(ImageUri_, *textControl, Logic::Text2DocHtmlMode::Escape, true, true);
+
+    textControl->document()->setDocumentMargin(0);
+
+    textControl->verticalScrollBar()->blockSignals(false);
+
+    setUpdatesEnabled(true);
+    blockSignals(false);
+
+    return textControl;
+}
+
+void ImagePreviewBlock::setTextEditTheme(TextEditEx *textControl)
+{
+    assert(textControl);
+
+    Utils::ApplyStyle(textControl, SELECTION_STYLE);
+    auto textColor = MessageStyle::getTextColor(TextOpacity_);
+    textColor.setAlpha(TextOpacity_ * 255);
+
+    QPalette palette = textControl->palette();
+    palette.setColor(QPalette::Text, textColor);
+    textControl->document()->setDefaultStyleSheet(MessageStyle::getMessageStyle());
+    textControl->setPalette(palette);
+}
+
+
+void ImagePreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType selection)
+{
+    assert(selection > BlockSelectionType::Min);
+    assert(selection < BlockSelectionType::Max);
+    assert(Selection_ > BlockSelectionType::Min);
+    assert(Selection_ < BlockSelectionType::Max);
+    
+    if (!link_)
     {
         return;
     }
 
-    IsSelected_ = false;
+    Selection_ = selection;
 
-    update();
+    const auto selectAll = (selection == BlockSelectionType::Full);
+    if (selectAll)
+    {
+        link_->selectWholeText();
+        return;
+    }
+
+    const auto selectFromBeginning = (selection == BlockSelectionType::FromBeginning);
+    if (selectFromBeginning)
+    {
+        link_->selectFromBeginning(to);
+        return;
+    }
+
+    const auto selectTillEnd = (selection == BlockSelectionType::TillEnd);
+    if (selectTillEnd)
+    {
+        link_->selectTillEnd(from);
+        return;
+    }
+
+    link_->selectByPos(from, to);
+}
+
+void ImagePreviewBlock::clearSelection()
+{
+//     if (!IsSelected_)
+//     {
+//         return;
+//     }
+
+    link_->clearSelection();
+
+    Selection_ = BlockSelectionType::None;
+
+//    IsSelected_ = false;
+
+//    update();
 }
 
 bool ImagePreviewBlock::hasActionButton() const
@@ -113,12 +231,16 @@ QString ImagePreviewBlock::getSelectedText(bool isFullSelect) const
 {
     assert(!ImageUri_.isEmpty());
 
-    if (IsSelected_)
+    switch (Selection_)
     {
-        return getSourceText();
+    case BlockSelectionType::Full:
+        return ImageUri_;
+
+    case BlockSelectionType::TillEnd:
+        return (link_->selection()/* + TrailingSpaces_*/);
     }
 
-    return QString();
+    return link_->selection();
 }
 
 void ImagePreviewBlock::hideActionButton()
@@ -202,35 +324,6 @@ void ImagePreviewBlock::onChangeLoadState(const bool _isLoad)
     videoPlayer_->setLoadingState(_isLoad);
 }
 
-void ImagePreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType /*selection*/)
-{
-    const QRect globalWidgetRect(
-        mapToGlobal(rect().topLeft()),
-        mapToGlobal(rect().bottomRight()));
-
-    auto selectionArea(globalWidgetRect);
-    selectionArea.setTop(from.y());
-    selectionArea.setBottom(to.y());
-    selectionArea = selectionArea.normalized();
-
-    const auto selectionOverlap = globalWidgetRect.intersected(selectionArea);
-    assert(selectionOverlap.height() >= 0);
-
-    const auto widgetHeight = std::max(globalWidgetRect.height(), 1);
-    const auto overlappedHeight = selectionOverlap.height();
-    const auto overlapRatePercents = ((overlappedHeight * 100) / widgetHeight);
-    assert(overlapRatePercents >= 0);
-
-    const auto isSelected = (overlapRatePercents > 45);
-
-    if (isSelected != IsSelected_)
-    {
-        IsSelected_ = isSelected;
-
-        update();
-    }
-}
-
 void ImagePreviewBlock::setMaxPreviewWidth(int width)
 {
     MaxPreviewWidth_ = width;
@@ -261,19 +354,26 @@ void ImagePreviewBlock::showActionButton(const QRect &pos)
 
 void ImagePreviewBlock::drawBlock(QPainter &p, const QRect& _rect, const QColor& quote_color)
 {
-    const auto &imageRect = Layout_->getPreviewRect();
+    const bool isSingleBlock = isSingle();
 
-    const auto updateClippingPath = (PreviewClippingPathRect_ != imageRect);
+    const auto& imageRect = Layout_->getPreviewRect();
+    const auto& blockRect = Layout_->getBlockRect();
+    const auto clipRect = (isSingleBlock ? blockRect : imageRect);
+
+    const auto updateClippingPath = (PreviewClippingPathRect_ != clipRect);
     if (updateClippingPath)
     {
-        PreviewClippingPathRect_ = imageRect;
-        PreviewClippingPath_= evaluateClippingPath(imageRect);
+        PreviewClippingPathRect_ = clipRect;
+        PreviewClippingPath_= evaluateClippingPath(clipRect);
 
-        auto relativePreviewRect = QRect(0, 0, imageRect.width(), imageRect.height());
+        auto relativePreviewRect = QRect(0, 0, clipRect.width(), clipRect.height());
         RelativePreviewClippingPath_= evaluateClippingPath(relativePreviewRect);
     }
 
     p.setClipPath(PreviewClippingPath_);
+
+    if (isSingleBlock)
+        p.fillRect(blockRect, MessageStyle::getBodyBrush(isOutgoing(), false, get_qt_theme_settings()->themeForContact(getParentComplexMessage()->getAimid())->get_id()));
 
     if (Preview_.isNull())
     {
@@ -682,7 +782,7 @@ void ImagePreviewBlock::initializeActionButton()
             const auto isFullImageDownloading = (FullImageDownloadSeq_ != -1);
             if (isFullImageDownloading)
             {
-                GetDispatcher()->cancelImageDownloading(FullImageDownloadSeq_);
+                GetDispatcher()->cancelImageDownloading(ImageUri_);
                 FullImageDownloadSeq_ = -1;
             }
 
@@ -803,6 +903,7 @@ void ImagePreviewBlock::onGifLeftMouseClick()
 
     if (!isFullImageDownloaded())
     {
+        downloadFullImage(QString());
         return;
     }
 
@@ -1051,6 +1152,11 @@ bool ImagePreviewBlock::shouldDisplayProgressAnimation() const
     return true;
 }
 
+bool ImagePreviewBlock::isSingle() const
+{
+    return getParentComplexMessage()->isSimple();
+}
+
 void ImagePreviewBlock::stopDownloadingAnimation()
 {
     if (isGifPreview() || isVideoPreview())
@@ -1094,7 +1200,7 @@ void ImagePreviewBlock::onGifFrameUpdated(int /*frameNumber*/)
     //const auto frame = Player_->currentPixmap();
    // Preview_ = frame;
 
-    update();
+    //update();
 }
 
 void ImagePreviewBlock::onImageDownloadError(qint64 seq, QString rawUri)
@@ -1102,6 +1208,7 @@ void ImagePreviewBlock::onImageDownloadError(qint64 seq, QString rawUri)
     const auto isPreviewSeq = (seq == PreviewDownloadSeq_);
     if (isPreviewSeq)
     {
+
         getParentComplexMessage()->replaceBlockWithSourceText(this);
 
         return;

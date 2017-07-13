@@ -240,19 +240,6 @@ namespace
         return result;
     }
 
-    QString formatCount(int count)
-    {
-        QString cnt;
-        if (count < 1000)
-            cnt = QString("%1").arg(count);
-        else if (count < 10000)
-            cnt = QString("%1k").arg(count / 1000);
-        else
-            cnt = "9k+";
-
-        return cnt;
-    }
-
     const QString redirect = "&noredirecttologin=1";
     const QString page = "https://r.mail.ru:443/cls3564/win.mail.ru/cgi-bin/auth";
     const QString fail_page = "https://r.mail.ru:443/cls3564/win.mail.ru/cgi-bin/auth";
@@ -1372,7 +1359,7 @@ namespace Utils
         QApplication::clipboard()->setMimeData(mimeData);
     }
 
-    void saveAs(const QString& _inputFilename, std::function<void (QString& _filename, QString& _directory)> _callback, bool asSheet)
+    void saveAs(const QString& _inputFilename, std::function<void (QString& _filename, QString& _directory)> _callback, std::function<void ()> _cancel_callback, bool asSheet)
     {
         static auto lastDirectory = UserDownloadsPath();
 
@@ -1384,7 +1371,7 @@ namespace Utils
 #ifdef __APPLE__
         if (asSheet)
         {
-            MacSupport::saveFileName(QT_TRANSLATE_NOOP("context_menu", "Save as..."), fullName, "*" + ext, _callback, ext, lastDirectory);
+            MacSupport::saveFileName(QT_TRANSLATE_NOOP("context_menu", "Save as..."), fullName, "*" + ext, _callback, ext, lastDirectory, _cancel_callback);
             return;
         }
 #endif //__APPLE__
@@ -1400,6 +1387,10 @@ namespace Utils
                 filename += ext;
             }
             _callback(filename, directory);
+        }
+        else if (_cancel_callback)
+        {
+            _cancel_callback();
         }
     }
 
@@ -1895,8 +1886,24 @@ namespace Utils
     {
         return (build::is_icq() ? product_name_icq : product_name_agent);
     }
-    
 
+    QString getInstallerName()
+    {
+        return (build::is_icq() ? installer_exe_name_icq : installer_exe_name_agent);
+    }
+
+    QString getUnreadsBadgeStr(int _unreads)
+    {
+        QString cnt;
+        if (_unreads < 1000)
+            cnt = QString::number(_unreads);
+        else if (_unreads < 10000)
+            cnt = QString("%1k").arg(_unreads / 1000);
+        else
+            cnt = "9k+";
+
+        return cnt;
+    }
     
     void drawUnreads(QPainter *p, const QFont &font, const QColor *bgColor, const QColor *textColor, const QColor *borderColor, int unreads, int balloonSize, int x, int y)
     {
@@ -1904,8 +1911,7 @@ namespace Utils
         {
             QFontMetrics m(font);
 
-            const auto text = (unreads > 99) ? QString("99+") : QVariant(unreads).toString();
-
+            const auto text = getUnreadsBadgeStr(unreads);
             const auto unreadsRect = m.tightBoundingRect(text);
             const auto firstChar = text[0];
             const auto lastChar = text[text.size() - 1];
@@ -1963,8 +1969,7 @@ namespace Utils
         {
             QFontMetrics m(font);
 
-            const auto text = (unreads > 99) ? QString("99+") : QVariant(unreads).toString();
-
+            const auto text = getUnreadsBadgeStr(unreads);
             const auto unreadsRect = m.tightBoundingRect(text);
             const auto firstChar = text[0];
             const auto lastChar = text[text.size() - 1];
@@ -2002,7 +2007,7 @@ namespace Utils
 
     QImage iconWithCounter(int size, int count, QColor bg, QColor fg, QImage back)
     {
-        QString cnt = formatCount(count);
+        QString cnt = getUnreadsBadgeStr(count);
 
         QImage result = back.isNull() ? QImage(size, size, QImage::Format_ARGB32) : back;
         int32_t cntSize = cnt.size();

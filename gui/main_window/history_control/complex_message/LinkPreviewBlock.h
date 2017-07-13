@@ -23,7 +23,7 @@ class LinkPreviewBlock final : public GenericBlock
     Q_OBJECT
 
 public:
-    LinkPreviewBlock(ComplexMessageItem *parent, const QString &uri);
+    LinkPreviewBlock(ComplexMessageItem *parent, const QString &uri, const bool _hasLinkInMessage);
 
     virtual ~LinkPreviewBlock() override;
 
@@ -42,6 +42,8 @@ public:
     QSize getPreviewImageSize() const;
 
     virtual QString getSelectedText(bool isFullSelect = false) const override;
+
+    virtual QString getTextForCopy() const override;
 
     const QString& getSiteName() const;
 
@@ -84,6 +86,10 @@ public:
     virtual void connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover) override;
 
     virtual void setQuoteSelection() override;
+
+    virtual bool isHasLinkInMessage() const override;
+
+    virtual int getMaxWidth() const override;
 
 protected:
     virtual void drawBlock(QPainter &p, const QRect& _rect, const QColor& quate_color) override;
@@ -144,6 +150,10 @@ private:
 
     QSize PreviewSize_;
 
+    QRect previewClippingPathRect_;
+
+    QPainterPath previewClippingPath_;
+
     QPropertyAnimation *PreloadingTickerAnimation_;
 
     int32_t PreloadingTickerValue_;
@@ -180,6 +190,8 @@ private:
 
     int MaxPreviewWidth_;
 
+    const bool hasLinkInMessage_;
+
     void connectSignals(const bool isConnected);
 
     enum class TextOptions
@@ -197,6 +209,8 @@ private:
     void drawPreview(QPainter &p);
 
     void drawSiteName(QPainter &p);
+
+    QPainterPath evaluateClippingPath(const QRect &imageRect) const;
 
     void initializeActionButton();
 

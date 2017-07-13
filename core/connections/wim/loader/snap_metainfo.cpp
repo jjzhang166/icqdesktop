@@ -184,7 +184,7 @@ snap_metainfo_uptr parse_json(InOut char *_json, const std::string& _ttl_id)
     }
 
     std::string iphone_preview_uri;
-    auto iter_iphone = node_file.FindMember("iphone_retina");
+    auto iter_iphone = node_file.FindMember("mdpi");
     if (iter_iphone != node_file.MemberEnd() && iter_iphone->value.IsString())
     {
         iphone_preview_uri = iter_iphone->value.GetString();

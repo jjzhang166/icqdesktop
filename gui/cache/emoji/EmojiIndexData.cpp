@@ -1,7 +1,9 @@
 ﻿#if defined(__APPLE__)
+    #define EXCLUDE_EMOJI_MAC_10_11 if (QSysInfo().macVersion() > QSysInfo::MV_10_11)
     #define EXCLUDE_EMOJI_MAC_10_10 if (QSysInfo().macVersion() > QSysInfo::MV_10_10)
     #define EXCLUDE_EMOJI_MAC_10_9 if (QSysInfo().macVersion() > QSysInfo::MV_10_9)
 #else
+    #define EXCLUDE_EMOJI_MAC_10_11
     #define EXCLUDE_EMOJI_MAC_10_10
     #define EXCLUDE_EMOJI_MAC_10_9
 #endif
@@ -14,7 +16,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 990, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 995, 0x1f606, 0x0, "laughing"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 994, 0x1f605, 0x0, "sweat_smile"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 991, 0x1f602, 0x0, "joy"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1189, 0x1f923, 0x0, "rofl"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1317, 0x263a, 0x0, "relaxed"));
@@ -44,7 +46,7 @@ EXCLUDE_EMOJI_MAC_10_10
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1174, 0x1f913, 0x0, "nerd"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1003, 0x1f60e, 0x0, "sunglasses"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1187, 0x1f921, 0x0, "clown"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1186, 0x1f920, 0x0, "cowboy"));
@@ -82,7 +84,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1029, 0x
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1037, 0x1f630, 0x0, "cold_sweat"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1023, 0x1f622, 0x0, "cry"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1026, 0x1f625, 0x0, "disappointed_relieved"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1190, 0x1f924, 0x0, "drooling_face"));
 }
@@ -94,12 +96,18 @@ EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1057, 0x1f644, 0x0, "rolling_eyes"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1175, 0x1f914, 0x0, "thinking"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1191, 0x1f925, 0x0, "lying_face"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1033, 0x1f62c, 0x0, "grimacing"));
 EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1171, 0x1f910, 0x0, "zipper_mouth"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1188, 0x1f922, 0x0, "nauseated_face"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1194, 0x1f927, 0x0, "sneezing_face"));
 }
@@ -140,7 +148,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 632, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1069, 0x1f64c, 0x0, "raised_hands"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 631, 0x1f44f, 0x0, "clap"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1074, 0x1f64f, 0x0, "pray"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1184, 0x1f91d, 0x0, "handshake"));
 }
@@ -148,7 +156,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 629, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 630, 0x1f44e, 0x0, "thumbsdown"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 626, 0x1f44a, 0x0, "punch"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1379, 0x270a, 0x0, "fist"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1182, 0x1f91b, 0x0, "left_facing_fist"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1183, 0x1f91c, 0x0, "right_facing_fist"));
@@ -168,9 +176,12 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 623, 0x1
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1307, 0x261d, 0x0, "point_up"));
 #endif
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1380, 0x270b, 0x0, "raised_hand"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1181, 0x1f91a, 0x0, "raised_back_of_hand"));
+}
+EXCLUDE_EMOJI_MAC_10_10
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 960, 0x1f590, 0x0, "hand_splayed"));
 }
 EXCLUDE_EMOJI_MAC_10_9
@@ -178,7 +189,7 @@ EXCLUDE_EMOJI_MAC_10_9
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 962, 0x1f596, 0x0, "vulcan"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 627, 0x1f44b, 0x0, "wave"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1180, 0x1f919, 0x0, "call_me"));
 }
@@ -187,6 +198,9 @@ EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 961, 0x1f595, 0x0, "middle_finger"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1382, 0x270d, 0x0, "writing_hand"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1196, 0x1f933, 0x0, "selfie"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 728, 0x1f485, 0x0, "nail_care"));
@@ -278,23 +292,23 @@ EXCLUDE_EMOJI_MAC_10_10
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 692, 0x1f469, 0x2696, "woman_judge"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 673, 0x1f468, 0x2696, "man_judge"));
 #endif
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1199, 0x1f936, 0x0, "mrs_claus"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 435, 0x1f385, 0x0, "santa"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 713, 0x1f478, 0x0, "princess"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1197, 0x1f934, 0x0, "prince"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 702, 0x1f470, 0x0, "bride_with_veil"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1198, 0x1f935, 0x0, "man_in_tuxedo"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 717, 0x1f47c, 0x0, "angel"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 1195, 0x1f930, 0x0, "pregnant_woman"));
 }
@@ -343,7 +357,7 @@ EXCLUDE_EMOJI_MAC_10_10
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 947, 0x1f574, 0x0, "levitate"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 726, 0x1f483, 0x0, "dancer"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("people", 954, 0x1f57a, 0x0, "man_dancing"));
 }
@@ -406,7 +420,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 600, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 596, 0x1f42d, 0x0, "mouse"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 608, 0x1f439, 0x0, "hamster"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 599, 0x1f430, 0x0, "rabbit"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1249, 0x1f98a, 0x0, "fox"));
 }
@@ -433,7 +447,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 589, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 587, 0x1f424, 0x0, "baby_chick"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 586, 0x1f423, 0x0, "hatching_chick"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 588, 0x1f425, 0x0, "hatched_chick"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1245, 0x1f986, 0x0, "duck"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1244, 0x1f985, 0x0, "eagle"));
@@ -449,7 +463,7 @@ EXCLUDE_EMOJI_MAC_10_10
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 580, 0x1f41d, 0x0, "bee"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 578, 0x1f41b, 0x0, "bug"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1250, 0x1f98b, 0x0, "butterfly"));
 }
@@ -464,15 +478,21 @@ EXCLUDE_EMOJI_MAC_10_10
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 585, 0x1f422, 0x0, "turtle"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 564, 0x1f40d, 0x0, "snake"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1253, 0x1f98e, 0x0, "lizard"));
+}
+EXCLUDE_EMOJI_MAC_10_10
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1241, 0x1f982, 0x0, "scorpion"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1239, 0x1f980, 0x0, "crab"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1256, 0x1f991, 0x0, "squid"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 576, 0x1f419, 0x0, "octopus"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1255, 0x1f990, 0x0, "shrimp"));
 }
@@ -480,7 +500,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 583, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 582, 0x1f41f, 0x0, "fish"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 584, 0x1f421, 0x0, "blowfish"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 595, 0x1f42c, 0x0, "dolphin"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1247, 0x1f988, 0x0, "shark"));
 }
@@ -492,14 +512,14 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 556, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 554, 0x1f403, 0x0, "water_buffalo"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 553, 0x1f402, 0x0, "ox"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 555, 0x1f404, 0x0, "cow2"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1251, 0x1f98c, 0x0, "deer"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 593, 0x1f42a, 0x0, "dromedary_camel"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 594, 0x1f42b, 0x0, "camel"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 575, 0x1f418, 0x0, "elephant"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1254, 0x1f98f, 0x0, "rhino"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1252, 0x1f98d, 0x0, "gorilla"));
@@ -550,7 +570,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 364, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 741, 0x1f490, 0x0, "bouquet"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 357, 0x1f337, 0x0, "tulip"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 359, 0x1f339, 0x0, "rose"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("nature", 1213, 0x1f940, 0x0, "wilted_rose"));
 }
@@ -642,14 +662,14 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 374, 0x1f
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 384, 0x1f352, 0x0, "cherries"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 383, 0x1f351, 0x0, "peach"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 379, 0x1f34d, 0x0, "pineapple"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1237, 0x1f95d, 0x0, "kiwi"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1225, 0x1f951, 0x0, "avocado"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 371, 0x1f345, 0x0, "tomato"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 372, 0x1f346, 0x0, "eggplant"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1226, 0x1f952, 0x0, "cucumber"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1229, 0x1f955, 0x0, "carrot"));
@@ -658,28 +678,37 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 363, 0x1f
 EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 356, 0x1f336, 0x0, "hot_pepper"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1228, 0x1f954, 0x0, "potato"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 398, 0x1f360, 0x0, "sweet_potato"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 350, 0x1f330, 0x0, "chestnut"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1236, 0x1f95c, 0x0, "peanuts"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 413, 0x1f36f, 0x0, "honey_pot"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1224, 0x1f950, 0x0, "croissant"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 396, 0x1f35e, 0x0, "bread"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1230, 0x1f956, 0x0, "french_bread"));
+}
+EXCLUDE_EMOJI_MAC_10_10
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1257, 0x1f9c0, 0x0, "cheese"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1234, 0x1f95a, 0x0, "egg"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 417, 0x1f373, 0x0, "cooking"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1227, 0x1f953, 0x0, "bacon"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1238, 0x1f95e, 0x0, "pancakes"));
@@ -694,11 +723,17 @@ EXCLUDE_EMOJI_MAC_10_10
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 386, 0x1f354, 0x0, "hamburger"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 397, 0x1f35f, 0x0, "fries"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1233, 0x1f959, 0x0, "stuffed_flatbread"));
+}
+EXCLUDE_EMOJI_MAC_10_10
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 348, 0x1f32e, 0x0, "taco"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 349, 0x1f32f, 0x0, "burrito"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1231, 0x1f957, 0x0, "salad"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1232, 0x1f958, 0x0, "shallow_pan_of_foods"));
 }
@@ -729,7 +764,7 @@ EXCLUDE_EMOJI_MAC_10_10
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 407, 0x1f369, 0x0, "doughnut"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 408, 0x1f36a, 0x0, "cookie"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1235, 0x1f95b, 0x0, "milk"));
 }
@@ -739,12 +774,12 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 419, 0x1f
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 420, 0x1f376, 0x0, "sake"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 424, 0x1f37a, 0x0, "beer"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 425, 0x1f37b, 0x0, "beers"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1215, 0x1f942, 0x0, "champagne_glass"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 421, 0x1f377, 0x0, "wine_glass"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1216, 0x1f943, 0x0, "tumbler_glass"));
 }
@@ -753,6 +788,9 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 423, 0x1f
 EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 428, 0x1f37e, 0x0, "champagne"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 1217, 0x1f944, 0x0, "spoon"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("foods", 418, 0x1f374, 0x0, "fork_and_knife"));
@@ -777,7 +815,13 @@ EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 513, 0x1f3d3, 0x0, "ping_pong"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 548, 0x1f3f8, 0x0, "badminton"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1218, 0x1f945, 0x0, "goal"));
+}
+EXCLUDE_EMOJI_MAC_10_10
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 512, 0x1f3d2, 0x0, "hockey"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 511, 0x1f3d1, 0x0, "field_hockey"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 509, 0x1f3cf, 0x0, "cricket"));
@@ -788,10 +832,13 @@ EXCLUDE_EMOJI_MAC_10_10
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 549, 0x1f3f9, 0x0, "bow_and_arrow"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 460, 0x1f3a3, 0x0, "fishing_pole_and_fish"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1222, 0x1f94a, 0x0, "boxing_glove"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1223, 0x1f94b, 0x0, "martial_arts_uniform"));
+}
+EXCLUDE_EMOJI_MAC_10_10
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1370, 0x26f8, 0x0, "ice_skate"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 488, 0x1f3bf, 0x0, "ski"));
@@ -806,6 +853,9 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 491, 0
 EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 503, 0x1f3cb, 0x0, "person_lifting_weights"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1206, 0x1f93a, 0x0, "person_fencing"));
 }
 #ifndef __APPLE__
@@ -856,6 +906,9 @@ EXCLUDE_EMOJI_MAC_10_10
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 496, 0x1f3c5, 0x0, "medal"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 450, 0x1f396, 0x0, "military_medal"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1219, 0x1f947, 0x0, "first_place"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1220, 0x1f948, 0x0, "second_place"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1221, 0x1f949, 0x0, "third_place"));
@@ -883,7 +936,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 461, 0
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 464, 0x1f3a7, 0x0, "headphones"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 485, 0x1f3bc, 0x0, "musical_score"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 482, 0x1f3b9, 0x0, "musical_keyboard"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("activity", 1214, 0x1f941, 0x0, "drum"));
 }
@@ -912,14 +965,17 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1091, 0x
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1101, 0x1f69a, 0x0, "truck"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1102, 0x1f69b, 0x0, "articulated_lorry"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1103, 0x1f69c, 0x0, "tractor"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1168, 0x1f6f4, 0x0, "scooter"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1126, 0x1f6b2, 0x0, "bike"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1169, 0x1f6f5, 0x0, "motor_scooter"));
+}
+EXCLUDE_EMOJI_MAC_10_10
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 507, 0x1f3cd, 0x0, "motorcycle"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1116, 0x1f6a8, 0x0, "rotating_light"));
@@ -959,7 +1015,7 @@ EXCLUDE_EMOJI_MAC_10_10
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1166, 0x1f6f0, 0x0, "satellite_orbital"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 783, 0x1f4ba, 0x0, "seat"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("travel", 1170, 0x1f6f6, 0x0, "canoe"));
 }
@@ -1221,6 +1277,9 @@ EXCLUDE_EMOJI_MAC_10_10
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("objects", 1150, 0x1f6cc, 0x0, "sleeping_accommodation"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("objects", 968, 0x1f5bc, 0x0, "frame_photo"));
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("objects", 1151, 0x1f6cd, 0x0, "shopping_bags"));
+}
+EXCLUDE_EMOJI_MAC_10_11
+{
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("objects", 1156, 0x1f6d2, 0x0, "shopping_cart"));
 }
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("objects", 431, 0x1f381, 0x0, "gift"));
@@ -1325,7 +1384,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 752, 0x
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 751, 0x1f49a, 0x0, "green_heart"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 750, 0x1f499, 0x0, "blue_heart"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 753, 0x1f49c, 0x0, "purple_heart"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 963, 0x1f5a4, 0x0, "black_heart"));
 }
@@ -1419,7 +1478,7 @@ EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 21, 0x1
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 28, 0x1f198, 0x0, "sos"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 1394, 0x274c, 0x0, "x"));
 EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 1416, 0x2b55, 0x0, "o"));
-EXCLUDE_EMOJI_MAC_10_10
+EXCLUDE_EMOJI_MAC_10_11
 {
     EmojiIndexByOrder_.emplace_back(std::make_shared<EmojiRecord>("symbols", 1155, 0x1f6d1, 0x0, "octagonal_sign"));
 }

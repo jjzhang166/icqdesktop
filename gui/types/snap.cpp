@@ -3,6 +3,7 @@
 #include "core_dispatcher.h"
 #include "../main_window/history_control/complex_message/FileSharingUtils.h"
 #include "../main_window/contact_list/SnapItemDelegate.h"
+#include "../main_window/contact_list/ContactListModel.h"
 #include "../utils/utils.h"
 
 namespace Logic
@@ -82,7 +83,7 @@ namespace Logic
         _snaps.AimId_ = _helper->get_value_as_string("aimId");
         _snaps.IsOfficial_ = _helper->get_value_as_bool("official");
         _snaps.Friendly_ = _helper->get_value_as_string("friendly");
-        _snaps.IsFriend_ = _helper->get_value_as_bool("buddy");
+        _snaps.IsFriend_ = _helper->get_value_as_bool("buddy") || (Logic::getContactListModel()->getContactItem(_snaps.AimId_) != 0);
         auto state = _helper->get_value_as_collection("state");
         core::coll_helper h(state, false);
         UnserializeSnapState(&h, _snaps.State_);

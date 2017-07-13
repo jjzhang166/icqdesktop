@@ -209,6 +209,9 @@ namespace Ui
 
         // All is connected and talking now.
         bool startTalking;
+        
+        // Load size from settings only one time per call. Actual for Mac.
+        bool isLoadSizeFromSettings_;
 
 #ifdef __APPLE__
         // We use fullscreen notification to fix a problem on macos

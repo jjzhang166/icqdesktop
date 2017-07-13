@@ -17,15 +17,6 @@ namespace Style
     int32_t getBlockMaxWidth()
     { return Utils::scale_value(320); }
 
-    const QPen& getBlocksSeparatorPen()
-    {
-        static const QPen separatorPen(
-            QBrush(QColor("#579e1c")),
-            (qreal)Utils::scale_value(1));
-
-        return separatorPen;
-    }
-
     const QMargins& getDefaultBlockBubbleMargins()
     {
         static const QMargins margins(
@@ -66,7 +57,7 @@ namespace Style
 
         int32_t getImageWidthMax()
         {
-            return Utils::scale_value(480);
+            return Utils::scale_value(388);
         }
 
         QBrush getImageShadeBrush()
@@ -107,20 +98,27 @@ namespace Style
 
         QSize getFaviconSizeUnscaled()
         {
-            return QSize(16, 16);
+            return QSize(12, 12);
         }
 
         QSize getImagePreloaderSizeDip()
-        { return QSize(320, 164); }
+        {
+            return QSize(388, 180);
+        }
+
+        int32_t getLinkPreviewHeightMax()
+        {
+            return Utils::scale_value(180);
+        }
 
         QColor getSiteNameColor()
         {
-            return QColor("#767676");
+            return QColor("#999999");
         }
 
         QFont getSiteNameFont()
         {
-            return Fonts::appFontScaled(14);
+            return Fonts::appFontScaled(12, Fonts::FontWeight::Medium);
         }
 
         QSize getSiteNamePlaceholderSize()
@@ -136,13 +134,13 @@ namespace Style
         { return Utils::scale_value(12); }
         
         QFont getYoutubeTitleFont()
-        { return Fonts::appFontScaled(17); }
+        { return Fonts::appFontScaled(15, Fonts::FontWeight::Medium); }
 
         int32_t getSiteNameLeftPadding()
         { return Utils::scale_value(4); }
 
         int32_t getSiteNameTopPadding()
-        { return Utils::scale_value(22); }
+        { return Utils::scale_value(18); }
 
         int32_t getFaviconTopPadding()
         { return Utils::scale_value(8); }
@@ -186,6 +184,9 @@ namespace Style
 
         QSize getQuoteAvatarSize()
         { return QSize(Utils::scale_value(20), Utils::scale_value(20)); }
+
+        QFont getQuoteFont()
+        { return Fonts::appFont(14); }
 
         int32_t getQuoteOffsetLeft() //The offset to the right of the green line
         {
@@ -234,11 +235,9 @@ namespace Style
     {
         QPen getFileSharingFramePen()
         {
-            QColor color("#767676");
-            color.setAlphaF(0.4);
-            const QBrush brush(color);
-            const auto width = Utils::scale_value(2);
-            return QPen(brush, width);
+            QColor color("#999999");
+            const auto width = Utils::scale_value(1);
+            return QPen(color, width);
         }
                 
         int32_t getFileBubbleHeight()

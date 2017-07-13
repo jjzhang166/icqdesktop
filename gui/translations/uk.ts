@@ -156,10 +156,6 @@
         <translation>Оберіть файл</translation>
     </message>
     <message>
-        <source>Image should be at least 600x600 px</source>
-        <translation>Зображення має бути не менше 600x600 пікселів</translation>
-    </message>
-    <message>
         <source>Change</source>
         <translation>Змінити</translation>
     </message>
@@ -186,6 +182,10 @@ photo</source>
     <message>
         <source>Edit photo</source>
         <translation>Редагувати фотографію</translation>
+    </message>
+    <message>
+        <source>Image should be at least 200x200 px</source>
+        <translation>Зображення має бути не менше 200x200 пікселів</translation>
     </message>
 </context>
 <context>
@@ -542,10 +542,6 @@ photo</source>
     <message>
         <source>MESSAGES</source>
         <translation>ПОВІДОМЛЕННЯ</translation>
-    </message>
-    <message>
-        <source>EMOJI</source>
-        <translation>ЕМОДЗI</translation>
     </message>
     <message>
         <source>SEARCH IN ALL CHATS</source>
@@ -2635,15 +2631,15 @@ photo</source>
         <translation>(Необхідне перезавантаження програми)</translation>
     </message>
     <message>
-        <source>Auto-scroll to new messages</source>
-        <translation>Автоперехід до нових повідомлень</translation>
-    </message>
-    <message>
         <source>Auto play videos</source>
         <translation>Автовідтворення відео</translation>
     </message>
     <message>
         <source>Preview images and links</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show snaps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2901,13 +2897,6 @@ Please edit phone number and try again.</source>
     </message>
 </context>
 <context>
-    <name>snaps</name>
-    <message>
-        <source>views</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>snaps_page</name>
     <message>
         <source>Cancel</source>
@@ -2928,6 +2917,26 @@ Please edit phone number and try again.</source>
     <message>
         <source>Unfortunately, this file is not supported on your device.</source>
         <translation>На жаль, цей файл не підтримується вашим пристроєм.</translation>
+    </message>
+    <message>
+        <source>view</source>
+        <comment>1</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>2</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>5</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>21</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

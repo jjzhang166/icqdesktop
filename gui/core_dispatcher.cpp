@@ -102,13 +102,15 @@ qint64 core_dispatcher::downloadFileSharingMetainfo(const QString& _url)
     return post_message_to_core("files/download/metainfo", helper.get());
 }
 
-qint64 core_dispatcher::downloadSharedFile(const QString& _url, bool _forceRequestMetainfo, const QString& _fileName)
+qint64 core_dispatcher::downloadSharedFile(const QString& _contactAimid, const QString& _url, bool _forceRequestMetainfo, const QString& _fileName, bool _raise_priority)
 {
     core::coll_helper helper(create_collection(), true);
+    helper.set<QString>("contact", _contactAimid);
     helper.set<QString>("url", _url);
     helper.set<bool>("force_request_metainfo", _forceRequestMetainfo);
     helper.set<QString>("filename", _fileName);
     helper.set<QString>("download_dir", Utils::UserDownloadsPath());
+    helper.set<bool>("raise", _raise_priority);
     return post_message_to_core("files/download", helper.get());
 }
 
@@ -185,7 +187,8 @@ int64_t core_dispatcher::downloadImage(
     const QString& _destination,
     const bool _isPreview,
     const int32_t _previewWidth,
-    const int32_t _previewHeight)
+    const int32_t _previewHeight,
+    bool _raisePriority)
 {
     assert(!_contactAimid.isEmpty());
     assert(_uri.isValid());
@@ -199,6 +202,7 @@ int64_t core_dispatcher::downloadImage(
     collection.set<QString>("destination", _destination);
     collection.set<bool>("is_preview", _isPreview);
     collection.set<QString>("contact", _contactAimid);
+    collection.set<bool>("raise", _raisePriority);
 
     if (_isPreview)
     {
@@ -221,13 +225,11 @@ int64_t core_dispatcher::downloadImage(
     return seq;
 }
 
-void core_dispatcher::cancelImageDownloading(const int64_t _downloadSeq)
+void core_dispatcher::cancelImageDownloading(const QString& _url)
 {
-    assert(_downloadSeq > 0);
-
     core::coll_helper collection(create_collection(), true);
 
-    collection.set<int64_t>("download_seq", _downloadSeq);
+    collection.set<QString>("url", _url);
 
     post_message_to_core("image/download/cancel", collection.get());
 }
@@ -252,13 +254,14 @@ int64_t core_dispatcher::downloadLinkMetainfo(
     return post_message_to_core("link_metainfo/download", collection.get());
 }
 
-int64_t core_dispatcher::download_snap_metainfo(const QString& _contact, const QString& _ttlId)
+int64_t core_dispatcher::download_snap_metainfo(const QString& _contact, const QString& _ttlId, bool _raise)
 {
     assert(!_ttlId.isEmpty());
 
     core::coll_helper collection(create_collection(), true);
     collection.set<QString>("ttl_id", _ttlId);
     collection.set<QString>("contact", _contact);
+    collection.set<bool>("raise", _raise);
 
     return post_message_to_core("snap/get_metainfo", collection.get());
 }
@@ -345,20 +348,11 @@ qint64 core_dispatcher::raiseDownloadPriority(const QString &_contactAimid, int6
     return post_message_to_core("download/raise_priority", collection.get());
 }
 
-qint64 core_dispatcher::raiseContactDownloadsPriority(const QString &_contactAimid)
+qint64 core_dispatcher::contactSwitched(const QString &_contactAimid)
 {
-    assert(!_contactAimid.isEmpty());
-
-    __TRACE(
-        "prefetch",
-        "requesting to raise downloads priority\n"
-        "    contact=<" << _contactAimid << ">");
-
     core::coll_helper collection(create_collection(), true);
-
     collection.set<QString>("contact", _contactAimid);
-
-    return post_message_to_core("download/raise_contact_tasks_priority", collection.get());
+    return post_message_to_core("contact/switched", collection.get());
 }
 
 void core_dispatcher::sendMessageToContact(const QString& _contact, const QString& _text)
@@ -1722,8 +1716,9 @@ void core_dispatcher::onSnapGetMetainfoResult(int64_t _seq, const core::coll_hel
 
     const auto preview_uri = _params.get<QString>("iphone_preview_uri", "");
     const auto ttl_id = _params.get<QString>("ttl_id", "");
+    const auto not_found = _params.get<bool>("not_found", false);
 
-    emit snapPreviewInfoDownloaded(snapId, preview_uri, ttl_id);
+    emit snapPreviewInfoDownloaded(snapId, preview_uri, ttl_id, !not_found);
 }
 
 

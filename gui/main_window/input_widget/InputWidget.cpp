@@ -25,9 +25,9 @@ const int widget_max_height = 230;
 const int document_min_height = 32;
 const int quote_line_width = 2;
 const int max_quote_height = 66;
-const int preview_max_height = 56;
+const int preview_max_height = 48;
 const int preview_offset = 16;
-const int preview_max_width = 140;
+const int preview_max_width = 132;
 const int preview_offset_hor = 18;
 const int preview_text_offset = 16;
 const int icon_size = 32;
@@ -155,7 +155,10 @@ namespace Ui
         cancel_files_->hide();
 
         setObjectName("input_edit_control");
-        text_edit_->setObjectName("input_edit_control");
+        if (message_only_)
+            text_edit_->setObjectName(platform::is_apple() ? "input_edit_control_mac" : "input_edit_control");
+        else
+            text_edit_->setObjectName("input_edit_control");
 
         text_edit_->setPlaceholderText(QT_TRANSLATE_NOOP("input_widget","Message"));
         text_edit_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -964,7 +967,7 @@ namespace Ui
         edit_content_changed();
 
         QRect edit_rect = text_edit_->geometry();
-        file_button_->setGeometry(edit_rect.right() - Utils::scale_value(24) - Utils::scale_value(16) - Utils::scale_value(16)/*margin*/,
+        file_button_->setGeometry(edit_rect.right() - Utils::scale_value(24) - Utils::scale_value(24)/*margin*/,
             edit_rect.top() + ((edit_rect.height() - Utils::scale_value(24))/2),
             Utils::scale_value(24),
             Utils::scale_value(24));

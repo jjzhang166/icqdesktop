@@ -13,11 +13,8 @@ QWidget#contactsWidgetStyle
 
 QWidget#titleWidget
 {
-	background-color: #ebebeb;
-	height: 28dip;
-	border-bottom-style: solid;
-	border-bottom-color: #d7d7d7;
-	border-bottom-width: 1dip;
+	background-color: #eeeded;
+	height: 36dip;
 }
 
 QPushButton#windowIcon

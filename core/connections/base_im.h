@@ -279,10 +279,12 @@ namespace core
 
         virtual void download_file_sharing(
             const int64_t _seq,
+            const std::string& _contact,
             const std::string& _file_url,
             const bool _force_request_metainfo,
             const std::string& _filename,
-            const std::string& _download_dir) = 0;
+            const std::string& _download_dir,
+            bool _raise_priority) = 0;
 
         virtual void download_image(
             const int64_t _seq,
@@ -291,7 +293,8 @@ namespace core
             const std::string& _destination,
             const bool _download_preview,
             const int32_t _preview_width,
-            const int32_t _preview_height) = 0;
+            const int32_t _preview_height,
+            const bool _raise_priority) = 0;
 
         virtual void download_link_preview(
             const int64_t _seq,
@@ -300,7 +303,7 @@ namespace core
             const int32_t _preview_width,
             const int32_t _preview_height) = 0;
 
-        virtual void cancel_loader_task(const int64_t _task_id) = 0;
+        virtual void cancel_loader_task(const std::string& _url) = 0;
 
         virtual void abort_file_sharing_download(const std::string& _url) = 0;
 
@@ -310,8 +313,8 @@ namespace core
             const std::string &_process_seq) = 0;
         virtual void raise_download_priority(
             const int64_t _task_id) = 0;
-        virtual void raise_contact_downloads_priority(
-            const std::string &_contact_aimid) = 0;
+
+        virtual void contact_switched(const std::string &_contact_aimid) = 0;
 
         virtual void set_played(const std::string& url, bool played) = 0;
         virtual void speech_to_text(int64_t _seq, const std::string& _url, const std::string& _locale) = 0;
@@ -335,7 +338,7 @@ namespace core
 
         virtual void read_snap(const uint64_t _snap_id, const std::string& _aimId, const bool _mark_prev_snaps_read, const bool _refresh_storage) = 0;
         virtual void delete_snap(const uint64_t _snap_id) = 0;
-        virtual void download_snap_metainfo(const int64_t seq, const std::string& _contact_aimid, const std::string &ttl_id) = 0;
+        virtual void download_snap_metainfo(const int64_t seq, const std::string& _contact_aimid, const std::string &ttl_id, bool _raise_priority) = 0;
 
         // masks
         virtual void get_mask_id_list(int64_t _seq) = 0;
@@ -346,6 +349,7 @@ namespace core
         //snaps
         virtual void refresh_snaps_storage() = 0;
         virtual void refresh_user_snaps(const std::string& _aimId) = 0;
+        virtual void remove_from_snaps_storage(const std::string& _aimId) = 0;
 
         virtual bool has_valid_login() const = 0;
     };

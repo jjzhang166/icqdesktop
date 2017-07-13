@@ -28,17 +28,18 @@ common::tools::message_tokenizer::message_tokenizer(const std::string& _message)
 
     auto append_tokens = [&_message, &parser, &prev, &i, this]()
     {
-        const auto length = parser.raw_url_length();
-        if (i - prev > length)
+        const auto url_size = parser.raw_url_length();
+        const auto text_size = i - prev - url_size - parser.tail_size();
+        if (text_size > 0)
         {
-            tokens_.push(message_token(_message.substr(prev, i - prev - length)));
+            tokens_.push(message_token(_message.substr(prev, text_size)));
         }
 
         tokens_.push(message_token(parser.get_url()));
 
         parser.reset();
 
-        prev = i;
+        prev += (text_size + url_size);
     };
 
     for (auto c : _message)
@@ -58,10 +59,17 @@ common::tools::message_tokenizer::message_tokenizer(const std::string& _message)
     if (parser.has_url())
     {
         append_tokens();
+
+        if (prev < i)
+            tokens_.push(message_token(_message.substr(prev, i - prev)));
     }
-    else if (prev < i)
+    else
     {
-        tokens_.push(message_token(_message.substr(prev, i - prev)));
+        const auto text_size = i - prev;
+        if (text_size > 0)
+        {
+            tokens_.push(message_token(_message.substr(prev, i - prev)));
+        }
     }
 
     tokens_.push(message_token()); // terminator

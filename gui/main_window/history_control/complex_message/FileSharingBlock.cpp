@@ -1153,7 +1153,7 @@ void FileSharingBlock::onLeftMouseClick(const QPoint &globalPos)
         }
         else
         {
-            startDownloading(true);
+            startDownloading(true, false, true);
         }
     }
 }
@@ -1248,11 +1248,8 @@ void FileSharingBlock::playMedia(const QString &localPath)
         changeGifPlaybackStatus(true);
 
         const auto gifSize = Utils::unscale_value(previewRect.size());
-        //Player_->setScaledSize(gifSize);
         videoplayer_->setLoadingState(true);
         videoplayer_->start(IsVisible_);
-            
-            // Player_->setPaused(false);
 
         return;
     }
@@ -1268,7 +1265,7 @@ void FileSharingBlock::playMedia(const QString &localPath)
         load_task_.get(), 
         &Utils::LoadMovieToFFMpegPlayerFromFileTask::loadedSignal, 
         this, 
-        [this, player_exist](QSharedPointer<Ui::DialogPlayer> _movie)
+        [this, player_exist, localPath](QSharedPointer<Ui::DialogPlayer> _movie)
     {
         if (!IsInPreloadDistance_)
             return;
@@ -1306,6 +1303,12 @@ void FileSharingBlock::playMedia(const QString &localPath)
 
         videoplayer_->updateSize(contentRect);
         videoplayer_->show();
+
+        QObject::connect(videoplayer_.data(), &DialogPlayer::mouseClicked, this, [this, localPath]()
+        {
+            Utils::InterConnector::instance().getMainWindow()->openGallery(
+                getChatAimid(), Data::Image(getParentComplexMessage()->getId(), getLink(), true), localPath);
+        });
 
         update();
 

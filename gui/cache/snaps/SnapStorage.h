@@ -8,6 +8,7 @@ namespace Logic
         SnapItem()
             : Views_(0)
             , HaveNewSnap_(false)
+            , IsOfficial_(false)
         {
         }
 
@@ -17,6 +18,7 @@ namespace Logic
         QPixmap Snap_;
         int Views_;
         bool HaveNewSnap_;
+        bool IsOfficial_;
     };
 
     struct PlayItem
@@ -38,6 +40,24 @@ namespace Logic
         bool First_;
     };
 
+    struct PreviewItem
+    {
+        PreviewItem()
+            : Id_(-1)
+        {
+        }
+
+        bool operator==(const PreviewItem& other)
+        {
+            return AimId_ == other.AimId_;
+        }
+
+        QString AimId_;
+        qint64 Id_;
+    };
+
+
+
 	class SnapStorage : public QStandardItemModel
     {
         Q_OBJECT
@@ -45,8 +65,11 @@ Q_SIGNALS:
         void playSnap(QString, QString, QString, QString, qint64, bool);
         void playUserSnap(QString, QString, QString, QString, qint64, bool);
         void indexChanged();
-        void tvStarted();
+        void tvStarted(QList<Logic::PreviewItem>, bool);
         void snapProgress(QString, int);
+        void previewChanged(QString);
+        void removed(QString);
+        void snapRemoved(QString, qint64, QString);
 
     public:
         SnapStorage();
@@ -60,11 +83,13 @@ Q_SIGNALS:
         QPixmap getFirstUserPreview(const QString& _aimId = QString());
 
         QPixmap getSnapPreviewFull(qint64 _id);
+        QString getSnapUrl(qint64 _id);
 
         int getSnapsCount(const QString& _aimId) const;
         int loadingSnapsCount(const QString& _aimId) const;
 
         QString getFriednly(const QString& _aimId) const;
+        bool isOfficial(const QString& _aimId) const;
         int getViews(qint64 id) const;
         int32_t getTimestamp(qint64 id) const;
 
@@ -77,17 +102,24 @@ Q_SIGNALS:
         int getFriendsRow() const { return 0; }
         int getFeaturedRow() const { return 1; }
 
+        void readSnap(const QString& aimId, qint64 id);
+        void clearPlaylist();
+
+        void clearStorage();
+
     public Q_SLOTS:
         void refresh();
 
     private Q_SLOTS:
         void userSnaps(Logic::UserSnapsInfo, bool);
         void userSnapsStorage(QList<Logic::UserSnapsInfo>, bool);
-        void snapPreviewInfoDownloaded(qint64 _snapId, QString _preview, QString _ttl_id);
+        void snapPreviewInfoDownloaded(qint64 _snapId, QString _preview, QString _ttl_id, bool _found);
         void imageDownloaded(qint64 _seq, QString _rawUri, QPixmap _image, QString _localPath);
         void fileDownloaded(qint64, QString, QString);
         void fileDownloading(qint64, QString, qint64, qint64);
         void fileSharingError(qint64, QString, qint32);
+        void userSnapsState(Logic::SnapState);
+        void expired();
 
     private:
         bool updateSnaps(Logic::UserSnapsInfo _info);
@@ -111,9 +143,12 @@ Q_SIGNALS:
         QString Selected_;
 
         QStringList DownloadingUrls_;
+        QTimer* expiredTimer_;
+        qint64 expiredId_;
     };
 
     SnapStorage* GetSnapStorage();
 }
 
 Q_DECLARE_METATYPE(Logic::SnapItem);
+Q_DECLARE_METATYPE(Logic::PreviewItem);

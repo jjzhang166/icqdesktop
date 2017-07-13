@@ -13,10 +13,10 @@ static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, v
 static int32_t progress_callback(void* ptr, double TotalToDownload, double NowDownloaded, double TotalToUpload, double NowUploaded);
 static int32_t trace_function(CURL* _handle, curl_infotype _type, unsigned char* _data, size_t _size, void* _userp);
 
-core::curl_context::curl_context(http_request_simple::stop_function _stop_func, http_request_simple::progress_function _progress_func, bool _keep_alive)
+core::curl_context::curl_context(std::shared_ptr<tools::stream> _output, http_request_simple::stop_function _stop_func, http_request_simple::progress_function _progress_func, bool _keep_alive)
     :
     curl_(curl_handler::instance().get_handle()),
-    output_(new core::tools::binary_stream()),
+    output_(_output),
     header_(new core::tools::binary_stream()),
     log_data_(new core::tools::binary_stream()),
     stop_func_(_stop_func),
@@ -186,11 +186,6 @@ void core::curl_context::set_modified_time(time_t _last_modified_time)
     curl_easy_setopt(curl_, CURLOPT_TIMEVALUE, _last_modified_time);
 }
 
-std::shared_ptr<core::tools::binary_stream> core::curl_context::get_response()
-{
-    return output_;
-}
-
 std::shared_ptr<core::tools::binary_stream> core::curl_context::get_header()
 {
     return header_;
@@ -224,6 +219,8 @@ void core::curl_context::set_form_filedata(const char* _field_name, const char* 
 
 bool core::curl_context::execute_request()
 {
+    const auto start = std::chrono::steady_clock().now();
+
     auto handler = curl_handler::instance().perform(priority_, timeout_, curl_);
     assert(handler.valid());
 
@@ -231,9 +228,12 @@ bool core::curl_context::execute_request()
 
     const CURLcode res = handler.get();
 
+    const auto finish = std::chrono::steady_clock().now();
+
     std::stringstream error;
     error << "curl_easy_perform result is ";
-    error << res;
+    error << res << '\n';
+    error << "completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(finish -start).count() << " ms";
     error << std::endl;
 
     write_log_string(error.str());

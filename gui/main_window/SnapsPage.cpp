@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "SnapsPage.h"
-#include "../cache/snaps/SnapStorage.h"
 #include "../cache/emoji/Emoji.h"
 #include "../cache/emoji/EmojiDb.h"
 #include "mplayer/FFMpegPlayer.h"
@@ -30,37 +29,43 @@ namespace
     const int IMAGE_DURATION = 4000;
     const int PROGRESS_HEIGHT = 70;
     const int PROGRESS_TEXT_PADDING = 16;
-    const int PROGRESS_VIEWS_PADDING = 54;
-    const int PROGRESS_VIEWS_TEXT_PADDING = 66;
     const int PROGRESS_TOP_PADDING = 8;
     const int PROGRESS_PEN_WIDTH = 2;
     const int PROGRESS_SPACING = 6;
-    const int MY_CONTROL_PANEL_WIDTH = 188;
     const int CONTROL_PANEL_HEIGHT = 36;
-    const int MESSAGE_HEIGHT = 56;
+    const int MESSAGE_HEIGHT = 40;
     const int BUTTON_OFFSET = 2;
+    const int SMILES_OFFSET_X = 8;
+#ifdef __APPLE__
+    const int SMILES_OFFSET_Y = 7;
+#else
+    const int SMILES_OFFSET_Y = 5;
+#endif //__APPLE__
     const int CONTROL_PANEL_ELEMENT_WIDTH = 36;
     const int CONTROL_PANEL_ELEMENT_SPACING = 8;
     const int CONTROL_PANEL_SPACING = 16;
-    const int CONTROL_PANEL_SMILES_SPACING = 6;
     const int MESSAGE_SIZE = 56;
     const int BORDER_RADIUS = 8;
-    const int SMILES_SIZE = 120;
+    const int SMILES_SIZE = 130;
     const int BUTTON_SIZE = 32;
-    const int SMILE_SIZE = 32;
+    const int SMILE_SIZE = 26;
     const int SPACE_TO_SMILES_OPEN = 16;
-    const int CLOSE_BUTTON_HEIGHT = 24;
-    const int CLOSE_BUTTON_WIDTH = 28;
+    const int CLOSE_BIG_SIZE = 16;
+    const int CLOSE_OFFSET = 16;
     const int OPEN_SMILES_WIDTH = 12;
     const int OPEN_SMILES_HEIGTH = 8;
-    const int EMOJI_VIEW_HEIGHT = 186;
-    const int EMOJI_ITEM_SIZE = 44;
+    const int EMOJI_VIEW_HEIGHT = 132;
+    const int EMOJI_ITEM_SIZE = 30;
     const int PREVIEW_OFFSET = 40;
-    const int SMILES_TOP_PADDING = 8;
+    const int SMILES_TOP_PADDING = 6;
+    const int SMILES_SPACING = 8;
     const int SEND_TIMEOUT = 2000;
 
-    const auto FIRST_EMOJI_MAIN = 0x1f602;
-    const auto SECOND_EMOJI_MAIN = 0x1f525;
+    const int CLOSE_OFFSET_X = 2;
+    const int CLOSE_OFFSET_Y = 4;
+
+    const auto FIRST_EMOJI_MAIN = 0x1f525;
+    const auto SECOND_EMOJI_MAIN = 0x1f602;
     const auto THIRD_EMOJI_MAIN = 0x1f618;
     const auto FIRST_EMOJI_EXT = 0x0;
     const auto SECOND_EMOJI_EXT = 0x0;
@@ -76,7 +81,6 @@ namespace
 
     const int MAX_ANIMATIONS_COUNT = 5;
     const int MAX_PLAYER_QUEUE_SIZE = 3;
-    const int PROGRESS_SIZE = 40;
 
     const int AVATAR_SIZE = 24;
     const int AVATAR_SPACING = 8;
@@ -85,24 +89,31 @@ namespace
     const int SNAP_TOP_PADDING = 16;
     const int FRIENDLY_HEIGHT = 24;
 
+    const int ADD_SPACING = 8;
+    const int SUB_SPACING = 2;
+    const int OFFICIAL_MARK_SIZE = 8;
+    const int OFFICIAL_PADDING = 2;
+
+    const int SNAPS_HOVER_HEIGHT = 60;
+
     Emoji::EmojiSizePx getEmojiSize()
     {
-        Emoji::EmojiSizePx emojiSize = Emoji::EmojiSizePx::_32;
+        Emoji::EmojiSizePx emojiSize = Emoji::EmojiSizePx::_27;
         int scale = (int) (Utils::getScaleCoefficient() * 100.0);
         scale = Utils::scale_bitmap(scale);
         switch (scale)
         {
         case 100:
-            emojiSize = Emoji::EmojiSizePx::_32;
+            emojiSize = Emoji::EmojiSizePx::_27;
             break;
         case 125:
-            emojiSize = Emoji::EmojiSizePx::_40;
+            emojiSize = Emoji::EmojiSizePx::_32;
             break;
         case 150:
-            emojiSize = Emoji::EmojiSizePx::_48;
+            emojiSize = Emoji::EmojiSizePx::_40;
             break;
         case 200:
-            emojiSize = Emoji::EmojiSizePx::_64;
+            emojiSize = Emoji::EmojiSizePx::_48;
             break;
         default:
             assert(!"invalid scale");
@@ -137,6 +148,8 @@ namespace Ui
 PreviewWidget::PreviewWidget(QWidget* parent)
     : QWidget(parent)
     , Avatar_(new ContactAvatarWidget(this, QString(), QString(), Utils::scale_value(AVATAR_SIZE), true))
+    , IsOfficial_(false)
+    , Id_(-1)
 {
     Avatar_->setFixedSize(QSize(Utils::scale_value(AVATAR_SIZE), Utils::scale_value(AVATAR_SIZE)));
     Avatar_->move(Utils::scale_value(AVATAR_SPACING), Utils::scale_value(AVATAR_SPACING));
@@ -150,14 +163,25 @@ PreviewWidget::PreviewWidget(QWidget* parent)
     Friendly_->move(Utils::scale_value(AVATAR_SPACING) + Avatar_->width(), Utils::scale_value(NAME_TOP_PADDING));
     Friendly_->setTextInteractionFlags(Qt::NoTextInteraction);
     Friendly_->setFixedHeight(Utils::scale_value(FRIENDLY_HEIGHT));
+
+    Gradient_ = new QWidget(this);
+    Gradient_->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 rgba(0, 0, 0, 75), stop:0.76 rgb(0, 0, 0, 25), stop:1 rgb(0, 0, 0, 0));");
+    Gradient_->setAttribute(Qt::WA_TransparentForMouseEvents);
+    Gradient_->stackUnder(Friendly_);
+    Gradient_->stackUnder(Avatar_);
+    Gradient_->setFixedHeight(SNAPS_HOVER_HEIGHT);
+    Gradient_->move(0, 0);
 }
     
 PreviewWidget::~PreviewWidget()
 {
 }
     
-void PreviewWidget::setPreview(const QPixmap& _preview)
+void PreviewWidget::setPreview(const QPixmap& _preview, QSize s)
 {
+    if (_preview.isNull())
+        return;
+
     QGraphicsBlurEffect* blur = new QGraphicsBlurEffect(this);
     blur->setBlurRadius(10.0);
     blur->setBlurHints(QGraphicsBlurEffect::QualityHint);
@@ -165,14 +189,25 @@ void PreviewWidget::setPreview(const QPixmap& _preview)
     QGraphicsScene scene;
     QGraphicsPixmapItem item;
 
-    item.setPixmap(_preview);
+    auto pSize = _preview.size();
+    auto newSize = pSize.scaled(s, pSize.height() > pSize.width() ? Qt::KeepAspectRatioByExpanding : Qt::KeepAspectRatio);
+    QPixmap preview = _preview.scaled(newSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    QPixmap b(s);
+    {
+        QPainter ptr(&b);
+        ptr.fillRect(b.rect(), Qt::black);
+        ptr.drawPixmap(QPoint(s.width() / 2 - preview.width() / 2, s.height() / 2 - preview.height() / 2), preview, preview.rect());
+    }
+
+    item.setPixmap(b);
     item.setGraphicsEffect(blur);
     scene.addItem(&item);
-    QPixmap res(_preview.size());
+    QPixmap res(s);
     res.fill(Qt::transparent);
     QPainter ptr(&res);
     ptr.setRenderHints(QPainter::HighQualityAntialiasing);
-    scene.render(&ptr, QRect(), QRect(0, 0, _preview.width(), _preview.height()));
+    scene.render(&ptr, res.rect(), b.rect());
     ptr.setOpacity(0.1);
     ptr.fillRect(res.rect(), Qt::white);
 
@@ -180,9 +215,35 @@ void PreviewWidget::setPreview(const QPixmap& _preview)
     update();
 }
 
-void PreviewWidget::setAimId(const QString& _aimid)
+void PreviewWidget::waitForPreview(const QString& _ainId, qint64 _id, QSize _size)
+{
+    Preview_ = QPixmap();
+
+    AimId_ = _ainId;
+    Id_ = _id;
+    Size_ = _size;
+
+    connect(Logic::GetSnapStorage(), SIGNAL(previewChanged(QString)), this, SLOT(previewChanged(QString)), Qt::QueuedConnection);
+}
+
+void PreviewWidget::previewChanged(QString aimid)
+{
+    if (aimid != AimId_)
+        return;
+
+    auto p = Logic::GetSnapStorage()->getSnapPreviewFull(Id_);
+    if (p.isNull())
+        return;
+
+    setPreview(p, Size_);
+    disconnect(Logic::GetSnapStorage(), SIGNAL(previewChanged(QString)), this, SLOT(previewChanged(QString)));
+}
+
+void PreviewWidget::setAimId(const QString& _aimid, bool _isOfficial, qint64 _id)
 {
     AimId_ = _aimid;
+    Id_ = _id;
+    IsOfficial_ = _isOfficial;
     FriendlyName_ = Logic::GetSnapStorage()->getFriednly(_aimid);
     updateFriendly();
     Avatar_->UpdateParams(AimId_, FriendlyName_);
@@ -200,12 +261,8 @@ void PreviewWidget::paintEvent(QPaintEvent* e)
     p.setRenderHints(QPainter::Antialiasing);
     p.fillRect(rect(), Preview_.isNull() ? QColor("#767676") : Qt::black);
     if (!Preview_.isNull())
-    {
-        auto s = Preview_.size();
-        s = s.scaled(size(), Qt::KeepAspectRatio);
-        auto r = QRect((width() - s.width()) / 2, (height() - s.height()) / 2, s.width(), s.height());
-        p.drawPixmap(r, Preview_, Preview_.rect());
-    }
+        p.drawPixmap(rect(), Preview_, Preview_.rect());
+
     Friendly_->render(&p);
 }
 
@@ -213,14 +270,35 @@ void PreviewWidget::resizeEvent(QResizeEvent* e)
 {
     Avatar_->move(Utils::scale_value(AVATAR_SPACING), Utils::scale_value(AVATAR_SPACING));
     Friendly_->move(Utils::scale_value(AVATAR_SPACING * 2) + Avatar_->width(), Utils::scale_value(NAME_TOP_PADDING));
+    Gradient_->setFixedWidth(width());
+    Gradient_->move(0, 0);
     updateFriendly();
     return QWidget::resizeEvent(e);
+}
+
+void PreviewWidget::mouseReleaseEvent(QMouseEvent *e)
+{
+    emitClicked();
+}
+
+void PreviewWidget::enterEvent(QEvent *e)
+{
+    emit enter(this);
+    return QWidget::enterEvent(e);
+}
+
+void PreviewWidget::leaveEvent(QEvent *e)
+{
+    emit leave(this);
+    return QWidget::leaveEvent(e);
 }
 
 void PreviewWidget::updateFriendly()
 {
     QFontMetrics m(Friendly_->font());
     auto w = width() - Utils::scale_value(AVATAR_SPACING * 2 + AVATAR_SIZE);
+//     if (IsOfficial_)
+//         w -= Utils::scale_value(OFFICIAL_PADDING + OFFICIAL_MARK_SIZE);
     auto friendly = m.elidedText(FriendlyName_, Qt::ElideRight, w);
     Friendly_->setFixedWidth(w);
     auto &doc = *Friendly_->document();
@@ -228,6 +306,11 @@ void PreviewWidget::updateFriendly()
     QTextCursor cursor = Friendly_->textCursor();
     Logic::Text2Doc(friendly, cursor, Logic::Text2DocHtmlMode::Pass, false, nullptr, Emoji::EmojiSizePx::_16);
     Logic::FormatDocument(doc, Utils::scale_value(FRIENDLY_HEIGHT));
+}
+
+void PreviewWidget::emitClicked()
+{
+    emit clicked(AimId_, Id_);
 }
     
 ProgressBar::ProgressBar(QWidget* parent)
@@ -240,6 +323,7 @@ ProgressBar::ProgressBar(QWidget* parent)
     , Avatar_(new ContactAvatarWidget(this, QString(), QString(), Utils::scale_value(AVATAR_SIZE), true))
     , Timestamp_(new QLabel(this))
     , Views_(new QLabel(this))
+    , IsOfficial_(false)
 {
     Avatar_->setFixedSize(QSize(Utils::scale_value(AVATAR_SIZE), Utils::scale_value(AVATAR_SIZE)));
     Avatar_->move(Utils::scale_value(AVATAR_SPACING), Utils::scale_value(AVATAR_SPACING + SNAP_TOP_PADDING));
@@ -259,13 +343,17 @@ ProgressBar::ProgressBar(QWidget* parent)
     QPalette p;
     p.setColor(Timestamp_->foregroundRole(), QColor("#ffffff"));
 
+    f = Fonts::appFontScaled(12, Fonts::FontWeight::Normal);
+
     Timestamp_->setStyleSheet("background: transparent;");
     Timestamp_->setPalette(p);
     Timestamp_->setFont(f);
+    Timestamp_->hide();
 
     Views_->setStyleSheet("background: transparent;");
     Views_->setPalette(p);
     Views_->setFont(f);
+    Views_->hide();
 
     setMouseTracking(true);
 }
@@ -281,7 +369,6 @@ void ProgressBar::durationChanged(qint64 _duration)
         return;
 
     Duration_ = _duration;
-    update();
 }
 
 void ProgressBar::positionChanged(qint64 _position)
@@ -320,7 +407,7 @@ void ProgressBar::paintEvent(QPaintEvent* e)
             if (e != b)
                 p.drawLine(b, e);
             
-            from = std::max(from + ((to - from) * Pos_ / Duration_), cur_from);
+            from = std::max(from + ((to - from) * Pos_ / Duration_), cur_from) + Utils::scale_value(PROGRESS_PEN_WIDTH);
             QColor color("#999999");
             color.setAlphaF(0.43);
             pen.setColor(color);
@@ -331,14 +418,21 @@ void ProgressBar::paintEvent(QPaintEvent* e)
     }
 
     p.translate(0, 0);
+    QFontMetrics f1(Friendly_->font());
+    QFontMetrics f2(Timestamp_->font());
     Friendly_->render(&p, QPoint(Utils::scale_value(AVATAR_SPACING * 2) + Avatar_->width(), Utils::scale_value(NAME_TOP_PADDING + SNAP_TOP_PADDING)));
+    Timestamp_->render(&p, QPoint(width() - Utils::scale_value(AVATAR_SPACING) - Timestamp_->width(), Utils::scale_value(NAME_TOP_PADDING + SNAP_TOP_PADDING) + (Friendly_->height() / 2 - Timestamp_->height() / 2) + (f1.height() / 2 - f2.height() / 2) + Utils::scale_value(1)));
+    Views_->render(&p, QPoint(width() - Utils::scale_value(AVATAR_SPACING) - Views_->width(), Utils::scale_value(NAME_TOP_PADDING + SNAP_TOP_PADDING) + Timestamp_->height() + Utils::scale_value(ADD_SPACING)));
+//     if (IsOfficial_)
+//     {
+//         QFontMetrics m(Friendly_->font());
+//         p.drawPixmap(Utils::scale_value(AVATAR_SPACING * 2) + Avatar_->width() + m.width(Friendly_->getPlainText()) + Utils::scale_value(OFFICIAL_PADDING), Utils::scale_value(NAME_TOP_PADDING + SNAP_TOP_PADDING + OFFICIAL_PADDING) + m.height() / 2, Utils::parse_image_name(":/resources/badge_official_small_100.png"));
+//     }
 }
 
 void ProgressBar::resizeEvent(QResizeEvent * e)
 {
     updateFriednly();
-    Timestamp_->move(width() - Utils::scale_value(AVATAR_SPACING) -Timestamp_->width(), Utils::scale_value(AVATAR_SPACING + SNAP_TOP_PADDING));
-    Views_->move(width() - Utils::scale_value(AVATAR_SPACING) - Views_->width(), Utils::scale_value(AVATAR_SPACING + SNAP_TOP_PADDING) + Timestamp_->height());
     return QWidget::resizeEvent(e);
 }
 
@@ -399,7 +493,9 @@ void ProgressBar::leaveEvent(QEvent * e)
 void ProgressBar::updateFriednly()
 {
     QFontMetrics m(Friendly_->font());
-    auto w = width() - Utils::scale_value(AVATAR_SPACING * 2 + AVATAR_SIZE) - Timestamp_->width();
+    auto w = width() - Utils::scale_value(AVATAR_SPACING * 2 + AVATAR_SIZE + SUB_SPACING) - Timestamp_->width();
+//     if (IsOfficial_)
+//         w -= Utils::scale_value(OFFICIAL_PADDING + OFFICIAL_MARK_SIZE);
     auto friendly = m.elidedText(FriendlyName_, Qt::ElideRight, w);
     Friendly_->setFixedWidth(w);
     auto &doc = *Friendly_->document();
@@ -429,19 +525,22 @@ void ProgressBar::resetCurrent()
 
 void ProgressBar::next()
 {
+    Pos_ = 0;
     ++Current_;
     update();
 }
 
 void ProgressBar::prev()
 {
+    Pos_ = 0;
     --Current_;
     update();
 }
 
-void ProgressBar::setFriednly(const QString& _friednly)
+void ProgressBar::setFriednly(const QString& _friednly, bool _isOfficial)
 {
     FriendlyName_ = _friednly;
+    IsOfficial_ = _isOfficial;
     updateFriednly();
     Avatar_->UpdateParams(AimId_, _friednly);
     update();
@@ -456,7 +555,14 @@ void ProgressBar::setAimId(const QString& _aimId)
 
 void ProgressBar::setViews(int _views)
 {
-    Views_->setText(QVariant(_views).toString() + " " + QT_TRANSLATE_NOOP("snaps", "views"));
+    Views_->setText(QVariant(_views).toString() + " "
+        + Utils::GetTranslator()->getNumberString(
+            _views,
+        QT_TRANSLATE_NOOP3("snaps_page", "view", "1"),
+        QT_TRANSLATE_NOOP3("snaps_page", "views", "2"),
+        QT_TRANSLATE_NOOP3("snaps_page", "views", "5"),
+        QT_TRANSLATE_NOOP3("snaps_page", "views", "21")
+    ));
     Views_->adjustSize();
     Views_->move(width() - Utils::scale_value(AVATAR_SPACING) - Views_->width(), Utils::scale_value(AVATAR_SPACING + SNAP_TOP_PADDING) + Timestamp_->height());
     update();
@@ -471,6 +577,53 @@ void ProgressBar::setTimestamp(int32_t _timestamp)
     update();
 }
 
+ClosePanel::ClosePanel(QWidget* parent)
+    : QWidget(parent)
+    , Hovered_(false)
+{
+}
+
+ClosePanel::~ClosePanel()
+{
+}
+
+void ClosePanel::enterEvent(QEvent *e)
+{
+    Hovered_ = true;
+    update();
+    return QWidget::enterEvent(e);
+}
+
+void ClosePanel::leaveEvent(QEvent *e)
+{
+    Hovered_ = false;
+    update();
+    return QWidget::leaveEvent(e);
+}
+
+void ClosePanel::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setBrush(Qt::black);
+    QPen pen;
+    pen.setColor(Qt::transparent);
+    p.setPen(pen);
+    p.setOpacity(0.6);
+
+    p.drawRoundedRect(QRect(0, 0, Utils::scale_value(CONTROL_PANEL_ELEMENT_WIDTH), Utils::scale_value(CONTROL_PANEL_HEIGHT)), Utils::scale_value(BORDER_RADIUS), Utils::scale_value(BORDER_RADIUS));
+    p.setOpacity(1.0);
+
+    QPixmap btn(Utils::parse_image_name(Hovered_ ? ":/resources/basic_elements/close_b_100.png" : ":/resources/basic_elements/close_c_100.png"));
+    Utils::check_pixel_ratio(btn);
+    p.drawPixmap(Utils::scale_value(BUTTON_OFFSET + CLOSE_OFFSET_X), Utils::scale_value(BUTTON_OFFSET + CLOSE_OFFSET_Y), btn);
+}
+
+void ClosePanel::mouseReleaseEvent(QMouseEvent *e)
+{
+    emit closeClicked();
+}
+
 ControlPanel::ControlPanel(QWidget* parent)
     : QWidget(parent)
     , MessageHovered_(false)
@@ -479,6 +632,7 @@ ControlPanel::ControlPanel(QWidget* parent)
     , LeftPadding_(0)
     , Prop_(0)
     , curSmile_(0)
+    , Close_(false)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true);
@@ -520,18 +674,28 @@ void ControlPanel::paintEvent(QPaintEvent *)
         Utils::scale_value(CONTROL_PANEL_ELEMENT_WIDTH), Utils::scale_value(CONTROL_PANEL_HEIGHT)), Utils::scale_value(BORDER_RADIUS), Utils::scale_value(BORDER_RADIUS));
 
     p.setOpacity(1.0);
-    QPixmap message(Utils::parse_image_name(MessageHovered_ ? ":/resources/videoplayer/reply_snap_button_100_hover.png" : ":/resources/videoplayer/reply_snap_button_100.png"));
+
+    QString messageButtonImage;
+    if (Close_)
+        messageButtonImage = Utils::parse_image_name(MessageHovered_ ? ":/resources/basic_elements/close_b_100.png" : ":/resources/basic_elements/close_c_100.png");
+    else
+        messageButtonImage = Utils::parse_image_name(MessageHovered_ ? ":/resources/videoplayer/reply_snap_button_100_hover.png" : ":/resources/videoplayer/reply_snap_button_100.png");
+
+    int x_off = Close_ ? Utils::scale_value(CLOSE_OFFSET_X) : 0;
+    int y_off = Close_ ? Utils::scale_value(CLOSE_OFFSET_Y) : 0;
+
+    QPixmap message(messageButtonImage);
     Utils::check_pixel_ratio(message);
-    p.drawPixmap(Utils::scale_value(BUTTON_OFFSET), y + Utils::scale_value(BUTTON_OFFSET), message);
+    p.drawPixmap(Utils::scale_value(BUTTON_OFFSET) + x_off, y + Utils::scale_value(BUTTON_OFFSET) + y_off, message);
 
 
     QPixmap forward(Utils::parse_image_name(ForwardHovered_ ? ":/resources/videoplayer/player_share_big_100_hover.png" : ":/resources/videoplayer/player_share_big_100.png"));
     Utils::check_pixel_ratio(forward);
     p.drawPixmap(width() - Utils::scale_value(BUTTON_SIZE + BUTTON_OFFSET), y + Utils::scale_value(BUTTON_OFFSET), forward);
 
-    QImage firstSmile = Emoji::GetEmoji(FIRST_EMOJI_MAIN, FIRST_EMOJI_EXT, getEmojiSize());
-    QImage secondSmile = Emoji::GetEmoji(SECOND_EMOJI_MAIN, SECOND_EMOJI_EXT, getEmojiSize());
-    QImage thirdSmile = Emoji::GetEmoji(THIRD_EMOJI_MAIN, THIRD_EMOJI_EXT, getEmojiSize());
+    QImage firstSmile = Emoji::GetEmoji(FIRST_EMOJI_MAIN, FIRST_EMOJI_EXT, getEmojiSize()).scaled(QSize(Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QImage secondSmile = Emoji::GetEmoji(SECOND_EMOJI_MAIN, SECOND_EMOJI_EXT, getEmojiSize()).scaled(QSize(Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), Qt::KeepAspectRatio, Qt::SmoothTransformation);;
+    QImage thirdSmile = Emoji::GetEmoji(THIRD_EMOJI_MAIN, THIRD_EMOJI_EXT, getEmojiSize()).scaled(QSize(Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), Qt::KeepAspectRatio, Qt::SmoothTransformation);;
     
     Utils::check_pixel_ratio(firstSmile);
     Utils::check_pixel_ratio(secondSmile);
@@ -560,13 +724,13 @@ void ControlPanel::paintEvent(QPaintEvent *)
         }
     }
 
-    p.drawImage(QRect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET) + addSpaceFirst, y + addSpaceFirst + Utils::scale_value(BUTTON_OFFSET), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), firstSmile, firstSmile.rect());
-    p.drawImage(QRect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET) * 2 + Utils::scale_value(SMILE_SIZE) + addSpaceSecond, y + addSpaceSecond + Utils::scale_value(BUTTON_OFFSET), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), secondSmile, secondSmile.rect());
-    p.drawImage(QRect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET) * 3 + Utils::scale_value(SMILE_SIZE) * 2 + addSpaceThird, y + addSpaceThird + Utils::scale_value(BUTTON_OFFSET), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), thirdSmile, thirdSmile.rect());
+    p.drawImage(QRect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X) + addSpaceFirst, y + addSpaceFirst + Utils::scale_value(SMILES_OFFSET_Y), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), firstSmile, firstSmile.rect());
+    p.drawImage(QRect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X) * 2 + Utils::scale_value(SMILE_SIZE) + addSpaceSecond, y + addSpaceSecond + Utils::scale_value(SMILES_OFFSET_Y), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), secondSmile, secondSmile.rect());
+    p.drawImage(QRect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X) * 3 + Utils::scale_value(SMILE_SIZE) * 2 + addSpaceThird, y + addSpaceThird + Utils::scale_value(SMILES_OFFSET_Y), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), thirdSmile, thirdSmile.rect());
 
     QPixmap smilesOpen(Utils::parse_image_name(SmilesOpenHovered_ ? ":/resources/basic_elements/arrow_small_b_100.png" : ":/resources/basic_elements/arrow_small_c_100.png"));
     Utils::check_pixel_ratio(smilesOpen);
-    p.drawPixmap(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET) * 4 + Utils::scale_value(SMILE_SIZE) * 3, y + Utils::scale_value(SPACE_TO_SMILES_OPEN), smilesOpen);
+    p.drawPixmap(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X) * 4 + Utils::scale_value(SMILE_SIZE) * 3, y + Utils::scale_value(SPACE_TO_SMILES_OPEN), smilesOpen);
 }
 
 void ControlPanel::mouseMoveEvent(QMouseEvent *e)
@@ -574,6 +738,22 @@ void ControlPanel::mouseMoveEvent(QMouseEvent *e)
     MessageHovered_ = isMessage(e->pos());
     ForwardHovered_ = isForward(e->pos());
     SmilesOpenHovered_ = isSmilesOpen(e->pos());
+    auto isFirst = isFirstSmile(e->pos());
+    auto isSecond = isSecondSmile(e->pos());
+    auto isThird = isThirdSmile(e->pos());
+
+    auto needCursor = MessageHovered_ || ForwardHovered_ || SmilesOpenHovered_ || isFirst || isSecond || isThird;
+
+    bool theSame = (QApplication::overrideCursor() && QApplication::overrideCursor()->shape() == Qt::PointingHandCursor);
+    if (needCursor)
+    {
+        if (!theSame)
+            QApplication::setOverrideCursor(Qt::PointingHandCursor);
+    }
+    else
+    {
+        QApplication::restoreOverrideCursor();
+    }
 
     update();
 
@@ -582,6 +762,8 @@ void ControlPanel::mouseMoveEvent(QMouseEvent *e)
 
 void ControlPanel::leaveEvent(QEvent *e)
 {
+    QApplication::restoreOverrideCursor();
+
     MessageHovered_ = false;
     ForwardHovered_ = false;
     SmilesOpenHovered_ = false;
@@ -597,7 +779,10 @@ void ControlPanel::mouseReleaseEvent(QMouseEvent *e)
 
     if (isMessage(e->pos()))
     {
-        emit messageClicked();
+        if (Close_)
+            emit closeClicked();
+        else
+            emit messageClicked();
     }
     else if (isSmilesOpen(e->pos()))
     {
@@ -662,7 +847,7 @@ bool ControlPanel::isSmilesOpen(const QPoint& p)
 {
     int y = height() - Utils::scale_value(CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING);
 
-    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET) * 4 + Utils::scale_value(SMILE_SIZE) * 3, y + Utils::scale_value(SPACE_TO_SMILES_OPEN), Utils::scale_value(OPEN_SMILES_WIDTH), Utils::scale_value(OPEN_SMILES_HEIGTH));
+    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X) * 4 + Utils::scale_value(SMILE_SIZE) * 3, y + Utils::scale_value(SPACE_TO_SMILES_OPEN), Utils::scale_value(OPEN_SMILES_WIDTH), Utils::scale_value(OPEN_SMILES_HEIGTH));
 
     return rect.contains(p);
 }
@@ -671,7 +856,7 @@ bool ControlPanel::isFirstSmile(const QPoint& p)
 {
     int y = height() - Utils::scale_value(CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING);
 
-    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET), y + Utils::scale_value(BUTTON_OFFSET), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE));
+    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X), y + Utils::scale_value(SMILES_OFFSET_Y), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE));
 
     return rect.contains(p);
 }
@@ -680,7 +865,7 @@ bool ControlPanel::isSecondSmile(const QPoint& p)
 {
     int y = height() - Utils::scale_value(CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING);
 
-    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET) * 2 + Utils::scale_value(SMILE_SIZE), y + Utils::scale_value(BUTTON_OFFSET), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE));
+    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X) * 2 + Utils::scale_value(SMILE_SIZE), y + Utils::scale_value(SMILES_OFFSET_Y), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE));
 
     return rect.contains(p);
 }
@@ -689,7 +874,7 @@ bool ControlPanel::isThirdSmile(const QPoint& p)
 {
     int y = height() - Utils::scale_value(CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING);
 
-    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(BUTTON_OFFSET) * 3 + Utils::scale_value(SMILE_SIZE) * 2, y + Utils::scale_value(BUTTON_OFFSET), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE));
+    QRect rect(width() / 2 - Utils::scale_value(SMILES_SIZE) / 2 + Utils::scale_value(SMILES_OFFSET_X) * 3 + Utils::scale_value(SMILE_SIZE) * 2, y + Utils::scale_value(SMILES_OFFSET_Y), Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE));
 
     return rect.contains(p);
 }
@@ -788,6 +973,17 @@ void MyControlPanel::mouseMoveEvent(QMouseEvent* e)
     DeleteHovered_ = isDelete(e->pos());
     ForwardHovered_ = isForward(e->pos());
 
+    bool theSame = (QApplication::overrideCursor() && QApplication::overrideCursor()->shape() == Qt::PointingHandCursor);
+    if (SaveHovered_ || DeleteHovered_ || ForwardHovered_)
+    {
+        if (!theSame)
+            QApplication::setOverrideCursor(Qt::PointingHandCursor);
+    }
+    else
+    {
+        QApplication::restoreOverrideCursor();
+    }
+
     update();
 
     return QWidget::mouseMoveEvent(e);
@@ -807,31 +1003,43 @@ void MyControlPanel::mouseReleaseEvent(QMouseEvent* e)
     {
         emit forwardClicked();
     }
+    else
+    {
+        return QWidget::mouseReleaseEvent(e);
+    }
+}
+
+void MyControlPanel::leaveEvent(QEvent * e)
+{
+    SaveHovered_ = false;
+    DeleteHovered_ = false;
+    ForwardHovered_ = false;
+    update();
+    QApplication::restoreOverrideCursor();
+    return QWidget::leaveEvent(e);
 }
 
 MessagePanel::MessagePanel(QWidget* parent)
     : QWidget(parent)
 {
     auto mainLayout = Utils::emptyVLayout(this);
-    auto hLayout = Utils::emptyHLayout();
-    hLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding));
-
-    Close_ = new QPushButton(this);
-    Close_->setObjectName("close_button");
-    Close_->setFixedSize(Utils::scale_value(CLOSE_BUTTON_WIDTH), Utils::scale_value(CLOSE_BUTTON_HEIGHT));
-    hLayout->addWidget(Close_);
-    mainLayout->addLayout(hLayout);
 
     QString styleSheet = ":/main_window/input_widget/input_widget_snaps.qss";
     setStyleSheet(Utils::LoadStyle(styleSheet));
 
-    Input_ = new Ui::InputWidget(this, Utils::scale_value(MESSAGE_HEIGHT), styleSheet, true);
-    Input_->setFontColor(Qt::white);
-    Input_->show();
-    mainLayout->addWidget(Input_);
+    Widget_ = new QWidget(this);
+    Widget_->setStyleSheet("background: white;");
+    Widget_->setFixedHeight(Utils::scale_value(MESSAGE_HEIGHT));
+    auto l = Utils::emptyVLayout(Widget_);
 
-    connect(Input_, SIGNAL(sizeChanged()), this, SLOT(sizeChanged()), Qt::QueuedConnection);
-    connect(Close_, SIGNAL(clicked()), this, SIGNAL(closeClicked()), Qt::QueuedConnection);
+    Input_ = new Ui::InputWidget(this, Utils::scale_value(MESSAGE_HEIGHT), styleSheet, true);
+    Input_->show();
+
+    l->addWidget(Input_);
+    mainLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Preferred, QSizePolicy::Expanding));
+    mainLayout->addWidget(Widget_);
+
+    connect(Input_, SIGNAL(sizeChanged()), this, SLOT(sizeChanged()), Qt::DirectConnection);
     connect(Input_, SIGNAL(sendMessage(QString)), this, SIGNAL(closeClicked()), Qt::QueuedConnection);
 }
 
@@ -854,13 +1062,8 @@ void MessagePanel::paintEvent(QPaintEvent * e)
 {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
-    p.setBrush(Qt::black);
-    QPen pen;
-    pen.setColor(Qt::transparent);
-    p.setPen(pen);
-    p.setOpacity(0.6);
-
-    p.drawRoundedRect(rect(), Utils::scale_value(BORDER_RADIUS), Utils::scale_value(BORDER_RADIUS));
+    p.setOpacity(0.5);
+    p.fillRect(rect(), Qt::black);
 }
 
 void MessagePanel::mouseReleaseEvent(QMouseEvent *e)
@@ -870,7 +1073,7 @@ void MessagePanel::mouseReleaseEvent(QMouseEvent *e)
 
 void MessagePanel::sizeChanged()
 {
-    setFixedHeight(Input_->get_current_height() + Utils::scale_value(CLOSE_BUTTON_HEIGHT));
+    Widget_->setFixedHeight(Input_->get_current_height());
     emit needMove();
 }
 
@@ -880,49 +1083,19 @@ SmilesPanel::SmilesPanel(QWidget* parent)
     setAttribute(Qt::WA_TranslucentBackground);
     auto mainLayout = Utils::emptyVLayout(this);
     mainLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Preferred, QSizePolicy::Expanding));
-    Model_ = new Smiles::EmojiViewItemModel(this);
+    Model_ = new Smiles::EmojiViewItemModel(this, false, true);
 
     QStringList emojiCategories = Emoji::GetEmojiCategories();
     for (auto i : emojiCategories)
         Model_->addCategory(i);
     
     Model_->resize(size(), true);
-    Delegate_ = new Smiles::EmojiTableItemDelegate(this);
+    Delegate_ = new Smiles::EmojiTableItemDelegate(this, true);
     ViewWidget_ = new QWidget(this);
     ViewWidget_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    ViewWidget_->setStyleSheet("background-color:rgba(0,0,0,60%);");
+    ViewWidget_->setStyleSheet("background-color:back;");
     auto viewLayout = new QVBoxLayout(ViewWidget_);
-    viewLayout->setContentsMargins(Utils::scale_value(CONTROL_PANEL_SPACING), Utils::scale_value(SMILES_TOP_PADDING), Utils::scale_value(CONTROL_PANEL_SPACING), 0);
-
-    auto hLayout = new QHBoxLayout();
-    hLayout->setContentsMargins(0, 0, 0, Utils::scale_value(CONTROL_PANEL_SPACING));
-    hLayout->setAlignment(Qt::AlignLeft);
-    EmojiLabel_ = new QLabel(ViewWidget_);
-    QPalette p;
-    p.setColor(EmojiLabel_->foregroundRole(), QColor("#ffffff"));
-    EmojiLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-    EmojiLabel_->setPalette(p);
-    EmojiLabel_->setText(QT_TRANSLATE_NOOP("contact_list","EMOJI"));
-    EmojiLabel_->setFixedWidth(width() / 2 - Utils::scale_value(OPEN_SMILES_WIDTH) / 2);
-    EmojiLabel_->setStyleSheet("background: transparent;");
-    EmojiLabel_->setFont(Fonts::appFont(Utils::scale_value(12), Fonts::defaultAppFontFamily(), Fonts::FontWeight::Normal));
-    hLayout->addWidget(EmojiLabel_);
-
-    auto pix = QPixmap(Utils::parse_image_name(":/resources/basic_elements/arrow_small_c_100.png"));
-    pix = pix.transformed(QTransform().rotate(180), Qt::SmoothTransformation);
-    auto pix_hover = QPixmap(Utils::parse_image_name(":/resources/basic_elements/arrow_small_b_100.png"));
-    pix_hover = pix_hover.transformed(QTransform().rotate(180), Qt::SmoothTransformation);
-    
-    auto back = new CustomButton(ViewWidget_, pix);
-    back->setActive(false);
-    back->setHoverImage(pix_hover);
-    back->setFixedSize(QSize(Utils::scale_value(OPEN_SMILES_WIDTH), Utils::scale_value(OPEN_SMILES_HEIGTH)));
-    back->setStyleSheet("background: transparent; border-style: none;");
-    back->setCursor(Qt::PointingHandCursor);
-    hLayout->addWidget(back);
-    viewLayout->addLayout(hLayout);
-
-    connect(back, SIGNAL(clicked()), this, SIGNAL(closeClicked()), Qt::QueuedConnection);
+    viewLayout->setContentsMargins(Utils::scale_value(SMILES_SPACING), Utils::scale_value(SMILES_TOP_PADDING), Utils::scale_value(SMILES_SPACING), 0);
 
     View_ = new QTableView(this);
     View_->setFixedSize(width(), Model_->getNeedHeight());
@@ -935,6 +1108,7 @@ SmilesPanel::SmilesPanel(QWidget* parent)
     View_->verticalHeader()->setDefaultSectionSize(Utils::scale_value(EMOJI_ITEM_SIZE));
     View_->horizontalHeader()->setDefaultSectionSize(Utils::scale_value(EMOJI_ITEM_SIZE));
     View_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    View_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     View_->setFocusPolicy(Qt::NoFocus);
     View_->setSelectionMode(QAbstractItemView::NoSelection);
     View_->setCursor(QCursor(Qt::PointingHandCursor));
@@ -963,8 +1137,8 @@ SmilesPanel::SmilesPanel(QWidget* parent)
         if (emoji)
         {
             auto em = Emoji::GetEmoji(emoji->Codepoint_, emoji->ExtendedCodepoint_, getEmojiSize());
-            auto pos = mapFromGlobal(QCursor::pos());
-            emit animation(em, pos.x(), width() / 2, pos.y(), 0);
+            auto pos = parentWidget()->mapFromGlobal(QCursor::pos());
+            emit animation(em, pos.x(), parentWidget()->width() / 2, pos.y(), 0);
             Delegate_->animate(_index, SMILE_ANIMATION_START, SMILE_ANIMATION_END, SMILE_ANIMATION_DURATION);
             Text_->insertEmoji(emoji->Codepoint_, emoji->ExtendedCodepoint_);
             Timer_->start();
@@ -1007,12 +1181,12 @@ void SmilesPanel::paintEvent(QPaintEvent * e)
 void SmilesPanel::resizeEvent(QResizeEvent * e)
 {
     QSize s = size();
-    s.setWidth(s.width() - Utils::scale_value(CONTROL_PANEL_SPACING * 2));
-    s.setHeight(s.height() - Utils::scale_value(CONTROL_PANEL_SPACING * 2));
+    s.setWidth(s.width() - Utils::scale_value(SMILES_SPACING * 2));
+    s.setHeight(s.height() - Utils::scale_value(SMILES_TOP_PADDING));
     Model_->resize(s, true);
-    View_->setFixedSize(width() - Utils::scale_value(CONTROL_PANEL_SPACING * 2), Model_->getNeedHeight());
-    Scroll_->setFixedWidth(width() - Utils::scale_value(CONTROL_PANEL_SPACING * 2));
-    EmojiLabel_->setFixedWidth(width() / 2 - Utils::scale_value(OPEN_SMILES_WIDTH) / 2 - Utils::scale_value(CONTROL_PANEL_SPACING));
+    View_->setFixedSize(width() - Utils::scale_value(SMILES_SPACING * 3), Model_->getNeedHeight());
+    ViewWidget_->setFixedWidth(width());
+    Scroll_->setFixedWidth(width() - Utils::scale_value(SMILES_SPACING));
 
     return QWidget::resizeEvent(e);
 }
@@ -1147,6 +1321,8 @@ SnapsPage::SnapsPage(QWidget* parent)
     , Prop_(0)
     , Error_(0)
     , ref_(new bool(false))
+    , canSkip_(true)
+    , MediaId_(-1)
 {
     Player_ = new FFMpegPlayer(this, false, true);
     Player_->setFillColor(Qt::black);
@@ -1164,7 +1340,7 @@ SnapsPage::SnapsPage(QWidget* parent)
     Player_->stackUnder(Progress_);
     Progress_->stackUnder(Preview_);
     Progress_->setFixedHeight(Utils::scale_value(PROGRESS_HEIGHT));
-    Progress_->setFriednly("");
+    Progress_->setFriednly("", false);
     Progress_->hide();
 
     Control_ = new ControlPanel(this);
@@ -1179,7 +1355,6 @@ SnapsPage::SnapsPage(QWidget* parent)
 
     Message_ = new MessagePanel(this);
     Player_->stackUnder(Message_);
-    Message_->setFixedHeight(Utils::scale_value(MESSAGE_HEIGHT + CLOSE_BUTTON_HEIGHT));
     Message_->hide();
 
     Smiles_ = new SmilesPanel(this);
@@ -1191,11 +1366,37 @@ SnapsPage::SnapsPage(QWidget* parent)
     Player_->stackUnder(Animations_);
     Animations_->setFixedSize(size());
 
-    Close_ = new CustomButton(this, ":/resources/basic_elements/close_b_100.png");
-    Close_->setActiveImage(":/resources/basic_elements/close_b_100.png");
+    Close_ = new CustomButton(this, ":/resources/basic_elements/close_big_b_100.png");
+    Close_->setActiveImage(":/resources/basic_elements/close_big_b_100.png");
     Player_->stackUnder(Close_);
-    Close_->setFixedSize(Utils::scale_value(CLOSE_BUTTON_WIDTH), Utils::scale_value(CLOSE_BUTTON_HEIGHT));
+    Close_->setFixedSize(Utils::scale_value(CLOSE_BIG_SIZE), Utils::scale_value(CLOSE_BIG_SIZE));
+    Close_->setCursor(Qt::PointingHandCursor);
 
+    SnapHover_ = new QWidget(this);
+    SnapHover_->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 rgba(0, 0, 0, 75), stop:0.76 rgb(0, 0, 0, 25), stop:1 rgb(0, 0, 0, 0));");
+    SnapHover_->setAttribute(Qt::WA_TransparentForMouseEvents);
+    Player_->stackUnder(SnapHover_);
+    SnapHover_->setFixedHeight(SNAPS_HOVER_HEIGHT);
+
+    NextHover_ = new QWidget(this);
+    NextHover_->setStyleSheet("background: transparent;");
+    Player_->stackUnder(NextHover_);
+    NextHover_->setCursor(Qt::PointingHandCursor);
+    NextHover_->hide();
+
+    PrevHover_ = new QWidget(this);
+    PrevHover_->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0,stop:0 rgba(0, 0, 0, 85), stop:1 rgb(0, 0, 0, 0));");
+    PrevHover_->setCursor(Qt::PointingHandCursor);
+    Player_->stackUnder(PrevHover_);
+    PrevHover_->hide();
+
+    ClosePanel_ = new ClosePanel(this);
+    ClosePanel_->setFixedSize(Utils::scale_value(CONTROL_PANEL_ELEMENT_WIDTH), Utils::scale_value(CONTROL_PANEL_ELEMENT_WIDTH));
+    Player_->stackUnder(ClosePanel_);
+    ClosePanel_->hide();
+    ClosePanel_->setCursor(Qt::PointingHandCursor);
+
+    SnapHover_->raise();
     Progress_->raise();
     Preview_->raise();
     Control_->raise();
@@ -1204,6 +1405,9 @@ SnapsPage::SnapsPage(QWidget* parent)
     Smiles_->raise();
     Animations_->raise();
     Close_->raise();
+    PrevHover_->raise();
+    NextHover_->raise();
+    ClosePanel_->raise();
 
     FakeProgress_ = new QPropertyAnimation(this, "prop");
     FakeProgress_->setStartValue(0);
@@ -1214,7 +1418,7 @@ SnapsPage::SnapsPage(QWidget* parent)
     connect(Player_, SIGNAL(durationChanged(qint64)), Progress_, SLOT(durationChanged(qint64)), Qt::UniqueConnection);
     connect(Player_, SIGNAL(positionChanged(qint64)), this, SLOT(positionChanged(qint64)), Qt::UniqueConnection);
     connect(Player_, SIGNAL(mediaChanged(qint32)), this, SLOT(mediaChanged(qint32)), Qt::QueuedConnection);
-    connect(Player_, SIGNAL(dataReady()), this, SLOT(hidePreview()), Qt::QueuedConnection);
+    connect(Player_, SIGNAL(dataReady()), this, SLOT(dataReady()), Qt::QueuedConnection);
     connect(Player_, SIGNAL(streamsOpenFailed(uint32_t)), this, SLOT(streamsOpenFailed(uint32_t)), Qt::QueuedConnection);
     connect(Control_, SIGNAL(messageClicked()), this, SLOT(messageClicked()), Qt::QueuedConnection);
     connect(Control_, SIGNAL(openSmilesClicked()), this, SLOT(smilesClicked()), Qt::QueuedConnection);
@@ -1222,6 +1426,8 @@ SnapsPage::SnapsPage(QWidget* parent)
     connect(Message_, SIGNAL(needMove()), this, SLOT(moveMessage()), Qt::DirectConnection);
     connect(Smiles_, SIGNAL(closeClicked()), this, SLOT(closeClicked()), Qt::QueuedConnection);
     connect(Message_, SIGNAL(closeClicked()), this, SLOT(closeClicked()), Qt::QueuedConnection);
+    connect(Control_, SIGNAL(closeClicked()), this, SLOT(closeClicked()), Qt::QueuedConnection);
+    connect(ClosePanel_, SIGNAL(closeClicked()), this, SLOT(closeClicked()), Qt::QueuedConnection);
     connect(Control_, SIGNAL(animation(QImage, int, int, int, int)), this, SLOT(addAnimation(QImage, int, int, int, int)), Qt::QueuedConnection);
     connect(Smiles_, SIGNAL(animation(QImage, int, int, int, int)), this, SLOT(addAnimation(QImage, int, int, int, int)), Qt::QueuedConnection);
 
@@ -1231,12 +1437,14 @@ SnapsPage::SnapsPage(QWidget* parent)
 
     connect(Close_, SIGNAL(clicked()), this, SIGNAL(close()), Qt::QueuedConnection);
 
-    connect(Logic::GetSnapStorage(), SIGNAL(tvStarted()), this, SLOT(showPreview()), Qt::DirectConnection);
+    connect(Logic::GetSnapStorage(), SIGNAL(tvStarted(QList<Logic::PreviewItem>, bool)), this, SLOT(tvStarted(QList<Logic::PreviewItem>, bool)), Qt::DirectConnection);
 
     NextTimer_ = new QTimer(this);
     NextTimer_->setSingleShot(true);
     NextTimer_->setInterval(IMAGE_DURATION);
     connect(NextTimer_, SIGNAL(timeout()), this, SLOT(next()), Qt::QueuedConnection);
+
+    setMouseTracking(true);
 }
 
 SnapsPage::~SnapsPage()
@@ -1246,10 +1454,8 @@ SnapsPage::~SnapsPage()
 
 void SnapsPage::stop()
 {
-    if (Player_->getLastMedia() != 0)
-    {
-        clear();
-    }
+    clear();
+    hidePreview();
 }
 
 void SnapsPage::notifyApplicationWindowActive(const bool isActive)
@@ -1258,6 +1464,54 @@ void SnapsPage::notifyApplicationWindowActive(const bool isActive)
         Player_->play(true);
     else if (!isActive && Player_->state() == QMovie::Running)
         Player_->pause();
+}
+
+void SnapsPage::nextSnap()
+{
+    if (!canSkip_)
+        return;
+
+    next();
+}
+
+void SnapsPage::nextUser()
+{
+    if (!canSkip_ || Prev_)
+        return;
+
+    auto cur = Preview_->isVisible() ? PreviewAimId_ : Current_;
+
+    QList<PreviewWidget*>::iterator iter = PreviewWidgets_.begin();
+    for (; iter != PreviewWidgets_.end(); ++iter)
+    {
+        if ((*iter)->getAimId() == cur)
+            break;
+    }
+
+    ++iter;
+    if (iter != PreviewWidgets_.end())
+        (*iter)->emitClicked();
+}
+
+void SnapsPage::prevUser()
+{
+    if (!canSkip_ || Prev_)
+        return;
+
+    auto cur = Preview_->isVisible() ? PreviewAimId_ : Current_;
+
+    QList<PreviewWidget*>::iterator iter = PreviewWidgets_.begin();
+    for (; iter != PreviewWidgets_.end(); ++iter)
+    {
+        if ((*iter)->getAimId() == cur)
+            break;
+    }
+
+    if (iter == PreviewWidgets_.begin())
+        return;
+    
+    --iter;
+    (*iter)->emitClicked();
 }
 
 void SnapsPage::setProp(int val)
@@ -1278,6 +1532,13 @@ void SnapsPage::resizeEvent(QResizeEvent * e)
     p.addRect(r);
     Player_->setClippingPath(p);
 
+    PrevHover_->setFixedSize(QSize(s.width() / 3, s.height()));
+    PrevHover_->move(width() / 2 - s.width() / 2, Utils::scale_value(SNAP_TOP_PADDING));
+    NextHover_->setFixedSize(QSize(s.width() - s.width() / 3, s.height()));
+    NextHover_->move(width() / 2 - s.width() / 6, Utils::scale_value(SNAP_TOP_PADDING));
+    SnapHover_->move(width() / 2 - s.width() / 2, Utils::scale_value(SNAP_TOP_PADDING));
+    SnapHover_->setFixedWidth(s.width());
+
     Player_->setFixedSize(s);
     Preview_->setFixedSize(s);
     Player_->move(width() / 2 - Player_->width() / 2, Utils::scale_value(SNAP_TOP_PADDING));
@@ -1296,29 +1557,40 @@ void SnapsPage::resizeEvent(QResizeEvent * e)
 
     updatePreviews();
 
-    Close_->move(width() - Utils::scale_value(CLOSE_BUTTON_WIDTH), Utils::scale_value(CLOSE_BUTTON_HEIGHT) / 2);
+    Close_->move(width() - Utils::scale_value(CLOSE_BIG_SIZE) - Utils::scale_value(CLOSE_OFFSET), Utils::scale_value(CLOSE_OFFSET));
 
-    Message_->setFixedWidth(Player_->width());
+    Message_->setFixedSize(Player_->size());
     moveMessage();
 
-    Smiles_->setFixedSize(Player_->width(), height());
-    Smiles_->move(width() / 2 - Smiles_->width() / 2, 0);
+    Smiles_->setFixedSize(Player_->width(), Player_->height());
+    Smiles_->move(width() / 2 - Smiles_->width() / 2, Utils::scale_value(SNAP_TOP_PADDING));
+
+    ClosePanel_->move(width() / 2 - ClosePanel_->width() / 2, Player_->height() + Utils::scale_value(SNAP_TOP_PADDING * 2));
 
     return QWidget::resizeEvent(e);
 }
 
 void SnapsPage::mouseReleaseEvent(QMouseEvent * e)
 {
+    if (!PrevHover_->isVisible() && !NextHover_->isVisible())
+    {
+        emit close();
+        return QWidget::mouseReleaseEvent(e);
+    }
+
     if (Prev_)
         return QWidget::mouseReleaseEvent(e);
 
-    if (QRect(0, 0, width() / 3, height()).contains(e->pos()))
+    if (PrevHover_->isVisible())
     {
         uint32_t id = Player_->getMedia();
         if (id == 0 && !UserMediaId_.empty())
             id = UserMediaId_.lastKey();
 
         auto snap = UserMediaId_[--id];
+        while (snap.AimId_.isEmpty() && id > 0)
+            snap = UserMediaId_[--id];
+
         if (!snap.AimId_.isEmpty())
         {
             QFileInfo f(snap.Local_);
@@ -1327,15 +1599,62 @@ void SnapsPage::mouseReleaseEvent(QMouseEvent * e)
             Prev_ = true;
         }
     }
-    else if (QRect(width() / 3, 0, width(), height()).contains(e->pos()) && !Player_->queueIsEmpty())
+    else if (NextHover_->isVisible())
     {
         next();
     }
     return QWidget::mouseReleaseEvent(e);
 }
 
+void SnapsPage::mouseMoveEvent(QMouseEvent * e)
+{
+    auto r = QRect(width() / 2 - Player_->width() / 2, Utils::scale_value(SNAP_TOP_PADDING), Player_->width(), Player_->height());
+    if (!Message_->isVisible() && !Preview_->isVisible() && r.contains(e->pos()))
+    {
+        PrevHover_->setVisible(width() / 2 - Player_->width() / 2 + Player_->width() / 3 >= e->x());
+        NextHover_->setVisible(width() / 2 - Player_->width() / 2 + Player_->width() / 3 < e->x());
+    }
+    else
+    {
+        NextHover_->hide();
+        PrevHover_->hide();
+    }
+
+    return QWidget::mouseMoveEvent(e);
+}
+
+void SnapsPage::leaveEvent(QEvent * e)
+{
+    NextHover_->hide();
+    PrevHover_->hide();
+    return QWidget::leaveEvent(e);
+}
+
 void SnapsPage::playSnap(QString _path, QString _aimid, QString _originalAimdId, QString _url, qint64 _id, bool _first)
 {
+    SnapId id;
+    id.AimId_ = _aimid;
+    id.OriginalAimdId_ = _originalAimdId;
+    id.Id_ = _id;
+    id.Url_ = _url;
+    id.Local_ = _path;
+    id.First_ = _first;
+
+    if (!WaitingFor_.isEmpty())
+    {
+        if (_aimid == WaitingFor_)
+        {
+            WaitingFor_.clear();
+            _first = false;
+            connect(Player_, SIGNAL(fileLoaded()), this, SLOT(fileLoaded()), Qt::UniqueConnection);
+        }
+        else
+        {
+            UserMediaId_[Player_->reserveId()] = id;
+            return;
+        }
+    }
+
     QFileInfo f(_path);
     if (_first)
     {
@@ -1345,16 +1664,6 @@ void SnapsPage::playSnap(QString _path, QString _aimid, QString _originalAimdId,
         Queue_.clear();
         Progress_->resetCurrent();
     }
-
-    SnapId id;
-    id.AimId_ = _aimid;
-    id.OriginalAimdId_ = _originalAimdId;
-    id.Id_ = _id;
-    id.Url_ = _url;
-    id.Local_ = _path;
-    id.First_ = _first;
-
-    addPreview(_aimid, _id);
 
     if (Player_->queueSize() < MAX_PLAYER_QUEUE_SIZE)
     {
@@ -1430,140 +1739,61 @@ void SnapsPage::fileLoaded()
 
 void SnapsPage::mediaChanged(qint32 _id)
 {
-    NextTimer_->stop();
-    if (Player_->queueSize() < MAX_PLAYER_QUEUE_SIZE && !Queue_.isEmpty())
-    {
-        auto id = Queue_.front();
-        Queue_.pop_front();
-        QFileInfo f(id.Local_);
-        Player_->openMedia(id.Local_, Utils::is_image_extension_not_gif(f.suffix()));
-        UserMediaId_[Player_->getLastMedia()] = id;
-    }
+    MediaId_ = _id;
 
     if (_id == -1)
     {
         if (Logic::GetSnapStorage()->haveLoading())
+        {
             showPreview();
-        return;
+            updatePreviews();
+            return;
+        }
+
+        emit close();
     }
-
-    FakeProgress_->stop();
-    connect(Player_, SIGNAL(durationChanged(qint64)), Progress_, SLOT(durationChanged(qint64)), Qt::UniqueConnection);
-    connect(Player_, SIGNAL(positionChanged(qint64)), this, SLOT(positionChanged(qint64)), Qt::UniqueConnection);
-
-    Player_->resetPosition();
-
-    auto id = UserMediaId_.value(_id);
-    if (!id.AimId_.isEmpty())
-    {
-        QFileInfo f(id.Local_);
-        if (f.suffix().toLower() == "gif")
-        {
-            Progress_->durationChanged(IMAGE_DURATION);
-            Progress_->positionChanged(0);
-            disconnect(Player_, SIGNAL(durationChanged(qint64)), Progress_, SLOT(durationChanged(qint64)));
-            disconnect(Player_, SIGNAL(positionChanged(qint64)), this, SLOT(positionChanged(qint64)));
-            FakeProgress_->start();
-        }
-
-        if (Current_ != id.AimId_)
-        {
-            int cur = 0;
-            for (auto i : UserMediaId_)
-            {
-                if (i.Id_ == id.Id_)
-                    break;
-
-                if (i.AimId_ == id.AimId_)
-                    ++cur;
-            }
-
-            Progress_->setCurrent(cur);
-            emit currentChanged(id.AimId_, id.New_);
-        }
-        else
-        {
-            if (_id > CurrentMedia_)
-            {
-                if (!id.First_)
-                    Progress_->next();
-            }
-            else
-            {
-                Progress_->prev();
-            }
-        }
-
-        int snapCount = 0;
-        for (auto i : UserMediaId_)
-        {
-            if (i.AimId_ == id.AimId_)
-                ++snapCount;
-        }
-        for (auto i : Queue_)
-        {
-            if (i.AimId_ == id.AimId_)
-                ++snapCount;
-        }
-        Progress_->setCount(snapCount + Logic::GetSnapStorage()->loadingSnapsCount(id.AimId_));
-
-        Current_ = id.AimId_;
-        CurrentUrl_ = id.Url_;
-        CurrentLocal_ = id.Local_;
-        CurrentId_ = id.Id_;
-        CurrentMedia_ = _id;
-
-        closeClicked();
-
-        auto aimId = id.OriginalAimdId_.isEmpty() ? id.AimId_ : id.OriginalAimdId_;
-        Progress_->setFriednly(Logic::GetSnapStorage()->getFriednly(aimId));
-        Progress_->setAimId(aimId);
-        Progress_->setViews(Logic::GetSnapStorage()->getViews(id.Id_));
-        Progress_->setTimestamp(Logic::GetSnapStorage()->getTimestamp(id.Id_));
-        Control_->predefined(aimId, id.Url_);
-        Message_->predefined(aimId, id.Url_);
-        Smiles_->predefined(aimId, id.Url_);
-        Ui::GetDispatcher()->read_snap(id.AimId_, id.Id_, true);
-
-        if (id.Failed_)
-            showFailPreview(_id);
-    }
-
-    updatePreviews();
 }
 
 void SnapsPage::messageClicked()
 {
-    Control_->hide();
+    ClosePanel_->hide();
+    Control_->setClose(true);
     MyControl_->hide();
     Smiles_->hide();
     Message_->show();
     Message_->setFocus();
     Player_->setReplay(true);
+    canSkip_ = false;
 }
 
 void SnapsPage::smilesClicked()
 {
+    ClosePanel_->show();
     Control_->hide();
     MyControl_->hide();
     Smiles_->show();
     Message_->hide();
     Player_->setReplay(true);
+    canSkip_ = false;
 }
 
 void SnapsPage::closeClicked()
 {
+    ClosePanel_->hide();
+    Control_->setClose(false);
     Message_->hide();
     Smiles_->hide();
     auto my = Current_ == MyInfo()->aimId();
     Control_->setVisible(!my);
     MyControl_->setVisible(my);
     Player_->setReplay(false);
+    canSkip_ = true;
+    setFocus(Qt::MouseFocusReason);
 }
 
 void SnapsPage::moveMessage()
 {
-    Message_->move(width() / 2 - Message_->width() / 2, height() - Message_->height() - Utils::scale_value(CONTROL_PANEL_SPACING));
+    Message_->move(width() / 2 - Message_->width() / 2, Utils::scale_value(SNAP_TOP_PADDING));
 }
 
 void SnapsPage::addAnimation(QImage smile, int xMin, int xMax, int yMin, int yMax)
@@ -1573,6 +1803,7 @@ void SnapsPage::addAnimation(QImage smile, int xMin, int xMax, int yMin, int yMa
 
 void SnapsPage::forwardClicked()
 {
+    canSkip_ = false;
     Player_->pause();
     auto url = Preview_->isVisible() ? PreviewUrl_ : CurrentUrl_;
     if (!url.isEmpty())
@@ -1601,11 +1832,14 @@ void SnapsPage::forwardClicked()
             }
         }
     }
+    canSkip_ = true;
     Player_->play(true);
 }
 
 void SnapsPage::save()
 {
+    canSkip_ = false;
+    Player_->setReplay(true);
     std::weak_ptr<bool> wr_ref = ref_;
     Utils::saveAs(CurrentLocal_, [this, wr_ref](const QString& file, const QString& dir)
     {
@@ -1625,12 +1859,24 @@ void SnapsPage::save()
         auto aimId = Preview_->isVisible() ? PreviewAimId_ : Current_;
         auto url = Preview_->isVisible() ? PreviewUrl_ : CurrentUrl_;
 
-        Ui::GetDispatcher()->downloadSharedFile(url, false, fullname);
+        Ui::GetDispatcher()->downloadSharedFile(PreviewAimId_, url, false, fullname);
+        Player_->setReplay(false);
+        canSkip_ = true;
+    }, [this, wr_ref]()
+    {
+        auto ref = wr_ref.lock();
+        if (!ref)
+            return;
+
+        Player_->setReplay(false);
+        canSkip_ = true;
     });
 }
 
 void SnapsPage::deleteSnap()
 {
+    canSkip_ = false;
+    Player_->setReplay(true);
     if (Utils::GetConfirmationWithTwoButtons(QT_TRANSLATE_NOOP("snaps_page", "Cancel"),
         QT_TRANSLATE_NOOP("snaps_page", "Yes"),
         QT_TRANSLATE_NOOP("snaps_page", "Are you sure you want to delete this snap?"),
@@ -1642,8 +1888,71 @@ void SnapsPage::deleteSnap()
         collection.set_value_as_int64("snap_id", id);
         Ui::GetDispatcher()->post_message_to_core("snap/delete", collection.get());
 
-        Logic::GetSnapStorage()->startTv(0, 0);
+        Player_->setReplay(false);
+        canSkip_ = true;
+
+        auto aimid = Preview_->isVisible() ? PreviewAimId_ : Current_;
+        int snapsCount = 0, cur = 0, c = 0;
+        for (auto i : UserMediaId_)
+        {
+            if (i.AimId_ == aimid)
+            {
+                ++snapsCount;
+            }
+            if (i.Id_ == id)
+            {
+                cur = c;
+            }
+            ++c;
+        }
+
+        UserMediaId_.remove(Player_->getMedia());
+        --snapsCount;
+
+        for (auto w : PreviewWidgets_)
+        {
+            if (w->getAimId() == aimid)
+            {
+                if (snapsCount == 0)
+                {
+                    PreviewWidgets_.removeAll(w);
+                }
+                else
+                {
+                    qint64 newId = -1;
+                    for (auto i : UserMediaId_)
+                    {
+                        if (i.AimId_ == aimid)
+                        {
+                            newId = i.Id_;
+                            break;
+                        }
+                    }
+
+                    int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+                    auto p = Logic::GetSnapStorage()->getSnapPreviewFull(newId);
+                    auto size = QSize(pHeight * 0.4, pHeight * 0.7);
+                    if (!p.isNull())
+                        w->setPreview(p, size);
+                    else
+                        w->waitForPreview(aimid, newId, size);
+                }
+                break;
+            }
+        }
+        
+        if (snapsCount > 0)
+        {
+            Progress_->setCount(snapsCount + Logic::GetSnapStorage()->loadingSnapsCount(aimid));
+            Progress_->setCurrent(cur - 1);
+        }
+
+        next();
+        return;
     }
+
+    Player_->setReplay(false);
+    canSkip_ = true;
 }
 
 void SnapsPage::positionChanged(qint64 pos)
@@ -1653,6 +1962,7 @@ void SnapsPage::positionChanged(qint64 pos)
 
 void SnapsPage::clear()
 {
+    Logic::GetSnapStorage()->clearPlaylist();
     Player_->stop();
     Player_->clearQueue();
     UserMediaId_.clear();
@@ -1666,8 +1976,13 @@ void SnapsPage::showPreview()
     if (snap.AimId_.isEmpty())
         return;
 
-    Preview_->setPreview(snap.Preview_);
-    Preview_->setAimId(snap.AimId_);
+    int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+    auto s = QSize(pHeight * 0.56, pHeight);
+    if (!snap.Preview_.isNull())
+        Preview_->setPreview(snap.Preview_, s);
+    else
+        Preview_->waitForPreview(snap.AimId_, snap.Id_, s);
+    Preview_->setAimId(snap.AimId_, Logic::GetSnapStorage()->isOfficial(snap.AimId_), snap.Id_);
     Preview_->show();
 
     auto aimId = snap.OriginalAimId_.isEmpty() ? snap.AimId_ : snap.OriginalAimId_;
@@ -1679,7 +1994,7 @@ void SnapsPage::showPreview()
     Progress_->resetCurrent();
     Progress_->setCount(Logic::GetSnapStorage()->loadingSnapsCount(snap.AimId_));
     Progress_->durationChanged(1);
-    Progress_->setFriednly(Logic::GetSnapStorage()->getFriednly(snap.AimId_));
+    Progress_->setFriednly(Logic::GetSnapStorage()->getFriednly(snap.AimId_), Logic::GetSnapStorage()->isOfficial(snap.AimId_));
     Progress_->setAimId(snap.AimId_);
     Progress_->setViews(Logic::GetSnapStorage()->getViews(snap.Id_));
     Progress_->setTimestamp(Logic::GetSnapStorage()->getTimestamp(snap.Id_));
@@ -1688,7 +2003,7 @@ void SnapsPage::showPreview()
     Smiles_->predefined(aimId, snap.Url_);
 
     Progress_->show();
-    auto my = Current_ == MyInfo()->aimId();
+    auto my = PreviewAimId_ == MyInfo()->aimId();
     Control_->setVisible(!my);
     MyControl_->setVisible(my);
 }
@@ -1722,7 +2037,9 @@ void SnapsPage::showFailPreview(uint32_t mediaId)
     Error_->setFixedWidth(width());
     Error_->render(&painter, QPoint(0, p.height() / 2));
       
-    Preview_->setPreview(p);
+    int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+    auto s = QSize(pHeight * 0.56, pHeight);
+    Preview_->setPreview(p, s);
     Preview_->show();
 
     auto aimId = id.OriginalAimdId_.isEmpty() ? id.AimId_ : id.OriginalAimdId_;
@@ -1731,7 +2048,7 @@ void SnapsPage::showFailPreview(uint32_t mediaId)
     PreviewUrl_ = id.Url_;
     PreviewId_ = id.Id_;
 
-    Progress_->setFriednly(Logic::GetSnapStorage()->getFriednly(id.AimId_));
+    Progress_->setFriednly(Logic::GetSnapStorage()->getFriednly(id.AimId_), Logic::GetSnapStorage()->isOfficial(id.AimId_));
     Progress_->setAimId(id.AimId_);
     Progress_->setViews(Logic::GetSnapStorage()->getViews(id.Id_));
     Progress_->setTimestamp(Logic::GetSnapStorage()->getTimestamp(id.Id_));
@@ -1740,7 +2057,7 @@ void SnapsPage::showFailPreview(uint32_t mediaId)
     Smiles_->predefined(aimId, id.Url_);
 
     Progress_->show();
-    auto my = Current_ == MyInfo()->aimId();
+    auto my = PreviewAimId_ == MyInfo()->aimId();
     Control_->setVisible(!my);
     MyControl_->setVisible(my);
 
@@ -1792,9 +2109,288 @@ void SnapsPage::streamsOpenFailed(uint32_t mediaId)
 
 void SnapsPage::next()
 {
+    if (Prev_)
+        return;
+
     Player_->stop();
     Player_->loadFromQueue();
     Player_->play(true);
+}
+
+void SnapsPage::dataReady()
+{
+    auto s = Player_->getVideoSize();
+    Player_->setFillClient(s.height() > s.width());
+
+    hidePreview();
+
+    NextTimer_->stop();
+    if (Player_->queueSize() < MAX_PLAYER_QUEUE_SIZE && !Queue_.isEmpty())
+    {
+        auto id = Queue_.front();
+        Queue_.pop_front();
+        QFileInfo f(id.Local_);
+        Player_->openMedia(id.Local_, Utils::is_image_extension_not_gif(f.suffix()));
+        UserMediaId_[Player_->getLastMedia()] = id;
+    }
+
+    FakeProgress_->stop();
+    connect(Player_, SIGNAL(durationChanged(qint64)), Progress_, SLOT(durationChanged(qint64)), Qt::UniqueConnection);
+    connect(Player_, SIGNAL(positionChanged(qint64)), this, SLOT(positionChanged(qint64)), Qt::UniqueConnection);
+
+    Player_->resetPosition();
+
+    auto id = UserMediaId_.value(MediaId_);
+    if (!id.AimId_.isEmpty())
+    {
+        QFileInfo f(id.Local_);
+        if (f.suffix().toLower() == "gif")
+        {
+            Progress_->durationChanged(IMAGE_DURATION);
+            Progress_->positionChanged(0);
+            disconnect(Player_, SIGNAL(durationChanged(qint64)), Progress_, SLOT(durationChanged(qint64)));
+            disconnect(Player_, SIGNAL(positionChanged(qint64)), this, SLOT(positionChanged(qint64)));
+            FakeProgress_->start();
+        }
+
+        if (Current_ != id.AimId_)
+        {
+            int cur = 0;
+            for (auto i : UserMediaId_)
+            {
+                if (i.Id_ == id.Id_)
+                    break;
+
+                if (i.AimId_ == id.AimId_)
+                    ++cur;
+            }
+
+            Progress_->setCurrent(cur);
+            emit currentChanged(id.AimId_, id.New_);
+        }
+        else
+        {
+            if (MediaId_ > CurrentMedia_)
+            {
+                if (!id.First_)
+                    Progress_->next();
+            }
+            else
+            {
+                Progress_->prev();
+            }
+        }
+
+        int snapCount = 0;
+        for (auto i : UserMediaId_)
+        {
+            if (i.AimId_ == id.AimId_)
+                ++snapCount;
+        }
+        for (auto i : Queue_)
+        {
+            if (i.AimId_ == id.AimId_)
+                ++snapCount;
+        }
+        Progress_->setCount(snapCount + Logic::GetSnapStorage()->loadingSnapsCount(id.AimId_));
+
+        Current_ = id.AimId_;
+        CurrentUrl_ = id.Url_;
+        CurrentLocal_ = id.Local_;
+        CurrentId_ = id.Id_;
+        CurrentMedia_ = MediaId_;
+
+        closeClicked();
+
+        auto aimId = id.OriginalAimdId_.isEmpty() ? id.AimId_ : id.OriginalAimdId_;
+        Progress_->setFriednly(Logic::GetSnapStorage()->getFriednly(aimId), Logic::GetSnapStorage()->isOfficial(aimId));
+        Progress_->setAimId(aimId);
+        Progress_->setViews(Logic::GetSnapStorage()->getViews(id.Id_));
+        Progress_->setTimestamp(Logic::GetSnapStorage()->getTimestamp(id.Id_));
+        Control_->predefined(aimId, id.Url_);
+        Message_->predefined(aimId, id.Url_);
+        Smiles_->predefined(aimId, id.Url_);
+        Logic::GetSnapStorage()->readSnap(id.AimId_, id.Id_);
+
+        if (id.Failed_)
+            showFailPreview(MediaId_);
+    }
+
+    updatePreviews();
+}
+
+void SnapsPage::previewEnter(QWidget* w)
+{
+    if (Preview_ == w)
+        return;
+
+    auto pos = w->pos();
+    int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+    auto newW = pHeight * 0.42;
+    auto newH = pHeight * 0.74;
+    pos.setX(pos.x() - (newW - w->width()) / 2);
+    pos.setY(pos.y() - (newH - w->height()) / 2);
+    w->setFixedSize(QSize(newW, newH));
+    w->move(pos);
+}
+
+void SnapsPage::previewLeave(QWidget* w)
+{
+    if (Preview_ == w)
+        return;
+
+    auto pos = w->pos();
+    int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+    auto newW = pHeight * 0.4;
+    auto newH = pHeight * 0.7;
+    pos.setX(pos.x() + (w->width() - newW) / 2);
+    pos.setY(pos.y() + (w->height() - newH) / 2);
+    w->setFixedSize(QSize(newW, newH));
+    w->move(pos);
+}
+
+void SnapsPage::previewClicked(QString aimid, qint64 _id)
+{
+    uint32_t cur = Player_->getMedia();
+    uint32_t mediaId = 0;
+    SnapId id;
+    for (auto s : UserMediaId_)
+    {
+        if (s.AimId_ == aimid)
+        {
+            id = s;
+            mediaId = UserMediaId_.key(id);
+            break;
+        }
+    }
+    
+    for (auto s : Queue_)
+    {
+        if (s.AimId_ == aimid)
+        {
+            id = s;
+            break;
+        }
+    }
+
+    bool found = false;
+    if (mediaId != 0)
+    {
+        found = true;
+        if (cur == 0 || cur > mediaId)
+        {
+            Player_->stop();
+            Player_->clearQueue();
+            QMap<qint32, SnapId> newIds_;
+            QList<SnapId> newQueue;
+            for (QMap<qint32, SnapId>::iterator iter = UserMediaId_.begin(); iter != UserMediaId_.end(); ++iter)
+            {
+                if (iter.key() < mediaId)
+                {
+                    newIds_.insert(iter.key(), iter.value());
+                    continue;
+                }
+
+                if (Player_->queueSize() < MAX_PLAYER_QUEUE_SIZE)
+                {
+                    QFileInfo f(iter->Local_);
+                    Player_->openMedia(iter->Local_, Utils::is_image_extension_not_gif(f.suffix()));
+                    auto lastId = Player_->getLastMedia();
+                    newIds_[lastId] = (iter.value());
+                }
+                else
+                {
+                    newQueue.push_back(iter.value());
+                }
+            }
+            UserMediaId_.swap(newIds_);
+            newQueue.append(Queue_);
+            newQueue.swap(Queue_);
+            connect(Player_, SIGNAL(fileLoaded()), this, SLOT(fileLoaded()), Qt::UniqueConnection);
+        }
+        else
+        {
+            Player_->stop();
+            for (QMap<qint32, SnapId>::iterator iter = UserMediaId_.begin(); iter != UserMediaId_.end(); ++iter)
+            {
+                if (iter.key() <= cur)
+                    continue;
+
+                Player_->loadFromQueue();
+
+                if (iter.key() == mediaId)
+                    break;
+            }
+            Player_->play(true);
+        }
+    }
+    else
+    {
+        Player_->stop();
+        Player_->clearQueue();
+        for (QList<SnapId>::iterator iter = Queue_.begin(); iter != Queue_.end();)
+        {
+            if (iter->AimId_ == aimid)
+            {
+                QFileInfo f(iter->Local_);
+                Player_->openMedia(iter->Local_, Utils::is_image_extension_not_gif(f.suffix()));
+                auto lastId = Player_->getLastMedia();
+                UserMediaId_[lastId] = (*iter);
+                iter = Queue_.erase(iter);
+                found = true;
+                break;
+            }
+            else
+            {
+                UserMediaId_[Player_->reserveId()] = (*iter);
+            }
+            iter = Queue_.erase(iter);
+        }
+        if (found)
+            connect(Player_, SIGNAL(fileLoaded()), this, SLOT(fileLoaded()), Qt::UniqueConnection);
+    }
+
+    if (!found)
+    {
+        Player_->stop();
+        Player_->clearQueue();
+
+        int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+        auto s = QSize(pHeight * 0.56, pHeight);
+        auto p = Logic::GetSnapStorage()->getSnapPreviewFull(_id);
+        if (!p.isNull())
+            Preview_->setPreview(p, s);
+        else
+            Preview_->waitForPreview(aimid, _id, s);
+
+        Preview_->setAimId(aimid, Logic::GetSnapStorage()->isOfficial(aimid), _id);
+        Preview_->show();
+
+        PreviewAimId_ = aimid;
+        auto url = Logic::GetSnapStorage()->getSnapUrl(_id);
+        PreviewUrl_ = url;
+        PreviewId_ = _id;
+
+        Progress_->resetCurrent();
+        Progress_->setCount(Logic::GetSnapStorage()->loadingSnapsCount(aimid));
+        Progress_->durationChanged(1);
+        Progress_->setFriednly(Logic::GetSnapStorage()->getFriednly(aimid), Logic::GetSnapStorage()->isOfficial(aimid));
+        Progress_->setAimId(aimid);
+        Progress_->setViews(Logic::GetSnapStorage()->getViews(_id));
+        Progress_->setTimestamp(Logic::GetSnapStorage()->getTimestamp(_id));
+        Control_->predefined(aimid, url);
+        Message_->predefined(aimid, url);
+        Smiles_->predefined(aimid, url);
+
+        Progress_->show();
+        auto my = PreviewAimId_ == MyInfo()->aimId();
+        Control_->setVisible(!my);
+        MyControl_->setVisible(my);
+
+        updatePreviews();
+
+        WaitingFor_ = aimid;
+    }
 }
 
 void SnapsPage::updatePreviews()
@@ -1811,11 +2407,14 @@ void SnapsPage::updatePreviews()
     int spaceRight = width() / 2 + Player_->width() / 2;
 
     int curPos = 0;
-    if (!Current_.isEmpty())
+
+    auto cur = Preview_->isVisible() ? PreviewAimId_ : Current_;
+
+    if (!cur.isEmpty())
     {
         for (auto w : PreviewWidgets_)
         {
-            if (w->getAimId() == Current_)
+            if (w->getAimId() == cur)
                 break;
 
             ++curPos;
@@ -1827,7 +2426,8 @@ void SnapsPage::updatePreviews()
     {
         auto w = PreviewWidgets_.at(tmp);
 
-        w->setFixedSize(QSize(height() * 0.34, height() * 0.6));
+        int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+        w->setFixedSize(QSize(pHeight * 0.4, pHeight * 0.7));
         w->show();
 
         spaceLeft -= Utils::scale_value(PREVIEW_OFFSET);
@@ -1840,7 +2440,8 @@ void SnapsPage::updatePreviews()
     {
         auto w = PreviewWidgets_.at(curPos);
 
-        w->setFixedSize(QSize(height() * 0.34, height() * 0.6));
+        int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+        w->setFixedSize(QSize(pHeight * 0.4, pHeight * 0.7));
         w->show();
 
         spaceRight += Utils::scale_value(PREVIEW_OFFSET);
@@ -1853,7 +2454,10 @@ void SnapsPage::updatePreviews()
 void SnapsPage::clearPreviewWidgets()
 {
     for (auto w : PreviewWidgets_)
+    {
         w->hide();
+        w->deleteLater();
+    }
 
     PreviewWidgets_.clear();
 }
@@ -1867,13 +2471,32 @@ void SnapsPage::addPreview(const QString& _aimId, qint64 id)
     }
 
     auto preview = new PreviewWidget(this);
+    preview->setCursor(Qt::PointingHandCursor);
 
-    preview->setAimId(_aimId);
-    preview->setPreview(Logic::GetSnapStorage()->getSnapPreviewFull(id));
+    preview->setAimId(_aimId, Logic::GetSnapStorage()->isOfficial(_aimId), id);
+    int pHeight = height() - Utils::scale_value(SNAP_TOP_PADDING + CONTROL_PANEL_HEIGHT + CONTROL_PANEL_SPACING * 2);
+    auto p = Logic::GetSnapStorage()->getSnapPreviewFull(id);
+    auto size = QSize(pHeight * 0.4, pHeight * 0.7);
+    if (!p.isNull())
+        preview->setPreview(p, size);
+    else
+        preview->waitForPreview(_aimId, id, size);
 
     PreviewWidgets_.push_back(preview);
+    connect(preview, SIGNAL(enter(QWidget*)), this, SLOT(previewEnter(QWidget*)), Qt::QueuedConnection);
+    connect(preview, SIGNAL(leave(QWidget*)), this, SLOT(previewLeave(QWidget*)), Qt::QueuedConnection);
+    connect(preview, SIGNAL(clicked(QString, qint64)), this, SLOT(previewClicked(QString, qint64)), Qt::QueuedConnection);
 
     updatePreviews();
+}
+
+void SnapsPage::tvStarted(QList<Logic::PreviewItem> result, bool needPreview)
+{
+    Current_.clear();
+    showPreview();
+
+    for (auto s : result)
+        addPreview(s.AimId_, s.Id_);
 }
 
 }

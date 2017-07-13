@@ -98,7 +98,7 @@ bool local_history::get_history_file(const std::string& _contact, /*out*/ core::
 {
     std::wstring contact_folder = core::tools::from_utf8(_contact);
     std::replace(contact_folder.begin(), contact_folder.end(), L'|', L'_');
-    std::wstring file_name = archive_path_ + L"/" + contact_folder + L"/" + version_db_filename(L"_db");
+    std::wstring file_name = archive_path_ + L"/" + contact_folder + L"/" + db_filename();
 
     contact_archive::get_history_file(file_name, _history_archive, _offset, _remaining_size, _cur_index, _mode);
     return true;

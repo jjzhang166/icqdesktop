@@ -77,7 +77,6 @@ im_container::im_container(std::shared_ptr<voip_manager::VoipManager> voip_manag
     REGISTER_IM_MESSAGE("image/download/cancel", on_cancel_image_downloading);
     REGISTER_IM_MESSAGE("link_metainfo/download", on_download_link_preview);
     REGISTER_IM_MESSAGE("download/raise_priority", on_download_raise_priority);
-    REGISTER_IM_MESSAGE("download/raise_contact_tasks_priority", on_download_raise_contact_tasks_priority);
     REGISTER_IM_MESSAGE("stickers/meta/get", on_get_stickers_meta);
     REGISTER_IM_MESSAGE("stickers/sticker/get", on_get_sticker);
     REGISTER_IM_MESSAGE("chats/info/get", on_get_chat_info);
@@ -93,6 +92,7 @@ im_container::im_container(std::shared_ptr<voip_manager::VoipManager> voip_manag
     REGISTER_IM_MESSAGE("contacts/block", on_spam_contact);
     REGISTER_IM_MESSAGE("contacts/ignore", on_ignore_contact);
     REGISTER_IM_MESSAGE("contacts/get_ignore", on_get_ignore_contacts);
+    REGISTER_IM_MESSAGE("contact/switched", on_contact_switched);
     REGISTER_IM_MESSAGE("dlg_state/hide", on_hide_dlg_state);
     REGISTER_IM_MESSAGE("remove_members", on_remove_members);
     REGISTER_IM_MESSAGE("add_members", on_add_members);
@@ -138,6 +138,7 @@ im_container::im_container(std::shared_ptr<voip_manager::VoipManager> voip_manag
     REGISTER_IM_MESSAGE("mrim/get_key", on_mrim_get_key);
     REGISTER_IM_MESSAGE("snaps/refresh", on_snaps_refresh);
     REGISTER_IM_MESSAGE("snaps/refresh_user_snaps", on_refresh_user_snaps);
+    REGISTER_IM_MESSAGE("snaps/remove_from_cache", on_remove_from_snaps_storage);
 }
 
 
@@ -904,8 +905,9 @@ void core::im_container::on_snap_download_metainfo(int64_t _seq, coll_helper& _p
     assert(!ttl_id.empty());
 
     const auto contact_aimid = _params.get<std::string>("contact");
+    bool raise_priority = _params.get<bool>("raise", false);
 
-    im->download_snap_metainfo(_seq, contact_aimid, ttl_id);
+    im->download_snap_metainfo(_seq, contact_aimid, ttl_id, raise_priority);
 }
 
 void core::im_container::on_connect_after_migration(int64_t _seq, coll_helper& _params)
@@ -1302,10 +1304,12 @@ void im_container::on_download_file(int64_t _seq, coll_helper& _params)
 
     im->download_file_sharing(
         _seq,
+        _params.get<std::string>("contact"),
         _params.get<std::string>("url"),
         _params.get<bool>("force_request_metainfo"),
         _params.get<std::string>("filename"),
-        _params.get<std::string>("download_dir"));
+        _params.get<std::string>("download_dir"),
+        _params.get<bool>("raise", false));
 }
 
 void im_container::on_download_image(int64_t _seq, coll_helper& _params)
@@ -1321,18 +1325,19 @@ void im_container::on_download_image(int64_t _seq, coll_helper& _params)
         _params.get<std::string>("destination", ""),
         _params.get<bool>("is_preview"),
         _params.get<int32_t>("preview_width", 0),
-        _params.get<int32_t>("preview_height", 0));
+        _params.get<int32_t>("preview_height", 0),
+        _params.get<bool>("raise", false));
 }
 
-void im_container::on_cancel_image_downloading(int64_t _seq, coll_helper& _params)
+void im_container::on_cancel_image_downloading(int64_t /*_seq*/, coll_helper& _params)
 {
     auto im = get_im(_params);
     if (!im)
         return;
 
-    const auto download_seq = _params.get<int64_t>("download_seq");
+    const auto url = _params.get<std::string>("url");
 
-    im->cancel_loader_task(download_seq);
+    im->cancel_loader_task(url);
 }
 
 void im_container::on_download_link_preview(int64_t _seq, coll_helper& _params)
@@ -1372,7 +1377,7 @@ void im_container::on_download_raise_priority(int64_t _seq, coll_helper& _params
     im->raise_download_priority(proc_id);
 }
 
-void im_container::on_download_raise_contact_tasks_priority(int64_t _seq, coll_helper& _params)
+void im_container::on_contact_switched(int64_t _seq, coll_helper& _params)
 {
     auto im = get_im(_params);
     if (!im)
@@ -1380,7 +1385,7 @@ void im_container::on_download_raise_contact_tasks_priority(int64_t _seq, coll_h
 
     const auto contact_aimid = _params.get<std::string>("contact");
 
-    im->raise_contact_downloads_priority(contact_aimid);
+    im->contact_switched(contact_aimid);
 }
 
 void im_container::on_get_stickers_meta(int64_t _seq, coll_helper& _params)
@@ -1878,6 +1883,15 @@ void im_container::on_refresh_user_snaps(int64_t _seq, coll_helper& _params)
         return;
 
     im->refresh_user_snaps(_params.get_value_as_string("aimid"));
+}
+
+void im_container::on_remove_from_snaps_storage(int64_t _seq, coll_helper& _params)
+{
+    auto im = get_im(_params);
+    if (!im)
+        return;
+
+    im->remove_from_snaps_storage(_params.get_value_as_string("aimid"));
 }
 
 bool im_container::has_valid_login() const

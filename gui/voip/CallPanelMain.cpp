@@ -749,5 +749,5 @@ void Ui::CallPanelMainEx::onSecureCallClicked()
 
 void Ui::CallPanelMainEx::addUserToVideoCall()
 {
-    showAddUserToVideoConverenceDialog(this, parentWidget());
+    showAddUserToVideoConverenceDialogMainWindow(this, parentWidget());
 }

@@ -44,6 +44,11 @@ namespace Logic
 
         qint64 getId() const { return OriginalSnapId_ == -1 ? SnapId_ : OriginalSnapId_; }
 
+        bool operator==(const SnapInfo& other)
+        {
+            return AimId_ == other.AimId_ && SnapId_ == other.SnapId_ && OriginalSnapId_ == other.OriginalSnapId_;
+        }
+
         //gui only values
         QString PreviewUri_;
         int64_t PreviewSeq_;

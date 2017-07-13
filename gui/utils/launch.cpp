@@ -19,6 +19,8 @@
 
     #ifndef __linux__
         Q_IMPORT_PLUGIN(QTiffPlugin);
+    #else
+		Q_IMPORT_PLUGIN(QXcbIntegrationPlugin);
     #endif //__linux__
 
     #ifdef __APPLE__
@@ -127,6 +129,7 @@ int launch::main(int _argc, char* _argv[])
         qRegisterMetaType<Logic::SnapState>("Logic::SnapState");
         qRegisterMetaType<Logic::UserSnapsInfo>("Logic::UserSnapsInfo");
         qRegisterMetaType<QList<Logic::UserSnapsInfo>>("QList<Logic::UserSnapsInfo>");
+        qRegisterMetaType<QList<Logic::PreviewItem>>("QList<Logic::PreviewItem>");
     }
     else
     {

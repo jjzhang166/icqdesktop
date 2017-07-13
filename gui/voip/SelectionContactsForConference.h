@@ -35,6 +35,9 @@ namespace Ui
 		// Set maximum restriction for selected item count. Used for video conference.
 		virtual void setMaximumSelectedCount(int number) override;
 
+    public Q_SLOTS:
+        void updateSize();
+
     private Q_SLOTS:
 
 		void updateMemberList();

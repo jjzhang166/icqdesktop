@@ -91,7 +91,7 @@ void Ui::MoveablePanel::mousePressEvent(QMouseEvent* _e)
     {
         grabMouse = true;
         dragState_.isDraging = true;
-        dragState_.posDragBegin = _e->pos();
+        dragState_.posDragBegin = QCursor::pos();
     }
 }
 
@@ -99,7 +99,8 @@ void Ui::MoveablePanel::mouseMoveEvent(QMouseEvent* _e)
 {
     if (isVisible() && (_e->buttons() & Qt::LeftButton) && dragState_.isDraging)
     {
-        QPoint diff = _e->pos() - dragState_.posDragBegin;
+        QPoint diff = QCursor::pos() - dragState_.posDragBegin;
+        dragState_.posDragBegin = QCursor::pos();
         QPoint newpos = parent_->pos() + diff;
 
         parent_->move(newpos);

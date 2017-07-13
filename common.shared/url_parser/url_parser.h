@@ -48,6 +48,7 @@ namespace common
                 wmv
             };
 
+            std::string original_;
             std::string url_;
             type type_;
             protocol protocol_;
@@ -55,6 +56,7 @@ namespace common
 
             url();
             url(const std::string& _url, type _type, protocol _protocol, extension _extension);
+            url(const std::string& _original, const std::string& _url, type _type, protocol _protocol, extension _extension);
 
             bool is_filesharing() const;
             bool is_image() const;
@@ -62,6 +64,7 @@ namespace common
             bool is_site() const;
             bool is_email() const;
             bool is_ftp() const;
+            bool has_prtocol() const;
 
             bool operator==(const url& _right) const;
             bool operator!=(const url& _right) const;
@@ -147,6 +150,7 @@ namespace common
             bool skipping_chars() const;
 
             int32_t raw_url_length() const;
+            int32_t tail_size() const;
 
             static url_vector_t parse_urls(const std::string& _source);
 
@@ -215,6 +219,8 @@ namespace common
             url url_;
 
             bool need_to_check_domain_;
+
+            int32_t tail_size_;
         };
     }
 }

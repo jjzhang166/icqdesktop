@@ -50,7 +50,7 @@ namespace core
         std::list<std::string> custom_headers_;
 
         long response_code_;
-        std::shared_ptr<tools::binary_stream> output_;
+        std::shared_ptr<tools::stream> output_;
         std::shared_ptr<tools::binary_stream> header_;
 
         bool is_time_condition_;
@@ -86,7 +86,9 @@ namespace core
         static void init_global();
         static void shutdown_global();
 
-        std::shared_ptr<tools::binary_stream> get_response();
+        void set_output_stream(std::shared_ptr<tools::stream> _output);
+
+        std::shared_ptr<tools::stream> get_response();
         std::shared_ptr<tools::binary_stream> get_header();
         long get_response_code();
 

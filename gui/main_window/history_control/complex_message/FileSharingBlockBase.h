@@ -119,7 +119,7 @@ protected:
 
     void setSelected(const bool isSelected);
 
-    void startDownloading(const bool _sendStats, const bool _forceRequestMetainfo = false);
+    void startDownloading(const bool _sendStats, const bool _forceRequestMetainfo = false, bool _highPriority = false);
 
     void stopDownloading();
 

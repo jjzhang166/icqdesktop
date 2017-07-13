@@ -10,6 +10,7 @@
 #include "../../../utils/Text.h"
 #include "../../../utils/Text2DocConverter.h"
 #include "../../../utils/UrlParser.h"
+#include "../../../utils/PainterPath.h"
 
 #include "../ActionButtonWidget.h"
 #include "../MessageStyle.h"
@@ -34,7 +35,7 @@ namespace
     int getLinesNumber(const TextEditEx &textControl);
 }
 
-LinkPreviewBlock::LinkPreviewBlock(ComplexMessageItem *parent, const QString &uri)
+LinkPreviewBlock::LinkPreviewBlock(ComplexMessageItem *parent, const QString &uri, const bool _hasLinkInMessage)
     : GenericBlock(parent, uri, MenuFlagLinkCopyable, false)
     , Uri_(uri)
     , RequestId_(-1)
@@ -56,6 +57,7 @@ LinkPreviewBlock::LinkPreviewBlock(ComplexMessageItem *parent, const QString &ur
     , TextFontSize_(-1)
     , TextOpacity_(1.0)
     , MaxPreviewWidth_(0)
+    , hasLinkInMessage_(_hasLinkInMessage)
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -140,12 +142,20 @@ QSize LinkPreviewBlock::getPreviewImageSize() const
 
 QString LinkPreviewBlock::getSelectedText(bool isFullSelect) const
 {
+    if (hasLinkInMessage_)
+        return QString();
+
     if (IsSelected_)
     {
         return getSourceText();
     }
 
     return QString();
+}
+
+QString LinkPreviewBlock::getTextForCopy() const
+{
+    return (isHasLinkInMessage() ? QString() : getSourceText());
 }
 
 const QString& LinkPreviewBlock::getSiteName() const
@@ -228,6 +238,9 @@ void LinkPreviewBlock::onDistanceToViewportChanged(const QRect& _widgetAbsGeomet
 
 void LinkPreviewBlock::selectByPos(const QPoint& from, const QPoint& to, const BlockSelectionType /*selection*/)
 {
+    if (isHasLinkInMessage())
+        return;
+
     const QRect globalWidgetRect(
         mapToGlobal(rect().topLeft()),
         mapToGlobal(rect().bottomRight()));
@@ -503,7 +516,10 @@ void LinkPreviewBlock::onLinkMetainfoMetaDownloaded(int64_t seq, bool success, D
     const auto isDescriptionEmpty = (!success || (title.isEmpty() && description.isEmpty()));
     if (isDescriptionEmpty)
     {
-        getParentComplexMessage()->replaceBlockWithSourceText(this);
+        if (isHasLinkInMessage())
+            getParentComplexMessage()->removeBlock(this);
+        else
+            getParentComplexMessage()->replaceBlockWithSourceText(this);
 
         return;
     }
@@ -701,7 +717,7 @@ bool LinkPreviewBlock::createTitleControl(const QString &title)
 
     auto titleFont = Layout_->getTitleFont();
     if (TextFontSize_ != -1)
-        titleFont.setPixelSize(TextFontSize_);
+        titleFont.setPixelSize(Utils::scale_value(TextFontSize_));
 
     assert(!Title_);
     Title_ = createTextEditControl(title, titleFont, TextOptions::PlainText);
@@ -894,6 +910,14 @@ void LinkPreviewBlock::drawPreloader(QPainter &p)
     p.drawRect(annotationRect);
 }
 
+QPainterPath LinkPreviewBlock::evaluateClippingPath(const QRect &imageRect) const
+{
+    assert(!imageRect.isEmpty());
+
+    return Utils::renderMessageBubble(imageRect, Ui::MessageStyle::getBorderRadius(), false);
+}
+
+
 void LinkPreviewBlock::drawPreview(QPainter &p)
 {
     const auto &imageRect = Layout_->getPreviewImageRect();
@@ -913,7 +937,21 @@ void LinkPreviewBlock::drawPreview(QPainter &p)
         return;
     }
 
+    const auto updateClippingPath = (previewClippingPathRect_ != imageRect);
+
+    if (updateClippingPath)
+    {
+        previewClippingPathRect_ = imageRect;
+        previewClippingPath_ = evaluateClippingPath(imageRect);
+    }
+
+    p.save();
+
+    p.setClipPath(previewClippingPath_);
+
     p.drawPixmap(imageRect, PreviewImage_);
+
+    p.restore();
 }
 
 void LinkPreviewBlock::drawSiteName(QPainter &p)
@@ -1121,4 +1159,13 @@ void LinkPreviewBlock::setQuoteSelection()
     emit setQuoteAnimation();
 }
 
+bool LinkPreviewBlock::isHasLinkInMessage() const
+{
+    return hasLinkInMessage_;
+}
+
+int LinkPreviewBlock::getMaxWidth() const
+{
+    return MessageStyle::getSnippetMaxWidth();
+}
 UI_COMPLEX_MESSAGE_NS_END

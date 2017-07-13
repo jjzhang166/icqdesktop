@@ -132,6 +132,14 @@ BOOST_AUTO_TEST_CASE(all_tests)
 
     DataWrapper data;
 
+    BOOST_CHECK(check("«12.127.17.72/test»", data.replace("http://12.127.17.72/test", url::type::site, url::protocol::http)));
+    BOOST_CHECK(check("«12.127.17.72»", data.replace("http://12.127.17.72", url::type::site, url::protocol::http)));
+    BOOST_CHECK(check("https://jira.mail.ru/browse/SWA-3529. hello", data.replace("https://jira.mail.ru/browse/SWA-3529", url::type::site, url::protocol::https)));
+    BOOST_CHECK(check("https://jira.mail.ru/browse/SWA-3529\" hello", data.replace("https://jira.mail.ru/browse/SWA-3529", url::type::site, url::protocol::https)));
+    BOOST_CHECK(check("https://jira.mail.ru/browse/SWA-3529> hello", data.replace("https://jira.mail.ru/browse/SWA-3529", url::type::site, url::protocol::https)));
+    BOOST_CHECK(check("https://jira.mail.ru/browse/SWA-3529` hello", data.replace("https://jira.mail.ru/browse/SWA-3529", url::type::site, url::protocol::https)));
+    BOOST_CHECK(check("http://mail.ru]", data.replace("http://mail.ru", url::type::site, url::protocol::http)));
+    BOOST_CHECK(check("http://mail.ru? текст", data.replace("http://mail.ru", url::type::site, url::protocol::http)));
     BOOST_CHECK(check("cleric@bk.ru?", data.replace("cleric@bk.ru", url::type::email)));
     BOOST_CHECK(check("получить https://files.icq.net/get/ ->> первая часть", data.replace("https://files.icq.net/get/", url::type::site, url::protocol::https)));
     BOOST_CHECK(check("https://o.life/бука💀", data.replace("https://o.life/бука💀", url::type::site, url::protocol::https)));

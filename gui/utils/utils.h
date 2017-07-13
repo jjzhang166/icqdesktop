@@ -121,7 +121,7 @@ namespace Utils
 
     void copyFileToClipboard(const QString& _path);
 
-    void saveAs(const QString& _inputFilename, std::function<void (QString& _filename, QString& _directory)> _callback, bool asSheet = true /* for OSX only */);
+    void saveAs(const QString& _inputFilename, std::function<void (QString& _filename, QString& _directory)> _callback, std::function<void ()> _cancel_callback = std::function<void ()>(), bool asSheet = true /* for OSX only */);
 
     typedef std::vector<std::pair<QString, Ui::KeyToSendMessage>> SendKeysIndex;
 
@@ -219,6 +219,7 @@ namespace Utils
     QVBoxLayout* emptyVLayout(QWidget* parent = 0);
 
     QString getProductName();
+    QString getInstallerName();
 
     void openMailBox(const QString& email, const QString& mrimKey, const QString& mailId);
     void openAgentUrl(
@@ -227,6 +228,7 @@ namespace Utils
         const QString& _email, 
         const QString& _mrimKey);
     
+    QString getUnreadsBadgeStr(int _unreads);
     void drawUnreads(QPainter *p, const QFont &font, const QColor *bgColor, const QColor *textColor, const QColor *borderColor, int unreads, int balloonSize, int x, int y);
     QPoint getUnreadsSize(QPainter *p, const QFont &font, bool bBorder, int unreads, int balloonSize);
 

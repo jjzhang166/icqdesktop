@@ -40,5 +40,6 @@ make:
 
 Download external libraries here https://files.icq.net/get/s66y7gIKtiejxAxSFxWPIn5935227e1ac and extract it to ./external folder
 
-cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DLINUX_ARCH=64|32
-make
+In order to build ICQ execute the following command line (change -DLINUX_ARCH=32 to -DLINUX_ARCH=64 for 64bit binaries):
+
+mkdir build && cd build && cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DLINUX_ARCH=32 && make

@@ -650,7 +650,6 @@ namespace Logic
 
     void RecentsModel::setSnapsVisible(bool _visible)
     {
-        return;
         SnapsVisible_ = _visible;
         emit dataChanged(index(0), index(rowCount()));
     }

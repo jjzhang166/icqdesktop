@@ -105,7 +105,12 @@ namespace core
 {
     typedef long milliseconds_t;
 
+    typedef size_t hash_t;
+
     typedef int priority_t; // the lower number is the higher priority
+
+    extern const priority_t increase_priority;
+    extern const priority_t decrease_priority;
 
     extern const priority_t top_priority;
     extern const priority_t highest_priority;

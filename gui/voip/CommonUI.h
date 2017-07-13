@@ -44,6 +44,7 @@ namespace Ui
 	{
 	public:
 		ShadowWindowParent(QWidget* parent);
+        ~ShadowWindowParent();
 
 		void showShadow();
 		void hideShadow();
@@ -160,7 +161,9 @@ namespace Ui
     // This panel fill all parent window
     class FullVideoWindowPanel : public Ui::BaseVideoPanel
     {
-    public:
+        Q_OBJECT
+
+    public:        
 
         FullVideoWindowPanel(QWidget* parent);
 
@@ -168,6 +171,14 @@ namespace Ui
 
         virtual void fadeIn(unsigned int duration)  override {}
         virtual void fadeOut(unsigned int duration) override {}
+
+    signals:
+
+        void onResize();
+
+    protected:
+
+        virtual void	resizeEvent(QResizeEvent *event);
     };
 
     // Use this class if you want to process
@@ -378,6 +389,6 @@ namespace Ui
 	};
 
     // Show dialog to add new users to video call.
-    void showAddUserToVideoConverenceDialog(QObject* parent, QWidget* parentWindow);
-
+    void showAddUserToVideoConverenceDialogVideoWindow(QObject* parent, FullVideoWindowPanel* parentWindow);
+    void showAddUserToVideoConverenceDialogMainWindow(QObject* parent, QWidget* parentWindow);
 }

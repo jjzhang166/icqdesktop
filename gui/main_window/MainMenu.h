@@ -13,6 +13,34 @@ namespace Ui
     class LabelEx;
     class FFMpegPlayer;
 
+    class PreviewImageWidget : public QWidget
+    {
+        Q_OBJECT
+    public:
+        PreviewImageWidget(QWidget* parent);
+        ~PreviewImageWidget();
+
+        void setPreview(const QPixmap& preview) { Preview_ = preview; update(); }
+        bool isEmpty() { return Preview_.isNull(); }
+
+    protected:
+        virtual void paintEvent(QPaintEvent* e);
+
+    private:
+        QPixmap Preview_;
+    };
+
+    struct SnapItem
+    {
+        SnapItem()
+            : mediaId_(0)
+        {
+        }
+
+        QString path_;
+        qint32 mediaId_;
+    };
+
     class BackWidget : public QWidget
     {
         Q_OBJECT
@@ -38,11 +66,20 @@ Q_SIGNALS:
         void mediaChanged(qint32);
         void hidePreview();
         void showPreview();
+        void previewChanged(QString);
+        void userSnapsRemoved(QString);
+        void snapRemoved(QString, qint64, QString);
+
+    private:
+        void prepareOverlay();
 
     private:
         FFMpegPlayer* Player_;
-        QMap<QString, qint32> Snaps_;
+        QMap<qint64, SnapItem> Snaps_;
+        QMap<qint32, QString> Ids_;
         unsigned SnapsCount_;
+        PreviewImageWidget* Preview_;
+        PreviewImageWidget* Overlay_;
     };
 
     class MainMenu: public QWidget
@@ -79,6 +116,7 @@ Q_SIGNALS:
         void guiSettingsChanged(QString);
         void signOut();
         void resize();
+        void snapsChanged();
 
     private:
         void updateState();

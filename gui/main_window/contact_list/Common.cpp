@@ -4,6 +4,7 @@
 #include "../../utils/InterConnector.h"
 #include "../../utils/utils.h"
 #include "../../utils/Text2DocConverter.h"
+#include "../../controls/TextEditEx.h"
 
 #include "Common.h"
 #include "ContactList.h"
@@ -103,12 +104,12 @@ namespace ContactList
 		return Utils::GetTranslator()->formatDate(date, date.year() == current.date().year());
 	}
 
-	QTextBrowserUptr CreateTextBrowser(const QString& _name, const QString& _stylesheet, const int _textHeight)
+	TextEditExUptr CreateTextBrowser(const QString& _name, const QString& _stylesheet, const int _textHeight)
 	{
 		assert(!_name.isEmpty());
 		assert(!_stylesheet.isEmpty());
 
-		QTextBrowserUptr ctrl(new QTextBrowser);
+		TextEditExUptr ctrl(new Ui::TextEditEx(nullptr, QFont(), QColor(), false, false));
 
 		ctrl->setObjectName(_name);
 		ctrl->setStyleSheet(_stylesheet);
@@ -333,7 +334,7 @@ namespace ContactList
         QPixmap official_mark;
         if (_visData.isOfficial_)
         {
-            official_mark = QPixmap(Utils::parse_image_name(":/resources/badge_official_100.png"));
+            official_mark = QPixmap(Utils::parse_image_name(":/resources/official_badge_blue_100.png"));
             Utils::check_pixel_ratio(official_mark);
         }
 
@@ -357,7 +358,7 @@ namespace ContactList
         auto &doc = *textControl->document();
         doc.clear();
         QTextCursor cursor = textControl->textCursor();
-        Logic::Text2Doc(elidedString, cursor, Logic::Text2DocHtmlMode::Pass, false);
+        Logic::Text4Edit(elidedString, *textControl, cursor, false, Emoji::EmojiSizePx::Auto);
         Logic::FormatDocument(doc, _contactList.contactNameHeight());
 
         // maybe cut it? ehh.. later ;)

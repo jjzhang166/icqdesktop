@@ -97,7 +97,7 @@ namespace Ui
             VideoPlayerControlPanel* _copyFrom, 
             QWidget* _parent, 
             FFMpegPlayer* _player, 
-            const bool _fullscreen);
+            const QString& _mode = "dialog");
 
         virtual ~VideoPlayerControlPanel();
 
@@ -140,18 +140,30 @@ namespace Ui
         bool isFullScreen_;
         bool isLoad_;
         bool isGif_;
+        const bool showControlPanel_;
+
+        QRect normalModePosition_;
 
         void init(QWidget* _parent, const bool _isGif);
         void moveToScreen();
 
     public:
-        void showAsFullscreen();
-        void closeFullScreen();
 
+        enum Flags
+        {
+            is_gif = 1 << 0,
+            enable_control_panel = 1 << 1,
+            use_opengl = 1 << 2,
+            as_window = 1 << 3
+        };
+
+        void showAs();
+        void showAsFullscreen();
+        void showAsNormal();
+        
         void start(bool _start);
 
-        DialogPlayer(QWidget* _parent, const bool _isGif); // normal constructor
-        DialogPlayer(DialogPlayer* _attached, QWidget* _parent); // fullscreen constructor
+        DialogPlayer(QWidget* _parent, const uint32_t _flags = 0);
         virtual ~DialogPlayer();
 
         bool openMedia(const QString& _mediaPath);
@@ -190,7 +202,10 @@ namespace Ui
         void setAttachedPlayer(DialogPlayer* _player);
         DialogPlayer* getAttachedPlayer() const;
 
+        QSize getVideoSize() const;
+
     public Q_SLOTS:
+
         void fullScreen(const bool _checked);
 
         void timerHide();
@@ -199,19 +214,25 @@ namespace Ui
         void playerMouseMoved();
         void playerMouseLeaved();
         void onLoaded();
+        void onFirstFrameReady();
 
     Q_SIGNALS:
         void loaded();
         void paused();
         void closed();
+        void firstFrameReady();
+        void mouseClicked();
+        void fullScreenClicked();
+        void mouseWheelEvent(const int _delta);
 
     protected:
 
         virtual bool eventFilter(QObject* _obj, QEvent* _event) override;
         virtual void mousePressEvent(QMouseEvent * event) override;
         virtual void mouseReleaseEvent(QMouseEvent* _event) override;
-        virtual void paintEvent(QPaintEvent* _e) override;
-
+        virtual void paintEvent(QPaintEvent* _event) override;
+        virtual void wheelEvent(QWheelEvent* _event) override;
+        virtual void keyPressEvent(QKeyEvent* _event) override;
     private:
         void showControlPanel();
         void changeFullScreen();

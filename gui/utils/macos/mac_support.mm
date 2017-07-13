@@ -26,6 +26,7 @@
 
 #import "mac_support.h"
 #import "mac_translations.h"
+#import "mac_toolbar.h"
 
 #include <objc/objc.h>
 #include <objc/message.h>
@@ -56,6 +57,7 @@ enum
     global_update,
     // TODO: add other items when needed.
 };
+    						
     
 static QMap<int, QAction *> menuItems_;
 static Ui::MainWindow * mainWindow_ = nil;
@@ -109,8 +111,6 @@ static NSString * fromQString(const QString & src)
 
 @end
 
-
-
 @interface LinkPreviewItem : NSObject <QLPreviewItem>
 @property (readonly) NSURL *previewItemURL;
 @property (readonly) NSString *previewItemURLString;
@@ -120,7 +120,6 @@ static NSString * fromQString(const QString & src)
 - (id)initWithPath:(NSString *)path andPoint:(CGPoint)point;
 
 @end
-
 
 @implementation LinkPreviewItem
 
@@ -359,11 +358,13 @@ BOOL isNetworkAvailable()
 static SUUpdater * sparkleUpdater_ = nil;
 static MacPreviewProxy * macPreviewProxy_ = nil;
 
-MacSupport::MacSupport(Ui::MainWindow * mainWindow): mainMenu_(nullptr)
+MacSupport::MacSupport(Ui::MainWindow * mainWindow):
+    mainMenu_(nullptr),
+    toolbar_(new MacToolbar(mainWindow))
 {
     sparkleUpdater_ = nil;
     mainWindow_ = mainWindow;
-    registerDelegate();
+    registerAppDelegate();
     setupDockClickHandler();
 }
 
@@ -372,6 +373,7 @@ MacSupport::~MacSupport()
     menuItems_.clear();
 
     mainWindow_ = nil;
+    toolbar_ = nullptr;
     
     cleanMacUpdater();
     
@@ -496,6 +498,11 @@ void MacSupport::enableMacPreview(WId wid)
     NSView *view = (__bridge NSView *)pntr;
     
     macPreviewProxy_ = [[MacPreviewProxy alloc] initInWindow:view.window];
+}
+
+MacToolbar* MacSupport::toolbar()
+{
+    return toolbar_;
 }
 
 void MacSupport::minimizeWindow(WId wid)
@@ -755,22 +762,6 @@ void MacSupport::createMenuBar(bool simple)
 void MacSupport::showEmojiPanel()
 {
     [NSApp orderFrontCharacterPalette:nil];
-}
-
-QPoint MacSupport::viewPosition(WId wid)
-{
-    void *pntr = (void *)wid;
-    NSView *view = (__bridge NSView *)pntr;
-    
-    auto frameRelativeToWindow = [view convertRect:view.bounds toView:nil];
-    auto frameRelativeToScreen = [view.window convertRectToScreen:frameRelativeToWindow];
-    auto p = QPoint(frameRelativeToScreen.origin.x, frameRelativeToScreen.origin.y);
-    if (view.isFlipped)
-    {
-        p.setY([NSScreen mainScreen].frame.size.height - p.y() - view.frame.size.height);
-    }
-    
-    return p;
 }
 
 void MacSupport::updateMainMenu()
@@ -1066,7 +1057,7 @@ void MacSupport::activateWindow(unsigned long long view/* = 0*/)
     [NSApp activateIgnoringOtherApps:YES];
 }
 
-void MacSupport::registerDelegate()
+void MacSupport::registerAppDelegate()
 {
     AppDelegate* delegate = [AppDelegate new];
     [NSApp setDelegate: delegate];
@@ -1078,7 +1069,7 @@ void MacSupport::registerDelegate()
      andEventID:kAEGetURL];
 }
 
-void MacSupport::saveFileName(const QString &caption, const QString &qdir, const QString &filter, std::function<void (QString& _filename, QString& _directory)> _callback, const QString& _ext, QString& lastDirectory)
+void MacSupport::saveFileName(const QString &caption, const QString &qdir, const QString &filter, std::function<void (QString& _filename, QString& _directory)> _callback, const QString& _ext, QString& lastDirectory, std::function<void ()> _cancel_callback)
 {
  
     auto dir = qdir.toNSString().stringByDeletingLastPathComponent;
@@ -1106,6 +1097,14 @@ void MacSupport::saveFileName(const QString &caption, const QString &qdir, const
                 }
                 _callback(filename, directory);
             }
+            else if (_cancel_callback)
+            {
+                _cancel_callback();
+            }
+        }
+        else if (_cancel_callback)
+        {
+            _cancel_callback();
         }
     }];
 

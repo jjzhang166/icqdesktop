@@ -95,6 +95,9 @@ namespace Ui
 
         void addSpace(int _space) { add_ = _space; }
 
+        void mousePress(QMouseEvent* ev);
+        void mouseRelease(QMouseEvent* ev);
+
     protected:
         virtual void focusInEvent(QFocusEvent*) override;
         virtual void focusOutEvent(QFocusEvent*) override;

@@ -13,7 +13,7 @@ UI_COMPLEX_MESSAGE_NS_BEGIN
 enum class BlockSelectionType;
 class TextBlockLayout;
 
-class TextBlock final : public GenericBlock
+class TextBlock : public GenericBlock
 {
     friend class TextBlockLayout;
 
@@ -21,6 +21,7 @@ class TextBlock final : public GenericBlock
 
 Q_SIGNALS:
     void selectionChanged();
+    void setTextEditEx(TextEditEx*);
 
 public:
     TextBlock(ComplexMessageItem *parent, const QString &text, const bool _hideLinks = false);
@@ -50,6 +51,8 @@ public:
     virtual QString getTrimmedText() const { return TrimmedText_; }
 
     virtual void connectToHover(Ui::ComplexMessage::QuoteBlockHover* hover);
+
+    virtual bool isBubbleRequired() const override;
 
 protected:
     virtual void drawBlock(QPainter &p, const QRect& _rect, const QColor& quate_color) override;

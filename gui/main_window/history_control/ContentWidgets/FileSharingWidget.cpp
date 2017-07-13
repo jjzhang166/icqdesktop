@@ -33,6 +33,8 @@
 #include "../../../utils/utils.h"
 #include "../../../utils/log/log.h"
 
+#include "../../common.shared/loader_errors.h"
+
 #include "../../../../corelib/enumerations.h"
 
 
@@ -439,7 +441,7 @@ namespace HistoryControl
 
             startDataTransferAnimation();
 
-            const auto procId = Ui::GetDispatcher()->downloadSharedFile(FsInfo_->GetUri(), false, fullname);
+            const auto procId = Ui::GetDispatcher()->downloadSharedFile(aimId_, FsInfo_->GetUri(), false, fullname);
 
             assert(FileDownloadId_ == -1);
             FileDownloadId_ = procId;
@@ -1739,7 +1741,7 @@ namespace HistoryControl
 
 		startDataTransferAnimation();
 
-		const auto procId = Ui::GetDispatcher()->downloadSharedFile(FsInfo_->GetUri(), false);
+        const auto procId = Ui::GetDispatcher()->downloadSharedFile(aimId_, FsInfo_->GetUri(), false, QString(), true);
 
         assert(FileDownloadId_ == -1);
         FileDownloadId_ = procId;
@@ -1757,7 +1759,7 @@ namespace HistoryControl
 
         // start image downloading
 
-		const auto procId = Ui::GetDispatcher()->downloadSharedFile(FsInfo_->GetUri(), false);
+        const auto procId = Ui::GetDispatcher()->downloadSharedFile(aimId_, FsInfo_->GetUri(), false);
 
         assert(FileDownloadId_ == -1);
         FileDownloadId_ = procId;
@@ -1818,7 +1820,7 @@ namespace HistoryControl
             setState(State::ImageFile_MetainfoLoaded);
         }
 
-        Ui::GetDispatcher()->abortSharedFileDownloading(Metainfo_.DownloadUri_);
+        Ui::GetDispatcher()->abortSharedFileDownloading(FsInfo_->GetUri());
 
 		resetCurrentProcessId();
 
@@ -2037,7 +2039,7 @@ namespace HistoryControl
 		update();
 	}
 
-	void FileSharingWidget::fileSharingError(qint64 seq, QString rawUri, qint32 /*errorCode*/)
+	void FileSharingWidget::fileSharingError(qint64 seq, QString rawUri, qint32 errorCode)
 	{
         assert(seq > 0);
 
@@ -2062,7 +2064,7 @@ namespace HistoryControl
             Retry_.FileDownload_ = true;
         }
 
-        if (Retry_.HasRetryFlagSet() && retryRequestLater())
+        if (errorCode != static_cast<qint32>(loader_errors::cancelled) && Retry_.HasRetryFlagSet() && retryRequestLater())
         {
             return;
         }

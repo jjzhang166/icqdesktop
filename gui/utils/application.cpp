@@ -62,10 +62,15 @@ namespace Utils
 			{
 				if (!Ui::GetDispatcher()->getVoipController().isVoipKilled())
 				{
-					*result = 0;
 					Ui::GetDispatcher()->getVoipController().voipReset();
-					Sleep(500); //Give voip time to release.
-					return true;
+
+                    // Under XP we can stop shutting down PC, if we return true.
+                    if (QSysInfo().windowsVersion() != QSysInfo::WV_XP)
+                    {
+                        // Do not shutting down us immediately, we need time to terminate
+                        *result = 0;
+                        return true;
+                    }
 				}
 			}
 
@@ -400,6 +405,9 @@ namespace Utils
     bool Application::updating()
     {
 #ifdef _WIN32
+
+        const auto updater_singlton_mutex_name = (build::is_icq() ? updater_singlton_mutex_name_icq : updater_singlton_mutex_name_agent);
+
         CHandle mutex(::CreateSemaphore(NULL, 0, 1, updater_singlton_mutex_name.c_str()));
         if (ERROR_ALREADY_EXISTS == ::GetLastError())
             return true;
@@ -439,7 +447,7 @@ namespace Utils
             QDir updateDir(updateFolder);
             if (updateDir.exists())
             {
-                QString setupName = updateFolder + "/" + installer_exe_name;
+                QString setupName = updateFolder + "/" + Utils::getInstallerName();
                 QFileInfo setupInfo(setupName);
                 if (!setupInfo.exists())
                     return false;

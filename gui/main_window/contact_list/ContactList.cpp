@@ -1378,7 +1378,7 @@ namespace Ui
 
         emit itemSelected(_aimId, _message_id, _quote_id);
 
-        if (isSearchMode() && regim_ == Logic::CONTACT_LIST)
+        if (isSearchMode() && regim_ == Logic::CONTACT_LIST && _message_id == -1 && _quote_id == -1)
         {
             emit searchEnd();
 

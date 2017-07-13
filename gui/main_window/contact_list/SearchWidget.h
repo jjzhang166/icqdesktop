@@ -56,7 +56,6 @@ namespace Ui
         QHBoxLayout *hMainLayout;
         QWidget *searchWidget_;
         QHBoxLayout *horLineLayout_;
-        CustomButton *glassIcon_;
         CustomButton *closeIcon_;
         bool isWithButton_;
     };

@@ -4,6 +4,7 @@
 #include "ContactDialog.h"
 #include "GroupChatOperations.h"
 #include "IntroduceYourself.h"
+#include "TitleBar.h"
 #include "livechats/LiveChatsHome.h"
 #include "livechats/LiveChatProfile.h"
 #include "contact_list/ChatMembersModel.h"
@@ -64,7 +65,8 @@ namespace
     const int MENU_WIDTH = 240;
     const int CL_POPUP_WIDTH = 360;
     const int ANIMATION_DURATION = 200;
-    const int SNAP_VIEW_HEIGHT = 124;
+    const int SNAP_VIEW_HEIGHT = 116;
+    const int TOP_WIDGET_HEIGHT = 52;
 }
 
 namespace Ui
@@ -180,7 +182,6 @@ namespace Ui
         , semiWindow_(new SemitransparentWindowAnimated(this, ANIMATION_DURATION))
         , anim_(min_step)
         , snapsView_(new HorScrollableView(this))
-        , mailWidget_(new MyMailWidget(this))
         , headerWidget_(new QWidget(this))
         , headerLabel_(new QLabel(this))
         , menuVisible_(false)
@@ -204,7 +205,7 @@ namespace Ui
         contactsLayout = Utils::emptyVLayout(contactsWidget_);
 
         myTopWidget_ = new TopPanelWidget(this, searchWidget_);
-        myTopWidget_->setFixedHeight(Ui::CommonStyle::getTopPanelHeight());
+        myTopWidget_->setFixedHeight(Utils::scale_value(TOP_WIDGET_HEIGHT));
         contactsLayout->addWidget(myTopWidget_);
 
         mainMenu_->setFixedWidth(Utils::scale_value(MENU_WIDTH));
@@ -219,7 +220,6 @@ namespace Ui
         connect(myTopWidget_, SIGNAL(back()), this, SLOT(openRecents()), Qt::QueuedConnection);
         connect(myTopWidget_, SIGNAL(burgerClicked()), this, SLOT(showMainMenu()), Qt::QueuedConnection);
         connect(myTopWidget_, SIGNAL(discoverClicked()), this, SLOT(discoverClicked()), Qt::QueuedConnection);
-        connect(MyInfo(), SIGNAL(received()), this, SLOT(infoUpdated()), Qt::QueuedConnection);
 
         {
             CustomButton *back = nullptr;
@@ -269,7 +269,6 @@ namespace Ui
 
         auto mailLayout = Utils::emptyHLayout();
         mailLayout->setContentsMargins(Utils::scale_value(6), 0, 0, 0);
-        mailLayout->addWidget(mailWidget_);
         contactsLayout->addLayout(mailLayout);
         connect(searchButton_, SIGNAL(clicked()), this, SLOT(setSearchFocus()), Qt::QueuedConnection);
         searchButton_->hide();
@@ -293,6 +292,7 @@ namespace Ui
         snapsView_->setFixedHeight(Utils::scale_value(SNAP_VIEW_HEIGHT));
         snapsView_->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
         snapsView_->setFrameStyle(QFrame::NoFrame);
+        snapsView_->setStyleSheet(Utils::ScaleStyle("QTableView { margin-left: 0dip; margin-right: 0dip; }", Utils::getScaleCoefficient()));
         snapsView_->hide();
 
         contactListWidget_->setSnaps(snapsView_);
@@ -432,6 +432,11 @@ namespace Ui
 
     MainPage::~MainPage()
     {
+        if (videoWindow_)
+        {
+            delete videoWindow_;
+            videoWindow_ = nullptr;
+        }
     }
 
     void MainPage::setCLWidth(int _val)
@@ -446,7 +451,6 @@ namespace Ui
         bool isCompact = (_val == compact_width);
         contactListWidget_->setPictureOnlyView(isCompact);
         searchButton_->setVisible(isCompact && currentTab_ == RECENTS && !NeedShowUnknownsHeader_);
-        mailWidget_->setVisible(MyInfo()->haveConnectedEmail() && isCompact && currentTab_ == RECENTS && !NeedShowUnknownsHeader_);
 
         TopPanelWidget::Mode m = TopPanelWidget::NORMAL;
         if (isCompact)
@@ -503,14 +507,9 @@ namespace Ui
         myTopWidget_->setFixedWidth(cl_width);
         snapsView_->setFixedWidth(cl_width - Utils::scale_value(1));
 
-        if (mainMenu_->isVisible())
-            mainMenu_->setFixedHeight(height());
-
-        if (semiWindow_->isVisible())
-            semiWindow_->setFixedSize(size());
-
-        if (snapsPage_->isVisible())
-            snapsPage_->setFixedSize(size());
+        mainMenu_->setFixedHeight(height());
+        semiWindow_->setFixedSize(size());
+        snapsPage_->setFixedSize(size());
     }
 
     void MainPage::hideMenu()
@@ -530,6 +529,11 @@ namespace Ui
     bool MainPage::isMenuVisible() const
     {
         return mainMenu_->isVisible() && animBurger_->state() != QVariantAnimation::Running;
+    }
+    
+    bool MainPage::isMenuVisibleOrOpening() const
+    {
+        return menuVisible_;
     }
 
     int MainPage::getContactDialogWidth(int _mainPageWidth)
@@ -561,6 +565,16 @@ namespace Ui
         int friends = Logic::GetSnapStorage()->getFriendsSnapsCount();
         int featured = Logic::GetSnapStorage()->getFeaturedSnapsCount();
 
+        auto offset = Logic::SnapItemDelegate::getFirstAndLastOffset();
+        auto s = Logic::SnapItemDelegate::getSnapItemSize();
+        for (auto i = 0; i < friends; ++i)
+        {
+            if (i == 0 || i == friends - 1)
+                snapsView_->setColumnWidth(i, s.width() + offset);
+            else
+                snapsView_->setColumnWidth(i, s.width());
+        }
+
         while (friends < featured)
         {
             snapsView_->setColumnWidth(friends, 0);
@@ -581,8 +595,8 @@ namespace Ui
         if (unknownsHeader_->isVisible())
             return;
 
-        bool show = get_gui_settings()->get_value<bool>(settings_show_snaps, true) && Logic::GetSnapStorage()->getFriendsSnapsCount() != 0;
-        //snapsView_->setVisible(show);
+        bool show = get_gui_settings()->get_value<bool>(settings_show_snaps, false) && Logic::GetSnapStorage()->getFriendsSnapsCount() != 0;
+        snapsView_->setVisible(show);
         Logic::getRecentsModel()->setSnapsVisible(show);
     }
 
@@ -595,8 +609,6 @@ namespace Ui
 
     void MainPage::snapClicked(const QModelIndex& index)
     {
-        return;
-
         if (index.isValid())
         {
             semiWindow_->setFixedSize(size());
@@ -744,7 +756,6 @@ namespace Ui
     void MainPage::myProfileClicked()
     {
         searchButton_->hide();
-        mailWidget_->hide();
         contactListWidget_->changeTab(SETTINGS);
         auto settingsTab = contactListWidget_->getSettingsTab();
         if (settingsTab)
@@ -897,7 +908,6 @@ namespace Ui
     void MainPage::settingsClicked()
     {
         searchButton_->hide();
-        mailWidget_->hide();
         contactListWidget_->changeTab(SETTINGS);
         auto settingsTab = contactListWidget_->getSettingsTab();
         if (settingsTab)
@@ -923,8 +933,6 @@ namespace Ui
 
     void MainPage::storiesClicked()
     {
-        return;
-
         animBurger_->stop();
         animBurger_->setStartValue(max_step);
         animBurger_->setEndValue(min_step);
@@ -1023,7 +1031,6 @@ namespace Ui
         destroyIncomingCallWindow(_contactEx.contact.account, _contactEx.contact.contact);
 
         Utils::InterConnector::instance().getMainWindow()->closeGallery();
-        Utils::InterConnector::instance().getMainWindow()->closePlayer();
     }
 
     void MainPage::onVoipCallDestroyed(const voip_manager::ContactEx& _contactEx)
@@ -1054,6 +1061,9 @@ namespace Ui
 
         if (mainMenu_ && mainMenu_->isVisible())
             mainMenu_->notifyApplicationWindowActive(isActive);
+
+        if (snapsPage_ && snapsPage_->isVisible())
+            snapsPage_->notifyApplicationWindowActive(isActive);
     }
 
     void MainPage::recentsTabActivate(bool _selectUnread)
@@ -1558,7 +1568,6 @@ namespace Ui
         changeCLHead(false);
         myTopWidget_->setBack(false);
         searchButton_->setVisible(leftPanelState_ == LeftPanelState::picture_only && currentTab_ == RECENTS && !NeedShowUnknownsHeader_);
-        mailWidget_->setVisible(MyInfo()->haveConnectedEmail() && leftPanelState_ == LeftPanelState::picture_only && currentTab_ == RECENTS && !NeedShowUnknownsHeader_);
     }
 
     void MainPage::changeCLHeadToUnknownSlot()
@@ -1567,7 +1576,6 @@ namespace Ui
         changeCLHead(true);
         myTopWidget_->setBack(true);
         searchButton_->hide();
-        mailWidget_->hide();
     }
 
     void MainPage::openRecents()
@@ -1617,17 +1625,11 @@ namespace Ui
 
         currentTab_ = tab;
         searchButton_->setVisible(leftPanelState_ == LeftPanelState::picture_only && tab == RECENTS && !NeedShowUnknownsHeader_);
-        mailWidget_->setVisible(MyInfo()->haveConnectedEmail() && leftPanelState_ == LeftPanelState::picture_only && tab == RECENTS && !NeedShowUnknownsHeader_);
     }
 
     void MainPage::themesSettingsOpen()
     {
         contactListWidget_->openThemeSettings();
-    }
-
-    void MainPage::infoUpdated()
-    {
-        mailWidget_->setVisible(MyInfo()->haveConnectedEmail() && leftPanelState_ == LeftPanelState::picture_only && currentTab_ == RECENTS && !NeedShowUnknownsHeader_);
     }
 
     void MainPage::headerBack()
@@ -1641,5 +1643,23 @@ namespace Ui
     {
         headerLabel_->setText(text);
         headerWidget_->show();
+    }
+
+    void MainPage::nextSnap()
+    {
+        if (snapsPage_)
+            snapsPage_->nextSnap();
+    }
+
+    void MainPage::nextUserSnap()
+    {
+        if (snapsPage_)
+            snapsPage_->nextUser();
+    }
+
+    void MainPage::prevUserSnap()
+    {
+        if (snapsPage_)
+            snapsPage_->prevUser();
     }
 }

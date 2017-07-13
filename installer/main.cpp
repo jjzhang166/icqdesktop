@@ -185,6 +185,8 @@ int main(int _argc, char* _argv[])
         }
         else if (logic::get_install_config().is_update_final())
         {
+            const auto updater_singlton_mutex_name = (build::is_icq() ? updater_singlton_mutex_name_icq : updater_singlton_mutex_name_agent);
+
             CHandle mutex(::CreateSemaphore(NULL, 0, 1, updater_singlton_mutex_name.c_str()));
             if (ERROR_ALREADY_EXISTS == ::GetLastError())
                 return true;

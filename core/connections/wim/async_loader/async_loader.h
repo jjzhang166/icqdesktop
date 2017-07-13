@@ -50,22 +50,23 @@ namespace core
             void download_file(priority_t _priority, const std::string& _url, const std::wstring& _file_name, const wim_packet_params& _wim_params, file_info_handler_t _handler = file_info_handler_t());
             void download_file(priority_t _priority, const std::string& _url, const std::string& _file_name, const wim_packet_params& _wim_params, file_info_handler_t _handler = file_info_handler_t());
 
-            void download_image_metainfo(priority_t _priority, const std::string& _url, const wim_packet_params& _wim_params, link_meta_handler_t _handler = link_meta_handler_t());
-            void download_snap_metainfo(priority_t _priority, const std::string& _ttl_id, const wim_packet_params& _wim_params, snap_meta_handler_t _handler = snap_meta_handler_t());
-            void download_file_sharing_metainfo(priority_t _priority, const std::string& _url, const wim_packet_params& _wim_params, file_sharing_meta_handler_t _handler = file_sharing_meta_handler_t());
+            void cancel(const std::string& _url);
+
+            void download_image_metainfo(const std::string& _url, const wim_packet_params& _wim_params, link_meta_handler_t _handler = link_meta_handler_t());
+            void download_snap_metainfo(const std::string& _ttl_id, const wim_packet_params& _wim_params, snap_meta_handler_t _handler = snap_meta_handler_t());
+            void download_file_sharing_metainfo(const std::string& _url, const wim_packet_params& _wim_params, file_sharing_meta_handler_t _handler = file_sharing_meta_handler_t());
 
             void download_image_preview(priority_t _priority, const std::string& _url, const wim_packet_params& _wim_params, link_meta_handler_t _metainfo_handler = link_meta_handler_t(), file_info_handler_t _preview_handler = file_info_handler_t());
 
             void download_image(priority_t _priority, const std::string& _url, const wim_packet_params& _wim_params, file_info_handler_t _preview_handler = file_info_handler_t());
             void download_image(priority_t _priority, const std::string& _url, const std::string& _file_name, const wim_packet_params& _wim_params, file_info_handler_t _preview_handler = file_info_handler_t());
 
-            void download_file_sharing(priority_t _priority, const std::string& _url, const std::string& _file_name, const wim_packet_params& _wim_params, file_info_handler_t _handler = file_info_handler_t());
-
-            void change_priority(const std::string& _url, priority_t _new_priority);
-
-            void cancel(const std::string& _url);
+            void download_file_sharing(priority_t _priority, const std::string& _contact, const std::string& _url, const std::string& _file_name, const wim_packet_params& _wim_params, file_info_handler_t _handler = file_info_handler_t());
+            void cancel_file_sharing(const std::string& _url);
 
             void resume_suspended_tasks(const wim_packet_params& _wim_params);
+
+            void contact_switched(const std::string& _contact);
 
         private:
             void download_file_sharing_impl(std::string _url, wim_packet_params _wim_params, downloadable_file_chunks_ptr _file_chunks);
@@ -82,7 +83,7 @@ namespace core
             void fire_chunks_callback(loader_errors _error, const std::string& _url);
 
             template <class metainfo_parser_t, typename T>
-            void download_metainfo(priority_t _priority, const std::string& _url, const std::string& _signed_url, metainfo_parser_t _parser, const wim_packet_params& _wim_params, async_handler<T> _handler)
+            void download_metainfo(const std::string& _url, const std::string& _signed_url, metainfo_parser_t _parser, const wim_packet_params& _wim_params, async_handler<T> _handler)
             {
                 __INFO("async_loader",
                     "download_metainfo\n"
@@ -116,7 +117,7 @@ namespace core
                     }
                 }
 
-                auto local_handler = default_handler_t([_priority, _url, _signed_url, _parser, _handler, meta_path, this](loader_errors _error, const default_data_t& _data)
+                auto local_handler = default_handler_t([_url, _signed_url, _parser, _handler, meta_path, this](loader_errors _error, const default_data_t& _data)
                 {
                     __INFO("async_loader",
                         "download_metainfo\n"
@@ -127,9 +128,9 @@ namespace core
 
                     if (_error == loader_errors::network_error)
                     {
-                        suspended_tasks_.push([_priority, _url, _signed_url, _parser, _handler, this](const wim_packet_params& wim_params)
+                        suspended_tasks_.push([_url, _signed_url, _parser, _handler, this](const wim_packet_params& wim_params)
                         {
-                            download_metainfo(_priority, _url, _signed_url, _parser, wim_params, _handler);
+                            download_metainfo(_url, _signed_url, _parser, wim_params, _handler);
                         });
                         return;
                     }
@@ -160,7 +161,7 @@ namespace core
 
                 }, _handler.progress_callback_);
 
-                download(_priority, _signed_url, _wim_params, local_handler);
+                download(highest_priority, _signed_url, _wim_params, local_handler);
             }
 
             void cleanup_cache();
@@ -172,6 +173,9 @@ namespace core
 
             std::unordered_map<std::string, downloadable_file_chunks_ptr> in_progress_;
             std::mutex in_progress_mutex_;
+
+            std::unordered_set<hash_t> to_cancel_;
+            std::mutex to_cancel_mutex_;
 
             typedef std::function<void(const wim_packet_params& _wim_params)> suspended_task_t;
             std::queue<suspended_task_t> suspended_tasks_;

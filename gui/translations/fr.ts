@@ -146,10 +146,6 @@ photo</translation>
         <translation>Charger photo</translation>
     </message>
     <message>
-        <source>Image should be at least 600x600 px</source>
-        <translation>L&apos;image doit faire au moins 600x600 pixels</translation>
-    </message>
-    <message>
         <source>Back</source>
         <translation>Retour</translation>
     </message>
@@ -186,6 +182,10 @@ photo</translation>
     <message>
         <source>Edit photo</source>
         <translation>Modifier photo</translation>
+    </message>
+    <message>
+        <source>Image should be at least 200x200 px</source>
+        <translation>L&apos;image doit faire au moins 200x200 pixels</translation>
     </message>
 </context>
 <context>
@@ -537,10 +537,6 @@ photo</translation>
     <message>
         <source>MESSAGES</source>
         <translation>MESSAGES</translation>
-    </message>
-    <message>
-        <source>EMOJI</source>
-        <translation>EMOJI</translation>
     </message>
     <message>
         <source>SEARCH IN ALL CHATS</source>
@@ -2629,15 +2625,15 @@ photo</translation>
         <translation>(Redémarrage de l&apos;application nécessaire)</translation>
     </message>
     <message>
-        <source>Auto-scroll to new messages</source>
-        <translation>Défilement automatique des nouveaux messages</translation>
-    </message>
-    <message>
         <source>Auto play videos</source>
         <translation>Lecture automatique des vidéos</translation>
     </message>
     <message>
         <source>Preview images and links</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show snaps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2895,13 +2891,6 @@ Modifiez le numéro et réessayez.</translation>
     </message>
 </context>
 <context>
-    <name>snaps</name>
-    <message>
-        <source>views</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>snaps_page</name>
     <message>
         <source>Cancel</source>
@@ -2922,6 +2911,26 @@ Modifiez le numéro et réessayez.</translation>
     <message>
         <source>Unfortunately, this file is not supported on your device.</source>
         <translation>Malheureusement, ce fichier n&apos;est pas supporté par votre appareil.</translation>
+    </message>
+    <message>
+        <source>view</source>
+        <comment>1</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>2</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>5</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>21</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -6,6 +6,7 @@
 #include "../../cache/snaps/SnapStorage.h"
 #include "../../cache/emoji/Emoji.h"
 #include "../../utils/Text2DocConverter.h"
+#include "../../controls/TextEditEx.h"
 
 namespace
 {
@@ -54,19 +55,26 @@ namespace Logic
     {
         auto snap = index.data(Qt::DisplayRole).value<Logic::SnapItem>();
 
-        const bool isSelected = (option.state & QStyle::State_Selected);
-        const bool isHovered =  (option.state & QStyle::State_MouseOver);
-
         painter->save();
         painter->setRenderHint(QPainter::Antialiasing);
         painter->translate(option.rect.topLeft());
         painter->setPen(QPen(Qt::transparent, 0));
 
         auto params = ContactList::GetContactListParams();
-        auto r = QRect(0, 0, params.snapItemWidth(), params.snapItemHeight());
+        
+        QRect r;
+        if (index.column() == 0 || (index.row() == Logic::GetSnapStorage()->getFriendsRow() && index.column() == Logic::GetSnapStorage()->getFriendsSnapsCount() - 1) || (index.row() == Logic::GetSnapStorage()->getFeaturedRow() && index.column() == Logic::GetSnapStorage()->getFeaturedSnapsCount() - 1))
+            r = QRect(0, 0, params.snapItemWidth() + getFirstAndLastOffset(), params.snapItemHeight());
+        else
+            r = QRect(0, 0, params.snapItemWidth(), params.snapItemHeight());
+        
         painter->fillRect(r, Qt::white);
 
-        painter->drawPixmap(params.snapLeftPadding(), params.snapTopPadding(), params.snapPreviewWidth(), params.snapPreviewHeight(), snap.Snap_);
+        auto padding = params.snapLeftPadding();
+        if (index.column() == 0)
+            padding += getFirstAndLastOffset();
+
+        painter->drawPixmap(padding, params.snapTopPadding(), params.snapPreviewWidth(), params.snapPreviewHeight(), snap.Snap_);
 
         const auto fontQss = Fonts::appFontFullQss(Utils::scale_value(12), Fonts::defaultAppFontFamily(), Fonts::FontWeight::Normal);
         const auto styleSheetQss =
@@ -83,13 +91,15 @@ namespace Logic
             friendly = snap.Friendly_;
 
         auto maxWidth = params.snapItemWidth() - params.snapLeftPadding() * 2;
+
         QFontMetrics f(textControl->font());
         friendly = f.elidedText(friendly, Qt::ElideRight, maxWidth);
         textControl->setFixedWidth(maxWidth);
 
         QTextCursor cursor = textControl->textCursor();
 
-        Logic::Text2Doc(friendly, cursor, Logic::Text2DocHtmlMode::Pass, false, nullptr, Emoji::EmojiSizePx::_16);
+        Logic::Text4Edit(friendly, *textControl, cursor, false, Emoji::EmojiSizePx::_16);
+
         Logic::FormatDocument(doc, params.contactNameHeight());
 
         auto textBlockFormat = cursor.blockFormat();
@@ -97,12 +107,16 @@ namespace Logic
         cursor.mergeBlockFormat(textBlockFormat);
         textControl->setTextCursor(cursor);
 
-        textControl->render(painter, QPoint(params.snapLeftPadding(), params.snapItemHeight() - params.snapNameBottomPadding() - textControl->height()));
+        textControl->render(painter, QPoint(padding, params.snapItemHeight() - params.snapNameBottomPadding() - textControl->height()));
 
         if (snap.HaveNewSnap_)
         {
-            auto fire = Emoji::GetEmoji(0x1f525, 0x0, getEmojiSize());
-            painter->drawImage(QRect(params.snapPreviewWidth() - Utils::scale_value(SMILE_SIZE) / 2 - Utils::scale_value(platform::is_apple() ? 2 : 4), params.snapTopPadding() / 2, Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE + (platform::is_apple() ? 0 : 2))), fire, fire.rect());
+            auto fire = Emoji::GetEmoji(0x1f525, 0x0, getEmojiSize()).scaled(QSize(Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE)), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            int x = params.snapPreviewWidth() - Utils::scale_value(SMILE_SIZE) / 2 - Utils::scale_value(platform::is_apple() ? 2 : 4);
+            if (index.column() == 0)
+                x += getFirstAndLastOffset();
+
+            painter->drawImage(QRect(x, 0, Utils::scale_value(SMILE_SIZE), Utils::scale_value(SMILE_SIZE + (platform::is_apple() ? 0 : 2))), fire, fire.rect());
         }
 
         painter->restore();
@@ -122,7 +136,12 @@ namespace Logic
     QSize SnapItemDelegate::getSnapPreviewItemSize()
     {
         auto params = ContactList::GetContactListParams();
-        return QSize(params.snapPreviewWidth(), params.snapItemHeight());
+        return QSize(params.snapPreviewWidth(), params.snapPreviewHeight());
+    }
+
+    int SnapItemDelegate::getFirstAndLastOffset()
+    {
+        return Utils::scale_value(12);
     }
 
     int SnapItemDelegate::getGradientHeight()

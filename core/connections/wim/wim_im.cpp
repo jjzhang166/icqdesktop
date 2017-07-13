@@ -97,7 +97,6 @@
 
 #include "async_loader/async_loader.h"
 
-#include "loader/tasks_runner_slot.h"
 #include "loader/loader.h"
 #include "../../../common.shared/loader_errors.h"
 #include "loader/loader_handlers.h"
@@ -192,11 +191,16 @@ std::shared_ptr<async_task_handlers> core::wim::wim_send_thread::post_packet(
 
     std::shared_ptr<async_task_handlers> callback_handlers = _handlers ? _handlers : std::make_shared<async_task_handlers>();
 
-    if (is_packet_execute_ && !_packet->support_async_execution())
+    const auto can_run_async = _packet->support_async_execution();
+
+    if (is_packet_execute_ && !can_run_async)
     {
         packets_queue_.push_back(task_and_params(_packet, _error_handler, callback_handlers));
         return callback_handlers;
     }
+
+    if (!can_run_async)
+        is_packet_execute_ = true;
 
     const auto current_time = std::chrono::system_clock::now();
 
@@ -221,9 +225,8 @@ std::shared_ptr<async_task_handlers> core::wim::wim_send_thread::post_packet(
         return callback_handlers;
     }
 
-    if (_packet->support_async_execution())
+    if (can_run_async)
     {
-        int kkk = 5;
         _packet->execute_async([wr_this, _packet, _error_handler, callback_handlers](int32_t _error)
         {
             auto ptr_this = wr_this.lock();
@@ -237,7 +240,12 @@ std::shared_ptr<async_task_handlers> core::wim::wim_send_thread::post_packet(
                     if (_packet->can_change_hosts_scheme())
                         _packet->change_hosts_scheme();
 
-                    ptr_this->post_packet(_packet, _error_handler, callback_handlers);
+                    ptr_this->run_async_function([]() { return 0; })->on_result_ = [wr_this, _packet, _error_handler, callback_handlers](int32_t /*_error*/)
+                    {
+                        auto ptr_this = wr_this.lock();
+                        if (ptr_this)
+                            ptr_this->post_packet(_packet, _error_handler, callback_handlers);
+                    };
 
                     return;
                 }
@@ -263,13 +271,16 @@ std::shared_ptr<async_task_handlers> core::wim::wim_send_thread::post_packet(
                 }
             }
 
-            ptr_this->execute_packet_from_queue();
+            ptr_this->run_async_function([]() { return 0; })->on_result_ = [wr_this](int32_t /*_error*/)
+            {
+                auto ptr_this = wr_this.lock();
+                if (ptr_this)
+                    ptr_this->execute_packet_from_queue();
+            };
         });
 
         return callback_handlers;
     }
-
-    is_packet_execute_ = true;
 
     auto internal_handlers = run_async_function([_packet]()->int32_t
     {
@@ -876,19 +887,22 @@ void im::delete_snap(const uint64_t _snap_id)
     };
 }
 
-void im::download_snap_metainfo(const int64_t _seq, const std::string& _contact_aimid, const std::string &_ttl_id)
+void im::download_snap_metainfo(const int64_t _seq, const std::string& _contact_aimid, const std::string &_ttl_id, bool _raise_priority)
 {
     assert(_seq > 0);
     assert(!_ttl_id.empty());
 
-    get_async_loader().download_snap_metainfo(default_priority, _ttl_id, make_wim_params(), snap_meta_handler_t(
-        [_seq](loader_errors _error, const snap_meta_data_t& _data)
+    get_async_loader().download_snap_metainfo(_ttl_id, make_wim_params(), snap_meta_handler_t(
+        [_seq, _ttl_id](loader_errors _error, const snap_meta_data_t& _data)
         {
             coll_helper cl_coll(g_core->create_collection(), true);
 
             const auto success = (_error == loader_errors::success);
 
             cl_coll.set<bool>("success", success);
+            cl_coll.set<bool>("not_found", _error == loader_errors::http_error);
+            if (_error == loader_errors::http_error)
+                cl_coll.set<std::string>("ttl_id", _ttl_id);
 
             if (_data.additional_data_)
             {
@@ -930,7 +944,6 @@ void im::get_mask(int64_t _seq, const std::string& mask_id)
 
 void im::refresh_snaps_storage()
 {
-    return;
     std::weak_ptr<core::wim::im> wr_this = shared_from_this();
 
     auto get_user_snaps = [wr_this](const std::string aimId)
@@ -975,7 +988,6 @@ void im::refresh_snaps_storage()
 
 void im::refresh_user_snaps(const std::string& _aimId)
 {
-    return;
     std::weak_ptr<core::wim::im> wr_this = shared_from_this();
     auto snaps_packet = std::make_shared<core::wim::get_user_snaps>(make_wim_params(), _aimId);
     post_robusto_packet(snaps_packet)->on_result_ = [wr_this, snaps_packet, _aimId](int32_t _error)
@@ -988,6 +1000,12 @@ void im::refresh_user_snaps(const std::string& _aimId)
         ptr_this->snaps_storage_->update_user_snaps(_aimId, snaps_packet->result_, coll.get());
         g_core->post_message_to_gui("snaps/user_snaps", 0, coll.get());
     };
+}
+
+void im::remove_from_snaps_storage(const std::string& _aimId)
+{
+    if (snaps_storage_)
+        snaps_storage_->remove_user(_aimId);
 }
 
 void im::load_auth_and_fetch_parameters()
@@ -1247,20 +1265,6 @@ std::shared_ptr<async_task_handlers> im::load_snaps_storage()
 {
     auto handler = std::make_shared<async_task_handlers>();
     std::weak_ptr<core::wim::im> wr_this = shared_from_this();
-
-    async_tasks_->run_async_function([]
-    {
-        return 0;
-    })->on_result_ = [wr_this, handler](int32_t _error)
-    {
-        auto ptr_this = wr_this.lock();
-        if (!ptr_this)
-            return;
-
-        if (handler->on_result_)
-            handler->on_result_(_error);
-    };
-    return handler;
 
     std::wstring snaps_storage_file = get_snaps_storage_filename();
     auto snaps = std::make_shared<snaps_storage>();
@@ -1669,14 +1673,6 @@ void im::load_cached_objects()
                         if (!ptr_this)
                             return;
 
-                        for (const auto &favorite : ptr_this->favorites_->contacts())
-                        {
-                            if (!ptr_this->contact_list_->is_ignored(favorite.get_aimid()))
-                            {
-                                ptr_this->prefetch_last_dialog_messages(favorite.get_aimid(), "favorite");
-                            }
-                        }
-
                         ptr_this->load_active_dialogs()->on_result_ = [wr_this, call_on_exit](int32_t _error)
                         {
                             auto ptr_this = wr_this.lock();
@@ -1699,8 +1695,6 @@ void im::load_cached_objects()
 
                                     if (!ptr_this->contact_list_->is_ignored(dlg_aimid))
                                     {
-                                        ptr_this->prefetch_last_dialog_messages(dlg_aimid, "active");
-
                                         if (avatar_size > 0)
                                             ptr_this->get_contact_avatar(-1, _dlg.get_aimid(), avatar_size, false);
 
@@ -3656,9 +3650,6 @@ std::shared_ptr<async_task_handlers> im::get_archive_messages_get_messages(int64
 				last_message_catcher(val->get_msgid());
 			}
 
-            auto messages_copy = std::make_shared<archive::history_block>(*_messages);
-            ptr_this->prefetch_messages_previews(messages_copy);
-
             const auto messages_overflow = (_messages->size() > _count_early + _count_later);
             if (messages_overflow)
             {
@@ -4329,8 +4320,6 @@ void im::on_event_dlg_state(fetch_event_dlg_state* _event, std::shared_ptr<auto_
     const auto messages = _event->get_messages();
 
     std::weak_ptr<im> wr_this = shared_from_this();
-
-    prefetch_messages_previews(messages);
 
     get_archive()->get_dlg_state(aimid)->on_result =
         [wr_this, aimid, _on_complete, server_dlg_state, messages]
@@ -6317,7 +6306,7 @@ void im::get_file_sharing_preview_size(const int64_t _seq, const std::string& _f
 
 void im::download_file_sharing_metainfo(const int64_t _seq, const std::string& _file_url)
 {
-    get_async_loader().download_file_sharing_metainfo(default_priority, _file_url, make_wim_params(), file_sharing_meta_handler_t(
+    get_async_loader().download_file_sharing_metainfo(_file_url, make_wim_params(), file_sharing_meta_handler_t(
         [_seq, _file_url](loader_errors _error, const file_sharing_meta_data_t& _data)
         {
             coll_helper cl_coll(g_core->create_collection(), true);
@@ -6340,7 +6329,7 @@ void im::download_file_sharing_metainfo(const int64_t _seq, const std::string& _
         }));
 }
 
-void im::download_file_sharing(const int64_t _seq, const std::string& _file_url, const bool _force_request_metainfo, const std::string& _filename, const std::string& _download_dir)
+void im::download_file_sharing(const int64_t _seq, const std::string& _contact, const std::string& _file_url, const bool _force_request_metainfo, const std::string& _filename, const std::string& _download_dir, bool _raise_priority)
 {
     get_async_loader().set_download_dir(_download_dir.empty() ? get_im_downloads_path(_download_dir) : tools::from_utf8(_download_dir));
 
@@ -6379,7 +6368,7 @@ void im::download_file_sharing(const int64_t _seq, const std::string& _file_url,
             g_core->post_message_to_gui("files/download/result", _seq, coll.get());
         });
 
-    get_async_loader().download_file_sharing(default_priority, _file_url, _filename, make_wim_params(), file_info_handler_t(completion_callback, progress_callback));
+    get_async_loader().download_file_sharing(_raise_priority ? highest_priority : default_priority, _contact, _file_url, _filename, make_wim_params(), file_info_handler_t(completion_callback, progress_callback));
 }
 
 void im::download_image(
@@ -6389,7 +6378,8 @@ void im::download_image(
     const std::string& _forced_path,
     const bool _download_preview,
     const int32_t _preview_width,
-    const int32_t _preview_height)
+    const int32_t _preview_height,
+    const bool _raise_priority)
 {
     assert(_seq > 0);
     assert(!_image_url.empty());
@@ -6471,11 +6461,11 @@ void im::download_image(
 
     if (_download_preview)
     {
-        get_async_loader().download_image_preview(default_priority, _image_url, make_wim_params(), metainfo_handler, file_info_handler_t(completion_callback));
+        get_async_loader().download_image_preview(_raise_priority ? high_priority : default_priority, _image_url, make_wim_params(), metainfo_handler, file_info_handler_t(completion_callback));
     }
     else
     {
-        get_async_loader().download_image(default_priority, _image_url, _forced_path, make_wim_params(), file_info_handler_t(completion_callback, progress_callback));
+        get_async_loader().download_image(_raise_priority ? high_priority : default_priority, _image_url, _forced_path, make_wim_params(), file_info_handler_t(completion_callback, progress_callback));
     }
 }
 
@@ -6496,7 +6486,7 @@ void im::download_link_preview(
 
     std::weak_ptr<im> wr_this = shared_from_this();
 
-    get_async_loader().download_image_metainfo(default_priority, _url, make_wim_params(), link_meta_handler_t(
+    get_async_loader().download_image_metainfo(_url, make_wim_params(), link_meta_handler_t(
         [_seq, _contact_aimid, _preview_width, _preview_height, wr_this](loader_errors _error, const link_meta_data_t _data)
         {
             auto ptr_this = wr_this.lock();
@@ -6548,16 +6538,14 @@ void im::download_link_preview(
         }));
 }
 
-void im::cancel_loader_task(const int64_t _task_id)
+void im::cancel_loader_task(const std::string& _url)
 {
-    assert(_task_id > 0);
-
-    get_loader().cancel_task(_task_id);
+    get_async_loader().cancel(_url);
 }
 
 void im::abort_file_sharing_download(const std::string& _url)
 {
-    get_async_loader().cancel(_url);
+    get_async_loader().cancel_file_sharing(_url);
 }
 
 void im::raise_download_priority(const int64_t _task_id)
@@ -6567,11 +6555,9 @@ void im::raise_download_priority(const int64_t _task_id)
 //TODO loader    get_loader().raise_task_priority(_task_id);
 }
 
-void im::raise_contact_downloads_priority(const std::string &_contact_aimid)
+void im::contact_switched(const std::string &_contact_aimid)
 {
-    assert(!_contact_aimid.empty());
-
-//TODO loader    get_loader().raise_contact_tasks_priority(_contact_aimid);
+    get_async_loader().contact_switched(_contact_aimid);
 }
 
 void im::abort_file_sharing_upload(
@@ -6684,7 +6670,7 @@ void im::request_snap_metainfo(const int64_t _seq, const std::string &_uri, cons
     assert(_seq > 0);
     assert(!_ttl_id.empty());
 
-    get_async_loader().download_snap_metainfo(default_priority, _ttl_id, make_wim_params(), snap_meta_handler_t(
+    get_async_loader().download_snap_metainfo(_ttl_id, make_wim_params(), snap_meta_handler_t(
         [_seq, _uri](loader_errors _error, const snap_meta_data_t& _data)
         {
             coll_helper cl_coll(g_core->create_collection(), true);
@@ -7107,11 +7093,8 @@ void im::on_event_notification(fetch_event_notification* _event, std::shared_ptr
 
 void im::on_event_snaps(fetch_event_snaps* _event, std::shared_ptr<auto_callback> _on_complete)
 {
-    _on_complete->callback(0);
-    return;
-
     auto aimId = _event->aim_id();
-    bool needUpdatePath = false, needUpdateSnaps = false;
+    bool needUpdateSnaps = false;
 
     std::weak_ptr<wim::im> wr_this(shared_from_this());
 
@@ -7137,24 +7120,7 @@ void im::on_event_snaps(fetch_event_snaps* _event, std::shared_ptr<auto_callback
     if (snaps_storage_->is_user_exist(aimId))
     {
         coll_helper coll(g_core->create_collection(), true);
-        snaps_storage_->update_snap_state(aimId, _event->state(), needUpdatePath, needUpdateSnaps, coll.get());
-        
-        if (needUpdatePath)
-        {
-            std::weak_ptr<wim::im> wr_this(shared_from_this());
-
-            auto snaps_packet = std::make_shared<core::wim::get_user_snaps_patch>(make_wim_params(), aimId, snaps_storage_->get_user_patch_version(aimId));
-            post_robusto_packet(snaps_packet)->on_result_ = [wr_this, snaps_packet, aimId, get_user_snaps](int32_t _error)
-            {
-                auto ptr_this = wr_this.lock();
-                if (!ptr_this)
-                    return;
-
-                coll_helper coll(g_core->create_collection(), true);
-                ptr_this->snaps_storage_->update_snap_state(aimId, snaps_packet->result_.state_, coll.get());
-                g_core->post_message_to_gui("snaps/user_snaps_state", 0, coll.get());
-            };
-        }
+        snaps_storage_->update_snap_state(aimId, _event->state(), needUpdateSnaps, coll.get());
 
         if (needUpdateSnaps)
         {
@@ -7520,215 +7486,6 @@ std::shared_ptr<async_task_handlers> im::send_timezone()
     return handler;
 }
 
-void im::prefetch_messages_previews(const archive::history_block_sptr &_block)
-{
-    assert(_block);
-
-    std::weak_ptr<im> wr_this(shared_from_this());
-
-    auto handler = get_archive()->find_previewable_links(_block);
-
-    handler->on_result_ = [](const common::tools::url_vector_t &_uris) {};
-    return;
-
-    handler->on_result_ =
-        [wr_this]
-        (const common::tools::url_vector_t &_uris)
-        {
-            auto ptr_this = wr_this.lock();
-            if (!ptr_this)
-            {
-                return;
-            }
-
-            const auto cache_dir = ptr_this->get_content_cache_path();
-
-            const auto wim_params = ptr_this->make_wim_params();
-
-            for (const auto &url_info : boost::adaptors::reverse(_uris))
-            {
-                __TRACE(
-                    "prefetch",
-                    "prefetching uri\n"
-                    "    uri=<%1%>\n",
-                    url_info.url_);
-
-                if (url_info.is_image())
-                {
-                    ptr_this->prefetch_image_preview(url_info.url_, wim_params);
-                    continue;
-                }
-
-                if (url_info.is_filesharing())
-                {
-                    ptr_this->prefetch_filesharing_preview(url_info.url_, wim_params);
-                    continue;
-                }
-
-                if (url_info.is_site())
-                {
-                    ptr_this->prefetch_site_preview(url_info.url_, wim_params);
-                    continue;
-                }
-
-                if (url_info.is_email() || url_info.is_ftp())
-                {
-                    continue;
-                }
-            }
-        };
-}
-
-void im::prefetch_filesharing_preview(const std::string &_uri, const wim_packet_params &_wim_params)
-{
-    assert(!_uri.empty());
-
-    std::string file_id;
-
-    if (!tools::parse_new_file_sharing_uri(_uri, Out file_id))
-    {
-        return;
-    }
-
-    auto type = file_sharing_content_type::undefined;
-    tools::get_content_type_from_file_sharing_id(file_id, Out type);
-
-    const auto is_snap = is_snap_file_sharing_content_type(type);
-
-    const auto is_prefetchable = (
-        (type == file_sharing_content_type::gif) ||
-        (type == file_sharing_content_type::image) ||
-        (type == file_sharing_content_type::video) ||
-        is_snap);
-
-    if (!is_prefetchable)
-    {
-        return;
-    }
-
-    if (is_snap)
-    {
-        prefetch_snap_filesharing_preview(file_id, _wim_params);
-    }
-    else
-    {
-        prefetch_generic_filesharing_preview(file_id, _wim_params);
-        prefetch_generic_filesharing_metainfo(_uri,_wim_params);
-    }
-}
-
-void im::prefetch_generic_filesharing_preview(const std::string &_file_id, const wim_packet_params &_wim_params)
-{
-    assert(!_file_id.empty());
-
-    const auto mini_preview_uri = tools::format_file_sharing_preview_uri(_file_id, tools::file_sharing_preview_size::small);
-    assert(!mini_preview_uri.empty());
-
-    const auto full_preview_uri = tools::format_file_sharing_preview_uri(_file_id, tools::file_sharing_preview_size::normal);
-    assert(!full_preview_uri.empty());
-
-    __TRACE(
-        "prefetch",
-        "prefetching file sharing preview\n"
-        "    fsid=<%1%>\n"
-        "    small=<%2%>\n"
-        "    normal=<%3%>",
-        _file_id % mini_preview_uri % full_preview_uri);
-
-    get_async_loader().download_image(low_priority, mini_preview_uri, _wim_params);
-    get_async_loader().download_image(low_priority, full_preview_uri, _wim_params);
-}
-
-void im::prefetch_generic_filesharing_metainfo(
-    const std::string &_file_url,
-    const wim_packet_params &_wim_params)
-{
-    std::string file_id;
-
-    if (!tools::parse_new_file_sharing_uri(_file_url, Out file_id))
-    {
-        __TRACE(
-            "prefetch",
-            "FAILED to prefetch file sharing metadata\n"
-            "    url=<%1%>\n"
-            "    reason=<invalid uri>",
-            _file_url);
-    }
-
-    __TRACE(
-        "prefetch",
-        "prefetching file sharing metadata\n"
-        "    url=<%1%>\n"
-        "    fsid=<%2%>\n",
-        _file_url % file_id);
-
-    get_async_loader().download_file_sharing(low_priority, _file_url, default_file_location, _wim_params);
-}
-
-void im::prefetch_snap_filesharing_preview(const std::string &_file_id, const wim_packet_params &_wim_params)
-{
-    assert(!_file_id.empty());
-
-    std::weak_ptr<im> wr_this(shared_from_this());
-
-    get_async_loader().download_snap_metainfo(low_priority, _file_id, _wim_params, snap_meta_handler_t(
-        [_file_id, _wim_params, wr_this](loader_errors _error, const snap_meta_data_t& _data)
-        {
-            const auto success = (_error == loader_errors::success);
-
-            if (success)
-            {
-                auto ptr_this = wr_this.lock();
-                if (!ptr_this)
-                    return;
-
-                ptr_this->prefetch_generic_filesharing_preview(_file_id, _wim_params);
-            }
-        }));
-}
-
-void im::prefetch_image_preview(const std::string &_uri, const wim_packet_params &_wim_params)
-{
-    assert(!_uri.empty());
-    get_async_loader().download_image_preview(low_priority, _uri, _wim_params);
-}
-
-void im::prefetch_site_preview(const std::string &_uri, const wim_packet_params &_wim_params)
-{
-    assert(!_uri.empty());
-
-    const auto wim_params = make_wim_params();
-
-    std::weak_ptr<im> wr_this = shared_from_this();
-
-    get_async_loader().download_image_metainfo(low_priority, _uri, wim_params, link_meta_handler_t(
-        [wr_this, wim_params](loader_errors _error, const link_meta_data_t& _data)
-        {
-            auto ptr_this = wr_this.lock();
-            if (!ptr_this)
-            {
-                return;
-            }
-
-            if (_error != loader_errors::success)
-            {
-                return;
-            }
-
-            auto meta = _data.additional_data_;
-
-            if (meta->has_preview_uri())
-            {
-                ptr_this->get_async_loader().download_image(low_priority, meta->get_preview_uri(), wim_params);
-            }
-
-            if (meta->has_favicon_uri())
-            {
-                ptr_this->get_async_loader().download_image(low_priority, meta->get_favicon_uri(), wim_params);
-            }
-        }));
-}
-
 void im::prefetch_last_dialog_messages(const std::string &_dlg_aimid, const char* const _reason)
 {
     assert(!_dlg_aimid.empty());
@@ -7742,28 +7499,7 @@ void im::prefetch_last_dialog_messages(const std::string &_dlg_aimid, const char
         "    reason=<%3%>",
         _dlg_aimid % PREFETCH_COUNT % _reason);
 
-    std::weak_ptr<im> wr_this(shared_from_this());
-
-    get_archive()->get_messages(_dlg_aimid, -1, PREFETCH_COUNT, -1 /* _to_older */)->on_result =
-        [wr_this, _dlg_aimid, _reason]
-        (std::shared_ptr<archive::history_block> _messages)
-        {
-            auto ptr_this = wr_this.lock();
-            if (!ptr_this)
-            {
-                return;
-            }
-
-            __TRACE(
-                "prefetch",
-                "received last dialog messages to prefetch\n"
-                "    contact=<%1%>\n"
-                "    count=<%2%>\n"
-                "    reason=<%3%>",
-                _dlg_aimid % _messages->size() % _reason);
-
-            ptr_this->prefetch_messages_previews(_messages);
-        };
+    get_archive()->get_messages(_dlg_aimid, -1, PREFETCH_COUNT, -1 /* _to_older */);
 }
 
 namespace

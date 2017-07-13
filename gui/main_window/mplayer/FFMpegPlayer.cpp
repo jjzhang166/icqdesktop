@@ -192,6 +192,7 @@ namespace Ui
     //////////////////////////////////////////////////////////////////////////
     VideoContext::VideoContext()
         : quit_(false)
+        , curr_id_(0)
     {
     }
 
@@ -207,12 +208,10 @@ namespace Ui
 
     uint32_t VideoContext::addVideo(uint32_t _id)
     {
-        static auto curr_id = 0;
-
         {
             std::unique_lock<std::mutex> lock(mediaDataMutex_);
             if (_id == 0)
-                mediaData_[++curr_id] = std::make_shared<MediaData>();
+                mediaData_[++curr_id_] = std::make_shared<MediaData>();
             else
                 mediaData_[_id] = std::make_shared<MediaData>();
         }
@@ -220,12 +219,17 @@ namespace Ui
         {
             std::unique_lock<std::mutex> lock(activeVideosMutex_);
             if (_id == 0)
-                activeVideos_[curr_id] = true;
+                activeVideos_[curr_id_] = true;
             else
                 activeVideos_[_id] = true;
         }
 
-        return _id == 0 ? curr_id : _id;
+        return _id == 0 ? curr_id_ : _id;
+    }
+
+    uint32_t VideoContext::reserveId()
+    {
+        return ++curr_id_;
     }
 
     void VideoContext::deleteVideo(uint32_t _videoId)
@@ -1933,11 +1937,20 @@ namespace Ui
                                     frame->width, 
                                     frame->height, 
                                     ffmpeg::AVPixelFormat(frame->format), scaledSize.width(), scaledSize.height(), ffmpeg::AV_PIX_FMT_RGBA, SWS_POINT, 0, 0, 0);
+                                
+                                int align = 256;
+                                while (1)
+                                {
+                                    if (frame->linesize[0] % align == 0)
+                                        break;
+                                    
+                                    align = align / 2;
+                                }
 
                                 media.frameRGB_ = ffmpeg::av_frame_alloc();
-                                int numBytes = ffmpeg::av_image_get_buffer_size(ffmpeg::AV_PIX_FMT_RGBA, scaledSize.width(), scaledSize.height(), 1);
+                                int numBytes = ffmpeg::av_image_get_buffer_size(ffmpeg::AV_PIX_FMT_RGBA, scaledSize.width(), scaledSize.height(), align);
                                 media.scaledBuffer_.resize(numBytes);
-                                av_image_fill_arrays(media.frameRGB_->data, media.frameRGB_->linesize, &media.scaledBuffer_[0], ffmpeg::AV_PIX_FMT_RGBA, scaledSize.width(), scaledSize.height(), 1);
+                                av_image_fill_arrays(media.frameRGB_->data, media.frameRGB_->linesize, &media.scaledBuffer_[0], ffmpeg::AV_PIX_FMT_RGBA, scaledSize.width(), scaledSize.height(), align);
 
                             }
 
@@ -1949,47 +1962,6 @@ namespace Ui
                             {
                                 memcpy(lastFrame.scanLine(y), media.frameRGB_->data[0] + y*media.frameRGB_->linesize[0], scaledSize.width()*4);
                             }
-
-
-
-
-
-
-                            /*QImage lastFrame = createAlignedImage(scaledSize);
-
-                            bool hasAlpha = (frame->format == ffmpeg::AV_PIX_FMT_RGBA || (frame->format == -1 && media.codecContext_->pix_fmt == ffmpeg::AV_PIX_FMT_RGBA));
-
-                            if (frame->width == scaledSize.width() && frame->height == scaledSize.height() && hasAlpha)
-                            {
-                                int32_t sbpl = frame->linesize[0], dbpl = lastFrame.bytesPerLine(), bpl = qMin(sbpl, dbpl);
-
-                                uchar *s = frame->data[0], *d = lastFrame.bits();
-
-                                for (int32_t i = 0, l = frame->height; i < l; ++i)
-                                {
-                                    memcpy(d + i * dbpl, s + i * sbpl, bpl);
-                                }
-                            }
-                            else
-                            {
-                                if ((media.needUpdateSwsContext_) || (frame->format != -1 && frame->format != media.codecContext_->pix_fmt) || !media.swsContext_)
-                                {
-                                    media.needUpdateSwsContext_ = false;
-                                    media.swsContext_ = sws_getCachedContext(
-                                        media.swsContext_, 
-                                        frame->width, 
-                                        frame->height, 
-                                        ffmpeg::AVPixelFormat(frame->format), scaledSize.width(), scaledSize.height(), ffmpeg::AV_PIX_FMT_BGRA, SWS_POINT, 0, 0, 0);
-                                }
-
-                                // AV_NUM_DATA_POINTERS defined in AVFrame struct
-                                uint8_t *toData[AV_NUM_DATA_POINTERS] = { lastFrame.bits(), nullptr };
-                                int toLinesize[AV_NUM_DATA_POINTERS] = { lastFrame.bytesPerLine(), 0 };
-                                int res;
-                                if ((res = ffmpeg::sws_scale(media.swsContext_, frame->data, frame->linesize, 0, frame->height, toData, toLinesize)) != scaledSize.height())
-                                {
-                                }
-                            }*/
 
                             std::unique_ptr<QTransform> imageTransform;
 
@@ -2060,6 +2032,8 @@ namespace Ui
 
     void AudioDecodeThread::run()
     {
+        qDebug() << "Audio decode thread start";
+
         std::unordered_map<uint32_t, AudioData> audioData;
         bool flush = false;
 
@@ -2239,6 +2213,7 @@ namespace Ui
                 }
             }
 
+            qDebug() << "Audio decode thread finish";
             for (auto data : audioData)
             {
                 auto videoId = data.first;
@@ -2285,7 +2260,7 @@ namespace Ui
     {
         if (activeImage_.isNull())
         {
-            _painter.fillRect(_clientRect, Qt::white);
+            _painter.fillRect(_clientRect, Qt::black);
 
             return;
         }
@@ -2462,7 +2437,7 @@ namespace Ui
     OpenGLRenderer::OpenGLRenderer(QWidget* _parent)
         : QOpenGLWidget(_parent)
     {
-        if (platform::is_apple())
+        //if (platform::is_apple())
             setFillColor(Qt::GlobalColor::black);
 
         setAutoFillBackground(false);
@@ -2489,7 +2464,6 @@ namespace Ui
 
         if (!fullScreen_)
         {
-            assert(!clippingPath_.isEmpty());
             if (!clippingPath_.isEmpty())
             {
                 p.setClipPath(clippingPath_);
@@ -2505,17 +2479,23 @@ namespace Ui
 
     void OpenGLRenderer::paintEvent(QPaintEvent* _e)
     {
-       paint();
+        paint();
+
+        QOpenGLWidget::paintEvent(_e);
     }
 
     void OpenGLRenderer::paintGL()
     {
         paint();
+
+        QOpenGLWidget::paintGL();
     }
 
     void OpenGLRenderer::resizeEvent(QResizeEvent *_event)
     {
         onSize(_event->size());
+
+        QOpenGLWidget::resizeEvent(_event);
     }
 
     void OpenGLRenderer::filterEvents(QWidget* _parent)
@@ -2657,6 +2637,8 @@ namespace Ui
             if (!firstFrame_)
             {
                 firstFrame_.reset(new DecodedFrame(frame, _pts));
+
+                emit firstFrameReady();
             }
         }
         else
@@ -2733,6 +2715,7 @@ namespace Ui
         return renderer;
     }
 
+
     uint32_t FFMpegPlayer::stop()
     {
         if (stoped_)
@@ -2742,7 +2725,7 @@ namespace Ui
         timer_->stop();
 
         imageProgressAnimation_->stop();
-        setImageProgress(getDuration());
+        setImageProgress(imageDuration_);
         decodedFrames_.clear();
 
         if (!continius_)
@@ -2849,6 +2832,7 @@ namespace Ui
         if (dataReady_)
         {
             emit dataReady();
+            setImageProgress(0);
             dataReady_ = false;
         }
 
@@ -2908,7 +2892,6 @@ namespace Ui
         getMediaContainer()->postVideoThreadMessage(ThreadMessage(mediaId_, thread_message_type::tmt_get_next_video_frame), false);
 
         active_renderer_->updateFrame(frame.image_);
-        emit frameChanged(-1 /* frameNumber */);
 
         if (!success)
         {
@@ -2979,6 +2962,13 @@ namespace Ui
         if (_videoId != mediaId_ && !continius_)
             return;
 
+        if (continius_ && _videoId != mediaId_)
+        {
+            auto queued = std::find(queuedMedia_.begin(), queuedMedia_.end(), _videoId);
+            if (queued == queuedMedia_.end())
+                return;
+        }
+
         disconnect(openStreamsConnection_);
 
         bool success = false;
@@ -2999,8 +2989,6 @@ namespace Ui
             active_renderer_->redraw();
             return;
         }
-
-        setImageProgress(0);
 
         bool success = false;
         auto media_ptr = getMediaContainer()->ctx_.getMediaData(mediaId_, success);
@@ -3295,6 +3283,11 @@ namespace Ui
         emit mediaChanged(mediaId_);
     }
 
+    void FFMpegPlayer::removeFromQueue(uint32_t _media)
+    {
+        queuedMedia_.remove(_media);
+    }
+
     void FFMpegPlayer::clearQueue()
     {
         for (auto i : queuedMedia_)
@@ -3389,6 +3382,22 @@ namespace Ui
         active_renderer_->setWidgetVisible(true);
     }
 
+    void FFMpegPlayer::resetRenderer()
+    {
+        if (active_renderer_ == opengl_renderer_)
+        {
+            layout_->removeWidget(active_renderer_->getWidget());
+
+            opengl_renderer_ = CreateRenderer(this, true);
+
+            layout_->addWidget(opengl_renderer_->getWidget());
+
+            opengl_renderer_->filterEvents(this);
+
+            active_renderer_ = opengl_renderer_;
+        }
+    }
+
     void FFMpegPlayer::setImageDuration(int _duration)
     {
         imageDuration_ = _duration;
@@ -3422,6 +3431,11 @@ namespace Ui
     uint32_t FFMpegPlayer::getMedia() const
     {
         return mediaId_;
+    }
+
+    uint32_t FFMpegPlayer::reserveId()
+    {
+        return getMediaContainer()->ctx_.reserveId();
     }
 
     void FFMpegPlayer::setReplay(bool _replay)

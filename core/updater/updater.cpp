@@ -122,7 +122,8 @@ namespace core
             if (http_code != 200)
                 return -1;
 
-            auto response = request.get_response();
+            auto response = dynamic_cast<tools::binary_stream*>(request.get_response().get());
+            assert(response);
 
             if (!response->available())
                 return -1;
@@ -187,7 +188,8 @@ namespace core
             if (http_code != 200)
                 return -1;
 
-            auto response = request.get_response();
+            auto response = dynamic_cast<tools::binary_stream*>(request.get_response().get());
+            assert(response);
 
             if (!response->available())
                 return -1;

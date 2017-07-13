@@ -400,6 +400,7 @@ else()
             ${ICQ_QT_LIB_DIR}/libQt5PlatformSupport.a
             ${ICQ_QT_LIB_DIR}/libQt5PrintSupport.a
             ${ICQ_QT_LIB_DIR}/libQt5Widgets.a
+	        ${ICQ_QT_LIB_DIR}/libQt5MacExtras.a
             ${ICQ_QT_LIB_DIR}/libqtfreetype.a
             ${ICQ_QT_LIB_DIR}/libqtharfbuzzng.a
             ${ICQ_QT_LIB_DIR}/libqtiff.a

@@ -627,10 +627,12 @@ namespace core
 
             virtual void download_file_sharing(
                 const int64_t _seq,
+                const std::string& _contact,
                 const std::string& _file_url,
                 const bool _force_request_metainfo,
                 const std::string& _filename,
-                const std::string& _download_dir) override;
+                const std::string& _download_dir,
+                bool _raise_priority) override;
 
             virtual void download_image(
                 const int64_t _seq,
@@ -639,7 +641,8 @@ namespace core
                 const std::string& _forced_path,
                 const bool _download_preview,
                 const int32_t _preview_width,
-                const int32_t _preview_height) override;
+                const int32_t _preview_height,
+                const bool _raise_priority) override;
 
             virtual void download_link_preview(
                 const int64_t _seq,
@@ -648,7 +651,7 @@ namespace core
                 const int32_t _preview_width,
                 const int32_t _preview_height) override;
 
-            virtual void cancel_loader_task(const int64_t _task_id) override;
+            virtual void cancel_loader_task(const std::string& _url) override;
 
             virtual void abort_file_sharing_download(const std::string& _url) override;
 
@@ -660,8 +663,7 @@ namespace core
             virtual void raise_download_priority(
                 const int64_t _task_id) override;
 
-            virtual void raise_contact_downloads_priority(
-                const std::string &_contact_aimid) override;
+            virtual void contact_switched(const std::string &_contact_aimid) override;
 
             void download_link_preview_image(
                 const int64_t _seq,
@@ -723,20 +725,6 @@ namespace core
             std::shared_ptr<async_task_handlers> send_timezone();
 
             // prefetching
-
-            void prefetch_filesharing_preview(const std::string &_uri, const wim_packet_params &_wim_params);
-
-            void prefetch_generic_filesharing_preview(const std::string &_file_id, const wim_packet_params &_wim_params);
-
-            void prefetch_generic_filesharing_metainfo(const std::string &_file_url, const wim_packet_params &_wim_params);
-
-            void prefetch_snap_filesharing_preview(const std::string &_file_id, const wim_packet_params &_wim_params);
-
-            void prefetch_image_preview(const std::string &_uri, const wim_packet_params &_wim_params);
-
-            void prefetch_messages_previews(const archive::history_block_sptr &_block);
-
-            void prefetch_site_preview(const std::string &_uri, const wim_packet_params &_wim_params);
 
             void history_search_one_batch(std::shared_ptr<archive::coded_term> _cterm, std::shared_ptr<archive::contact_and_msgs> _archive
                 , std::shared_ptr<tools::binary_stream> _data, int64_t _seq
@@ -831,7 +819,7 @@ namespace core
 
             virtual void read_snap(const uint64_t _snap_id, const std::string& _aimId, const bool _mark_prev_snaps_read, const bool _refresh_storage) override;
             virtual void delete_snap(const uint64_t _snap_id) override;
-            virtual void download_snap_metainfo(const int64_t _seq, const std::string& _contact_aimid, const std::string &_ttl_id) override;
+            virtual void download_snap_metainfo(const int64_t _seq, const std::string& _contact_aimid, const std::string &_ttl_id, bool _raise_priority) override;
 
             virtual void get_mask_id_list(int64_t _seq) override;
             virtual void get_mask_preview(int64_t _seq, const std::string& mask_id) override;
@@ -840,6 +828,7 @@ namespace core
 
             virtual void refresh_snaps_storage() override;
             virtual void refresh_user_snaps(const std::string& _aimId) override;
+            virtual void remove_from_snaps_storage(const std::string& _aimId) override;
 
             virtual bool has_valid_login() const override;
         };

@@ -19,6 +19,8 @@ namespace Logic
 
         static QSize getSnapPreviewItemSize();
 
+        static int getFirstAndLastOffset();
+
         static int getGradientHeight();
 
     private:

@@ -444,6 +444,10 @@ namespace Ui
     void GeneralDialog::resizeEvent(QResizeEvent *_event)
     {
         QDialog::resizeEvent(_event);
+        if (semiWindow_)
+        {
+            semiWindow_->updateSize();
+        }        
         if (keepCenter_)
         {
             moveToPosition(x_, y_);
@@ -518,5 +522,18 @@ namespace Ui
     {
         nextButton_->setEnabled(!rightButtonDisableOnClicked_);
         emit rightButtonClicked();
+    }
+
+    void GeneralDialog::updateSize()
+    {
+        if (semiWindow_)
+        {
+            semiWindow_->updateSize();
+        }
+        if (keepCenter_)
+        {
+            moveToPosition(x_, y_);
+        }
+        setFixedSize(sizeHint());
     }
 }

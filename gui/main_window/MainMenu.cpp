@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "MainMenu.h"
 #include "MainWindow.h"
+#include "MainPage.h"
 #include "sidebar/SidebarUtils.h"
 #include "mplayer/FFMpegPlayer.h"
 #include "../cache/snaps/SnapStorage.h"
@@ -29,6 +30,7 @@ namespace
     const int BACKGROUND_HEIGHT_MIN = 116;
     const int SNAPS_HEIGHT_MAX = 208;
     const int SNAPS_HEIGHT_MIN = 120;
+    const int SNAPS_WIDTH = 240;
     const int CLOSE_TOP_PADDING = 16;
     const int CLOSE_WIDTH = 16;
     const int CLOSE_HEIGHT = 16;
@@ -45,9 +47,30 @@ namespace
 
 namespace Ui
 {
+    PreviewImageWidget::PreviewImageWidget(QWidget* parent)
+        : QWidget(parent)
+    {
+    }
+
+    PreviewImageWidget::~PreviewImageWidget()
+    {
+    }
+
+    void PreviewImageWidget::paintEvent(QPaintEvent* e)
+    {
+        if (Preview_.isNull())
+            return;
+
+        QPainter p(this);
+        p.drawPixmap(rect(), Preview_, Preview_.rect());
+    }
+
+
     BackWidget::BackWidget(QWidget* _parent)
         : QWidget(_parent)
         , SnapsCount_(0)
+        , Preview_(new PreviewImageWidget(this))
+        , Overlay_(new PreviewImageWidget(this))
     {
         auto layout = Utils::emptyVLayout(this);
         Player_ = new FFMpegPlayer(this, false, true);
@@ -57,7 +80,19 @@ namespace Ui
         Player_->hide();
         layout->addWidget(Player_);
 
+        Player_->stackUnder(Preview_);
+        Preview_->raise();
+        Preview_->hide();
+
+        Player_->stackUnder(Overlay_);
+        Preview_->stackUnder(Overlay_);
+        Overlay_->raise();
+        Overlay_->hide();
+
         connect(Logic::GetSnapStorage(), SIGNAL(playUserSnap(QString, QString, QString, QString, qint64, bool)), this, SLOT(playSnap(QString, QString, QString, QString, qint64, bool)), Qt::QueuedConnection);
+        connect(Logic::GetSnapStorage(), SIGNAL(previewChanged(QString)), this, SLOT(previewChanged(QString)), Qt::QueuedConnection);
+        connect(Logic::GetSnapStorage(), SIGNAL(removed(QString)), this, SLOT(userSnapsRemoved(QString)), Qt::QueuedConnection);
+        connect(Logic::GetSnapStorage(), SIGNAL(snapRemoved(QString, qint64, QString)), this, SLOT(snapRemoved(QString, qint64, QString)), Qt::QueuedConnection);
         connect(Player_, SIGNAL(mediaChanged(qint32)), this, SLOT(mediaChanged(qint32)), Qt::QueuedConnection);
         connect(Player_, SIGNAL(dataReady()), this, SLOT(hidePreview()), Qt::QueuedConnection);
 
@@ -75,12 +110,11 @@ namespace Ui
     {
         auto snaps = Logic::GetSnapStorage()->getSnapsCount(MyInfo()->aimId());
 
-        if (snaps == SnapsCount_)
-        {
-            if (SnapsCount_ && Player_->state() == QMovie::Paused)
-                Player_->play(true);
-            return;
-        }
+        Overlay_->setVisible(snaps != 0 && !Preview_->isEmpty());
+
+        bool needPreview = (SnapsCount_ == 0);
+        if (SnapsCount_ && Player_->state() == QMovie::Paused)
+            Player_->play(true);
 
         SnapsCount_ = snaps;
 
@@ -97,7 +131,8 @@ namespace Ui
             setMaximumHeight(Utils::scale_value(BACKGROUND_HEIGHT_MAX));
         }
 
-        showPreview();
+        if (SnapsCount_ && Player_->state() != QMovie::Running)
+            showPreview();
     }
 
     void BackWidget::play()
@@ -112,8 +147,15 @@ namespace Ui
             Player_->pause();
     }
 
-    void BackWidget::playSnap(QString _path, QString, QString, QString, qint64, bool _first)
+    void BackWidget::playSnap(QString _path, QString, QString, QString, qint64 id, bool _first)
     {
+        auto w = Utils::InterConnector::instance().getMainWindow();
+        if (w && w->getMainPage() && !w->getMainPage()->isMenuVisibleOrOpening())
+            return;
+        
+        if (Snaps_.contains(id))
+            return;
+
         if (_first)
         {
             connect(Player_, SIGNAL(fileLoaded()), this, SLOT(fileLoaded()), Qt::UniqueConnection);
@@ -121,9 +163,16 @@ namespace Ui
             Snaps_.clear();
         }
 
+        if (!Snaps_.isEmpty() && Ids_[Player_->getMedia()] == Snaps_.last().path_)
+            Player_->removeFromQueue(Snaps_.last().mediaId_);
+
         QFileInfo f(_path);
         Player_->openMedia(_path, Utils::is_image_extension_not_gif(f.suffix()));
-        Snaps_[_path] = Player_->getLastMedia();
+        SnapItem s;
+        s.path_ = _path;
+        s.mediaId_ = Player_->getLastMedia();
+        Snaps_[id] = s;
+        Ids_[s.mediaId_] = s.path_;
     }
 
     void BackWidget::fileLoaded()
@@ -134,71 +183,129 @@ namespace Ui
 
     void BackWidget::mediaChanged(qint32 id)
     {
-        if (Snaps_.last() == id)
+        if ((!Snaps_.isEmpty() && Snaps_.last().mediaId_ == id) || id == -1)
         {
-            QMap<QString, qint32>::iterator iter = Snaps_.begin();
+            QMap<qint64, SnapItem>::iterator iter = Snaps_.begin();
             while (iter != Snaps_.end())
             {
-                QFileInfo f(iter.key());
-                Player_->openMedia(iter.key(), Utils::is_image_extension_not_gif(f.suffix()));
-                Snaps_[iter.key()] = Player_->getLastMedia();
+                QFileInfo f(iter->path_);
+                Player_->openMedia(iter->path_, Utils::is_image_extension_not_gif(f.suffix()));
+                iter->mediaId_ = Player_->getLastMedia();
+                Ids_[iter->mediaId_] = iter->path_;
                 ++iter;
             }
         }
+        Ids_.remove(id - 1);
+        if (id == -1 && !Snaps_.isEmpty())
+            connect(Player_, SIGNAL(fileLoaded()), this, SLOT(fileLoaded()), Qt::UniqueConnection);
     }
 
     void BackWidget::hidePreview()
     {
+        Preview_->hide();
         Player_->show();
     }
 
     void BackWidget::showPreview()
     {
+        Preview_->show();
         Player_->hide();
+    }
+
+    void BackWidget::previewChanged(QString aimid)
+    {
+        if (MyInfo()->aimId() != aimid)
+            return;
+
+        auto preview = Logic::GetSnapStorage()->getFirstUserPreview();
+        if (preview.isNull())
+        {
+            Overlay_->hide();
+            return;
+        }
+
+        QImage resultImg(QSize(Utils::scale_value(SNAPS_WIDTH), Utils::scale_value(SNAPS_HEIGHT_MAX)), QImage::Format_ARGB32);
+        QPainter painter(&resultImg);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        if (preview.width() > preview.height())
+            preview = preview.scaledToHeight(resultImg.height(), Qt::SmoothTransformation);
+        else
+            preview = preview.scaledToWidth(resultImg.width(), Qt::SmoothTransformation);
+        QRect sourceRect(0, 0, resultImg.width(), resultImg.height());
+        if (preview.width() > resultImg.rect().width())
+        {
+            auto diff = preview.width() / 2 - resultImg.rect().width() / 2;
+            sourceRect.moveLeft(diff);
+        }
+
+        if (preview.height() > resultImg.rect().height())
+        {
+            auto diff = preview.height() / 2 - resultImg.rect().height() / 2;
+            sourceRect.moveTop(diff);
+        }
+        painter.drawPixmap(resultImg.rect(), preview, sourceRect);
+        Preview_->setPreview(QPixmap::fromImage(resultImg));
+    }
+
+    void BackWidget::userSnapsRemoved(QString aimId)
+    {
+        if (aimId == MyInfo()->aimId())
+        {
+            Player_->stop();
+            Player_->hide();
+            setMinimumHeight(Utils::scale_value(BACKGROUND_HEIGHT_MIN));
+            setMaximumHeight(Utils::scale_value(BACKGROUND_HEIGHT_MAX));
+            Preview_->hide();
+            Overlay_->hide();
+            Snaps_.clear();
+        }
+    }
+
+    void BackWidget::snapRemoved(QString aimid, qint64 id, QString path)
+    {
+        if (aimid != MyInfo()->aimId())
+            return;
+
+        auto s = Snaps_[id];
+        auto media = Player_->getMedia();
+        if (media == s.mediaId_ || (Ids_.contains(media) && Ids_[media] == path))
+        {
+            Player_->stop();
+            Player_->loadFromQueue();
+            auto w = Utils::InterConnector::instance().getMainWindow();
+            if (w && w->isActive() && w->getMainPage()->isMenuVisible())
+                Player_->play(true);
+        }
+
+        Player_->removeFromQueue(s.mediaId_);
+
+        Snaps_.remove(id);
+    }
+
+    void BackWidget::prepareOverlay()
+    {
+        QImage resultImg(size(), QImage::Format_ARGB32);
+        resultImg.fill(qRgba(0,0,0,0));
+        QPainter painter(&resultImg);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        QPixmap pix(Utils::parse_image_name(":/resources/gradient_menu_100.png"));
+        pix = pix.scaledToHeight(resultImg.rect().height() / 2, Qt::SmoothTransformation);
+        QBrush b(pix);
+        painter.fillRect(QRect(0, 0, resultImg.rect().width(), resultImg.rect().height() / 2), b);
+        QMatrix m;
+        m.rotate(180);
+        b.setMatrix(m);
+        painter.fillRect(QRect(0, resultImg.rect().height() / 2, resultImg.rect().width(), resultImg.rect().height() / 2), b);
+
+        Overlay_->setPreview(QPixmap::fromImage(resultImg));
     }
 
     void BackWidget::paintEvent(QPaintEvent *e)
     {
         QPainter p(this);
-        if (SnapsCount_)
-        {
-            auto preview = Logic::GetSnapStorage()->getFirstUserPreview();
-            QSize s = preview.size();
-            auto ss = rect().size();
-            if (preview.width() > preview.height())
-                preview = preview.scaledToHeight(rect().height(), Qt::SmoothTransformation);
-            else
-                preview = preview.scaledToWidth(rect().width(), Qt::SmoothTransformation);
-            QSize s1 = preview.size();
-            QRect sourceRect(0, 0, preview.width(), preview.height());
-            if (preview.width() > rect().width())
-            {
-                auto diff = preview.width() / 2 - rect().width() / 2;
-                sourceRect.moveLeft(diff);
-                sourceRect.setWidth(sourceRect.width() - diff * 2);
-            }
-
-            if (preview.height() > rect().height())
-            {
-                auto diff = preview.height() / 2 - rect().height() / 2;
-                sourceRect.moveTop(diff);
-                sourceRect.setHeight(sourceRect.height() - diff * 2);
-            }
-
-            p.drawPixmap(rect(), preview, sourceRect);
-            QPixmap pix(Utils::parse_image_name(":/resources/gradient_menu_100.png"));
-            pix = pix.scaledToHeight(rect().height() / 2, Qt::SmoothTransformation);
-            QBrush b(pix);
-            p.fillRect(QRect(0, 0, rect().width(), rect().height() / 2), b);
-            QMatrix m;
-            m.rotate(180);
-            b.setMatrix(m);
-            p.fillRect(QRect(0, rect().height() / 2, rect().width(), rect().height() / 2), b);
-        }
-        else
-        {
-            p.fillRect(rect(), QColor("#84b858"));
-        }
+        p.fillRect(rect(), QColor("#84b858"));
     }
 
     void BackWidget::resizeEvent(QResizeEvent *e)
@@ -206,6 +313,13 @@ namespace Ui
         QPainterPath p;
         p.addRect(rect());
         Player_->setClippingPath(p);
+
+        Preview_->setFixedSize(size());
+        Preview_->move(0, 0);
+
+        prepareOverlay();
+        Overlay_->setFixedSize(size());
+        Overlay_->move(0, 0);
 
         emit resized();
         return QWidget::resizeEvent(e);
@@ -364,7 +478,7 @@ namespace Ui
         connect(Contacts_, SIGNAL(clicked()), this, SIGNAL(contacts()), Qt::QueuedConnection);
         connect(Settings_, SIGNAL(clicked()), this, SIGNAL(settings()), Qt::QueuedConnection);
         connect(Discover_, SIGNAL(clicked()), this, SIGNAL(discover()), Qt::QueuedConnection);
-        //connect(Stories_, SIGNAL(clicked()), this, SIGNAL(stories()), Qt::QueuedConnection);
+        connect(Stories_, SIGNAL(clicked()), this, SIGNAL(stories()), Qt::QueuedConnection);
         connect(About_, SIGNAL(clicked()), this, SIGNAL(about()), Qt::QueuedConnection);
         connect(ContactUs_, SIGNAL(clicked()), this, SIGNAL(contactUs()), Qt::QueuedConnection);
         connect(SignOut_, SIGNAL(clicked()), this, SLOT(signOut()), Qt::QueuedConnection);
@@ -372,9 +486,10 @@ namespace Ui
         connect(AddContact_, SIGNAL(clicked()), this, SLOT(Hide()), Qt::QueuedConnection);
         connect(Settings_, SIGNAL(clicked()), this, SLOT(Hide()), Qt::QueuedConnection);
         connect(Discover_, SIGNAL(clicked()), this, SLOT(Hide()), Qt::QueuedConnection);
-        //connect(Stories_, SIGNAL(clicked()), this, SLOT(Hide()), Qt::QueuedConnection);
         connect(About_, SIGNAL(clicked()), this, SLOT(Hide()), Qt::QueuedConnection);
         connect(ContactUs_, SIGNAL(clicked()), this, SLOT(Hide()), Qt::QueuedConnection);
+
+        connect(Logic::GetSnapStorage(), SIGNAL(indexChanged()), this, SLOT(snapsChanged()), Qt::QueuedConnection);
     }
 
     void MainMenu::notifyApplicationWindowActive(const bool isActive)
@@ -404,6 +519,8 @@ namespace Ui
         auto w = Utils::InterConnector::instance().getMainWindow();
         if (w)
             w->hideMenu();
+
+        Background_->pause();
     }
 
     void MainMenu::myInfoUpdated()
@@ -449,6 +566,11 @@ namespace Ui
 
         Status_->setFixedWidth(width() - Utils::scale_value(HOR_PADDING + AVATAR_SIZE + HOR_PADDING + NAME_PADDING));
         Status_->move(Utils::scale_value(HOR_PADDING + AVATAR_SIZE + NAME_PADDING), Background_->height() - Utils::scale_value(AVATAR_BOTTOM_PADDING + AVATAR_SIZE - STATUS_TOP_PADDING) + Name_->height());
+    }
+
+    void MainMenu::snapsChanged()
+    {
+        Stories_->setVisible(Logic::GetSnapStorage()->getFriendsSnapsCount() != 0);
     }
 
     void MainMenu::showEvent(QShowEvent *e)

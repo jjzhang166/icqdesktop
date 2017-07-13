@@ -11,8 +11,6 @@
 #include "FFMpegPlayer.h"
 #include "../../fonts.h"
 
-const bool dialog_control_panel_visible = false;
-
 namespace Ui
 {
     int getMargin(bool _isFullScreen)
@@ -121,16 +119,18 @@ namespace Ui
         VideoPlayerControlPanel* _copyFrom, 
         QWidget* _parent, 
         FFMpegPlayer* _player, 
-        const bool _fullscreen)
+        const QString& _mode)
 
         :   QWidget(_parent),
             player_(_player),
             duration_(_copyFrom ? _copyFrom->duration_ : 0),
             position_(_copyFrom ? _copyFrom->position_ : 0),
             positionSliderTimer_(new QTimer(this)),
-            fullscreen_(_fullscreen),
+            fullscreen_(_mode == "full_screen"),
             lastSoundButtonMode_(_copyFrom ? _copyFrom->lastSoundButtonMode_ : "0")
     {
+        setProperty("mode", _mode);
+
         setStyleSheet(Utils::LoadStyle(":/main_window/mplayer/mstyles.qss"));
 
         int32_t volume = get_gui_settings()->get_value<int32_t>(setting_mplayer_volume, 100);
@@ -140,24 +140,23 @@ namespace Ui
 
         gradient_ = new QWidget(this);
         gradient_->setObjectName("control_panel_gradient");
-        if (_fullscreen)
-            gradient_->setProperty("mode", "fullscreen");
+        gradient_->setProperty("mode", _mode);
         gradient_->show();
 
         baseLayout_ = new QHBoxLayout();
-        baseLayout_->setContentsMargins(getMargin(_fullscreen), getMargin(_fullscreen), getMargin(_fullscreen), getMargin(_fullscreen));
+        baseLayout_->setContentsMargins(getMargin(isFullScreen()), getMargin(isFullScreen()), getMargin(isFullScreen()), getMargin(isFullScreen()));
         baseLayout_->setAlignment(Qt::AlignBottom | Qt::AlignLeft);
 
         {
             playLayout_ = new QVBoxLayout();
-            playLayout_->setContentsMargins(0, getControlPanelSoundHeight(_fullscreen), 0, 0);
+            playLayout_->setContentsMargins(0, getControlPanelSoundHeight(isFullScreen()), 0, 0);
             playLayout_->setSpacing(0);
             playLayout_->setAlignment(Qt::AlignBottom | Qt::AlignLeft);
 
             playButton_ = new QPushButton(this);
             playButton_->setObjectName("VideoPlayerPlayButton");
-            playButton_->setFixedHeight(getControlPanelButtonSize(_fullscreen));
-            playButton_->setFixedWidth(getControlPanelButtonSize(_fullscreen));
+            playButton_->setFixedHeight(getControlPanelButtonSize(isFullScreen()));
+            playButton_->setFixedWidth(getControlPanelButtonSize(isFullScreen()));
             playButton_->setCursor(Qt::PointingHandCursor);
             playButton_->setCheckable(true);
 
@@ -173,8 +172,8 @@ namespace Ui
 
             progressSlider_ = new InstChangedSlider(Qt::Orientation::Horizontal, this);
             progressSlider_->setObjectName("VideoProgressSlider");
-            progressSlider_->setProperty("mode", (_fullscreen ? "full_screen" : "dialog"));
-            progressSlider_->setFixedHeight(getControlPanelButtonSize(_fullscreen));
+            progressSlider_->setProperty("mode", _mode);
+            progressSlider_->setFixedHeight(getControlPanelButtonSize(isFullScreen()));
             progressSlider_->setCursor(Qt::PointingHandCursor);
             progressSliderLayout_->addWidget(progressSlider_);
             baseLayout_->addLayout(progressSliderLayout_);
@@ -183,17 +182,17 @@ namespace Ui
         {
             timeLayout_ = new QVBoxLayout();
             timeLayout_->setContentsMargins(
-                getTimeRightMargin(_fullscreen), 
-                getControlPanelSoundHeight(_fullscreen), 
-                getTimeRightMargin(_fullscreen), 
-                getTimeBottomMargin(_fullscreen));
+                getTimeRightMargin(isFullScreen()), 
+                getControlPanelSoundHeight(isFullScreen()), 
+                getTimeRightMargin(isFullScreen()), 
+                getTimeBottomMargin(isFullScreen()));
 
             timeLayout_->setSpacing(0);
             timeLayout_->setAlignment(Qt::AlignBottom);
 
             timeRight_ = new QLabel(this);
             timeRight_->setObjectName("VideoTimeProgress");
-            timeRight_->setProperty("mode", (_fullscreen ? "full_screen" : "dialog"));
+            timeRight_->setProperty("mode", _mode);
             timeRight_->setText("0:00");
             
             timeLayout_->addWidget(timeRight_);
@@ -202,8 +201,8 @@ namespace Ui
         
         {
             soundWidget_ = new QWidget(this);
-            soundWidget_->setFixedHeight(getSoundsWidgetHeight(_fullscreen));
-            soundWidget_->setFixedWidth(getControlPanelButtonSize(_fullscreen));
+            soundWidget_->setFixedHeight(getSoundsWidgetHeight(isFullScreen()));
+            soundWidget_->setFixedWidth(getControlPanelButtonSize(isFullScreen()));
 
             QVBoxLayout* soundLayout = new QVBoxLayout();
             soundLayout->setContentsMargins(0, 0, 0, 0);
@@ -215,14 +214,14 @@ namespace Ui
             {
                 soundButton_ = new QPushButton(this);
                 soundButton_->setObjectName("VideoPlayerSoundButton");
-                soundButton_->setFixedHeight(getControlPanelButtonSize(_fullscreen));
-                soundButton_->setFixedWidth(getControlPanelButtonSize(_fullscreen));
+                soundButton_->setFixedHeight(getControlPanelButtonSize(isFullScreen()));
+                soundButton_->setFixedWidth(getControlPanelButtonSize(isFullScreen()));
                 soundButton_->setCursor(Qt::PointingHandCursor);
                 soundButton_->setProperty("mode", lastSoundButtonMode_);
                 soundButton_->installEventFilter(this);
 
                 volumeContainer_ = new QWidget(this);
-                volumeContainer_->setFixedWidth(getVolumeSliderWidth(_fullscreen));
+                volumeContainer_->setFixedWidth(getVolumeSliderWidth(isFullScreen()));
                 soundLayout->addWidget(volumeContainer_);
                 {
                     QHBoxLayout* volumeLayout = new QHBoxLayout();
@@ -233,20 +232,20 @@ namespace Ui
                     volumeSlider_ = new InstChangedSlider(Qt::Orientation::Vertical, this);
                     volumeSlider_->setOrientation(Qt::Orientation::Vertical);
                     volumeSlider_->setObjectName("VideoVolumeSlider");
-                    volumeSlider_->setProperty("mode", (_fullscreen ? "full_screen" : "dialog"));
+                    volumeSlider_->setProperty("mode", _mode);
                     volumeSlider_->setMinimum(0);
                     volumeSlider_->setMaximum(100);
                     volumeSlider_->setPageStep(10);
-                    volumeSlider_->setFixedHeight(getVolumeSliderHeight(_fullscreen));
+                    volumeSlider_->setFixedHeight(getVolumeSliderHeight(isFullScreen()));
                     volumeSlider_->setCursor(Qt::PointingHandCursor);
                     volumeSlider_->setSliderPosition(volume);
-                    volumeSlider_->setFixedWidth(getVolumeSliderWidth(_fullscreen));
+                    volumeSlider_->setFixedWidth(getVolumeSliderWidth(isFullScreen()));
                     volumeSlider_->hide();
                     volumeLayout->addWidget(volumeSlider_);
                 }
                 
                 soundButtonVolumeSpacer_ = new QWidget();
-                soundButtonVolumeSpacer_->setFixedHeight(getSoundButtonVolumeSpacerHeight(_fullscreen));
+                soundButtonVolumeSpacer_->setFixedHeight(getSoundButtonVolumeSpacerHeight(isFullScreen()));
                 soundLayout->addWidget(soundButtonVolumeSpacer_);
                 soundLayout->addWidget(soundButton_);
             }
@@ -264,14 +263,14 @@ namespace Ui
             fullscreenButton_->setFixedHeight(getControlPanelButtonSize(false));
             fullscreenButton_->setFixedWidth(getControlPanelButtonSize(false));
             fullscreenButton_->setCursor(Qt::PointingHandCursor);
-            fullscreenButton_->setVisible(!_fullscreen);
+            fullscreenButton_->setVisible(!isFullScreen());
 
             normalscreenButton_ = new QPushButton(this);
             normalscreenButton_->setObjectName("VideoPlayerNormalscreenButton");
             normalscreenButton_->setFixedHeight(getControlPanelButtonSize(false));
             normalscreenButton_->setFixedWidth(getControlPanelButtonSize(false));
             normalscreenButton_->setCursor(Qt::PointingHandCursor);
-            normalscreenButton_->setVisible(_fullscreen);
+            normalscreenButton_->setVisible(isFullScreen());
 
             fullScreenLayout_->addWidget(fullscreenButton_);
             fullScreenLayout_->addWidget(normalscreenButton_);
@@ -552,11 +551,27 @@ namespace Ui
 
         connect(fullscreenButton_, &QPushButton::clicked, this, [this](bool _checked)
         {
+            QString mode = property("mode").toString();
+
+            if (mode != "dialog")
+            {
+                fullscreenButton_->setVisible(false);
+                normalscreenButton_->setVisible(true);
+            }
+
             emit signalFullscreen(true);
         });
 
         connect(normalscreenButton_, &QPushButton::clicked, this, [this](bool _checked)
         {
+            QString mode = property("mode").toString();
+
+            if (mode != "dialog")
+            {
+                normalscreenButton_->setVisible(false);
+                fullscreenButton_->setVisible(true);
+            }
+
             emit signalFullscreen(false);
         });
 
@@ -676,24 +691,32 @@ namespace Ui
     //////////////////////////////////////////////////////////////////////////
     // DialogPlayer
     //////////////////////////////////////////////////////////////////////////
-    DialogPlayer::DialogPlayer(QWidget* _parent, bool _isGif)
+    DialogPlayer::DialogPlayer(QWidget* _parent, const uint32_t _flags)
         :   QWidget(_parent)
             , attachedPlayer_(nullptr)
+            , showControlPanel_(_flags & DialogPlayer::Flags::enable_control_panel)
     {
-        ffplayer_ = new FFMpegPlayer(this, false /* openGL */);
+        const QString mode = ((_flags & DialogPlayer::Flags::as_window) ? "window" : "dialog");
 
-        init(_parent, _isGif);
+        if (DialogPlayer::Flags::as_window & _flags)
+        {
+            setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+        }
+
+        ffplayer_ = new FFMpegPlayer(this, (_flags & DialogPlayer::Flags::use_opengl));
+
+        init(_parent, (_flags &DialogPlayer::Flags::is_gif));
 
         isFullScreen_ = false;
 
         rootLayout_->addWidget(ffplayer_);
 
-        controlPanel_.reset(new VideoPlayerControlPanel(nullptr, this, ffplayer_, false));
-        controlPanel_->setProperty("mode", "dialog_player");
+        controlPanel_.reset(new VideoPlayerControlPanel(nullptr, this, ffplayer_, mode));
         controlPanel_->installEventFilter(this);
-        if (dialog_control_panel_visible)
+
+        if (showControlPanel_)
         {
-            controlPanel_->raise();
+            //controlPanel_->raise();
         }
         else
         {
@@ -701,38 +724,6 @@ namespace Ui
         }
 
         connect(controlPanel_.get(), &VideoPlayerControlPanel::signalFullscreen, this, &DialogPlayer::fullScreen);
-    }
-
-    DialogPlayer::DialogPlayer(DialogPlayer* _attached, QWidget* _parent)
-        :   QWidget(_parent)
-            , isGif_(_attached->isGif_)
-            , ffplayer_(_attached->ffplayer_)
-            , attachedPlayer_(_attached)
-    {
-
-#ifdef __linux__
-        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
-#else
-        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-#endif //__linux__
-
-        setStyleSheet(Utils::LoadStyle(":/main_window/mplayer/mstyles.qss"));
-
-        grabKeyboard();
-
-        grabGesture(Qt::PinchGesture);
-
-        init(_parent, isGif_);
-
-        isFullScreen_ = true;
-
-        controlPanel_.reset(new VideoPlayerControlPanel(_attached->controlPanel_.get(), this, ffplayer_, true));
-        controlPanel_->setProperty("mode", "dialog_player_fullscreen");
-        controlPanel_->installEventFilter(this);
-
-        connect(controlPanel_.get(), &VideoPlayerControlPanel::signalFullscreen, this, &DialogPlayer::fullScreen);
-
-        attachedPlayer_->setAttachedPlayer(this);
     }
 
     DialogPlayer::~DialogPlayer()
@@ -766,7 +757,7 @@ namespace Ui
         connect(ffplayer_, &FFMpegPlayer::mouseMoved, this, &DialogPlayer::playerMouseMoved);
         connect(ffplayer_, &FFMpegPlayer::mouseLeaveEvent, this, &DialogPlayer::playerMouseLeaved);
         connect(ffplayer_, &FFMpegPlayer::fileLoaded, this, &DialogPlayer::onLoaded);
-        
+        connect(ffplayer_, &FFMpegPlayer::firstFrameReady, this, &DialogPlayer::onFirstFrameReady);
         setMouseTracking(true);
 
         installEventFilter(this);
@@ -844,7 +835,7 @@ namespace Ui
 
     void DialogPlayer::showControlPanel(const bool _isShow)
     {
-        if (!isFullScreen() && !dialog_control_panel_visible)
+        if (!showControlPanel_)
             return;
 
         const QRect rcParent = rect();
@@ -1015,10 +1006,8 @@ namespace Ui
                     {
                         setPaused(!controlPanel_->isPause(), true);
                     }
-                    else
-                    {
-                        changeFullScreen();
-                    }
+
+                    emit mouseClicked();
                 }
             }
 
@@ -1028,55 +1017,45 @@ namespace Ui
 
     void DialogPlayer::showAsFullscreen()
     {
-        moveToScreen();
+        normalModePosition_ = geometry();
+
+        const auto screen = Utils::InterConnector::instance().getMainWindow()->getScreen();
+
+        const auto screenGeometry = QApplication::desktop()->screenGeometry(screen);
+
+        hide();
+
+        updateSize(screenGeometry);
 
         if (platform::is_windows())
             showMaximized();
         else
             showFullScreen();
 
-        const auto videoSize = ffplayer_->getVideoSize();
-        const auto rcParent = geometry();
+        showControlPanel(controlsShowed_);
 
-        ffplayer_->setFullScreen(this, rootLayout_);
-
-        controlPanel_->raise();
-
-        setMute(false);
-
-        updateSize(rcParent);
+        show();
     }
 
-    void DialogPlayer::closeFullScreen()
+    void DialogPlayer::showAs()
     {
-        ffplayer_->setNormal();
+        show();
 
-        setMute(true);
+        showControlPanel(controlsShowed_);
+    }
 
-        releaseKeyboard();
-
-        ungrabGesture(Qt::PinchGesture);
-
+    void DialogPlayer::showAsNormal()
+    {
         showNormal();
 
-        close();
+        setGeometry(normalModePosition_);
 
-        emit closed();
+        showControlPanel(controlsShowed_);
     }
 
     void DialogPlayer::fullScreen(const bool _checked)
     {
-        if (isFullScreen() == _checked)
-            return;
-
-        if (isFullScreen())
-        {
-            closeFullScreen();
-        }
-        else
-        {
-            Utils::InterConnector::instance().getMainWindow()->openPlayerFullscreen(this);
-        }
+        emit fullScreenClicked();
     }
 
     void DialogPlayer::moveToTop()
@@ -1114,6 +1093,11 @@ namespace Ui
     void DialogPlayer::onLoaded()
     {
         emit loaded();
+    }
+
+    void DialogPlayer::onFirstFrameReady()
+    {
+        emit firstFrameReady();
     }
 
     void DialogPlayer::setLoadingState(bool _isLoad)
@@ -1159,5 +1143,25 @@ namespace Ui
     DialogPlayer* DialogPlayer::getAttachedPlayer() const
     {
         return attachedPlayer_;
+    }
+
+    QSize DialogPlayer::getVideoSize() const
+    {
+        if (!ffplayer_)
+            return QSize();
+
+        return ffplayer_->getVideoSize();
+    }
+
+    void DialogPlayer::wheelEvent(QWheelEvent* _event)
+    {
+        emit mouseWheelEvent(_event->delta());
+
+        QWidget::wheelEvent(_event);
+    }
+
+    void DialogPlayer::keyPressEvent(QKeyEvent* _event)
+    {
+        QWidget::keyPressEvent(_event);
     }
 }

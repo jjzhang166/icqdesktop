@@ -3,6 +3,7 @@
 
 #include "RecentMessagesAlert.h"
 #include "../MainWindow.h"
+#include "../MainPage.h"
 #include "../contact_list/ContactListModel.h"
 #include "../contact_list/RecentItemDelegate.h"
 #include "../contact_list/RecentsModel.h"
@@ -512,6 +513,10 @@ namespace Ui
 
         if (!aimId.isEmpty())
         {
+            auto w = MainWindow_->getMainPage();
+            if (w)
+                w->snapsClose();
+
             if (aimId == "mail")
             {
                 GetDispatcher()->post_stats_to_core(mailId.isEmpty() ? core::stats::stats_event_names::alert_mail_common : core::stats::stats_event_names::alert_mail_letter);
@@ -619,33 +624,22 @@ namespace Ui
 
     void TrayIcon::showEmailIcon()
     {
-        if (platform::is_apple())
-            return;
-        
-        if (emailSystemTrayIcon_)
+        if (platform::is_apple() || emailSystemTrayIcon_ || !canShowNotifications(true))
             return;
 
         emailSystemTrayIcon_ = new QSystemTrayIcon(this);
-
         emailSystemTrayIcon_->setIcon(emailIcon_);
-
         emailSystemTrayIcon_->setVisible(true);
-
         connect(emailSystemTrayIcon_, &QSystemTrayIcon::activated, this, &TrayIcon::onEmailIconClick, Qt::QueuedConnection);
     }
 
     void TrayIcon::hideEmailIcon()
     {
-        if (platform::is_apple())
-            return;
-        
-        if (!emailSystemTrayIcon_)
+        if (platform::is_apple() || !emailSystemTrayIcon_)
             return;
 
         emailSystemTrayIcon_->setVisible(false);
-
         delete emailSystemTrayIcon_;
-
         emailSystemTrayIcon_ = nullptr;
     }
 
@@ -829,7 +823,9 @@ namespace Ui
     void TrayIcon::loggedIn()
     {
         connect(Logic::getRecentsModel(), &Logic::RecentsModel::dlgStatesHandled, this, &TrayIcon::dlgStates, Qt::QueuedConnection);
+        connect(Logic::getRecentsModel(), &Logic::RecentsModel::updated, this, &TrayIcon::updateIcon, Qt::QueuedConnection);        
         connect(Logic::getUnknownsModel(), &Logic::UnknownsModel::dlgStatesHandled, this, &TrayIcon::dlgStates, Qt::QueuedConnection);
+        connect(Logic::getUnknownsModel(), &Logic::UnknownsModel::updated, this, &TrayIcon::updateIcon, Qt::QueuedConnection);       
         connect(Ui::GetDispatcher(), SIGNAL(newMail(QString, QString, QString, QString)), this, SLOT(newMail(QString, QString, QString, QString)), Qt::QueuedConnection);
     }
 

@@ -9,12 +9,13 @@ QString getCloseButtonStyle()
 {
     const QString close_button_style =
         "QPushButton {"
-        "border-image: url(:/resources/main_window/contr_close_100.png);"
-        "background-color: transparent; border: none;"
+        "background-color: transparent;"
+        "background-image: url(:/resources/main_window/contr_close_100.png);"
+        "background-position: center; background-repeat: no-repeat; border: none;"
         "padding: 0; margin: 0;"
-        "width: 46dip; height: 28dip; }"
+        "width: 46dip; height: 36dip; }"
         "QPushButton:hover {"
-        "border-image: url(:/resources/main_window/contr_close_100_hover.png);"
+        "background-image: url(:/resources/main_window/contr_close_100_hover.png);"
         "background-color: #e81123; }"
         "QPushButton:hover:pressed { background-color: #e81123; }"
         "QPushButton:focus { outline: none; }";
@@ -25,10 +26,11 @@ QString getMinimizeButtonStyle()
 {
     const QString str =
         "QPushButton {"
-        "border-image: url(:/resources/main_window/contr_minimize_100.png);"
-        "background-color: transparent; border: none;"
+        "background-color: transparent;"
+        "background-image: url(:/resources/main_window/contr_minimize_100.png);"
+        "background-position: center; background-repeat: no-repeat; border: none;"
         "padding: 0; margin: 0;"
-        "width: 46dip; height: 28dip; }"
+        "width: 46dip; height: 36dip; }"
         "QPushButton:hover { background-color: #d3d3d3; }"
         "QPushButton:hover:pressed { background-color: #c8c8c8; }"
         "QPushButton:focus { outline: none; }";
@@ -39,10 +41,11 @@ QString getMaximizeButtonStyle()
 {
     const QString str =
         "QPushButton {"
-        "border-image: url(:/resources/main_window/contr_bigwindow_100.png);"
-        "background-color: transparent; border: none;"
+        "background-color: transparent;"
+        "background-image: url(:/resources/main_window/contr_bigwindow_100.png);"
+        "background-position: center; background-repeat: no-repeat; border: none;"
         "padding: 0; margin: 0;"
-        "width: 46dip; height: 28dip; }"
+        "width: 46dip; height: 36dip; }"
         "QPushButton:hover { background-color: #d3d3d3; }"
         "QPushButton:hover:pressed { background-color: #c8c8c8; }"
         "QPushButton:focus { outline: none; }";
@@ -52,10 +55,11 @@ QString getRestoreButtonStyle()
 {
     const QString str =
         "QPushButton { "
-        "border-image: url(:/resources/main_window/contr_smallwindow_100.png);"
-        "background-color: transparent; border: none;"
+        "background-color: transparent;"
+        "background-image: url(:/resources/main_window/contr_smallwindow_100.png);"
+        "background-position: center; background-repeat: no-repeat; border: none;"
         "padding: 0; margin: 0;"
-        "width: 46dip; height: 28dip; }"
+        "width: 46dip; height: 36dip; }"
         "QPushButton:hover { background-color: #d3d3d3; }"
         "QPushButton:hover:pressed { background-color: #c8c8c8; }"
         "QPushButton:focus { outline: none; }";
@@ -117,9 +121,9 @@ QString getGreenButtonStyle()
 }
 
 const QColor getFrameColor() { return QColor("#ffffff"); }
-const int getBottomPanelHeight() { return  Utils::scale_value(72); }
-const QColor getBottomPanelColor() { return QColor("#ebebeb"); }
-const int getTopPanelHeight() { return  Utils::scale_value(64); }
+const int getBottomPanelHeight() { return  Utils::scale_value(64); }
+const QColor getBottomPanelColor() { return QColor("#ffffff"); }
+const int getTopPanelHeight() { return  Utils::scale_value(56); }
 const QColor getTopPanelColor() { return QColor("#ffffff"); }
 
 const QColor getLinkColor() { return QColor("#579e1c"); }

@@ -1,4 +1,5 @@
 #pragma once
+#include "../cache/snaps/SnapStorage.h"
 
 namespace Ui
 {
@@ -17,21 +18,34 @@ namespace Ui
     class PreviewWidget : public QWidget
     {
         Q_OBJECT
+
+    Q_SIGNALS:
+        void enter(QWidget*);
+        void leave(QWidget*);
+        void clicked(QString, qint64);
         
     public:
         PreviewWidget(QWidget* parent);
         ~PreviewWidget();
         
-        void setPreview(const QPixmap& _preview);
+        void setPreview(const QPixmap& _preview, QSize size);
+        void waitForPreview(const QString& _ainId, qint64 _id, QSize _size);
 
-        void setAimId(const QString& _aimid);
+        void setAimId(const QString& _aimid, bool _isOfficial, qint64 _id);
         QString getAimId() const;
 
         void updateFriendly();
+        void emitClicked();
+
+    private Q_SLOTS:
+        void previewChanged(QString);
         
     protected:
         virtual void paintEvent(QPaintEvent* e);
         virtual void resizeEvent(QResizeEvent* e);
+        virtual void mouseReleaseEvent(QMouseEvent *e);
+        virtual void enterEvent(QEvent *);
+        virtual void leaveEvent(QEvent *);
         
     private:
         QPixmap Preview_;
@@ -39,6 +53,10 @@ namespace Ui
         QString FriendlyName_;
         ContactAvatarWidget* Avatar_;
         TextEditEx* Friendly_;
+        QWidget* Gradient_;
+        qint64 Id_;
+        QSize Size_;
+        bool IsOfficial_;
     };
 
     class ProgressBar : public QWidget
@@ -55,7 +73,7 @@ namespace Ui
         void next();
         void prev();
 
-        void setFriednly(const QString& _friednly);
+        void setFriednly(const QString& _friednly, bool _isOfficial);
         void setAimId(const QString& _aimId);
         void setViews(int _views);
         void setTimestamp(int32_t _timestamp);
@@ -81,6 +99,7 @@ namespace Ui
         int Count_;
 
         bool Inverted_;
+        bool IsOfficial_;
 
         TextEditEx* Friendly_;
         ContactAvatarWidget* Avatar_;
@@ -91,12 +110,34 @@ namespace Ui
         QString FriendlyName_;
     };
 
+    class ClosePanel : public QWidget
+    {
+        Q_OBJECT
+
+Q_SIGNALS:
+        void closeClicked();
+
+    public:
+        ClosePanel(QWidget* parent);
+        ~ClosePanel();
+
+    protected:
+        virtual void enterEvent(QEvent *);
+        virtual void leaveEvent(QEvent *);
+        virtual void paintEvent(QPaintEvent *);
+        virtual void mouseReleaseEvent(QMouseEvent *);
+
+    private:
+        bool Hovered_;
+    };
+
     class ControlPanel : public QWidget
     {
         Q_OBJECT
 
     Q_SIGNALS:
         void messageClicked();
+        void closeClicked();
         void openSmilesClicked();
         void forwardClicked();
         void animation(QImage, int, int, int, int);
@@ -112,6 +153,8 @@ namespace Ui
 
         int getProp() const { return Prop_; }
         void setProp(int val) { Prop_ = val; update(); }
+
+        void setClose(bool close) {Close_ = close; update(); }
 
     protected:
         virtual void paintEvent(QPaintEvent *);
@@ -135,6 +178,7 @@ namespace Ui
         bool MessageHovered_;
         bool ForwardHovered_;
         bool SmilesOpenHovered_;
+        bool Close_;
 
         int LeftPadding_;
         int Prop_;
@@ -165,6 +209,7 @@ Q_SIGNALS:
         virtual void paintEvent(QPaintEvent *);
         virtual void mouseMoveEvent(QMouseEvent *);
         virtual void mouseReleaseEvent(QMouseEvent *);
+        virtual void leaveEvent(QEvent *);
 
     private:
         bool isSave(const QPoint& p);
@@ -201,7 +246,7 @@ Q_SIGNALS:
 
     private:
         Ui::InputWidget* Input_;
-        QPushButton* Close_;
+        QWidget* Widget_;
     };
 
     class SmilesPanel : public QWidget
@@ -232,7 +277,6 @@ Q_SIGNALS:
         QTableView* View_;
         QScrollArea* Scroll_;
         QWidget* ViewWidget_;
-        QLabel* EmojiLabel_;
         TextEditEx* Text_;
         QTimer* Timer_;
         QString AimId_;
@@ -310,6 +354,11 @@ Q_SIGNALS:
         {
         }
 
+        bool operator==(const SnapId other) const
+        {
+            return AimId_ == other.AimId_ && Id_ == other.Id_ && OriginalAimdId_ == other.OriginalAimdId_;
+        }
+
         QString AimId_;
         QString OriginalAimdId_;
         QString Url_;
@@ -340,9 +389,15 @@ Q_SIGNALS:
         int getProp() const { return Prop_; }
         void setProp(int val);
 
+        void nextSnap();
+        void nextUser();
+        void prevUser();
+
     protected:
         virtual void resizeEvent(QResizeEvent *);
         virtual void mouseReleaseEvent(QMouseEvent *);
+        virtual void mouseMoveEvent(QMouseEvent *);
+        virtual void leaveEvent(QEvent *);
 
     private Q_SLOTS:
         void playSnap(QString, QString, QString, QString, qint64, bool);
@@ -362,7 +417,12 @@ Q_SIGNALS:
         void showFailPreview(uint32_t);
         void hidePreview();
         void streamsOpenFailed(uint32_t);
+        void previewEnter(QWidget*);
+        void previewLeave(QWidget*);
+        void previewClicked(QString, qint64);
+        void tvStarted(QList<Logic::PreviewItem>, bool);
         void next();
+        void dataReady();
 
     private:
         void updatePreviews();
@@ -389,13 +449,23 @@ Q_SIGNALS:
         QString PreviewUrl_;
         qint64 PreviewId_;
         uint32_t CurrentMedia_;
+        uint32_t MediaId_;
         QPropertyAnimation* FakeProgress_;
         TextEditEx* Error_;
         QTimer* NextTimer_;
+        ClosePanel* ClosePanel_;
         bool Prev_;
         int Prop_;
 
+        QWidget* SnapHover_;
+        QWidget* PrevHover_;
+        QWidget* NextHover_;
+
+        QString WaitingFor_;
+
         CustomButton* Close_;
         std::shared_ptr<bool> ref_;
+
+        bool canSkip_;
     };
 }

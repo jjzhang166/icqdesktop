@@ -432,7 +432,9 @@ void core::archive::image_cache::extract_images(int64_t _msgid, const std::strin
             if ((content_type == file_sharing_content_type::image) ||
                 (content_type == file_sharing_content_type::gif) ||
                 (content_type == file_sharing_content_type::snap_image) ||
-                (content_type == file_sharing_content_type::snap_gif))
+                (content_type == file_sharing_content_type::snap_gif ||
+                (content_type == file_sharing_content_type::snap_video) ||
+                (content_type == file_sharing_content_type::video)))
             {
                 _images.emplace_back(_msgid, url_info.url_, url_info.is_filesharing());
             }

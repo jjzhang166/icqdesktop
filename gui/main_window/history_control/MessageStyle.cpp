@@ -11,13 +11,11 @@ UI_MESSAGE_STYLE_NS_BEGIN
 
 QFont getTextFont(int size)
 {
-    return Fonts::appFontScaled(size == -1 ? 
-#ifdef __linux__
-	16
-#else
-	15
-#endif //__linux__
- : size);
+    const int defaultFontSize = platform::is_linux() ? 16 : 15;
+
+    const int fontSize = size == -1 ? defaultFontSize : size;
+
+    return Fonts::appFontScaled(fontSize);
 }
 
 QColor getTextColor(double opacity)
@@ -68,7 +66,7 @@ int32_t getTimeMarginY()
 
 int32_t getTimeMaxWidth()
 {
-    return Utils::scale_value(30);
+    return Utils::scale_value(32);
 }
 
 QColor getIncomingBodyColorA()
@@ -95,6 +93,21 @@ QColor getOutgoingBodyColorB()
     QColor outgoingBodyColorB("#d5d2ce");
     outgoingBodyColorB.setAlphaF(0.72);
     return outgoingBodyColorB;
+}
+
+QString getLinkColorS()
+{
+    return "#579e1c";
+}
+
+QColor getLinkColor()
+{
+    return QColor(getLinkColorS());
+}
+
+QString getMessageStyle()
+{
+    return QString("a {text-decoration:none;color:") + MessageStyle::getLinkColorS() + ";}";
 }
 
 QBrush getBodyBrush(
@@ -167,7 +180,7 @@ int32_t getLeftMargin(const bool isOutgoing)
 int32_t getRightMargin(const bool isOutgoing)
 {
     return Utils::scale_value(
-        isOutgoing ? 16 : 72
+        isOutgoing ? 8 : 72
     );
 }
 
@@ -250,6 +263,11 @@ int32_t roundTextWidthDown(const int32_t width)
     assert(width > 0);
 
     return ((width / getTextWidthStep()) * getTextWidthStep());
+}
+
+int32_t getSnippetMaxWidth()
+{
+    return Utils::scale_value(420);
 }
 
 UI_MESSAGE_STYLE_NS_END

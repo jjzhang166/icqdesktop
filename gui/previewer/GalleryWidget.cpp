@@ -18,7 +18,7 @@
 
 namespace
 {
-    const qreal backgroundOpacity = 0.8;
+    const qreal backgroundOpacity = 0.95;
     const QBrush backgroundColor(QColor("#000000"));
     const int smallSpacing = 8;
     const int largeSpacing = 24;
@@ -174,15 +174,19 @@ QFrame* Previewer::GalleryWidget::createZoomFrame()
 
     zoomOut_ = zoomFrame->addButton("zoom_minus", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
     zoomOut_->setDisabled(false);
+    zoomOut_->setVisible(false);
     connect(zoomOut_, &QPushButton::clicked, this, &GalleryWidget::onZoomOut);
 
     zoomFrame->addSpace(GalleryFrame::SpaceSize::Medium);
 
     zoomIn_ = zoomFrame->addButton("zoom", GalleryFrame::Disabled | GalleryFrame::Hover | GalleryFrame::Pressed);
     zoomIn_->setDisabled(false);
+    zoomIn_->setVisible(false);
     connect(zoomIn_, &QPushButton::clicked, this, &GalleryWidget::onZoomIn);
 
     zoomFrame->addSpace(GalleryFrame::SpaceSize::Small);
+
+    zoomFrame->setFixedWidth(Utils::scale_value(100));
 
     return zoomFrame;
 }
@@ -253,7 +257,7 @@ void Previewer::GalleryWidget::keyPressEvent(QKeyEvent* _event)
     const auto key = _event->key();
     if (key == Qt::Key_Escape)
     {
-        closeGallery();
+        onEscapeClick();
     }
     else if (key == Qt::Key_Left && hasPrev())
     {
@@ -287,25 +291,7 @@ void Previewer::GalleryWidget::keyReleaseEvent(QKeyEvent* _event)
 
 void Previewer::GalleryWidget::wheelEvent(QWheelEvent* _event)
 {
-    const int delta = _event->delta();
-    if (delta == 0)
-        return;
-
-    if (scrollTimer_->isActive())
-        return;
-
-    scrollTimer_->start(scrollTimeoutMsec);
-
-    if (delta < 0 && hasNext())
-    {
-        next();
-        startLoading();
-    }
-    else if (delta > 0 && hasPrev())
-    {
-        prev();
-        startLoading();
-    }
+    onWheelEvent(_event->delta());
 }
 
 void Previewer::GalleryWidget::paintEvent(QPaintEvent* /*_event*/)
@@ -332,6 +318,9 @@ void Previewer::GalleryWidget::onIteratorUpdated()
 
 void Previewer::GalleryWidget::updateButtonFrame()
 {
+    if (!imageIterator_)
+        return;
+
     prev_->setEnabled(hasPrev());
     next_->setEnabled(hasNext());
 
@@ -389,12 +378,17 @@ void Previewer::GalleryWidget::onSaveClicked()
 #endif
 
         save_->setActive(true);
-        const bool success = QFile::copy(currentLoader().getLocalFileName(), QFileInfo(dir, name).absoluteFilePath());
-        (void) success; // supress warning
+
+        const auto destinationFile = QFileInfo(dir, name).absoluteFilePath();
+        if (QFile::exists(destinationFile))
+            if (!QFile::remove(destinationFile))
+                return;
+
+        QFile::copy(currentLoader().getLocalFileName(), destinationFile);
+
         save_->setActive(false);
 
-        assert(success);
-    }, false);
+    }, std::function<void ()>(), false);
 }
 
 void Previewer::GalleryWidget::onImageLoaded()
@@ -437,6 +431,36 @@ void Previewer::GalleryWidget::onZoomOut()
     zoomOut_->setEnabled(imageViewer_->canZoomOut());
 }
 
+void Previewer::GalleryWidget::onWheelEvent(const int _delta)
+{
+    if (_delta == 0)
+        return;
+
+    if (scrollTimer_->isActive())
+        return;
+
+    scrollTimer_->start(scrollTimeoutMsec);
+
+    if (_delta < 0 && hasNext())
+    {
+        next();
+        startLoading();
+    }
+    else if (_delta > 0 && hasPrev())
+    {
+        prev();
+        startLoading();
+    }
+}
+
+void Previewer::GalleryWidget::onEscapeClick()
+{
+    if (!imageViewer_->closeFullscreen())
+    {
+        closeGallery();
+    }
+}
+
 void Previewer::GalleryWidget::showImage(const QPixmap& _preview, const QString& _fileName)
 {
     delayTimer_->stop();
@@ -446,6 +470,9 @@ void Previewer::GalleryWidget::showImage(const QPixmap& _preview, const QString&
     updateButtonFrame();
     zoomIn_->setEnabled(true);
     zoomOut_->setEnabled(true);
+    zoomIn_->setVisible(imageViewer_->isZoomSupport());
+    zoomOut_->setVisible(imageViewer_->isZoomSupport());
+    connectContainerEvents();
 }
 
 void Previewer::GalleryWidget::showProgress()
@@ -580,4 +607,12 @@ void Previewer::GalleryWidget::tryShowImage(ImageLoader& _loader)
     {
         showImage(_loader.getPixmap(), _loader.getLocalFileName());
     }
+}
+
+void Previewer::GalleryWidget::connectContainerEvents()
+{
+    imageViewer_->connectExternalWheelEvent([this](const int _delta)
+    {
+        onWheelEvent(_delta);
+    });
 }

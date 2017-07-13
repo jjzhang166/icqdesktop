@@ -288,20 +288,20 @@ void GeneralSettingsWidget::Creator::initGeneral(GeneralSettings* _parent, std::
             return (checked ? QT_TRANSLATE_NOOP("settings_pages", "On") : QT_TRANSLATE_NOOP("settings_pages", "Off"));
         });
 
-//         GeneralCreator::addSwitcher(
-//             0,
-//             scrollArea,
-//             mainLayout,
-//             QT_TRANSLATE_NOOP("settings_pages", "Show snaps"),
-//             get_gui_settings()->get_value<bool>(settings_show_snaps, true),
-//             [](bool checked) -> QString
-//         {
-//             if (get_gui_settings()->get_value<bool>(settings_show_snaps, true) != checked)
-//                 get_gui_settings()->set_value<bool>(settings_show_snaps, checked);
-// 
-//             emit Utils::InterConnector::instance().showSnapsChanged();
-//             return (checked ? QT_TRANSLATE_NOOP("settings_pages", "On") : QT_TRANSLATE_NOOP("settings_pages", "Off"));
-//         });
+        GeneralCreator::addSwitcher(
+            0,
+            scrollArea,
+            mainLayout,
+            QT_TRANSLATE_NOOP("settings_pages", "Show snaps"),
+            get_gui_settings()->get_value<bool>(settings_show_snaps, false),
+            [](bool checked) -> QString
+        {
+            if (get_gui_settings()->get_value<bool>(settings_show_snaps, false) != checked)
+                get_gui_settings()->set_value<bool>(settings_show_snaps, checked);
+
+            emit Utils::InterConnector::instance().showSnapsChanged();
+            return (checked ? QT_TRANSLATE_NOOP("settings_pages", "On") : QT_TRANSLATE_NOOP("settings_pages", "Off"));
+        });
 
 #ifndef __APPLE__
         auto i = (get_gui_settings()->get_value<double>(settings_scale_coefficient, Utils::getBasicScaleCoefficient()) - 1.f) / .25f; if (i > 3) i = 3;

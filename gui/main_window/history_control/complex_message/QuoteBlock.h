@@ -9,6 +9,7 @@ UI_NS_BEGIN
 class TextEmojiWidget;
 class PictureWidget;
 class ContactAvatarWidget;
+class TextEditEx;
 
 UI_NS_END
 
@@ -53,6 +54,8 @@ protected:
 
 	QuoteBlockHoverPainter* Painter_;
 	QuoteBlock*				Block_;
+    Ui::TextEditEx*         Text_;
+    bool                    bAnchorClicked_;
 
 signals:
 	void openMessage();
@@ -61,6 +64,11 @@ signals:
 
 public slots:
     void onEventFilterRequest(QWidget*);
+    void onSetTextEditEx(Ui::TextEditEx*);
+    void onLeave();
+
+private slots:
+    void onAnchorClicked(const QUrl&);
 };
 
 /////////////////////////////////////////////////////////////////////

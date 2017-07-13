@@ -18,6 +18,7 @@
 #include "Style.h"
 #include "QuoteBlock.h"
 #include "TextBlock.h"
+#include "../../../gui/controls/TextEditEx.h"
 
 UI_COMPLEX_MESSAGE_NS_BEGIN
 
@@ -84,7 +85,9 @@ void QuoteBlockHoverPainter::onOpacityChanged(qreal o)
 QuoteBlockHover::QuoteBlockHover(QuoteBlockHoverPainter* painter, QWidget* parent, QuoteBlock* block) :
 	QWidget(parent),
 	Painter_(painter),
-	Block_(block)
+	Block_(block),
+    Text_(nullptr),
+    bAnchorClicked_(false)
 {
     setMouseTracking(true);
 }
@@ -114,6 +117,15 @@ void QuoteBlockHover::mouseMoveEvent(QMouseEvent * e)
 
 void QuoteBlockHover::mousePressEvent(QMouseEvent * e)
 {
+    bAnchorClicked_ = false;
+
+    if (Text_)
+    {
+        auto pos = Text_->mapFromGlobal(e->globalPos());
+        QMouseEvent ev = QMouseEvent(QEvent::MouseButtonPress, pos, e->button(), e->buttons(), e->modifiers());
+        Text_->mousePress(&ev);
+    }
+
 	if ((e->buttons() & Qt::RightButton) ||
 		(e->button() == Qt::RightButton))
 	{
@@ -129,10 +141,16 @@ void QuoteBlockHover::mousePressEvent(QMouseEvent * e)
 
 void QuoteBlockHover::mouseReleaseEvent(QMouseEvent * e)
 {
+    if (Text_)
+    {
+        auto pos = Text_->mapFromGlobal(e->globalPos());
+        QMouseEvent ev = QMouseEvent(QEvent::MouseButtonRelease, pos, e->button(), e->buttons(), e->modifiers());
+        Text_->mouseRelease(&ev);
+    }
+
 	/// press when below avatar_name
 	int max_y = Utils::scale_value(0); //Change to 35 to create an AvatarClick action (by s.skakov)
-
-    if (!Block_->isSelected())
+    if (!Block_->isSelected() && !bAnchorClicked_)
     {
 	    if ((e->buttons() & Qt::LeftButton) || 
 		    (e->button() == Qt::LeftButton))
@@ -148,10 +166,31 @@ void QuoteBlockHover::mouseReleaseEvent(QMouseEvent * e)
 			    emit openAvatar();
 		    }
 		    e->accept();
-            return;
 	    }
+        else
+            e->ignore();
     }
-    e->ignore();
+    else
+        e->ignore();
+
+    bAnchorClicked_ = false;
+}
+
+void Ui::ComplexMessage::QuoteBlockHover::onLeave()
+{
+    Painter_->startAnimation(0.0);
+}
+
+void Ui::ComplexMessage::QuoteBlockHover::onAnchorClicked(const QUrl&)
+{
+    bAnchorClicked_ = true;
+}
+
+void Ui::ComplexMessage::QuoteBlockHover::onSetTextEditEx(Ui::TextEditEx* text)
+{
+    Text_ = text;
+    text->installEventFilter(this);
+    connect(text, &Ui::TextEditEx::anchorClicked, this, &QuoteBlockHover::onAnchorClicked);
 }
 
 void Ui::ComplexMessage::QuoteBlockHover::onEventFilterRequest(QWidget* w)
@@ -470,11 +509,11 @@ void QuoteBlock::onActivityChanged(const bool isVisible)
 void QuoteBlock::addBlock(GenericBlock* block)
 {
     block->setBubbleRequired(false);
-    block->setFontSize(14);
-    block->setTextOpacity(0.8);
+    block->setFontSize(Style::Quote::getQuoteFont().pixelSize());
+    block->setTextOpacity(0.7);
     Blocks_.push_back(block);
 
-    connect(block, SIGNAL(clicked()), this, SLOT(blockClicked()), Qt::QueuedConnection);
+    /// connect(block, SIGNAL(clicked()), this, SLOT(blockClicked()), Qt::QueuedConnection);
 }
 
 bool QuoteBlock::quoteOnly() const
@@ -600,6 +639,9 @@ void QuoteBlock::createQuoteHover(ComplexMessage::ComplexMessageItem* complex_it
 
         Parent_->installEventFilter(QuoteHover_);
         QuoteHover_->setCursor(Qt::PointingHandCursor);
+
+        connect(complex_item, &ComplexMessage::ComplexMessageItem::setTextEditEx, QuoteHover_, &QuoteBlockHover::onSetTextEditEx);
+        connect(complex_item, &ComplexMessage::ComplexMessageItem::leave, QuoteHover_, &QuoteBlockHover::onLeave);
 	}
 }
 

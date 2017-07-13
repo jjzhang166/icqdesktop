@@ -51,6 +51,8 @@ namespace Ui
         inline void setLeftButtonDisableOnClicked(bool v) { leftButtonDisableOnClicked_ = v; }
         inline void setRightButtonDisableOnClicked(bool v) { rightButtonDisableOnClicked_ = v; }
 
+        void updateSize();
+
     protected:
         virtual void showEvent(QShowEvent *) override;
         virtual void hideEvent(QHideEvent *) override;

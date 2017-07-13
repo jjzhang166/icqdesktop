@@ -156,10 +156,6 @@
         <translation>Datei wählen</translation>
     </message>
     <message>
-        <source>Image should be at least 600x600 px</source>
-        <translation>Das Bild sollte mindestens 600 x 600 Pixel betragen</translation>
-    </message>
-    <message>
         <source>Change</source>
         <translation>Ändern</translation>
     </message>
@@ -186,6 +182,10 @@ bearbeiten</translation>
     <message>
         <source>Edit photo</source>
         <translation>Foto bearbeiten</translation>
+    </message>
+    <message>
+        <source>Image should be at least 200x200 px</source>
+        <translation>Das Bild sollte mindestens 200 x 200 Pixel betragen</translation>
     </message>
 </context>
 <context>
@@ -542,10 +542,6 @@ bearbeiten</translation>
     <message>
         <source>MESSAGES</source>
         <translation>NACHRICHTEN</translation>
-    </message>
-    <message>
-        <source>EMOJI</source>
-        <translation>EMOJI</translation>
     </message>
     <message>
         <source>SEARCH IN ALL CHATS</source>
@@ -2634,15 +2630,15 @@ bearbeiten</translation>
         <translation>(Neustart der Anwendung erforderlich)</translation>
     </message>
     <message>
-        <source>Auto-scroll to new messages</source>
-        <translation>Automatisch zu neuen Nachrichten scrollen</translation>
-    </message>
-    <message>
         <source>Auto play videos</source>
         <translation>Videos automatisch abspielen</translation>
     </message>
     <message>
         <source>Preview images and links</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show snaps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2900,13 +2896,6 @@ Bitte bearbeite sie und versuche es erneut.</translation>
     </message>
 </context>
 <context>
-    <name>snaps</name>
-    <message>
-        <source>views</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>snaps_page</name>
     <message>
         <source>Cancel</source>
@@ -2927,6 +2916,26 @@ Bitte bearbeite sie und versuche es erneut.</translation>
     <message>
         <source>Unfortunately, this file is not supported on your device.</source>
         <translation>Leider wird diese Datei auf deinem Gerät nicht unterstützt.</translation>
+    </message>
+    <message>
+        <source>view</source>
+        <comment>1</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>2</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>5</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>views</source>
+        <comment>21</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -19,7 +19,10 @@ namespace core
 {
     void start_new_job(curl_handler* _curl_handler)
     {
-        event_active(_curl_handler->start_task_event_, 0, 0);
+        if (_curl_handler->keep_working_)
+        {
+            event_active(_curl_handler->start_task_event_, 0, 0);
+        }
     }
 
     void finish_job(curl_handler* _curl_handler, CURL* handle, CURLcode _result)
@@ -282,9 +285,7 @@ void core::curl_handler::start()
     timer_event_ = evtimer_new(event_base_, event_timer_callback, this);
     start_task_event_ = event_new(event_base_, -1, EV_PERSIST, start_task_callback, this);
 
-    keep_working_.test_and_set();
-
-    can_add_requests_ = true;
+    keep_working_ = true;
 
     event_loop_thread_ = std::thread([this]()
     {
@@ -294,9 +295,7 @@ void core::curl_handler::start()
 
 void core::curl_handler::stop()
 {
-    keep_working_.clear();
-
-    can_add_requests_ = false;
+    keep_working_ = false;
 
     event_base_loopbreak(event_base_);
 
@@ -337,7 +336,7 @@ core::curl_handler::future_t core::curl_handler::perform(priority_t _priority, m
     auto promise = promise_t();
     auto future = promise.get_future();
 
-    if (can_add_requests_)
+    if (keep_working_)
     {
         auto completion_handler = completion_handler_t(promise_wrapper(std::move(promise)));
         add_task(_priority, _timeout, _handle, completion_handler);
@@ -352,7 +351,7 @@ core::curl_handler::future_t core::curl_handler::perform(priority_t _priority, m
 
 void core::curl_handler::perform_async(priority_t _priority, milliseconds_t _timeout, CURL* _handle, completion_callback_t _completion_callback)
 {
-    if (can_add_requests_)
+    if (keep_working_)
     {
         auto completion_handler = completion_handler_t(_completion_callback);
         add_task(_priority, _timeout, _handle, completion_handler);
@@ -365,9 +364,11 @@ void core::curl_handler::perform_async(priority_t _priority, milliseconds_t _tim
 
 void core::curl_handler::add_task(priority_t _priority, milliseconds_t _timeout, CURL* _handle, const completion_handler_t& _completion_handler)
 {
-    std::lock_guard<std::mutex> lock(jobs_mutex_);
+    {
+        std::lock_guard<std::mutex> lock(jobs_mutex_);
 
-    pending_jobs_.emplace(_priority, _timeout, _handle, _completion_handler);
+        pending_jobs_.emplace(_priority, _timeout, _handle, _completion_handler);
+    }
 
     event_active(start_task_event_, 0, 0);
 }
